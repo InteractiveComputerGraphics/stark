@@ -5,3 +5,40 @@ stark repo TODO
 		I don't think this is really necessary. In splishsplash you just modify it directly
 	
 	
+Architecture
+------------
+	* Drop the old Energy and PhysicalSystem inheritance-based interface in favor of lambdas. Old problems:
+		- Physical systems with multiple dofs or no dofs
+		- Energies are naturally attached to the data. Unnenecessary complexity and incompatibility when splitting.
+		
+		The new system allows to set lambdas as they are needed without enforcing anything. List of lambdas:
+			.add_callback_before_time_step();
+			.add_callback_before_energy_evaluation();
+			.add_callback_max_allowed_step();
+			.add_callback_is_state_valid();
+			.add_callback_after_energy_evaluation();
+			.add_callback_after_time_step();
+			.add_callback_write_frame();
+			
+	* For the simulator instance itself: Reusability of data accross physical systems is going to bee too hard.
+		For example, for cloth, just have a triangle mesh and all the cloth energies in the same class.
+		Do not split it as it is nearly impossible to reuse. And if so, can be done later on.
+		Simply have booleans to activate/deactivate effects such as inextensibility.
+		It is true that I might repeat a lot of things going from linear tets to quadratic tets, but I am not sure adding more abstraction is the answer.
+		I can always have smaller functions for minor stuff like mesh inertia, prescribed positions...
+		
+		Simulation global variables should go in its own class:
+			- dt, dhat, friction...
+			- output
+		
+	* Mesh deformables as a single set of dofs so I have less combinations in the collision detection?
+		It simplifies some things but complicates others
+		I guess I could concatenate the meshes only in the scope of the collision/friction energy. Not globally.
+		While that sounds good to merge cloth-softbody-rods, we still have a lot of combinations with rigidbody and static.
+		Probably the best option is to do the combinatorial explosion with test and pointers.
+	
+
+
+
+
+
