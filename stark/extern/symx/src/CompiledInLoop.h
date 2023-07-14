@@ -1,0 +1,558 @@
+#pragma once
+#include <functional>
+#include <array>
+
+#include "BlockedSparseMatrix/ParallelNumber.h"
+
+#include "lambdas.h"
+#include "Element.h"
+#include "Compilation.h"
+#include "simd_utils.h"
+#include "utils.h"
+#include "AlignmentAllocator.h"
+
+
+namespace symx
+{
+	/*
+		Represents loop executions of compiled functions.
+		The main loop needs a connectivity and pointers and stride data to arrays.
+
+		This class also handles the case of summations per entry in the connectivity 
+		array where the data changes across summation iterations is fixed. The typical
+		use case is FEM integrators where the compiled function evaluates one integration 
+		point and the summation just calls that function for a set of integration points 
+		and weights.
+
+	*/
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT = INPUT_FLOAT, typename OUTPUT_FLOAT = INPUT_FLOAT>
+	class CompiledInLoop
+	{
+		constexpr static bool CHECK_FOR_NAN = false;
+
+	private:
+		struct SymbolArrayMap
+		{
+			int connectivity_index = -1;
+			int stride = -1;
+			int offset = -1;  // Coordinate for vectors
+			const INPUT_FLOAT* array_begin = nullptr;
+			std::function<const INPUT_FLOAT*()> data = nullptr;
+		};
+
+	public:
+		/* Fields */
+		// Compilation and evaluation
+		Compilation compilation;
+		std::vector<SymbolArrayMap> symbol_array_map;
+		std::vector<symx::avx::avector<COMPILED_FLOAT, 64>> thread_input;
+		std::vector<symx::avx::avector<COMPILED_FLOAT, 64>> thread_output;
+		std::vector<symx::avx::avector<COMPILED_FLOAT, 64>> thread_summation_buffer;
+		std::vector<std::vector<OUTPUT_FLOAT>> thread_solution_buffer;
+
+		// Connectivity
+		std::function<const int32_t*()> connectivity_data;
+		std::function<int32_t()> connectivity_n_elements;
+		int32_t connectivity_stride = -1;
+
+		// Summation
+		std::vector<int> summation_symbols_idx;
+		std::vector<int> non_summation_symbols_idx;
+		std::vector<double> summation_data;
+		int summation_stride = -1;
+		int summation_iterations = -1;
+
+		// Misc
+		bsm::ParallelNumber<double> thread_compiled_timing;
+
+
+		/* Methods */
+		CompiledInLoop() = default;
+		~CompiledInLoop() = default;
+		CompiledInLoop(const CompiledInLoop&) = delete; // Copying makes unclear who owns the DLL
+		CompiledInLoop(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", bool suppress_compiler_output = true);
+		void compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", bool suppress_compiler_output = true);
+		bool load_if_cached(std::string name, std::string folder, std::string id);
+		bool is_valid();
+		bool was_cached();
+
+		// Set connectivity
+		Element set_connectivity(std::function<const int32_t*()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element);
+		Element set_connectivity(const std::vector<int32_t>& arr, const int32_t n_items_per_element);
+		template<std::size_t N>
+		Element set_connectivity(const std::vector<std::array<int32_t, N>>& arr);
+
+		// Update connectivity
+		void update_connectivity(std::function<const int32_t* ()> data, std::function<int32_t()> n_elements);
+		void update_connectivity(const std::vector<int32_t>& arr);
+		template<std::size_t N>
+		void update_connectivity(const std::vector<std::array<int32_t, N>>& arr);
+		
+		// Set fixed Scalar
+		void set_scalar(const Scalar& scalar, std::function<const INPUT_FLOAT* ()> data);
+		void set_scalar(const Scalar& scalar, const INPUT_FLOAT& value);
+
+		// Set fixed Vector
+		void set_vector(const Vector& vector, std::function<const INPUT_FLOAT* ()> data);
+		template<typename ARRAY>
+		void set_vector(const Vector& vector, ARRAY& arr);
+
+		// Set Scalars
+		void set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data);
+		template<typename ARRAY>
+		void set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, ARRAY& arr);
+
+		// Set Vectors
+		void set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data);
+		template<typename ARRAY>
+		void set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, ARRAY& arr);
+
+		// Set Matrices
+		void set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data);
+		template<typename ARRAY>
+		void set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, ARRAY& arr);
+
+		// Set summation vector
+		void set_summation_vector(const Vector vector, const std::vector<double>& summation_data, const int summation_stride);
+
+
+		/*
+			CB -> std::function<void(const int32_t iteration, const int32_t thread_id, const int32_t* connectivity, const OUTPUT_FLOAT* solution)>
+		*/
+		template<typename CB>
+		void run(const int32_t n_threads, CB callback);
+
+	private:
+		void _init();
+		void _resize_symbol_array_map(const Scalar& scalar);
+	};
+
+
+
+	// ===================================== DEFINITIONS =====================================
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::_init()
+	{
+		static_assert((std::is_same_v<INPUT_FLOAT, float> || std::is_same_v<INPUT_FLOAT, double>), "INPUT_FLOAT must be {float, double}");
+		static_assert((
+			std::is_same_v<COMPILED_FLOAT, float> ||
+			std::is_same_v<COMPILED_FLOAT, double> ||
+			std::is_same_v<COMPILED_FLOAT, __m128d> ||
+			std::is_same_v<COMPILED_FLOAT, __m128> ||
+			std::is_same_v<COMPILED_FLOAT, __m256d> ||
+			std::is_same_v<COMPILED_FLOAT, __m256> ||
+			std::is_same_v<COMPILED_FLOAT, __m512d> ||
+			std::is_same_v<COMPILED_FLOAT, __m512>),
+			"COMPILED_FLOAT must be {float, double, __m128d, __m128, __m256d, __m256, __m512d, __m512}");
+
+		this->symbol_array_map.resize(this->compilation.n_inputs);
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::_resize_symbol_array_map(const Scalar& scalar)
+	{
+		this->symbol_array_map.resize(scalar.expressions.symbols.size());
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::CompiledInLoop(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, bool suppress_compiler_output)
+	{
+		this->compile(expr, name, folder, id, suppress_compiler_output);
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, bool suppress_compiler_output)
+	{
+		this->compilation.template compile<COMPILED_FLOAT>(expr, name, folder, id, suppress_compiler_output);
+		this->_init();
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline bool CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::load_if_cached(std::string name, std::string folder, std::string id)
+	{
+		const bool success = this->compilation.template load_if_cached<COMPILED_FLOAT>(name, folder, id);
+		if (success) {
+			this->_init();
+		}
+		return success;
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline bool CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::is_valid()
+	{
+		return this->compilation.is_valid();
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline bool CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::was_cached()
+	{
+		return this->compilation.was_cached;
+	}
+
+
+
+
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline Element CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_connectivity(std::function<const int32_t* ()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element)
+	{
+		this->connectivity_data = data;
+		this->connectivity_n_elements = n_elements;
+		this->connectivity_stride = n_items_per_element;
+		return Element(n_items_per_element);
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline Element CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_connectivity(const std::vector<int32_t>& arr, const int32_t n_items_per_element)
+	{
+		return this->set_connectivity(l2data_int(arr), l2n_elements_int(arr, n_items_per_element), n_items_per_element);
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	template<std::size_t N>
+	inline Element CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_connectivity(const std::vector<std::array<int32_t, N>>& arr)
+	{
+		return this->set_connectivity(l2data_int(arr), l2n_elements_int(arr), N);
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::update_connectivity(std::function<const int32_t* ()> data, std::function<int32_t()> n_elements)
+	{
+		this->connectivity_data = data;
+		this->connectivity_n_elements = n_elements;
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::update_connectivity(const std::vector<int32_t>& arr)
+	{
+		this->update_connectivity(l2data_int(arr), l2n_elements_int(arr));
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	template<std::size_t N>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::update_connectivity(const std::vector<std::array<int32_t, N>>& arr)
+	{
+		this->update_connectivity(l2data_int(arr), l2n_elements_int(arr));
+	}
+	
+
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_scalar(const Scalar& scalar, const INPUT_FLOAT& value)
+	{
+		this->set_scalar(scalar, l2data_double(value));
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_scalar(const Scalar& symbol, std::function<const INPUT_FLOAT*()> data)
+	{
+		this->_resize_symbol_array_map(symbol);
+
+		SymbolArrayMap map;
+		map.data = data;
+		map.connectivity_index = 0;
+		map.stride = 0;
+		map.offset = 0;
+		this->symbol_array_map[symbol.get_symbol_idx()] = map;
+		this->non_summation_symbols_idx.push_back(symbol.get_symbol_idx());
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT*()> data)
+	{
+		if (scalars.size() != indices.size()) {
+			std::cout << "symx error: CompiledInLoop.set_from_array() got mistmatched sized scalars and indices vectors." << std::endl;
+			exit(-1);
+		}
+		this->_resize_symbol_array_map(scalars[0]);
+		const int32_t n = (int)indices.size();
+
+		for (size_t i = 0; i < n; i++){
+			const Scalar& scalar = scalars[i];
+			const Index& idx = indices[i];
+
+			SymbolArrayMap map;
+			map.data = data;
+			map.connectivity_index = idx.idx;
+			map.stride = 1;
+			map.offset = 0;
+			this->symbol_array_map[scalar.get_symbol_idx()] = map;
+			this->non_summation_symbols_idx.push_back(scalar.get_symbol_idx());
+		}
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	template<typename ARRAY>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, ARRAY& arr)
+	{
+		this->set_scalars(scalars, indices, l2data_double(arr));
+	}
+	
+
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_vector(const Vector& vector, std::function<const INPUT_FLOAT*()> data)
+	{
+		this->_resize_symbol_array_map(vector[0]);
+
+		for (int i = 0; i < vector.size(); i++) {
+			SymbolArrayMap map;
+			map.data = data;
+			map.connectivity_index = 0;
+			map.stride = 0;
+			map.offset = i;
+			this->symbol_array_map[vector[i].get_symbol_idx()] = map;
+			this->non_summation_symbols_idx.push_back(vector[i].get_symbol_idx());
+		}
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	template<typename ARRAY>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_vector(const Vector& vector, ARRAY& arr)
+	{
+		this->set_vector(vector, l2data_double(arr));
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT*()> data)
+	{
+		if (vectors.size() != indices.size()) {
+			std::cout << "symx error: CompiledInLoop.set_from_array() got mistmatched sized vectors and indices vectors." << std::endl;
+			exit(-1);
+		}
+
+		this->_resize_symbol_array_map(vectors[0][0]);
+		const int32_t n = (int)indices.size();
+
+		for (size_t i = 0; i < n; i++){
+			const Vector& vector = vectors[i];
+			const Index& idx = indices[i];
+			for (int j = 0; j < vector.size(); j++) {
+				SymbolArrayMap map;
+				map.data = data;
+				map.connectivity_index = idx.idx;
+				map.stride = vector.size();
+				map.offset = j;
+				this->symbol_array_map[vector[j].get_symbol_idx()] = map;
+				this->non_summation_symbols_idx.push_back(vector[j].get_symbol_idx());
+			}
+		}
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	template<typename ARRAY>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, ARRAY& arr)
+	{
+		this->set_vectors(vectors, indices, l2data_double(arr));
+	}
+	
+
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT*()> data)
+	{
+		if (matrices.size() != indices.size()) {
+			std::cout << "symx error: CompiledInLoop.set_from_array() got mistmatched sized vectors and indices vectors." << std::endl;
+			exit(-1);
+		}
+
+		const int32_t n = (int)indices.size();
+		std::vector<Vector> values;
+		for (size_t i = 0; i < n; i++) {
+			values.push_back(Vector(matrices[i].vals));  // Set the values of the matrix as a vector
+		}
+		this->set_vectors(values, indices, data);
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	template<typename ARRAY>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, ARRAY& arr)
+	{
+		this->set_matrices(matrices, indices, l2data_double(arr));
+	}
+	
+
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_summation_vector(const Vector vector, const std::vector<double>& summation_data, const int summation_stride)
+	{
+		if (this->summation_stride != -1) {
+			std::cout << "symx error: CompiledInLoop.set_summation_vector(): Summation vector already set." << std::endl;
+			exit(-1);
+		}
+
+		if ((int)vector.size() != summation_stride) {
+			std::cout << "symx error: CompiledInLoop.set_summation_vector() got mistmatched sized vectors and data stride." << std::endl;
+			exit(-1);
+		}
+
+		this->summation_stride = summation_stride;
+		this->summation_data = summation_data;
+		this->summation_iterations = (int)this->summation_data.size() / this->summation_stride;
+
+		if ((int)this->summation_data.size() != this->summation_iterations*this->summation_stride) {
+			std::cout << "symx error: CompiledInLoop.set_summation_vector() got non consistent sized vectors and data stride." << std::endl;
+			exit(-1);
+		}
+
+		this->_resize_symbol_array_map(vector[0]);
+		for (int j = 0; j < summation_stride; j++) {
+			SymbolArrayMap map;
+			map.array_begin = this->summation_data.data();
+			map.connectivity_index = -1;
+			map.stride = summation_stride;
+			map.offset = j;
+			this->symbol_array_map[vector[j].get_symbol_idx()] = map;
+			this->summation_symbols_idx.push_back(vector[j].get_symbol_idx());
+		}
+	}
+
+
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	template<typename CB>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run(const int32_t n_threads, CB callback)
+	{
+		using UNDERLYING_FLOAT = UNDERLYING_TYPE<COMPILED_FLOAT>;
+		constexpr int N_SIMD = get_n_items_in_simd<COMPILED_FLOAT>();
+
+		// Update connectivity and pointers
+		const int32_t n_elements = this->connectivity_n_elements();
+		if (n_elements == 0) { return; } // Early exit
+		const int32_t* connectivity_data = this->connectivity_data();
+		for (SymbolArrayMap& map : this->symbol_array_map) {
+			if (map.data == nullptr) {
+				std::cout << "symx error: CompiledInLoop found a symbol that were not set." << std::endl;
+				exit(-1);
+			}
+			map.array_begin = map.data();
+		}
+
+		if (n_threads < 0) {
+			std::cout << "symx error: invalid n_threads in CompiledInLoop.run()." << std::endl;
+			exit(-1);
+		}
+
+		// Resize
+		this->thread_solution_buffer.resize(n_threads);
+		for (std::vector<OUTPUT_FLOAT>& solution_buffer : this->thread_solution_buffer) {
+			solution_buffer.resize(this->compilation.n_outputs);
+		}
+		this->thread_input.resize(n_threads);
+		for (symx::avx::avector<COMPILED_FLOAT, 64>&input : this->thread_input) {
+			input.resize(this->compilation.n_inputs);
+		}
+		this->thread_output.resize(n_threads);
+		for (symx::avx::avector<COMPILED_FLOAT, 64>&output : this->thread_output) {
+			output.resize(this->compilation.n_outputs);
+		}
+		if (this->summation_data.size() > 0) {
+			this->thread_summation_buffer.resize(n_threads);
+			for (symx::avx::avector<COMPILED_FLOAT, 64>&output : this->thread_summation_buffer) {
+				output.resize(this->compilation.n_outputs);
+			}
+		}
+
+		// Get the compiled function
+		void(*f)(COMPILED_FLOAT*, COMPILED_FLOAT*) = this->compilation.template get_f<COMPILED_FLOAT>();
+		const int n_inputs = this->compilation.n_inputs;
+		const int n_outputs = this->compilation.n_outputs;
+
+		// Connectivity loop
+		const int total_avx_lines = (n_elements % N_SIMD == 0) ? n_elements / N_SIMD : n_elements / N_SIMD + 1;
+
+		this->thread_compiled_timing.reset(n_threads);
+		#pragma omp parallel for schedule(static) num_threads(n_threads) if(total_avx_lines > 2*n_threads)
+		for (int avx_i = 0; avx_i < total_avx_lines; avx_i++) {
+			const int thread_id = omp_get_thread_num();
+			COMPILED_FLOAT* f_input = this->thread_input[thread_id].data();
+			COMPILED_FLOAT* f_output = this->thread_output[thread_id].data();
+
+			const int begin_i = N_SIMD * avx_i;
+			const int end_i = std::min(N_SIMD * (avx_i + 1), n_elements);
+			const int active_simd_elements = end_i - begin_i;
+
+			// Gather
+			UNDERLYING_FLOAT* input_scalar = reinterpret_cast<UNDERLYING_FLOAT*>(f_input);
+			for (int32_t i = 0; i < active_simd_elements; i++) {
+				const int32_t* loc_conn = connectivity_data + (begin_i + i) * this->connectivity_stride;
+				for (const int symbol_i : this->non_summation_symbols_idx) {
+					SymbolArrayMap& map = this->symbol_array_map[symbol_i];
+					const int32_t loc_idx = loc_conn[map.connectivity_index];
+					const int32_t value_idx = loc_idx * map.stride + map.offset;
+					input_scalar[N_SIMD * symbol_i + i] = static_cast<UNDERLYING_FLOAT>(map.array_begin[value_idx]);
+
+					if constexpr (CompiledInLoop::CHECK_FOR_NAN) {
+						if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
+							std::cout << ("symx error: NaN found in CompiledInLoop::run() in the input " + std::to_string(symbol_i)) << std::endl;
+							exit(-1);
+						}
+					}
+				}
+			}
+
+			// Run
+			//// No summation
+			const double t0 = omp_get_wtime();
+			if (this->summation_data.size() == 0) {
+				f(f_input, f_output);
+			}
+
+			//// Summation
+			else {
+				COMPILED_FLOAT* buffer = this->thread_summation_buffer[thread_id].data();
+				UNDERLYING_FLOAT* buffer_scalar = reinterpret_cast<UNDERLYING_FLOAT*>(buffer);
+				UNDERLYING_FLOAT* output_scalar = reinterpret_cast<UNDERLYING_FLOAT*>(f_output);
+
+				for (int i = 0; i < n_outputs * N_SIMD; i++) {
+					output_scalar[i] = static_cast<UNDERLYING_FLOAT>(0.0);
+				}
+
+				for (int sum_it = 0; sum_it < this->summation_iterations; sum_it++) {
+
+					// Update summation data
+					for (int32_t i = 0; i < active_simd_elements; i++) {
+						for (const int symbol_i : this->summation_symbols_idx) {
+							SymbolArrayMap& map = this->symbol_array_map[symbol_i];
+							input_scalar[N_SIMD * symbol_i + i] = static_cast<UNDERLYING_FLOAT>(map.array_begin[map.stride * sum_it + map.offset]);
+
+							if constexpr (CompiledInLoop::CHECK_FOR_NAN) {
+								if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
+									std::cout << ("symx error: NaN foung in CompiledInLoop::run() in the input " + std::to_string(symbol_i)) << std::endl;
+									exit(-1);
+								}
+							}
+						}
+					}
+
+					// Run compiled function
+					f(f_input, buffer);
+
+					// Add contribution to the summation results
+					for (int i = 0; i < n_outputs * N_SIMD; i++) {
+						output_scalar[i] += buffer_scalar[i];
+					}
+				}
+			}
+			const double t1 = omp_get_wtime();
+			const double dt = t1 - t0;
+			this->thread_compiled_timing.get(thread_id) += dt;
+
+			// Scatter
+			if constexpr (N_SIMD == 1 && std::is_same_v<UNDERLYING_FLOAT, OUTPUT_FLOAT>) {
+				if constexpr (CompiledInLoop::CHECK_FOR_NAN) {
+					for (int32_t i = 0; i < n_outputs; i++) {
+						if (std::isnan(f_output[i])) {
+							std::cout << "symx error: NaN foung in CompiledInLoop::run() in the outputs." << std::endl;
+							std::cout << "Inputs: ";
+							for (int32_t i = 0; i < n_inputs; i++) {
+								std::cout << std::to_string(f_input[i]) << ", ";
+							}
+							std::cout << std::endl;
+							exit(-1);
+						}
+					}
+				}
+
+				const int32_t* loc_conn = connectivity_data + begin_i * this->connectivity_stride;
+				callback(begin_i, thread_id, loc_conn, f_output);
+			}
+			else {
+				std::vector<OUTPUT_FLOAT>& solution_buffer = this->thread_solution_buffer[thread_id];
+				const UNDERLYING_FLOAT* output_scalar = reinterpret_cast<UNDERLYING_FLOAT*>(f_output);
+				for (int32_t i = 0; i < active_simd_elements; i++) {
+					for (int32_t sol_i = 0; sol_i < n_outputs; sol_i++) {
+						solution_buffer[sol_i] = static_cast<OUTPUT_FLOAT>(output_scalar[N_SIMD * sol_i + i]);
+
+						if constexpr (CompiledInLoop::CHECK_FOR_NAN) {
+							if (std::isnan(solution_buffer[sol_i])) {
+								std::cout << "symx error: NaN foung in CompiledInLoop::run() in the outputs." << std::endl;
+								std::cout << "Compile with scalar COMPILED_FLOAT to see the input." << std::endl;
+								exit(-1);
+							}
+						}
+					}
+					const int32_t* loc_conn = connectivity_data + (begin_i + i) * this->connectivity_stride;
+					callback(begin_i + i, thread_id, loc_conn, solution_buffer.data());
+				}
+			}
+		}
+	}
+}
+

@@ -1,0 +1,7 @@
+stark repo TODO
+===============
+	* How is Stark supposed to be used? From the app or from the lib? This influences the reach of libraries such as SymX
+		I would maybe need a new middle level of abstraction: app -> stark (simulator put together) -> stark_sim (core simulator)
+		I don't think this is really necessary. In splishsplash you just modify it directly
+	
+	

@@ -1,0 +1,7 @@
+Accelerated Complex-Step Finite Difference for Expedient Deformable.pdf
+*.pyc
+app/debug.h
+
+/.idea
+/cmake-build-*
+blender/pyEffecto.cp310-win_amd64.pyd

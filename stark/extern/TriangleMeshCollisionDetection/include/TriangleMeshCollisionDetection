@@ -1,0 +1,6 @@
+#include "../src/ipc_toolkit_geometry_functions.h"
+#include "../src/BroadPhaseET.h"
+#include "../src/BroadPhasePTEE.h"
+#include "../src/BroadPhasePTEECCD.h"
+#include "../src/IntersectionDetection.h"
+#include "../src/ProximityDetection.h"
