@@ -3,10 +3,28 @@ stark repo TODO
 	* How is Stark supposed to be used? From the app or from the lib? This influences the reach of libraries such as SymX
 		I would maybe need a new middle level of abstraction: app -> stark (simulator put together) -> stark_sim (core simulator)
 		I don't think this is really necessary. In splishsplash you just modify it directly
+		
+	* Push changes to vtkio
+	* Off the shelf logger/output
+	* Support use whole element in global energy
 	
 	
 Architecture
 ------------
+	* Connectivity slices? (maybe I can already work with it)
+		At the moment I have to choose one material model. I can't have different cloth models in the same scene.
+		Changing materials would require recompilation.
+		This problem could be solved by having different connectivity arrays, one per material. But that would be insane in terms of combinations with everthing else.
+		This could be the solution to the collision combinatorial problem!!
+		A solution could be connectivity slices:
+			-> Use the lambdas to the pointer and size to point to differet ranges of the same array.
+		This allows to use the same array for different energies (materials).
+		
+		The problem of the combinatorial explosion is that is inverse: we want different connectivities concatenated into one.
+		Should I support multiple connectitivity pointers natively in symx? What about the data?
+			The way things work now, we need contiguous in memory conn and data!
+
+	
 	* Drop the old Energy and PhysicalSystem inheritance-based interface in favor of lambdas. Old problems:
 		- Physical systems with multiple dofs or no dofs
 		- Energies are naturally attached to the data. Unnenecessary complexity and incompatibility when splitting.
@@ -37,6 +55,9 @@ Architecture
 		While that sounds good to merge cloth-softbody-rods, we still have a lot of combinations with rigidbody and static.
 		Probably the best option is to do the combinatorial explosion with test and pointers.
 	
+	* Similarly for boundary conditions or inertia.
+		It could all be handled together in a concatenated mesh as they are literally the same.
+		The interface has to be per-system, but there is no way around.
 
 
 

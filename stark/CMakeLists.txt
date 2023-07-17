@@ -24,21 +24,52 @@ add_subdirectory(extern/TriangleMeshCollisionDetection)
 
 # Source files
 set(SOLVER_FILES
+	include/stark
 	src/hola.h
 	src/hola.cpp
+	src/sim/Callbacks.h
+	src/sim/AdaptiveParameter.cpp
+	src/sim/AdaptiveParameter.h
+	src/sim/NewtonsMethod.h
+	src/sim/Simulation.h
+	)
+
+set(MODELS_FILES
+	src/models/distances.h
+	src/models/Cloth.h
+	src/models/Cloth.cpp
+	)
+
+set(UTILS_FILES
+	src/utils/Output.h
+	src/utils/Output.cpp
+	src/utils/unordered_array_set_and_map.h
+	src/utils/MultiMesh.h
+	src/utils/MeshWithDynamics.h
 	)
 
 # Create lireary
-add_library(stark ${SOLVER_FILES})
+add_library(stark ${SOLVER_FILES} ${MODELS_FILES} ${UTILS_FILES})
 
+# Include/link dependencies
 ## SymX
 target_link_libraries(stark symx)
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/symx/include)
 
 ## TriangleMeshCollisionDetection
 target_link_libraries(stark TriangleMeshCollisionDetection)
-target_include_directories(stark INTERFACE extern/TriangleMeshCollisionDetection/include)
+target_include_directories(stark PUBLIC extern/TriangleMeshCollisionDetection/include)
+
+## Conjugate Gradient
+target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/symx/extern)
+
+## vtkio
+target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/vtkio/include)
+
+## Eigen
 target_include_directories(stark PUBLIC ${EIGEN3_INCLUDE_DIR})
 
 # Group files
 source_group("solver" FILES ${SOLVER_FILES})
+source_group("models" FILES ${MODELS_FILES})
+source_group("utils" FILES ${UTILS_FILES})
