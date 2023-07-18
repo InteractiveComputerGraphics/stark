@@ -19,6 +19,7 @@ namespace stark
 		// Global parameters
 		AdaptiveParameter time_step;
 		Eigen::Vector3d gravity;
+		double boundary_conditions_stiffness = 1e6;
 
 		// Options
 		std::string name = "";

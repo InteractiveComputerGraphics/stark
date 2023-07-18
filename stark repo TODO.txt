@@ -7,6 +7,10 @@ stark repo TODO
 	* Push changes to vtkio
 	* Off the shelf logger/output
 	* Support use whole element in global energy
+
+Specific to energies
+--------------------
+	* Stable neohookean for cloth
 	
 	
 Architecture

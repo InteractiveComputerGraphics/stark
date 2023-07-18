@@ -37,6 +37,7 @@ namespace symx
 		double runtime_compilation = 0.0;
 		uint64_t n_bytes_symbols = 0;
 		bool project_to_PD = false;
+		bool is_active = true;
 
 		// Symbols
 		SymbolicWorkSpace sws;
@@ -65,6 +66,7 @@ namespace symx
 		void set_conditional_expression(const Scalar& expr, const Scalar& cond);
 		bool is_expression_set() const;
 		void deferred_init(std::vector<std::function<double* ()>> dof_arrays, const bool suppress_compiler_output);
+		void activate(const bool activate);
 	
 		// Make fixed Scalar
 		Scalar make_scalar(std::function<const double* ()> data, const std::string name = "");

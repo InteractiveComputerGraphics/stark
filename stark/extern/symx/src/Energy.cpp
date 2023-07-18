@@ -59,6 +59,10 @@ void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arra
 	this->sws = SymbolicWorkSpace();
 	this->expr = nullptr;
 }
+void symx::Energy::activate(const bool activate)
+{
+	this->is_active = activate;
+}
 bool symx::Energy::is_expression_set() const
 {
 	return this->expr != nullptr;
@@ -121,6 +125,7 @@ symx::Matrix symx::Energy::make_matrix(std::function<const double* ()> data, con
 
 void symx::Energy::evaluate_E(Assembly& assembly)
 {
+	if (!this->is_active) { return; }
 	if (this->has_condition) {
 		this->_update_connectivity_conditionally(assembly.n_threads);
 	}
@@ -141,6 +146,7 @@ void symx::Energy::evaluate_E(Assembly& assembly)
 }
 void symx::Energy::evaluate_E_grad(Assembly& assembly)
 {
+	if (!this->is_active) { return; }
 	if (this->has_condition) {
 		this->_update_connectivity_conditionally(assembly.n_threads);
 	}
@@ -174,6 +180,7 @@ void symx::Energy::evaluate_E_grad(Assembly& assembly)
 }
 void symx::Energy::evaluate_E_grad_hess(Assembly& assembly)
 {
+	if (!this->is_active) { return; }
 	if (this->has_condition) {
 		this->_update_connectivity_conditionally(assembly.n_threads);
 	}

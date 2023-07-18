@@ -36,6 +36,8 @@ set(SOLVER_FILES
 
 set(MODELS_FILES
 	src/models/distances.h
+	src/models/time_integration.h
+	src/models/time_integration.cpp
 	src/models/Cloth.h
 	src/models/Cloth.cpp
 	)

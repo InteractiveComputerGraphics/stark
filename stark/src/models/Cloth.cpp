@@ -1,9 +1,10 @@
 #include "Cloth.h"
 
 #include "../utils/Output.h"
+#include "time_integration.h"
 #include "distances.h"
 
-void stark::Cloth::init(Simulation& sim)
+void stark::models::Cloth::init(Simulation& sim)
 {
 	Output::output->cout("Cloth::init()\n", 3);
 
@@ -39,192 +40,163 @@ void stark::Cloth::init(Simulation& sim)
 	);
 
 	//// Strain
-	{
-		// Local variables and arrays
-		symx::Array* CLOTH_YOUNG_MODULUS = sim.make_array("cloth_young_modulus", 1, this->young_modulus);
-		symx::Array* CLOTH_POISSON_RATIO = sim.make_array("cloth_poisson_ratio", 1, this->poisson_ratio);
+	sim.global_energy.add_energy("cloth_strain", this->conn_mesh_numbered_triangles,
+		[&](symx::Energy& energy, symx::Element& mesh_idx_triangle)
+		{
+			// Unpack connectivity
+			symx::Index tri_idx = mesh_idx_triangle[0];
+			symx::Index mesh_idx = mesh_idx_triangle[1];
+			std::vector<symx::Index> triangle = mesh_idx_triangle.slice(2, 5);
 
-		// Energy
-		symx::Energy& energy = *sim.make_energy("cloth_strain", &NUMBERED_MESH_TRIANGLES);
+			// Create symbols
+			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, triangle);
+			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, triangle);
+			symx::Matrix DXinv = energy.make_matrix(this->DXinv, { 2, 2 }, tri_idx);
+			symx::Scalar area = energy.make_scalar(this->triangle_area_rest, tri_idx);
+			symx::Scalar E = energy.make_scalar(this->young_modulus, mesh_idx);
+			symx::Scalar nu = energy.make_scalar(this->poisson_ratio, mesh_idx);
+			symx::Scalar dt = energy.make_scalar(sim.time_step.value);
 
-		//// Unpack connectivity
-		symx::ConnectivityIndex tri_idx = NUMBERED_MESH_TRIANGLES["tri_idx"];
-		symx::ConnectivityIndex mesh_idx = NUMBERED_MESH_TRIANGLES["mesh_idx"];
-		std::vector<symx::ConnectivityIndex> triangle = { NUMBERED_MESH_TRIANGLES["a"], NUMBERED_MESH_TRIANGLES["b"], NUMBERED_MESH_TRIANGLES["c"] };
+			// Time integration
+			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
 
-		//// Create symbols from connectivity, arrays and variables
-		std::vector<symx::Vector> v1 = energy.make_vectors_from_array(*V1, triangle);
-		std::vector<symx::Vector> x0 = energy.make_vectors_from_array(*X0, triangle);
-		symx::Matrix DXinv = energy.make_matrix_from_array(*DXINV, tri_idx, { 2, 2 });
-		symx::Scalar area = energy.make_scalar_from_array(*AREA, tri_idx);
-		symx::Scalar E = energy.make_scalar_from_array(*CLOTH_YOUNG_MODULUS, mesh_idx);
-		symx::Scalar nu = energy.make_scalar_from_array(*CLOTH_POISSON_RATIO, mesh_idx);
-		symx::Scalar dt = energy.make_scalar_variable(*DT);
+			// Kinematics
+			symx::Matrix Dx = symx::Matrix(symx::gather({
+				x1[1] - x1[0],
+				x1[2] - x1[0],
+				}), { 2, 3 }).transpose();
+			symx::Matrix F_32 = Dx * DXinv;  // 3x2
+			symx::Matrix C = F_32.transpose() * F_32;
 
-		symx::Scalar mu = E / (2.0 * (1.0 + nu));
-		symx::Scalar lambda = (E * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
-
-		std::vector<symx::Vector> x1 = symx::euler_integration(x0, v1, dt);
-
-		symx::Matrix Dx = symx::Matrix(symx::gather({
-			x1[1] - x1[0],
-			x1[2] - x1[0],
-			}), { 2, 3 }).transpose();
-		symx::Matrix F_32 = Dx * DXinv;  // 3x2
-		symx::Matrix C = F_32.transpose() * F_32;
-
-
-		//// Projection matrix
-		//symx::Vector v01 = x1[0] - x1[2];
-		//symx::Vector v02 = x1[1] - x1[2];
-		//symx::Vector px = v01.normalized();
-		//symx::Vector normal = v01.cross3(v02).normalized();
-		//symx::Vector py = normal.cross3(px);
-		//symx::Matrix P = symx::Matrix(symx::gather({ px, py }), { 2, 3 });
-
-		//// Projection and deformation gradient
-		//std::vector<symx::Vector> x1_ = { P * x1[0], P * x1[1], P * x1[2] };
-		//symx::Matrix Dx = symx::Matrix(symx::gather({
-		//	x1_[1] - x1_[0],
-		//	x1_[2] - x1_[0],
-		//	}), { 2, 2 }).transpose();
-		//symx::Matrix F = Dx * DXinv;
-
-
-		// Strain energy (Neo-Hookean)
-		symx::Scalar def_area = 0.5 * ((x1[0] - x1[2]).cross3(x1[1] - x1[2])).norm();
-		symx::Scalar J = def_area / area;
-		symx::Scalar Ic = C.trace();
-		symx::Scalar logJ = symx::log(J);
-		symx::Scalar energy_density = 0.5 * mu * (Ic - 3.0) - mu * logJ + 0.5 * lambda * logJ.powN(2);
-		symx::Scalar Energy = area * energy_density;
-		energy.set_expression(Energy);
-	}
+			// Strain energy
+			symx::Scalar mu = E / (2.0 * (1.0 + nu));
+			symx::Scalar lambda = (E * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
+			symx::Scalar def_area = 0.5 * ((x1[0] - x1[2]).cross3(x1[1] - x1[2])).norm();
+			symx::Scalar J = def_area / area;
+			symx::Scalar Ic = C.trace();
+			symx::Scalar logJ = symx::log(J);
+			symx::Scalar energy_density = 0.5 * mu * (Ic - 3.0) - mu * logJ + 0.5 * lambda * logJ.powN(2);
+			symx::Scalar Energy = area * energy_density;
+			energy.set_expression(Energy);
+		}
+	);
 
 	//// Strain limiting
-	{
-		// Local variables and arrays
-		symx::Array* CLOTH_STRAIN_LIMITING_START = sim.make_array("cloth_strain_limiting_start", 1, this->strain_limiting_start);
-		symx::Array* CLOTH_STRAIN_LIMITING_STIFFNESS = sim.make_array("cloth_strain_limiting_stiffness", 1, this->strain_limiting_stiffness);
+	sim.global_energy.add_energy("cloth_strain_limiting", this->conn_mesh_numbered_triangles,
+		[&](symx::Energy& energy, symx::Element& mesh_idx_triangle)
+		{
+			// Unpack connectivity
+			symx::Index tri_idx = mesh_idx_triangle[0];
+			symx::Index mesh_idx = mesh_idx_triangle[1];
+			std::vector<symx::Index> triangle = mesh_idx_triangle.slice(2, 5);
 
-		// Energy
-		symx::Energy& energy = *sim.make_energy("cloth_strain_limiting", &NUMBERED_MESH_TRIANGLES);
+			// Create symbols
+			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, triangle);
+			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, triangle);
+			symx::Matrix DXinv = energy.make_matrix(this->DXinv, { 2, 2 }, tri_idx);
+			symx::Scalar area = energy.make_scalar(this->triangle_area_rest, tri_idx);
+			symx::Scalar strain_limiting_start = energy.make_scalar(this->strain_limiting_start, mesh_idx);
+			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, mesh_idx);
+			symx::Scalar dt = energy.make_scalar(sim.time_step.value);
 
-		//// Unpack connectivity
-		symx::ConnectivityIndex tri_idx = NUMBERED_MESH_TRIANGLES["tri_idx"];
-		symx::ConnectivityIndex mesh_idx = NUMBERED_MESH_TRIANGLES["mesh_idx"];
-		std::vector<symx::ConnectivityIndex> triangle = { NUMBERED_MESH_TRIANGLES["a"], NUMBERED_MESH_TRIANGLES["b"], NUMBERED_MESH_TRIANGLES["c"] };
+			// Time integration
+			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
 
-		//// Create symbols from connectivity, arrays and variables
-		std::vector<symx::Vector> v1 = energy.make_vectors_from_array(*V1, triangle);
-		std::vector<symx::Vector> x0 = energy.make_vectors_from_array(*X0, triangle);
-		symx::Matrix DXinv = energy.make_matrix_from_array(*DXINV, tri_idx, { 2, 2 });
-		symx::Scalar area = energy.make_scalar_from_array(*AREA, tri_idx);
-		symx::Scalar strain_limiting_start = energy.make_scalar_from_array(*CLOTH_STRAIN_LIMITING_START, mesh_idx);
-		symx::Scalar strain_limiting_stiffness = energy.make_scalar_from_array(*CLOTH_STRAIN_LIMITING_STIFFNESS, mesh_idx);
-		symx::Scalar dt = energy.make_scalar_variable(*DT);
+			// Projection matrix
+			symx::Vector v01 = x1[0] - x1[2];
+			symx::Vector v02 = x1[1] - x1[2];
+			symx::Vector px = v01.normalized();
+			symx::Vector normal = v01.cross3(v02).normalized();
+			symx::Vector py = normal.cross3(px);
+			symx::Matrix P = symx::Matrix(symx::gather({ px, py }), { 2, 3 });
 
-		std::vector<symx::Vector> x1 = symx::euler_integration(x0, v1, dt);
-
-		// Projection matrix
-		symx::Vector v01 = x1[0] - x1[2];
-		symx::Vector v02 = x1[1] - x1[2];
-		symx::Vector px = v01.normalized();
-		symx::Vector normal = v01.cross3(v02).normalized();
-		symx::Vector py = normal.cross3(px);
-		symx::Matrix P = symx::Matrix(symx::gather({ px, py }), { 2, 3 });
-
-		// Projection and deformation gradient
-		std::vector<symx::Vector> x1_ = { P * x1[0], P * x1[1], P * x1[2] };
-		symx::Matrix Dx = symx::Matrix(symx::gather({
-			x1_[1] - x1_[0],
-			x1_[2] - x1_[0],
-			}), { 2, 2 }).transpose();
-		symx::Matrix F = Dx * DXinv;
-		symx::Vector s = symx::singular_values_2x2(F);
-
-		symx::Scalar C = s[0] - strain_limiting_start;
-		symx::Scalar E = area * strain_limiting_stiffness * C.powN(3);
-		energy.set_conditional_expression(E, C);
-	}
+			// Projection and deformation gradient
+			std::vector<symx::Vector> x1_ = { P * x1[0], P * x1[1], P * x1[2] };
+			symx::Matrix Dx = symx::Matrix(symx::gather({
+				x1_[1] - x1_[0],
+				x1_[2] - x1_[0],
+				}), { 2, 2 }).transpose();
+			symx::Matrix F = Dx * DXinv;
+			symx::Vector s = F.singular_values_2x2();
+			symx::Scalar C = s[0] - strain_limiting_start;
+			symx::Scalar E = area * strain_limiting_stiffness * C.powN(3);
+			energy.set_conditional_expression(E, C);
+			energy.activate(this->is_strain_limiting_active);
+		}
+	);
 
 	//// Bergou06 Bending Energy
-	{
-		// Local variables and arrays
-		symx::Array* BENDING_STIFFNESS = sim.make_array("cloth_bending_stiffness", 1, this->bending_stiffness);
-		symx::Array* Q = sim.make_array("cloth_bergou_Q_matrix", 16, this->bergou_Q_matrix);
+	sim.global_energy.add_energy("cloth_bending", this->conn_numbered_mesh_internal_edges,
+		[&](symx::Energy& energy, symx::Element& mesh_idx_internal_edge)
+		{
+			// Unpack connectivity
+			symx::Index ie_idx = mesh_idx_internal_edge[0];
+			symx::Index mesh_idx = mesh_idx_internal_edge[1];
+			std::vector<symx::Index> internal_edge = mesh_idx_internal_edge.slice(2, 6);
 
-		// Local connectivity
-		symx::ConnectivityArray& NUMBERED_MESH_INTERNAL_EDGES = *sim.make_connectivity_array("cloth_conn_numbered_internal_edges", this->conn_numbered_mesh_internal_edges, { "ie_idx", "mesh_idx", "a", "b", "c", "d" });
+			// Create symbols
+			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, internal_edge);
+			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, internal_edge);
+			symx::Matrix Q = energy.make_matrix(this->DXinv, { 4, 4 }, ie_idx);
+			symx::Scalar bending_stiffness = energy.make_scalar(this->bending_stiffness, mesh_idx);
+			symx::Scalar dt = energy.make_scalar(sim.time_step.value);
 
-		//// Unpack connectivity
-		symx::ConnectivityIndex ie_idx = NUMBERED_MESH_INTERNAL_EDGES["ie_idx"];
-		symx::ConnectivityIndex mesh_idx = NUMBERED_MESH_INTERNAL_EDGES["mesh_idx"];
-		std::vector<symx::ConnectivityIndex> ie = { NUMBERED_MESH_INTERNAL_EDGES["a"], NUMBERED_MESH_INTERNAL_EDGES["b"], NUMBERED_MESH_INTERNAL_EDGES["c"], NUMBERED_MESH_INTERNAL_EDGES["d"] };
+			// Time integration
+			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
 
-		// Energy
-		symx::Energy& energy = *sim.make_energy("cloth_bergou_bending", &NUMBERED_MESH_INTERNAL_EDGES);
-
-		//// Create symbols from connectivity, arrays and variables
-		std::vector<symx::Vector> v1 = energy.make_vectors_from_array(*V1, ie);
-		std::vector<symx::Vector> x0 = energy.make_vectors_from_array(*X0, ie);
-		symx::Matrix q = energy.make_matrix_from_array(*Q, ie_idx, { 4, 4 });
-		symx::Scalar bending_stiffness = energy.make_scalar_from_array(*BENDING_STIFFNESS, mesh_idx);
-		symx::Scalar dt = energy.make_scalar_variable(*DT);
-
-		//// Set energy expression
-		std::vector<symx::Vector> x1 = symx::euler_integration(x0, v1, dt);
-		symx::Scalar E = dt.get_zero();
-		for (int i = 0; i < 3; i++) {
-			symx::Vector x = symx::Vector({ x1[0][i], x1[1][i], x1[2][i], x1[3][i] });
-			E += x.transpose() * q * x;
+			// Energy
+			symx::Scalar E = dt.get_zero();
+			for (int i = 0; i < 3; i++) {
+				symx::Vector x = symx::Vector({ x1[0][i], x1[1][i], x1[2][i], x1[3][i] });
+				E += x.transpose() * Q * x;
+			}
+			E *= bending_stiffness;
+			energy.set_expression(E);
 		}
-		E *= bending_stiffness;
-		energy.set_expression(E);
-	}
+	);
 
 	//// Prescribed nodes
-	{
-		// Local variables and arrays
-		symx::Array*	PRESCRIBED_POSITIONS = sim.make_array("cloth_prescribed_positions", 3, this->prescribed_positions);
+	sim.global_energy.add_energy("cloth_prescribed_positions", this->conn_enumerated_prescribed_positions,
+		[&](symx::Energy& energy, symx::Element& node)
+		{
+			// Unpack connectivity
+			symx::Index constraint_idx = node[0];
+			symx::Index node_idx = node[1];
 
-		// Local connectivity
-		symx::ConnectivityArray& PRESCRIBED_NODES = *sim.make_connectivity_array("cloth_conn_enumerated_prescribed_positions", this->conn_enumerated_prescribed_positions, { "constraint_idx", "node_idx" });
+			//// Create symbols
+			symx::Vector x0 = energy.make_vector(this->model.x0, node_idx);
+			symx::Vector v1 = energy.make_vector(this->model.v1, node_idx);
+			symx::Vector x1_prescribed = energy.make_vector(this->prescribed_positions, constraint_idx);
+			symx::Scalar k = energy.make_scalar(sim.boundary_conditions_stiffness);
+			symx::Scalar dt = energy.make_scalar(sim.time_step.value);
 
-		// Energy
-		symx::Energy& energy = *sim.make_energy("cloth_prescribed_positions", &PRESCRIBED_NODES);
+			// Time integration
+			symx::Vector x1 = euler_integration(x0, v1, dt);
 
-		//// Create symbols from connectivity, arrays and variables
-		symx::Vector x0 = energy.make_vector_from_array(*X0, PRESCRIBED_NODES["node_idx"]);
-		symx::Vector v1 = energy.make_vector_from_array(*V1, PRESCRIBED_NODES["node_idx"]);
-		symx::Vector x1_prescribed = energy.make_vector_from_array(*PRESCRIBED_POSITIONS, PRESCRIBED_NODES["constraint_idx"]);
-		symx::Scalar dt = energy.make_scalar_variable(*DT);
-		symx::Scalar k = energy.make_scalar_variable(*HARD_K);
-
-		//// Set energy expression
-		symx::Vector x1 = x0 + dt * v1;
-		symx::Scalar E = 0.5 * k * (x1 - x1_prescribed).squared_norm();
-		energy.set_expression(E);
-	}
+			// Energy
+			symx::Scalar E = 0.5 * k * (x1 - x1_prescribed).squared_norm();
+			energy.set_expression(E);
+		}
+	);
 
 	//// Attachments
-	{
-		// Local connectivity
-		symx::ConnectivityArray& ATTACHMENTS = *sim.make_connectivity_array("cloth_conn_attached_nodes", this->conn_attached_nodes);
+	sim.global_energy.add_energy("cloth_attachments", this->conn_attached_nodes,
+		[&](symx::Energy& energy, symx::Element& node_pair)
+		{
+			//// Create symbols
+			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, node_pair);
+			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, node_pair);
+			symx::Scalar k = energy.make_scalar(sim.boundary_conditions_stiffness);
+			symx::Scalar dt = energy.make_scalar(sim.time_step.value);
 
-		// Energy
-		symx::Energy& energy = *sim.make_energy("cloth_attachments", &ATTACHMENTS);
+			// Time integration
+			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
 
-		//// Create symbols from connectivity, arrays and variables
-		std::vector<symx::Vector> x0 = energy.make_vectors_from_array(*X0, ATTACHMENTS.all());
-		std::vector<symx::Vector> v1 = energy.make_vectors_from_array(*V1, ATTACHMENTS.all());
-		symx::Scalar dt = energy.make_scalar_variable(*DT);
-		symx::Scalar k = energy.make_scalar_variable(*HARD_K);
-
-		std::vector<symx::Vector> x1 = symx::euler_integration(x0, v1, dt);
-		symx::Scalar E = 0.5*k*(x1[0] - x1[1]).squared_norm();
-		energy.set_expression(E);
-	}
+			// Energy
+			symx::Scalar E = 0.5 * k * (x1[0] - x1[1]).squared_norm();
+			energy.set_expression(E);
+		}
+	);
 
 	//// Collisions
 	if (this->activate_collisions) {

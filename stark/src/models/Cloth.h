@@ -10,7 +10,7 @@
 #include "../utils/unordered_array_set_and_map.h"
 
 
-namespace stark
+namespace stark::models
 {
 	class Cloth 
 	{
@@ -44,6 +44,7 @@ namespace stark
 		std::vector<double> triangle_area_rest;  // per triangle
 
 		//// Strain limiting
+		bool is_strain_limiting_active = true;
 		std::vector<double> strain_limiting_start;  // per mesh
 		std::vector<double> strain_limiting_stiffness;  // per mesh
 
