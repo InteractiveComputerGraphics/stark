@@ -111,11 +111,16 @@ namespace stark::models
 		const utils::TriangleMultiMesh& get_mesh() const;
 
 	private:
+		// Simulation callbacks
+		void _before_time_step(Simulation& sim);
+		void _after_time_step(Simulation& sim);
+		bool _is_valid_configuration(Simulation& sim);
+		void _write_frame(Simulation& sim);
+
+		// Helpers
 		void _exit_if_cloth_not_declared(const int cloth_id);
 		void _init_simulation_structures(const int n_threads);
-		void _update_collision_x(SimulationWorkSpace& simws);
-		void _update_contacts(SimulationWorkSpace& simws);
-		bool _is_valid_configuration(SimulationWorkSpace& simws);
-
+		void _update_collision_x(Simulation& sim);
+		void _update_contacts(Simulation& sim);
 	};
 }

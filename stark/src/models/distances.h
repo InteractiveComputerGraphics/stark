@@ -1,7 +1,7 @@
 #pragma once
 #include <math.h>
 
-namespace sym
+namespace stark::models
 {
 	double sqrt(double a)
 	{
@@ -65,24 +65,24 @@ namespace sym
 	//	return potential_no_singularity;
 	//}
 
-	template<typename POTENTIAL>
-	Scalar potential_edge_edge_mollified(const Vector& v11, const Vector& v12, const Vector& v21, const Vector& v22, const Vector& V11, const Vector& V12, const Vector& V21, const Vector& V22, const POTENTIAL psi)
-	{
-		// IPC mollifier (Eq. 24)
-		const Scalar c = ((v12 - v11).cross3(v22 - v21)).squared_norm();
-		const Scalar ex = 1e-3*((V12 - V11).cross3(V22 - V21)).squared_norm();
-		const Scalar mollifier = sym::branch(c - ex, c.get_one(), -1.0/ex.powN(2)*c.powN(2) + 2.0/ex*c);
+	//template<typename POTENTIAL>
+	//Scalar potential_edge_edge_mollified(const Vector& v11, const Vector& v12, const Vector& v21, const Vector& v22, const Vector& V11, const Vector& V12, const Vector& V21, const Vector& V22, const POTENTIAL psi)
+	//{
+	//	// IPC mollifier (Eq. 24)
+	//	const Scalar c = ((v12 - v11).cross3(v22 - v21)).squared_norm();
+	//	const Scalar ex = 1e-3*((V12 - V11).cross3(V22 - V21)).squared_norm();
+	//	const Scalar mollifier = sym::branch(c - ex, c.get_one(), -1.0/ex.powN(2)*c.powN(2) + 2.0/ex*c);
 
-		// Distance
-		const Scalar d = distance_line_line<Scalar>(v11, v12, v21, v22);
+	//	// Distance
+	//	const Scalar d = distance_line_line<Scalar>(v11, v12, v21, v22);
 
-		// IPC mollified edge-edge potential
-		const Scalar potential = mollifier * psi(d);  // Note: This will evaluate *nearly parallel* cases in psi
+	//	// IPC mollified edge-edge potential
+	//	const Scalar potential = mollifier * psi(d);  // Note: This will evaluate *nearly parallel* cases in psi
 
-		//// We don't evaluate anything before if almost parallel (that's the whole point) and return zero directly
-		//const Scalar potential_no_singularity = sym::branch(n_norm - 1e-12, potential, cond.get_zero());
-		//return potential_no_singularity;
-		
-		return potential;
-	}
+	//	//// We don't evaluate anything before if almost parallel (that's the whole point) and return zero directly
+	//	//const Scalar potential_no_singularity = sym::branch(n_norm - 1e-12, potential, cond.get_zero());
+	//	//return potential_no_singularity;
+	//	
+	//	return potential;
+	//}
 }

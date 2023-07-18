@@ -13,6 +13,13 @@ void stark::models::Cloth::init(Simulation& sim)
 	// DoFs
 	sim.global_energy.add_dof_array(this->model.v1);
 
+	// Callbacks
+	sim.callbacks.before_time_step.push_back([&](Simulation& sim) { this->_before_time_step(sim); });
+	sim.callbacks.after_time_step.push_back([&](Simulation& sim) { this->_after_time_step(sim); });
+	sim.callbacks.write_frame.push_back([&](Simulation& sim) { this->_write_frame(sim); });
+	sim.callbacks.before_energy_evaluation.push_back([&](Simulation& sim) { this->_update_contacts(sim); });
+	sim.callbacks.is_state_valid.push_back([&](Simulation& sim) { return this->_is_valid_configuration(sim); });
+
 	// Energies
 	//// Lumped mass inertia
 	sim.global_energy.add_energy("cloth_inertia", this->conn_nodes,
@@ -198,130 +205,86 @@ void stark::models::Cloth::init(Simulation& sim)
 		}
 	);
 
-	//// Collisions
-	if (this->activate_collisions) {
-		symx::Variable* DHAT = sim.make_variable("dhat", this->dhat);
-		symx::Variable* COLLISION_STIFFNESS = &sim.get_variable("collision_stiffness");
-		sim.make_connectivity_array("conn_cloth_cloth_point_point", this->contacts.point_point);
-		sim.make_connectivity_array("conn_cloth_cloth_point_edge", this->contacts.point_edge);
-		sim.make_connectivity_array("conn_cloth_cloth_point_triangle", this->contacts.point_triangle);
-		sim.make_connectivity_array("conn_cloth_cloth_edge_edge", this->contacts.edge_edge);
-
-		// Common symbol creation and manipulation functions ------------------------
-		auto get_x1 = [&](std::vector<symx::ConnectivityIndex> conn, symx::Energy& energy)
+	/* -------------  Collisions ------------- */
+	// Common symbol creation and manipulation functions ------------------------
+	auto get_x1 = [&](std::vector<symx::Index> conn, symx::Energy& energy)
+	{
+		std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, conn);
+		std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, conn);
+		symx::Scalar dt = energy.make_scalar(sim.time_step.value);
+		return euler_integration(x0, v1, dt);
+	};
+	auto barrier_energy = [&](const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k)
+	{
+		//symx::Scalar E = k * symx::log_barrier(d, dhat);
+		return k * (dhat - d).powN(3);
+	};
+	auto set_barrier_energy = [&](const symx::Scalar& d, symx::Energy& energy)
+	{
+		symx::Scalar k = energy.make_scalar(sim.collision_stiffness.value);
+		symx::Scalar dhat = energy.make_scalar(this->dhat);
+		symx::Scalar E = barrier_energy(d, dhat, k);
+		energy.set_expression(E);
+		energy.activate(this->activate_collisions);
+	};
+	// -----------------------------------------------------------------------------
+	
+	// Point - Point
+	sim.global_energy.add_energy("collision_cloth_cloth_point_point", this->contacts.point_point,
+		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			std::vector<symx::Vector> x0 = energy.make_vectors_from_array(*X0, conn);
-			std::vector<symx::Vector> v1 = energy.make_vectors_from_array(*V1, conn);
-			symx::Scalar dt = energy.make_scalar_variable(*DT);
-			return symx::euler_integration(x0, v1, dt);
-		};
-		auto get_X = [&](std::vector<symx::ConnectivityIndex> conn, symx::Energy& energy)
-		{
-			return energy.make_vectors_from_array(*X_REST, conn);
-		};
-		auto barrier_energy = [&](const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k)
-		{
-			//symx::Scalar E = k * symx::log_barrier(d, dhat);
-			return k * (dhat - d).powN(3);
-		};
-		auto set_barrier_energy = [&](const symx::Scalar& d, symx::Energy& energy)
-		{
-			symx::Scalar k = energy.make_scalar_variable(*COLLISION_STIFFNESS);
-			symx::Scalar dhat = energy.make_scalar_variable(*DHAT);
-			symx::Scalar E = barrier_energy(d, dhat, k);
-			energy.set_expression(E);
-		};
-		// -----------------------------------------------------------------------------
-		
-		// Point - Point
-		{
-			symx::ConnectivityArray& conn = sim.get_connectivity_array("conn_cloth_cloth_point_point");
-			symx::Energy& energy = *sim.make_energy("cloth_point_point", &conn);
-
 			std::vector<symx::Vector> P = get_x1({ conn[0] }, energy);
 			std::vector<symx::Vector> Q = get_x1({ conn[1] }, energy);
-			symx::Scalar d = symx::distance_point_point<symx::Scalar>(P[0], Q[0]);
+			symx::Scalar d = distance_point_point<symx::Scalar>(P[0], Q[0]);
 			set_barrier_energy(d, energy);
 		}
+	);
 
-		// Point - Edge
+	// Point - Edge
+	sim.global_energy.add_energy("collision_cloth_cloth_point_edge", this->contacts.point_edge,
+		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			symx::ConnectivityArray& conn = sim.get_connectivity_array("conn_cloth_cloth_point_edge");
-			symx::Energy& energy = *sim.make_energy("cloth_point_edge", &conn);
-
 			std::vector<symx::Vector> P = get_x1({ conn[0] }, energy);
 			std::vector<symx::Vector> Q = get_x1({ conn[1], conn[2] }, energy);
-			symx::Scalar d = symx::distance_point_line<symx::Scalar>(P[0], Q[0], Q[1]);
+			symx::Scalar d = distance_point_line<symx::Scalar>(P[0], Q[0], Q[1]);
 			set_barrier_energy(d, energy);
 		}
+	);
 
-		// Point - Triangle
+	// Point - Triangle
+	sim.global_energy.add_energy("collision_cloth_cloth_point_triangle", this->contacts.point_triangle,
+		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			symx::ConnectivityArray& conn = sim.get_connectivity_array("conn_cloth_cloth_point_triangle");
-			symx::Energy& energy = *sim.make_energy("cloth_point_triangle", &conn);
-
 			std::vector<symx::Vector> P = get_x1({ conn[0] }, energy);
 			std::vector<symx::Vector> Q = get_x1({ conn[1], conn[2], conn[3] }, energy);
-			symx::Scalar d = symx::distance_point_plane<symx::Scalar>(P[0], Q[0], Q[1], Q[2]);
+			symx::Scalar d = distance_point_plane<symx::Scalar>(P[0], Q[0], Q[1], Q[2]);
 			set_barrier_energy(d, energy);
 		}
+	);
 
-		// Edge - Edge
+	// Edge - Edge
+	sim.global_energy.add_energy("collision_cloth_cloth_edge_edge", this->contacts.edge_edge,
+		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			symx::ConnectivityArray& conn = sim.get_connectivity_array("conn_cloth_cloth_edge_edge");
-			symx::Energy& energy = *sim.make_energy("cloth_edge_edge", &conn);
-
-			std::vector<symx::Vector> P_rest = get_X({ conn[0], conn[1] }, energy);
-			std::vector<symx::Vector> Q_rest = get_X({ conn[2], conn[3] }, energy);
 			std::vector<symx::Vector> P = get_x1({ conn[0], conn[1] }, energy);
 			std::vector<symx::Vector> Q = get_x1({ conn[2], conn[3] }, energy);
-			symx::Scalar k = energy.make_scalar_variable(*COLLISION_STIFFNESS);
-			symx::Scalar dhat = energy.make_scalar_variable(*DHAT);
-
-			// For some reason this makes concave and sharp energies
-			symx::Scalar d = symx::distance_line_line<symx::Scalar>(P[0], P[1], Q[0], Q[1]);
+			symx::Scalar d = distance_line_line<symx::Scalar>(P[0], P[1], Q[0], Q[1]);
 			set_barrier_energy(d, energy);
-
-			//// For some reason this is discontinuous
-			//symx::Scalar E = symx::potential_edge_edge_mollified(P[0], P[1], Q[0], Q[1], P_rest[0], P_rest[1], Q_rest[0], Q_rest[1],
-			//	[&](const symx::Scalar& dist)
-			//	{
-			//		return barrier_energy(dist, dhat, k);
-			//	}
-			//);
-			//energy.set_expression(E);
 		}
-		
-		sim.add_callback_before_evaluation([&](SimulationWorkSpace& sim) { this->_update_contacts(sim); });
-		sim.add_valid_configuration_function([&](SimulationWorkSpace& sim) { return this->_is_valid_configuration(sim); });
-	}
-
+	);
 }
-void stark::Cloth::prepare_time_step(SimulationWorkSpace& sim)
+void stark::models::Cloth::_before_time_step(Simulation& sim)
 {
 	Output::output->cout("Cloth::prepare_time_step()\n", 3);
 	this->_init_simulation_structures(sim.n_threads);
-
-	//const double dt = *sim.get_variable("dt").data;
-	//const double gravity_z = *sim.get_variable("gravity_z").data;
-
-	// Initial guess (zero for IPC reasons)
-	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
-		//Eigen::Vector3d a = this->model.a[i];
-		//a[2] += gravity_z;
-		//this->model.v1[i] = this->model.v0[i] + dt*a;
-		//this->model.x1[i] = this->model.x0[i] + dt*this->model.v1[i];
-
-		this->model.v1[i] = Eigen::Vector3d::Zero();
-		//this->model.x1[i] = this->model.x0[i];
-	}
+	std::fill(this->model.v1.begin(), this->model.v1.end(), Eigen::Vector3d::Zero());
 }
-void stark::Cloth::postprocess_time_step(SimulationWorkSpace& sim)
+void stark::models::Cloth::_after_time_step(Simulation& sim)
 {
 	Output::output->cout("Cloth::postprocess_time_step()\n", 3);
 
 	// Set final positions
-	const double dt = *sim.get_variable("dt").data;
+	const double dt = sim.time_step.value;
 	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
 		this->model.x1[i] = this->model.x0[i] + dt * this->model.v1[i];
 	}
@@ -330,7 +293,7 @@ void stark::Cloth::postprocess_time_step(SimulationWorkSpace& sim)
 	this->model.x0 = this->model.x1;
 	this->model.v0 = this->model.v1;
 }
-void stark::Cloth::write_frame(const std::string path)
+void stark::models::Cloth::_write_frame(Simulation& sim)
 {
 	Output::output->cout("Cloth::write_frame()\n", 3);
 
@@ -353,18 +316,18 @@ void stark::Cloth::write_frame(const std::string path)
 	vtk_file.set_point_data_from_twice_indexable("normals", normals, vtkio::AttributeType::Vectors);
 	vtk_file.write(path);
 }
-void stark::Cloth::set_vertex_target_position_as_initial(const int cloth_id, const int vertex_id)
+void stark::models::Cloth::set_vertex_target_position_as_initial(const int cloth_id, const int vertex_id)
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->set_vertex_target_position(cloth_id, vertex_id, this->model.mesh.vertices[this->model.mesh.get_global_vertex_idx(cloth_id, vertex_id)]);
 }
-void stark::Cloth::set_vertex_target_position(const int cloth_id, const int vertex_id, const Eigen::Vector3d& position)
+void stark::models::Cloth::set_vertex_target_position(const int cloth_id, const int vertex_id, const Eigen::Vector3d& position)
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->prescribed_nodes_map[this->model.mesh.get_global_vertex_idx(cloth_id, vertex_id)] = position;
 	this->changed_prescribed_vertices = true;
 }
-void stark::Cloth::set_attached_vertices(const int cloth_0_id, const int vertex_0_idx, const int cloth_1_id, const int vertex_1_idx)
+void stark::models::Cloth::set_attached_vertices(const int cloth_0_id, const int vertex_0_idx, const int cloth_1_id, const int vertex_1_idx)
 {
 	this->_exit_if_cloth_not_declared(cloth_0_id);
 	this->_exit_if_cloth_not_declared(cloth_1_id);
@@ -373,51 +336,51 @@ void stark::Cloth::set_attached_vertices(const int cloth_0_id, const int vertex_
 	this->attached_nodes_set.insert({ std::min(glob_idx_a, glob_idx_b), std::max(glob_idx_a, glob_idx_b) });
 	this->changed_attachments = true;
 }
-void stark::Cloth::clear_vertex_target_position()
+void stark::models::Cloth::clear_vertex_target_position()
 {
 	this->prescribed_nodes_map.clear();
 	this->changed_prescribed_vertices = true;
 }
-void stark::Cloth::clear_attached_vertices()
+void stark::models::Cloth::clear_attached_vertices()
 {
 	this->attached_nodes_set.clear();
 	this->changed_attachments = true;
 }
-void stark::Cloth::set_acceleration(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& acceleration)
+void stark::models::Cloth::set_acceleration(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& acceleration)
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->model.set_acceleration(cloth_id, vertex_idx, acceleration);
 }
-void stark::Cloth::add_acceleration(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& acceleration)
+void stark::models::Cloth::add_acceleration(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& acceleration)
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->model.add_acceleration(cloth_id, vertex_idx, acceleration);
 }
-void stark::Cloth::set_velocity(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& velocity)
+void stark::models::Cloth::set_velocity(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& velocity)
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->model.set_velocity(cloth_id, vertex_idx, velocity);
 }
-void stark::Cloth::add_velocity(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& velocity)
+void stark::models::Cloth::add_velocity(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& velocity)
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->model.add_velocity(cloth_id, vertex_idx, velocity);
 }
-void stark::Cloth::set_position(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& position)
+void stark::models::Cloth::set_position(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& position)
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->model.set_position(cloth_id, vertex_idx, position);
 }
-void stark::Cloth::add_displacement(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& displacement)
+void stark::models::Cloth::add_displacement(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& displacement)
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->model.add_displacement(cloth_id, vertex_idx, displacement);
 }
-void stark::Cloth::enable_writing_vtk(const bool write)
+void stark::models::Cloth::enable_writing_vtk(const bool write)
 {
 	this->write_VTK = write;
 }
-int stark::Cloth::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const MaterialPreset material)
+int stark::models::Cloth::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const MaterialPreset material)
 {
 	const int cloth_id = this->get_n_cloths();
 	this->model.add_mesh(vertices, triangles);
@@ -443,11 +406,11 @@ int stark::Cloth::add(const std::vector<Eigen::Vector3d>& vertices, const std::v
 
 	return cloth_id;
 }
-void stark::Cloth::set_damping(const double damping)
+void stark::models::Cloth::set_damping(const double damping)
 {
 	this->damping = damping;
 }
-void stark::Cloth::set_material_preset(const int cloth_id, const MaterialPreset material)
+void stark::models::Cloth::set_material_preset(const int cloth_id, const MaterialPreset material)
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	switch (material)
@@ -463,13 +426,13 @@ void stark::Cloth::set_material_preset(const int cloth_id, const MaterialPreset 
 		break;
 	}
 }
-void stark::Cloth::set_density(const int cloth_id, const double density)
+void stark::models::Cloth::set_density(const int cloth_id, const double density)
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->density[cloth_id] = density;
 	this->changed_discretization = true;
 }
-void stark::Cloth::set_strain_parameters(const int cloth_id, const double young_modulus, const double poisson_ratio, const double strain_limit, const double strain_limit_stiffness)
+void stark::models::Cloth::set_strain_parameters(const int cloth_id, const double young_modulus, const double poisson_ratio, const double strain_limit, const double strain_limit_stiffness)
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->young_modulus[cloth_id] = young_modulus;
@@ -477,22 +440,16 @@ void stark::Cloth::set_strain_parameters(const int cloth_id, const double young_
 	this->strain_limiting_start[cloth_id] = strain_limit;
 	this->strain_limiting_stiffness[cloth_id] = strain_limit_stiffness;
 }
-void stark::Cloth::set_bending_stiffness(const int cloth_id, const double bending_stiffness)
+void stark::models::Cloth::set_bending_stiffness(const int cloth_id, const double bending_stiffness)
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->bending_stiffness[cloth_id] = bending_stiffness;
 }
-//void stark::Cloth::set_contact_parameters(const bool activate, const double dhat, const double stiffness)
-//{
-//	this->activate_collisions = activate;
-//	this->dhat = dhat;
-//	this->barrier_stiffness = stiffness;
-//}
-void stark::Cloth::_exit_if_cloth_not_declared(const int cloth_id)
+void stark::models::Cloth::_exit_if_cloth_not_declared(const int cloth_id)
 {
 	Output::output->assert_with_exit(this->is_cloth_declared(cloth_id), "There is no cloth with id " + std::to_string(cloth_id) + " declared.");
 }
-void stark::Cloth::_init_simulation_structures(const int n_threads)
+void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 {
 	Output::output->cout("Cloth::_init_simulation_structures()\n", 3);
 	const auto& mesh_rest = this->model.mesh;
@@ -637,7 +594,7 @@ void stark::Cloth::_init_simulation_structures(const int n_threads)
 	}
 
 	// Attachments
-	Output::output->cout("BeAttachmentsnding\n", 3);
+	Output::output->cout("Attachments\n", 3);
 	if (this->changed_attachments) {
 		this->conn_attached_nodes.clear();
 		for (const std::array<int, 2>&pair : this->attached_nodes_set) {
@@ -650,15 +607,15 @@ void stark::Cloth::_init_simulation_structures(const int n_threads)
 	this->changed_discretization = false;
 	this->changed_prescribed_vertices = false;
 }
-void stark::Cloth::_update_collision_x(SimulationWorkSpace& sim)
+void stark::models::Cloth::_update_collision_x(Simulation& sim)
 {
-	const double dt = *sim.get_variable("dt").data;
+	const double dt = sim.time_step.value;
 	this->collision_x.resize(this->model.x0.size());
 	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
 		this->collision_x[i] = this->model.x0[i] + dt*this->model.v1[i];
 	}
 }
-void stark::Cloth::_update_contacts(SimulationWorkSpace& sim)
+void stark::models::Cloth::_update_contacts(Simulation& sim)
 {
 	if (!this->activate_collisions) { return; }
 
@@ -688,7 +645,7 @@ void stark::Cloth::_update_contacts(SimulationWorkSpace& sim)
 		this->contacts.edge_edge.push_back({ pair.first.vertices[0], pair.first.vertices[1], pair.second.vertices[0], pair.second.vertices[1] });
 	}
 }
-bool stark::Cloth::_is_valid_configuration(SimulationWorkSpace& sim)
+bool stark::models::Cloth::_is_valid_configuration(Simulation& sim)
 {
 	this->_update_collision_x(sim);
 	this->id.clear();
@@ -696,23 +653,23 @@ bool stark::Cloth::_is_valid_configuration(SimulationWorkSpace& sim)
 	const tmcd::IntersectionResults& intersections = this->id.run();
 	return intersections.edge_triangle.size() == 0;
 }
-bool stark::Cloth::is_cloth_declared(const int cloth_id) const
+bool stark::models::Cloth::is_cloth_declared(const int cloth_id) const
 {
 	return cloth_id < this->get_n_cloths();
 }
-int stark::Cloth::get_n_cloths() const
+int stark::models::Cloth::get_n_cloths() const
 {
 	return this->model.mesh.get_n_meshes();
 }
-Eigen::Vector3d stark::Cloth::get_vertex(const int cloth_id, const int vertex_idx) const
+Eigen::Vector3d stark::models::Cloth::get_vertex(const int cloth_id, const int vertex_idx) const
 {
 	return this->model.x1[this->model.mesh.get_global_vertex_idx(cloth_id, vertex_idx)];
 }
-Eigen::Vector3d stark::Cloth::get_velocity(const int cloth_id, const int vertex_idx) const
+Eigen::Vector3d stark::models::Cloth::get_velocity(const int cloth_id, const int vertex_idx) const
 {
 	return this->model.v1[this->model.mesh.get_global_vertex_idx(cloth_id, vertex_idx)];
 }
-const stb::mesh::TriangleMultiMesh& stark::Cloth::get_mesh() const
+const stark::utils::TriangleMultiMesh& stark::models::Cloth::get_mesh() const
 {
 	return this->model.mesh;
 }

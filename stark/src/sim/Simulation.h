@@ -5,19 +5,30 @@
 #include <symx>
 
 #include "AdaptiveParameter.h"
-#include "Callbacks.h"
 
 namespace stark
 {
 	class Simulation
 	{
 	public:
+		struct Callbacks
+		{
+			std::vector<std::function<void(Simulation& sim)>> before_time_step;
+			std::vector<std::function<void(Simulation& sim)>> before_energy_evaluation;
+			std::vector<std::function<void(Simulation& sim)>> after_energy_evaluation;
+			std::vector<std::function<void(Simulation& sim)>> after_time_step;
+			std::vector<std::function<double(Simulation& sim)>> max_allowed_step;
+			std::vector<std::function<bool(Simulation& sim)>> is_state_valid;
+			std::vector<std::function<void(Simulation& sim)>> write_frame;
+		};
+
 		/* Fields*/
 		symx::GlobalEnergy global_energy;
 		Callbacks callbacks;
 
 		// Global parameters
 		AdaptiveParameter time_step;
+		AdaptiveParameter collision_stiffness;
 		Eigen::Vector3d gravity;
 		double boundary_conditions_stiffness = 1e6;
 
@@ -42,11 +53,4 @@ namespace stark
 		void _write_frame();
 		void _print_header();
 	};
-
-
-	template<typename PhysicalSystemType>
-	inline void Simulation::add_physical_system(PhysicalSystemType* physical_system)
-	{
-		this->physical_systems.push_back(physical_system);
-	}
 }

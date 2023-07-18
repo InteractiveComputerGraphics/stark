@@ -27,7 +27,6 @@ set(SOLVER_FILES
 	include/stark
 	src/hola.h
 	src/hola.cpp
-	src/sim/Callbacks.h
 	src/sim/AdaptiveParameter.cpp
 	src/sim/AdaptiveParameter.h
 	src/sim/NewtonsMethod.h
