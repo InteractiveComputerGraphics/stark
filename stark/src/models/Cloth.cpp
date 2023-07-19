@@ -9,7 +9,7 @@ void stark::models::Cloth::init(Simulation& sim)
 {
 	Output::output->cout("Cloth::init()\n", 3);
 
-	this->_init_simulation_structures(sim.n_threads);
+	this->_init_simulation_structures(sim.options.n_threads);
 
 	// DoFs
 	sim.global_energy.add_dof_array(this->model.v1);
@@ -34,8 +34,8 @@ void stark::models::Cloth::init(Simulation& sim)
 			symx::Vector a = energy.make_vector(this->model.a, node[0]);
 
 			symx::Scalar damping = energy.make_scalar(this->damping);
-			symx::Scalar dt = energy.make_scalar(sim.time_step.value);
-			symx::Vector gravity = energy.make_vector(sim.gravity);
+			symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
+			symx::Vector gravity = energy.make_vector(sim.parameters.gravity);
 
 			//// Set energy expression
 			symx::Vector x1 = x0 + dt * v1;
@@ -63,7 +63,7 @@ void stark::models::Cloth::init(Simulation& sim)
 			symx::Scalar area = energy.make_scalar(this->triangle_area_rest, tri_idx);
 			symx::Scalar E = energy.make_scalar(this->young_modulus, mesh_idx);
 			symx::Scalar nu = energy.make_scalar(this->poisson_ratio, mesh_idx);
-			symx::Scalar dt = energy.make_scalar(sim.time_step.value);
+			symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
 
 			// Time integration
 			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
@@ -105,7 +105,7 @@ void stark::models::Cloth::init(Simulation& sim)
 			symx::Scalar area = energy.make_scalar(this->triangle_area_rest, tri_idx);
 			symx::Scalar strain_limiting_start = energy.make_scalar(this->strain_limiting_start, mesh_idx);
 			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, mesh_idx);
-			symx::Scalar dt = energy.make_scalar(sim.time_step.value);
+			symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
 
 			// Time integration
 			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
@@ -147,7 +147,7 @@ void stark::models::Cloth::init(Simulation& sim)
 			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, internal_edge);
 			symx::Matrix Q = energy.make_matrix(this->DXinv, { 4, 4 }, ie_idx);
 			symx::Scalar bending_stiffness = energy.make_scalar(this->bending_stiffness, mesh_idx);
-			symx::Scalar dt = energy.make_scalar(sim.time_step.value);
+			symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
 
 			// Time integration
 			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
@@ -175,8 +175,8 @@ void stark::models::Cloth::init(Simulation& sim)
 			symx::Vector x0 = energy.make_vector(this->model.x0, node_idx);
 			symx::Vector v1 = energy.make_vector(this->model.v1, node_idx);
 			symx::Vector x1_prescribed = energy.make_vector(this->prescribed_positions, constraint_idx);
-			symx::Scalar k = energy.make_scalar(sim.boundary_conditions_stiffness);
-			symx::Scalar dt = energy.make_scalar(sim.time_step.value);
+			symx::Scalar k = energy.make_scalar(sim.parameters.boundary_conditions_stiffness);
+			symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
 
 			// Time integration
 			symx::Vector x1 = euler_integration(x0, v1, dt);
@@ -194,8 +194,8 @@ void stark::models::Cloth::init(Simulation& sim)
 			//// Create symbols
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, node_pair);
 			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, node_pair);
-			symx::Scalar k = energy.make_scalar(sim.boundary_conditions_stiffness);
-			symx::Scalar dt = energy.make_scalar(sim.time_step.value);
+			symx::Scalar k = energy.make_scalar(sim.parameters.boundary_conditions_stiffness);
+			symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
 
 			// Time integration
 			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
@@ -212,7 +212,7 @@ void stark::models::Cloth::init(Simulation& sim)
 	{
 		std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, conn);
 		std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, conn);
-		symx::Scalar dt = energy.make_scalar(sim.time_step.value);
+		symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
 		return euler_integration(x0, v1, dt);
 	};
 	auto barrier_energy = [&](const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k)
@@ -222,7 +222,7 @@ void stark::models::Cloth::init(Simulation& sim)
 	};
 	auto set_barrier_energy = [&](const symx::Scalar& d, symx::Energy& energy)
 	{
-		symx::Scalar k = energy.make_scalar(sim.collision_stiffness.value);
+		symx::Scalar k = energy.make_scalar(sim.parameters.collision_stiffness.value);
 		symx::Scalar dhat = energy.make_scalar(this->dhat);
 		symx::Scalar E = barrier_energy(d, dhat, k);
 		energy.set_expression(E);
@@ -277,7 +277,7 @@ void stark::models::Cloth::init(Simulation& sim)
 void stark::models::Cloth::_before_time_step(Simulation& sim)
 {
 	Output::output->cout("Cloth::prepare_time_step()\n", 3);
-	this->_init_simulation_structures(sim.n_threads);
+	this->_init_simulation_structures(sim.options.n_threads);
 	std::fill(this->model.v1.begin(), this->model.v1.end(), Eigen::Vector3d::Zero());
 }
 void stark::models::Cloth::_after_time_step(Simulation& sim)
@@ -285,7 +285,7 @@ void stark::models::Cloth::_after_time_step(Simulation& sim)
 	Output::output->cout("Cloth::postprocess_time_step()\n", 3);
 
 	// Set final positions
-	const double dt = sim.time_step.value;
+	const double dt = sim.parameters.time_step.value;
 	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
 		this->model.x1[i] = this->model.x0[i] + dt * this->model.v1[i];
 	}
@@ -298,7 +298,7 @@ void stark::models::Cloth::_write_frame(Simulation& sim)
 {
 	Output::output->cout("Cloth::write_frame()\n", 3);
 	if (this->write_VTK) {
-		utils::write_VTK(path, this->model.x1, this->model.mesh.connectivity);
+		utils::write_VTK(sim.output.get_vtk_path("cloth"), this->model.x1, this->model.mesh.connectivity);
 	}
 }
 void stark::models::Cloth::set_vertex_target_position_as_initial(const int cloth_id, const int vertex_id)
@@ -455,7 +455,7 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 			mesh_rest.for_each_element_parallel_const(mesh_i,
 				[&](const int tri_glob_idx, const std::array<int, 3>& triangle_glob, std::array<const Eigen::Vector3d*, 3>& vertices)
 				{
-					const double lumped_mass = density*stb::geo::triangle_area(*vertices[0], *vertices[1], *vertices[2]) / 3.0;
+					const double lumped_mass = density*utils::triangle_area(*vertices[0], *vertices[1], *vertices[2]) / 3.0;
 					this->lumped_mass[triangle_glob[0]] += lumped_mass;
 					this->lumped_mass[triangle_glob[1]] += lumped_mass;
 					this->lumped_mass[triangle_glob[2]] += lumped_mass;
@@ -483,7 +483,7 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 					const Eigen::Vector3d& p2 = *vertices[2];
 
 					// Area
-					this->triangle_area_rest[tri_glob_idx] = stb::geo::triangle_area(p0, p1, p2);
+					this->triangle_area_rest[tri_glob_idx] = utils::triangle_area(p0, p1, p2);
 
 					// Projection matrix
 					Eigen::Vector3d v01 = p0 - p2;
@@ -522,9 +522,8 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 			return (cosTheta / sinTheta);
 		};
 
-		std::vector<std::array<int, 2>> edges;
 		std::vector<std::array<int, 4>> internal_angles;
-		stb::mesh::triangle::find_edges_and_internal_angles(edges, internal_angles, mesh_rest.vertices, mesh_rest.connectivity);
+		utils::find_internal_angles(internal_angles, mesh_rest.connectivity, mesh_rest.get_n_vertices());
 		const int n = (int)internal_angles.size();
 		this->conn_numbered_mesh_internal_edges.resize(n);
 		this->bergou_Q_matrix.resize(n);
@@ -594,7 +593,7 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 }
 void stark::models::Cloth::_update_collision_x(Simulation& sim)
 {
-	const double dt = sim.time_step.value;
+	const double dt = sim.parameters.time_step.value;
 	this->collision_x.resize(this->model.x0.size());
 	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
 		this->collision_x[i] = this->model.x0[i] + dt*this->model.v1[i];

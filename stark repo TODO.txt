@@ -10,6 +10,7 @@ stark repo TODO
 		* It doesn't need to be a singleton, although that might be the best
 	* Support use whole element in global energy
 	* Consider moving all geometry utils to its own namespace
+	* Interpolate frames
 
 Specific to energies
 --------------------
