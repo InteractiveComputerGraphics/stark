@@ -42,6 +42,8 @@ set(MODELS_FILES
 	)
 
 set(UTILS_FILES
+	src/utils/mesh_utils.h
+	src/utils/mesh_utils.cpp
 	src/utils/Output.h
 	src/utils/Output.cpp
 	src/utils/unordered_array_set_and_map.h

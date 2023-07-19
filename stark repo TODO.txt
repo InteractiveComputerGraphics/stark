@@ -6,7 +6,10 @@ stark repo TODO
 		
 	* Push changes to vtkio
 	* Off the shelf logger/output
+		* Decide where to put it: stark or start::utils.
+		* It doesn't need to be a singleton, although that might be the best
 	* Support use whole element in global energy
+	* Consider moving all geometry utils to its own namespace
 
 Specific to energies
 --------------------

@@ -1,6 +1,7 @@
 #include "Cloth.h"
 
 #include "../utils/Output.h"
+#include "../utils/mesh_utils.h"
 #include "time_integration.h"
 #include "distances.h"
 
@@ -296,25 +297,9 @@ void stark::models::Cloth::_after_time_step(Simulation& sim)
 void stark::models::Cloth::_write_frame(Simulation& sim)
 {
 	Output::output->cout("Cloth::write_frame()\n", 3);
-
-	if (!this->write_VTK) {
-		return;
+	if (this->write_VTK) {
+		utils::write_VTK(path, this->model.x1, this->model.mesh.connectivity);
 	}
-
-	vtkio::VTKFile vtk_file;
-
-	if (this->model.mesh.get_n_vertices() == 0) {
-		vtk_file.write_empty(path);
-		return;
-	}
-
-	std::vector<Eigen::Vector3d> normals;
-	stb::mesh::triangle::compute_node_normals(normals, this->model.x1, this->model.mesh.connectivity);
-
-	vtk_file.set_points_from_twice_indexable(this->model.x1);
-	vtk_file.set_cells_from_twice_indexable(this->model.mesh.connectivity, vtkio::CellType::Triangle);
-	vtk_file.set_point_data_from_twice_indexable("normals", normals, vtkio::AttributeType::Vectors);
-	vtk_file.write(path);
 }
 void stark::models::Cloth::set_vertex_target_position_as_initial(const int cloth_id, const int vertex_id)
 {
