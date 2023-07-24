@@ -4,7 +4,9 @@
 #include <Eigen/Dense>
 #include <symx>
 
+#include "Callbacks.h"
 #include "AdaptiveParameter.h"
+#include "NewtonsMethod.h"
 
 namespace stark
 {
@@ -12,16 +14,6 @@ namespace stark
 	{
 	public:
 		// ---------------------------------------------------------------------------------
-		struct Callbacks
-		{
-			std::vector<std::function<void(Simulation& sim)>> before_time_step;
-			std::vector<std::function<void(Simulation& sim)>> before_energy_evaluation;
-			std::vector<std::function<void(Simulation& sim)>> after_energy_evaluation;
-			std::vector<std::function<void(Simulation& sim)>> after_time_step;
-			std::vector<std::function<double(Simulation& sim)>> max_allowed_step;
-			std::vector<std::function<bool(Simulation& sim)>> is_state_valid;
-			std::vector<std::function<void(Simulation& sim)>> write_frame;
-		};
 		struct Parameters
 		{
 			AdaptiveParameter time_step;
@@ -33,9 +25,11 @@ namespace stark
 		{
 			std::string sim_name = "";
 			std::string directory = "";
+			std::string codegen_directory = "";
 			int fps = 30;
 			int frame_it = 0;
 			double next_frame_time = -1e-12;
+			Logger logger; // TODO: https://github.com/gabime/spdlog
 			std::string get_vtk_path(std::string name) const
 			{
 				return this->directory + "/" + this->sim_name + "_" + name + "_" + std::to_string(this->frame_it) + ".vtk";
@@ -56,10 +50,10 @@ namespace stark
 
 
 		/* Fields*/
-		std::string codegen_directory = "";
 		symx::GlobalEnergy global_energy;
-		Parameters parameters;
+		NewtonsMethod minimizer;
 		Callbacks callbacks;
+		Parameters parameters;
 		Time time;
 		Output output;
 		Options options;

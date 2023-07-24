@@ -7,7 +7,6 @@
 
 #include "Callbacks.h"
 
-
 namespace stark
 {
 	enum class NewtonError
@@ -37,6 +36,6 @@ namespace stark
 		bool use_direct_linear_solve = false;
 		int debug_output_counter = 0;
 
-		NewtonError solve(symx::GlobalEnergy& simws, const Callbacks& callbacks);
+		NewtonError solve(symx::GlobalEnergy& global_energy, const Callbacks& callbacks, Output& output);
 	};
 }
