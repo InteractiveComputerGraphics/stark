@@ -2,7 +2,7 @@
 #include <string>
 
 #include <Eigen/Dense>
-#include <BlockedSparseMatrix/ConjugateGradientMethod.h>
+
 #include <symx>
 
 #include "Callbacks.h"
@@ -26,6 +26,7 @@ namespace stark
 		int n_threads = -1;
 		double newton_tol = 1e-8;
 		double cg_tol = 1e-12;
+		double gc_max_iterations_multiplier = 1.0;
 		Eigen::VectorXd du;
 		Eigen::VectorXd u0;
 		Eigen::VectorXd u1;

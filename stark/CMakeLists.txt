@@ -51,6 +51,8 @@ set(UTILS_FILES
 	src/utils/unordered_array_set_and_map.h
 	src/utils/MultiMesh.h
 	src/utils/MeshWithDynamics.h
+	src/utils/linear_system.cpp
+	src/utils/linear_system.h
 	)
 
 # Create lireary

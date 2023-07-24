@@ -39,5 +39,12 @@ namespace symx
 		{
 			this->compiled_runtime = assembly.compiled_runtime;
 		}
+		Assembled& operator=(const Assembled& assembly)
+		{
+			this->hess = assembly.hess;
+			this->grad = assembly.grad;
+			this->E = assembly.E;
+			this->compiled_runtime = assembly.compiled_runtime;
+		}
 	};
 }

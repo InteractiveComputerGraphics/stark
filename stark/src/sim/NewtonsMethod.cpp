@@ -2,9 +2,12 @@
 
 #include <fstream>
 
+#include "../utils/linear_system.h"
+
+
 stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy, const Callbacks& callbacks, Output& output)
 {
-	const int ndofs = global_energy.get_n_dofs();
+	const int ndofs = global_energy.get_total_n_dofs();
 	this->du.resize(ndofs);
 	this->u0.resize(ndofs);
 	this->u1.resize(ndofs);
@@ -24,47 +27,36 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		// Linear system
 		//// Evaluate and assemble
 		Output::logger->start_timing("assemble_linear_system");
-		stark::Assembled assembled = global_energy.evaluate_E_grad_hess();
+		symx::Assembled assembled = global_energy.evaluate_E_grad_hess();
 		Output::logger->stop_timing_add("assemble_linear_system");
 		Output::logger->add_to_timer("compiled_E_g_h (acc)", assembled.compiled_runtime);
 
 		//// Solve
-		Output::logger->start_timing("CG");
-		{
-			auto& sparse = *assembled.hess;
-			sparse.set_preconditioner(bsm::Preconditioner::BlockDiagonal);
-			sparse.prepare_preconditioning(this->n_threads);
-			
-			const int max_iterations = std::max(100, (int)(1.0 * ndofs)); // Very small sims will need to exceed ndofs iterations
+		this->du.resize(ndofs);
+		const Eigen::VectorXd rhs = -1.0 * assembled.grad;
+
+		if (this->use_direct_linear_solve) {  // TODO: Clarify that one is directLU and the other is BCG without PSD checks
+			Output::logger->start_timing("directLU");
+			utils::solve_linear_system_with_directLU(this->du, assembled.hess, rhs);
+			Output::logger->stop_timing_add("directLU");
+		}
+		else {
+			Output::logger->start_timing("CG");
 			this->du.setZero();
-			const Eigen::VectorXd rhs = -1.0 * (*assembled.grad);
+			const int max_iterations = std::max(100, (int)(this->gc_max_iterations_multiplier * ndofs)); // Very small sims will need to exceed ndofs iterations
+			const int iterations = utils::solve_linear_system_with_CG(this->du, assembled.hess, rhs, max_iterations, this->cg_tol, this->n_threads);
+			total_CG_it += iterations;
 
-			if (this->use_direct_linear_solve) {
-				std::vector<Eigen::Triplet<double>> triplets;
-				assembled.hess->to_triplets(triplets);
-
-				Eigen::SparseMatrix<double> s;
-				stb::solver::make_sparse_matrix(s, triplets, ndofs);
-				stb::solver::solve_directLU(this->du, s, rhs);
-			}
-			else {
-				cg::Info info = cg::solve<double>(this->du.data(), rhs.data(), ndofs, this->cg_tol, max_iterations,
-					[&](double* b, const double* x, const int size) { sparse.spmxv_from_ptr(b, x, this->n_threads);  },
-					[&](double* z, const double* r, const int size) { sparse.apply_preconditioning(z, r, this->n_threads); }
-				, this->n_threads);
-				total_CG_it += info.n_iterations;
-
-				Output::logger->stop_timing_add("CG");
-				if (!info.converged) {
-					Output::output->cout("\t| CG didn't converged.", 1);
-					return NewtonError::TooManyCGIterations;
-				}
+			Output::logger->stop_timing_add("CG");
+			if (iterations == max_iterations) {  // TODO: Check
+				Output::output->cout("\t| CG didn't converged.", 1);
+				return NewtonError::TooManyCGIterations;
 			}
 		}
 
 		// Line search (for later use)
 		const double base_E = assembled.E;
-		const double precomputed_dot = this->du.dot(*assembled.grad);
+		const double precomputed_dot = this->du.dot(assembled.grad);
 		const double suitable_backtracking_energy = assembled.E + 1e-4 * precomputed_dot;
 
 		// Sufficient descend
@@ -74,7 +66,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		}
 
 		// Max step in the search direction
-		double step = global_energy.max_allowed_step_in_search_direction(this->du.data());
+		double step = callbacks.run_max_allowed_step();
 
 		// Step and valid step
 		global_energy.get_dofs(this->u0.data());
@@ -88,7 +80,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			this->u1 = this->u0 + step * this->du;
 			global_energy.set_dofs(this->u1.data());
 
-			if (global_energy.is_valid_configuration()) {
+			if (callbacks.run_is_state_valid()) {
 				break;
 			}
 
