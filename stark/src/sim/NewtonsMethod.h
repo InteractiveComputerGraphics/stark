@@ -6,6 +6,9 @@
 #include <symx>
 
 #include "Callbacks.h"
+#include "../utils/Console.h"
+#include "../utils/Logger.h"
+
 
 namespace stark
 {
@@ -36,7 +39,9 @@ namespace stark
 		int it_count = 0;
 		bool use_direct_linear_solve = false;
 		int debug_output_counter = 0;
+		utils::Logger line_search_debug_logger;
+		bool debug_line_search_print = false;
 
-		NewtonError solve(symx::GlobalEnergy& global_energy, const Callbacks& callbacks, Output& output);
+		NewtonError solve(symx::GlobalEnergy& global_energy, const Callbacks& callbacks, utils::Console& console, utils::Logger& logger);
 	};
 }

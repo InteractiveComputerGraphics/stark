@@ -44,10 +44,12 @@ set(MODELS_FILES
 	)
 
 set(UTILS_FILES
+	src/utils/Logger.cpp
+	src/utils/Logger.h
+	src/utils/Console.cpp
+	src/utils/Console.h
 	src/utils/mesh_utils.h
 	src/utils/mesh_utils.cpp
-	src/utils/Output.h
-	src/utils/Output.cpp
 	src/utils/unordered_array_set_and_map.h
 	src/utils/MultiMesh.h
 	src/utils/MeshWithDynamics.h
@@ -72,6 +74,9 @@ target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/symx/
 
 ## vtkio
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/vtkio/include)
+
+## fmt
+target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/fmt/include)
 
 ## Eigen
 target_include_directories(stark PUBLIC ${EIGEN3_INCLUDE_DIR})

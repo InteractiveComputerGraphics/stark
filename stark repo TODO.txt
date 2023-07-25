@@ -11,6 +11,7 @@ stark repo TODO
 	* Support use whole element in global energy
 	* Consider moving all geometry utils to its own namespace
 	* Interpolate frames
+	* Newton's method needs a lot of work in understanding, convergence, when to repeat a time step...
 
 Specific to energies
 --------------------

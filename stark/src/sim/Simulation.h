@@ -7,6 +7,8 @@
 #include "Callbacks.h"
 #include "AdaptiveParameter.h"
 #include "NewtonsMethod.h"
+#include "../utils/Console.h"
+#include "../utils/Logger.h"
 
 namespace stark
 {
@@ -29,7 +31,8 @@ namespace stark
 			int fps = 30;
 			int frame_it = 0;
 			double next_frame_time = -1e-12;
-			Logger logger; // TODO: https://github.com/gabime/spdlog
+			utils::Console console;
+			utils::Logger logger;
 			std::string get_vtk_path(std::string name) const
 			{
 				return this->directory + "/" + this->sim_name + "_" + name + "_" + std::to_string(this->frame_it) + ".vtk";
@@ -49,7 +52,7 @@ namespace stark
 		// ---------------------------------------------------------------------------------
 
 
-		/* Fields*/
+		/* Fields */
 		symx::GlobalEnergy global_energy;
 		NewtonsMethod minimizer;
 		Callbacks callbacks;
