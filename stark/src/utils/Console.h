@@ -28,6 +28,8 @@ namespace stark::utils
 
 
 	public:
+		void initialize(const std::string path, const Verbosity verbosity, const OutputTo output_to);
+
 		void set_path(const std::string path);
 		std::string get_path() const;
 		void set_verbosity(const Verbosity verbosity);

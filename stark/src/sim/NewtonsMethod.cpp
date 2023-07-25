@@ -3,7 +3,7 @@
 #include "../utils/linear_system.h"
 
 
-stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy, const Callbacks& callbacks, utils::Console& console, utils::Logger& logger)
+stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy, const Callbacks& callbacks, Settings& settings, utils::Console& console, utils::Logger& logger)
 {
 	const int ndofs = global_energy.get_total_n_dofs();
 	this->du.resize(ndofs);
@@ -14,13 +14,13 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 	int total_line_search_it = 0;
 	int total_CG_it = 0;
 	double residual = std::numeric_limits<double>::max();
-	while (residual > this->newton_tol) {
+	while (residual > settings.newton.newton_tol) {
 		console.print(fmt::format("\t\t {:d}. ", newton_it), Verbosity::NewtonIterations);
 		
 		newton_it++;
 		this->it_count++;
-		if (newton_it == this->max_newton_iterations) {
-			console.print(fmt::format("\t| Max Newton iterations reached ({:d}) with residual {:.2e}\n", this->max_newton_iterations, residual), Verbosity::TimeSteps);
+		if (newton_it == settings.newton.max_newton_iterations) {
+			console.print(fmt::format("\t| Max Newton iterations reached ({:d}) with residual {:.2e}\n", settings.newton.max_newton_iterations, residual), Verbosity::TimeSteps);
 			return NewtonError::TooManyNewtonIterations;
 		}
 
@@ -36,7 +36,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		this->du.resize(ndofs);
 		const Eigen::VectorXd rhs = -1.0 * assembled.grad;
 
-		if (this->use_direct_linear_solve) {  // TODO: Clarify that one is directLU and the other is BCG without PSD checks
+		if (settings.newton.use_direct_linear_solve) {  // TODO: Clarify that one is directLU and the other is BCG without PSD checks
 			logger.start_timing("directLU");
 			utils::solve_linear_system_with_directLU(this->du, *assembled.hess, rhs);
 			logger.stop_timing_add("directLU");
@@ -44,8 +44,8 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		else {
 			logger.start_timing("CG");
 			this->du.setZero();
-			const int max_iterations = std::max(100, (int)(this->gc_max_iterations_multiplier * ndofs)); // Very small sims will need to exceed ndofs iterations
-			const int iterations = utils::solve_linear_system_with_CG(this->du, *assembled.hess, rhs, max_iterations, this->cg_tol, this->n_threads);
+			const int max_iterations = std::max(100, (int)(settings.newton.cg_max_iterations_multiplier * ndofs)); // Very small sims will need to exceed ndofs iterations
+			const int iterations = utils::solve_linear_system_with_CG(this->du, *assembled.hess, rhs, max_iterations, settings.newton.cg_tol, settings.execution.n_threads);
 			total_CG_it += iterations;
 			logger.stop_timing_add("CG");
 
@@ -99,7 +99,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		residual = assembled.grad.norm();
 		console.print(fmt::format("dE1 = {:.2e}", residual), Verbosity::NewtonIterations);
 
-		if (residual < this->newton_tol) {
+		if (residual < settings.newton.newton_tol) {
 			break;
 		}
 
@@ -111,7 +111,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			console.print(fmt::format("\n\t\t\t {:d}. E/E_bt = {:.2e}", line_search_it, assembled.E/suitable_backtracking_energy), Verbosity::NewtonIterations);
 
 			// Reduce step
-			step *= this->line_search_multiplier;
+			step *= settings.newton.line_search_multiplier;
 			this->u1 = this->u0 + step * this->du;
 			global_energy.set_dofs(this->u1.data());
 
@@ -122,15 +122,15 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			// Counters
 			line_search_it++;
 
-			if (line_search_it == this->max_line_search_iterations) {
-				console.print(fmt::format("\t| Max line search iterations reached ({d})", this->max_line_search_iterations), Verbosity::TimeSteps);
+			if (line_search_it == settings.newton.max_line_search_iterations) {
+				console.print(fmt::format("\t| Max line search iterations reached ({d})", settings.newton.max_line_search_iterations), Verbosity::TimeSteps);
 				return NewtonError::TooManyLineSearchIterations;
 			}
 		}
 		console.print("\n", Verbosity::NewtonIterations);
 
 		// Log line search energy profile
-		if (this->debug_line_search_print) {
+		if (settings.newton.debug_line_search_output) {
 			if (step_valid_configuration > 0.99 && step < 0.99) {
 				const std::string label = std::to_string(this->debug_output_counter);
 
@@ -149,6 +149,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 				}
 
 				this->line_search_debug_logger.save_to_disk();
+				this->debug_output_counter++;
 
 				// Restore state
 				this->u1 = this->u0 + step * this->du;

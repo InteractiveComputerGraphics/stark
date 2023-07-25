@@ -12,6 +12,9 @@ stark repo TODO
 	* Consider moving all geometry utils to its own namespace
 	* Interpolate frames
 	* Newton's method needs a lot of work in understanding, convergence, when to repeat a time step...
+	* Trace and debug info
+	* Remove dependency to JanBenderUtilities. We just need mkdirs.
+	* Check for NaNs in symx as an option in Stark::Settings
 
 Specific to energies
 --------------------

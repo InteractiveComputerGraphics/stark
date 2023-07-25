@@ -44,7 +44,7 @@ void stark::utils::Logger::save_to_disk(const std::string path)
 	// Open the file
 	std::ofstream outfile(path);
 	if (!outfile) {
-		std::cout << "stark::utils::Logger error: Cannot open a file " << path << std::endl;
+		std::cout << "stark::utils::Logger::save_to_disk error: Cannot open file " << path << std::endl;
 		exit(-1);
 	}
 

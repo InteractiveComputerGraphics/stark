@@ -1,7 +1,9 @@
 #include "Console.h"
 
-void stark::utils::Console::set_path(const std::string path)
+void stark::utils::Console::initialize(const std::string path, const Verbosity verbosity, const OutputTo output_to)
 {
+	this->verbosity = verbosity;
+	this->output_to = output_to;
 	this->path = path;
 	this->ofstream_ptr = std::make_unique<std::ofstream>(path);
 	if (!(*this->ofstream_ptr)) {
@@ -9,17 +11,19 @@ void stark::utils::Console::set_path(const std::string path)
 		exit(-1);
 	}
 }
+
+void stark::utils::Console::set_path(const std::string path)
+{
+}
 std::string stark::utils::Console::get_path() const
 {
 	return this->path;
 }
 void stark::utils::Console::set_verbosity(const Verbosity verbosity)
 {
-	this->verbosity = verbosity;
 }
 void stark::utils::Console::set_output_target(const OutputTo output_to)
 {
-	this->output_to = output_to;
 }
 void stark::utils::Console::print(const std::string str)
 {

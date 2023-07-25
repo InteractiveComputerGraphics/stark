@@ -34,7 +34,7 @@ void stark::models::Cloth::init(Simulation& sim)
 			symx::Vector a = energy.make_vector(this->model.a, node[0]);
 
 			symx::Scalar damping = energy.make_scalar(this->damping);
-			symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
+			symx::Scalar dt = energy.make_scalar(sim.parameters.adaptive_time_step.value);
 			symx::Vector gravity = energy.make_vector(sim.parameters.gravity);
 
 			//// Set energy expression
@@ -63,7 +63,7 @@ void stark::models::Cloth::init(Simulation& sim)
 			symx::Scalar area = energy.make_scalar(this->triangle_area_rest, tri_idx);
 			symx::Scalar E = energy.make_scalar(this->young_modulus, mesh_idx);
 			symx::Scalar nu = energy.make_scalar(this->poisson_ratio, mesh_idx);
-			symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
+			symx::Scalar dt = energy.make_scalar(sim.parameters.adaptive_time_step.value);
 
 			// Time integration
 			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
@@ -105,7 +105,7 @@ void stark::models::Cloth::init(Simulation& sim)
 			symx::Scalar area = energy.make_scalar(this->triangle_area_rest, tri_idx);
 			symx::Scalar strain_limiting_start = energy.make_scalar(this->strain_limiting_start, mesh_idx);
 			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, mesh_idx);
-			symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
+			symx::Scalar dt = energy.make_scalar(sim.parameters.adaptive_time_step.value);
 
 			// Time integration
 			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
@@ -147,7 +147,7 @@ void stark::models::Cloth::init(Simulation& sim)
 			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, internal_edge);
 			symx::Matrix Q = energy.make_matrix(this->DXinv, { 4, 4 }, ie_idx);
 			symx::Scalar bending_stiffness = energy.make_scalar(this->bending_stiffness, mesh_idx);
-			symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
+			symx::Scalar dt = energy.make_scalar(sim.parameters.adaptive_time_step.value);
 
 			// Time integration
 			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
@@ -176,7 +176,7 @@ void stark::models::Cloth::init(Simulation& sim)
 			symx::Vector v1 = energy.make_vector(this->model.v1, node_idx);
 			symx::Vector x1_prescribed = energy.make_vector(this->prescribed_positions, constraint_idx);
 			symx::Scalar k = energy.make_scalar(sim.parameters.boundary_conditions_stiffness);
-			symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
+			symx::Scalar dt = energy.make_scalar(sim.parameters.adaptive_time_step.value);
 
 			// Time integration
 			symx::Vector x1 = euler_integration(x0, v1, dt);
@@ -195,7 +195,7 @@ void stark::models::Cloth::init(Simulation& sim)
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, node_pair);
 			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, node_pair);
 			symx::Scalar k = energy.make_scalar(sim.parameters.boundary_conditions_stiffness);
-			symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
+			symx::Scalar dt = energy.make_scalar(sim.parameters.adaptive_time_step.value);
 
 			// Time integration
 			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
@@ -212,7 +212,7 @@ void stark::models::Cloth::init(Simulation& sim)
 	{
 		std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, conn);
 		std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, conn);
-		symx::Scalar dt = energy.make_scalar(sim.parameters.time_step.value);
+		symx::Scalar dt = energy.make_scalar(sim.parameters.adaptive_time_step.value);
 		return euler_integration(x0, v1, dt);
 	};
 	auto barrier_energy = [&](const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k)
@@ -222,7 +222,7 @@ void stark::models::Cloth::init(Simulation& sim)
 	};
 	auto set_barrier_energy = [&](const symx::Scalar& d, symx::Energy& energy)
 	{
-		symx::Scalar k = energy.make_scalar(sim.parameters.collision_stiffness.value);
+		symx::Scalar k = energy.make_scalar(sim.parameters.adaptive_contact_stiffness.value);
 		symx::Scalar dhat = energy.make_scalar(this->dhat);
 		symx::Scalar E = barrier_energy(d, dhat, k);
 		energy.set_expression(E);
@@ -285,7 +285,7 @@ void stark::models::Cloth::_after_time_step(Simulation& sim)
 	Output::output->cout("Cloth::postprocess_time_step()\n", 3);
 
 	// Set final positions
-	const double dt = sim.parameters.time_step.value;
+	const double dt = sim.parameters.adaptive_time_step.value;
 	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
 		this->model.x1[i] = this->model.x0[i] + dt * this->model.v1[i];
 	}
@@ -593,7 +593,7 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 }
 void stark::models::Cloth::_update_collision_x(Simulation& sim)
 {
-	const double dt = sim.parameters.time_step.value;
+	const double dt = sim.parameters.adaptive_time_step.value;
 	this->collision_x.resize(this->model.x0.size());
 	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
 		this->collision_x[i] = this->model.x0[i] + dt*this->model.v1[i];

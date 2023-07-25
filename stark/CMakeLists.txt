@@ -27,11 +27,14 @@ set(SOLVER_FILES
 	include/stark
 	src/hola.h
 	src/hola.cpp
+	src/sim/Settings.cpp
+	src/sim/Settings.h
 	src/sim/Callbacks.h
 	src/sim/AdaptiveParameter.cpp
 	src/sim/AdaptiveParameter.h
 	src/sim/NewtonsMethod.cpp
 	src/sim/NewtonsMethod.h
+	src/sim/Simulation.cpp
 	src/sim/Simulation.h
 	)
 
@@ -77,6 +80,9 @@ target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/vtkio
 
 ## fmt
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/fmt/include)
+
+## JanBenderUtilities
+target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/JanBenderUtilities/include)
 
 ## Eigen
 target_include_directories(stark PUBLIC ${EIGEN3_INCLUDE_DIR})
