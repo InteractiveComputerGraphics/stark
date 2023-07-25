@@ -25,25 +25,18 @@ namespace symx
 		/* Methods */
 		Assembly() = default;
 		~Assembly();
-		void reset(const std::vector<int> dof_set_offsets, const int n_threads = -1, const bool reset_hess = true, const bool reset_grad = true);
+		void reset(const std::vector<int>& dof_set_offsets, const int n_threads = -1, const bool reset_hess = true, const bool reset_grad = true);
 	};
 
 	struct Assembled
 	{
-		bsm::BlockedSparseMatrix<Assembly::BLOCK_SIZE, Assembly::BLOCK_SIZE, double>& hess;
-		Eigen::VectorXd& grad;
-		double& E;
+		bsm::BlockedSparseMatrix<Assembly::BLOCK_SIZE, Assembly::BLOCK_SIZE, double>* hess;
+		Eigen::VectorXd grad;
+		double E;
 		double compiled_runtime = 0.0;
 		Assembled(Assembly& assembly)
-			: hess(assembly.hess), grad(assembly.grad.get_solution()), E(assembly.E.get_solution())
+			: hess(&assembly.hess), grad(assembly.grad.get_solution()), E(assembly.E.get_solution())
 		{
-			this->compiled_runtime = assembly.compiled_runtime;
-		}
-		Assembled& operator=(const Assembled& assembly)
-		{
-			this->hess = assembly.hess;
-			this->grad = assembly.grad;
-			this->E = assembly.E;
 			this->compiled_runtime = assembly.compiled_runtime;
 		}
 	};

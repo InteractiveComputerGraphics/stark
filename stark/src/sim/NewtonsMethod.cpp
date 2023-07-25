@@ -92,7 +92,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		assembled = global_energy.evaluate_E_grad();
 		Output::logger->stop_timing_add("assemble_gradient");
 		Output::logger->add_to_timer("compiled_E_g (acc)", assembled.compiled_runtime);
-		residual = assembled.grad->norm();
+		residual = assembled.grad.norm();
 
 		if (residual < this->newton_tol) {
 			break;
