@@ -38,6 +38,9 @@ void stark::Simulation::setup(Settings& settings)
 	this->console.initialize(settings.output.output_directory + "/console.txt", settings.output.console_verbosity, settings.output.console_output_to);
 	this->logger.set_path(settings.output.output_directory + "/logger.txt");
 	this->newton.line_search_debug_logger.set_path(settings.output.output_directory + "/line_search.txt");
+
+	// Print settings
+	this->console.print(this->settings.as_string(), Verbosity::TimeSteps);
 }
 void stark::Simulation::init()
 {
@@ -124,18 +127,22 @@ bool stark::Simulation::run(const double duration, std::function<void()> callbac
 void stark::Simulation::_initialize_symx()
 {
 	// Compile
-	this->global_energy.compile(this->settings.output.codegen_directory, this->settings.execution.n_threads, this->settings.output.suppress_symx_compiler_output);
-	how do I get the output?
+	const std::string symx_print = this->global_energy.compile(this->settings.output.codegen_directory, this->settings.execution.n_threads, this->settings.output.suppress_symx_compiler_output);
+	this->console.print(symx_print, Verbosity::Frames);
 
 	// Project to PD
-	for (auto& energy : this->global_energy.energies) {
-		energy->project_to_PD = energy->project_to_PD || this->project_to_PD;
+	if (this->settings.newton.project_to_PD) {
+		this->global_energy.set_project_to_PD(true);
+	}
+
+	// Print ndofs
+	this->console.print("Degrees of freedom:", Verbosity::Frames);
+	for (int i = 0; i < (int)this->global_energy.dof_labels.size(); i++) {
+		this->console.print(fmt::format("\n\t {} {:d}", this->global_energy.dof_labels[i], this->global_energy.dof_ndofs[i]()), Verbosity::Frames);
 	}
 }
 void stark::Simulation::_write_frame()
 {
-	this->output.console.print("Simulation::_write_frame\n", 3);
-
 	const std::string base_path = this->output_directory + "/" + this->name + "_";
 	if (this->fps < 0.0) {
 		Output::logger->save_to_disk();
@@ -156,27 +163,5 @@ void stark::Simulation::_write_frame()
 			this->working_on_frame_number++;
 		}
 	}
-}
-void stark::Simulation::_print_header()
-{
-	this->output.console.print("Simulation name: " + this->name + "\n", 0);
-	this->output.console.print("Codegen directory: " + this->codegen_directory + "\n", 0);
-	this->output.console.print("Output directory: " + this->output_directory + "\n", 0);
-	this->output.console.print("Number of threads: " + std::to_string(this->n_threads) + "\n", 0);
-	this->output.console.print("Minimizer: " + this->minimizer.get_name() + "\n", 0);
-
-	std::string physical_systems = "";
-	for (auto& ps : this->physical_systems) {
-		physical_systems += ps->get_name() + ", ";
-	}
-	this->output.console.print("Physical Systems: " + physical_systems + "\n", 0);
-
-	std::string dofs = "Degrees of freedom:";
-	for (auto& array : this->simws.arrays) {
-		if (array->is_dof) {
-			dofs += "\n\t" + array->name + ": " + std::to_string(array->size);
-		}
-	}
-	this->output.console.print(dofs + "\n", 0);
 }
 

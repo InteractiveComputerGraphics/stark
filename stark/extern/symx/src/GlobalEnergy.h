@@ -24,6 +24,7 @@ namespace symx
 		std::vector<std::unique_ptr<Energy>> energies;
 		std::vector<std::function<double*()>> dof_data;
 		std::vector<std::function<int32_t()>> dof_ndofs;
+		std::vector<std::string> dof_labels;
 
 		std::string working_directory = "NO_PATH_SET_IN_SimulationWorkSpace";
 		bool suppress_compiler_output = true;
@@ -54,19 +55,20 @@ namespace symx
 		void add_energy(std::string name, const std::vector<std::array<int32_t, N>>& arr, std::function<void(Energy&, Element&)> energy);
 		void add_external_contributions(std::function<void(Assembly&)> E, std::function<void(Assembly&)> E_grad, std::function<void(Assembly&)> E_grad_hess);
 
-		void add_dof_array(std::function<double*()> data, std::function<int32_t()> ndofs);
+		void add_dof_array(std::function<double*()> data, std::function<int32_t()> ndofs, std::string label = "");
 		template<typename STATIC_VECTOR>  // std::vector<std::array<double, 3>>, std::vector<Eigen::Vector3d>...
-		void add_dof_array(std::vector<STATIC_VECTOR>& arr);
+		void add_dof_array(std::vector<STATIC_VECTOR>& arr, std::string label = "");
 		template<typename DYNAMIC_VECTOR>  // std::vector<double>, Eigen::VectorXd...
-		void add_dof_array(DYNAMIC_VECTOR& arr);
+		void add_dof_array(DYNAMIC_VECTOR& arr, std::string label = "");
 
-		void compile(std::string working_directory, const int n_threads = -1, bool suppress_compiler_output = true);
+		std::string compile(std::string working_directory, const int n_threads = -1, bool suppress_compiler_output = true);
 		Assembled evaluate_E();
 		Assembled evaluate_E_grad();
 		Assembled evaluate_E_grad_hess();
 		void get_dofs(double* u) const;
 		void apply_dof_increment(const double* du);
 		void set_dofs(const double* u);
+		void set_project_to_PD(const bool activate);
 
 		int get_total_n_dofs() const;
 		int32_t get_n_dof_sets() const;
@@ -83,13 +85,13 @@ namespace symx
 		this->add_energy(name, l2data_int(arr), l2n_elements_int(arr), N, energy);
 	}
 	template<typename STATIC_VECTOR>
-	inline void GlobalEnergy::add_dof_array(std::vector<STATIC_VECTOR>& arr)
+	inline void GlobalEnergy::add_dof_array(std::vector<STATIC_VECTOR>& arr, std::string label)
 	{
-		this->add_dof_array(l2data_double_mut(arr), l2count_double(arr));
+		this->add_dof_array(l2data_double_mut(arr), l2count_double(arr), label);
 	}
 	template<typename DYNAMIC_VECTOR>
-	inline void GlobalEnergy::add_dof_array(DYNAMIC_VECTOR& arr)
+	inline void GlobalEnergy::add_dof_array(DYNAMIC_VECTOR& arr, std::string label)
 	{
-		this->add_dof_array(l2data_double_mut(arr), l2count_double(arr));
+		this->add_dof_array(l2data_double_mut(arr), l2count_double(arr), label);
 	}
 }

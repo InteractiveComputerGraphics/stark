@@ -6,10 +6,11 @@ void symx::GlobalEnergy::add_external_contributions(std::function<void(Assembly&
 	this->external_E_grad.push_back(E_grad);
 	this->external_E_grad_hess.push_back(E_grad_hess);
 }
-void symx::GlobalEnergy::add_dof_array(std::function<double* ()> data, std::function<int32_t()> ndofs)
+void symx::GlobalEnergy::add_dof_array(std::function<double* ()> data, std::function<int32_t()> ndofs, std::string label)
 {
 	this->dof_data.push_back(data);
 	this->dof_ndofs.push_back(ndofs);
+	this->dof_labels.push_back(label);
 }
 void symx::GlobalEnergy::add_energy(std::string name, std::function<const int32_t* ()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element, std::function<void(Energy&, Element&)> energy)
 {
@@ -63,8 +64,9 @@ void symx::GlobalEnergy::_exit_if_not_initialized() const
 		exit(-1);
 	}
 }
-void symx::GlobalEnergy::compile(std::string working_directory, const int n_threads, bool suppress_compiler_output)
+std::string symx::GlobalEnergy::compile(std::string working_directory, const int n_threads, bool suppress_compiler_output)
 {
+	std::string output;
 	if (this->get_n_dof_sets() == 0) {
 		std::cout << "SymX GlobalEnergy.compile() error: No sets of degrees of freedom declared." << std::endl;
 		exit(-1);
@@ -82,7 +84,7 @@ void symx::GlobalEnergy::compile(std::string working_directory, const int n_thre
 	this->runtime_codegen = 0.0;
 	this->runtime_compilation = 0.0;
 	this->symbols_bytes = 0;
-	std::cout << "Energies: " << std::endl;
+	output += "Energies:\n";
 
 	#pragma omp parallel for num_threads(this->n_threads)
 	for (int i = 0; i < (int)this->energies.size(); i++) {
@@ -105,10 +107,10 @@ void symx::GlobalEnergy::compile(std::string working_directory, const int n_thre
 		this->symbols_bytes += this->energies[i]->n_bytes_symbols;
 
 		if (this->energies[i]->was_cached) {
-			std::cout << "\t" + this->energies[i]->name + "... loaded. (" + std::to_string(t1 - t0) + " s)" << std::endl;
+			output += "\t" + this->energies[i]->name + "... loaded. (" + std::to_string(t1 - t0) + " s)\n";
 		}
 		else {
-			std::cout << "\t" + this->energies[i]->name + "... compiled. (" + std::to_string(t1 - t0) + " s)" << std::endl;
+			output += "\t" + this->energies[i]->name + "... compiled. (" + std::to_string(t1 - t0) + " s)\n";
 		}
 	}
 	std::string slow_compile_note;
@@ -116,11 +118,12 @@ void symx::GlobalEnergy::compile(std::string working_directory, const int n_thre
 	slow_compile_note = "(Note: MSVC takes a lot of time just to load!)";
 	#endif
 
-	std::cout << "Differentiation (acc): " + std::to_string(this->runtime_differentiation) + " s." << std::endl;
-	std::cout << "Code generation (acc): " + std::to_string(this->runtime_codegen) + " s." << std::endl;
-	std::cout << "Compilation (acc): " + std::to_string(this->runtime_compilation) + " s. " + slow_compile_note << std::endl;
-	std::cout << "Symbol peak memory: " + std::to_string(this->symbols_bytes/1024) + " KB." << std::endl;
+	output += "Differentiation (acc): " + std::to_string(this->runtime_differentiation) + " s.\n";
+	output += "Code generation (acc): " + std::to_string(this->runtime_codegen) + " s.\n";
+	output += "Compilation (acc): " + std::to_string(this->runtime_compilation) + " s. " + slow_compile_note + "\n";
+	output += "Symbol peak memory: " + std::to_string(this->symbols_bytes/1024) + " KB.\n";
 	this->is_initialized = true;
+	return output;
 }
 symx::Assembled symx::GlobalEnergy::evaluate_E()
 {
@@ -204,5 +207,11 @@ void symx::GlobalEnergy::set_dofs(const double* u)
 		const int32_t end = offsets[set + 1];
 		const int32_t length = end - begin;
 		memcpy(data, u + begin, length * sizeof(double));
+	}
+}
+void symx::GlobalEnergy::set_project_to_PD(const bool activate)
+{
+	for (auto& energy : this->energies) {
+		energy->project_to_PD = activate;
 	}
 }

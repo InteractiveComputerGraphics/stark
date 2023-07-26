@@ -54,9 +54,7 @@ namespace stark
 
 	private:
 		bool is_init = false;
-		void _check();
 		void _initialize_symx();
 		void _write_frame();
-		void _print_header();
 	};
 }
