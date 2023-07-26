@@ -16,22 +16,6 @@ namespace stark
 	class Simulation
 	{
 	public:
-		// ---------------------------------------------------------------------------------
-		struct Output
-		{
-		public:
-			std::string get_vtk_path(std::string name) const
-			{
-				return this->settings->output.output_directory + "/" + this->settings->output.simulation_name + "_" + name + "_" + std::to_string(this->frame_it) + ".vtk";
-			}
-		private:
-			Settings* settings = nullptr;
-			int frame_it = 0;
-			double next_frame_time = -1e-12;
-		};
-		// ---------------------------------------------------------------------------------
-
-
 		/* Fields */
 		symx::GlobalEnergy global_energy;
 		NewtonsMethod newton;
@@ -40,21 +24,24 @@ namespace stark
 		utils::Logger logger;
 		Settings settings;
 
+		// Frame output
 		double current_time = 0.0;
 		int current_frame = 0;
 
 
-
-		Output output;
-
 		/* Methods */
-		void setup(Settings& settings);
+		Simulation(Settings& settings);
 		bool run_one_step();
-		bool run(const double duration, std::function<void()> callback = nullptr);
+		bool run(std::function<void()> callback = nullptr);
+		std::string get_vtk_path(std::string name) const;
 
 	private:
+		/* Fields */
 		bool is_init = false;
-		void _initialize_symx();
+		double next_frame_time = -std::numeric_limits<double>::epsilon();
+
+		/* Methods */
+		void _initialize();
 		void _write_frame();
 	};
 }

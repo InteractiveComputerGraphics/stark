@@ -4,7 +4,7 @@
 
 #include <JanBenderUtilities/FileSystem.h>
 
-void stark::Simulation::setup(Settings& settings)
+stark::Simulation::Simulation(Settings& settings)
 {
 	this->settings = settings;
 
@@ -42,126 +42,136 @@ void stark::Simulation::setup(Settings& settings)
 	// Print settings
 	this->console.print(this->settings.as_string(), Verbosity::TimeSteps);
 }
-void stark::Simulation::init()
-{
-	this->_init();
-	this->_print_header();
-	this->simws.compile();
-	this->_write_frame();
-	this->is_init = true;
-}
 bool stark::Simulation::run_one_step()
 {
-	this->output.console.print("Simulation::run_one_step\n", 3);
-
 	if (!this->is_init) {
-		std::cout << "sym error: Call Simulation.init() before Simulation.run_one_step()." << std::endl;
-		return false;
+		this->_initialize();
 	}
-	this->time.compute_current_max_dt();
 
-	Output::logger->start_timing("total");
-	this->output.console.print("\tdt: " + std::to_string(1000.0 * this->time.dt) + " ms", 1);
-	this->output.console.print("  |  log10(k): " + to_string_with_precision(std::log10(this->adaptive_contact_stiffness.value), 2), 1);
+	this->logger.start_timing("total");
+	this->console.print(fmt::format("\t dt: {:.6f} ms  |  log10(k): {:.1e}\n", 1000.0 * this->settings.simulation.adaptive_time_step.value, this->settings.contact.adaptive_contact_stiffness.value), Verbosity::TimeSteps);
 
-	for (auto& ps : this->physical_systems) {
-		ps->prepare_time_step(this->simws);  // This just sets initial guess to zero
-	}
+	this->callbacks.run_before_time_step();
 
 	const double t0 = omp_get_wtime();
-	Output::logger->start_timing("step");
-	NewtonError err = this->minimizer.solve(this->simws);
-	Output::logger->stop_timing_add("step");
+	this->logger.start_timing("step");
+	NewtonError err = this->newton.solve(this->global_energy, this->callbacks, this->settings, this->console, this->logger);
+	this->logger.stop_timing_add("step");
 	const double t1 = omp_get_wtime();
-	this->output.console.print("  |  runtime: " + to_string_with_precision(1000.0 * (t1 - t0), 2) + " ms\n", 1);
+	this->console.print(fmt::format("  |  runtime: {:.0f} ms\n", 1000.0 * (t1 - t0)), Verbosity::TimeSteps);
 
 	if (err == NewtonError::InvalidConfiguration) {
-		this->adaptive_contact_stiffness.failed_iteration();
+		this->settings.contact.adaptive_contact_stiffness.failed_iteration();
 		return this->run_one_step();
 	}
 	else if (err != NewtonError::Successful) {
-		this->time.reduce_time_step_size();
-		if (this->time.dt < this->time.dt_min) {
-			this->output.console.print("Min time step size reached (" + std::to_string(this->time.dt) + "). Exiting simulation.\n", 1);
-			Output::logger->save_to_disk();
+		this->settings.simulation.adaptive_time_step.failed_iteration();
+		if (this->settings.simulation.adaptive_time_step.value < this->settings.simulation.adaptive_time_step.min) {
+			this->console.print(fmt::format("Min time step size reached ({:.e}). Exiting simulation.\n", this->settings.simulation.adaptive_time_step.min), Verbosity::Frames);
+			this->logger.save_to_disk();
 			return false;
 		}
 		return this->run_one_step();
 	}
-	Output::logger->stop_timing_add("total");
-	Output::logger->add("dt", this->time.dt);
-	Output::logger->add("time", this->time.current);
+	this->logger.stop_timing_add("total");
+	this->logger.add("dt", this->settings.simulation.adaptive_time_step.value);
+	this->logger.add("time", this->current_time);
+	this->logger.add("frame", this->current_frame);
 
-	for (auto& ps : this->physical_systems) {
-		ps->postprocess_time_step(this->simws);
-	}
+	this->callbacks.run_after_time_step();
 
 	this->_write_frame();
-	this->time.successful_time_step();
-	this->adaptive_contact_stiffness.successful_iteration();
+	this->settings.contact.adaptive_contact_stiffness.successful_iteration();
+	this->settings.simulation.adaptive_time_step.successful_iteration();
+	this->logger.add_to_counter("time_steps", 1);
 	return true;
 }
-bool stark::Simulation::run(const double duration, std::function<void()> callback)
+bool stark::Simulation::run(std::function<void()> callback)
 {
-	if (this->print_verbosity >= 3) { std::cout << "Simulation::init" << std::endl; }
-
-	this->init();
 	const double t0 = omp_get_wtime();
-	while (this->time.current < duration && (omp_get_wtime() - t0) < this->timeout) {
+	while (
+		this->current_time < this->settings.execution.end_simulation_time && 
+		this->current_frame < this->settings.execution.end_frame && 
+		(omp_get_wtime() - t0) < this->settings.execution.allowed_execution_time) 
+	{
 		if (callback != nullptr) { callback(); }
-		this->run_one_step();
+		bool success = this->run_one_step();
+		if (!success) {
+			break;
+		}
 	}
 
-	Output::logger->add("newton_iterations: ", this->minimizer.it_count);
-	std::cout << "newton_iterations: " << this->minimizer.it_count << std::endl;
-	std::cout << "assemble_linear_system: " << Output::logger->timers["assemble_linear_system"] << " s" << std::endl;
-	std::cout << "CG: " << Output::logger->timers["CG"] << " s" << std::endl;
-	std::cout << "step: " << Output::logger->timers["step"] << " s" << std::endl;
-	std::cout << "assemble_gradient: " << Output::logger->timers["assemble_gradient"] << " s" << std::endl;
-	std::cout << "line_search: " << Output::logger->timers["line_search"] << " s" << std::endl;
-	std::cout << "assemble_E: " << Output::logger->timers["assemble_E"] << " s" << std::endl;
-	std::cout << "total: " << Output::logger->timers["total"] << " s" << std::endl;
+	// Final print
+	//// Iterations
+	this->console.print("Iterations\n", Verbosity::Frames);
+	this->console.print(fmt::format("\t# time_steps: {:d}\n", this->logger.counters["time_steps"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t# newton/time_steps: {:.1f}\n", (double)this->logger.counters["newton_iterations"]/(double)this->logger.counters["time_steps"]), Verbosity::Frames);
+	if (!this->settings.newton.use_direct_linear_solve) {
+		this->console.print(fmt::format("# CG_iterations/newton: {:.1f}\n", (double)this->logger.counters["CG_iterations"]/(double)this->logger.counters["newton_iterations"]), Verbosity::Frames);
+	}
+	this->console.print(fmt::format("# line_search/newton: {:.1f}\n", (double)this->logger.counters["line_search_iterations"]/(double)this->logger.counters["newton_iterations"]), Verbosity::Frames);
+
+	//// Runtime
+	this->console.print("Runtime\n", Verbosity::Frames);
+	this->console.print(fmt::format("\t total: {:f} s\n", this->logger.timers["total"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t evaluate_E_grad_hess: {:f} s\n", this->logger.timers["evaluate_E_grad_hess"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t evaluate_E_grad_hess: {:f} s\n", this->logger.timers["evaluate_E_grad_hess"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t evaluate_E_grad: {:f} s\n", this->logger.timers["evaluate_E_grad"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t evaluate_E: {:f} s\n", this->logger.timers["evaluate_E"]), Verbosity::Frames);
+	if (!this->settings.newton.use_direct_linear_solve) {
+		this->console.print(fmt::format("\t CG: {:f} s\n", this->logger.timers["CG"]), Verbosity::Frames);
+	}
+	else {
+		this->console.print(fmt::format("\t directLU: {:f} s\n", this->logger.timers["directLU"]), Verbosity::Frames);
+	}
 	return true;
 }
-
-void stark::Simulation::_initialize_symx()
+std::string stark::Simulation::get_vtk_path(std::string name) const
 {
-	// Compile
+	return this->settings.output.output_directory + "/" + this->settings.output.simulation_name + "_" + name + "_" + std::to_string(this->current_frame) + ".vtk";
+}
+
+void stark::Simulation::_initialize()
+{
+	this->is_init = true;
+
+	// SymX
+	//// Compile
 	const std::string symx_print = this->global_energy.compile(this->settings.output.codegen_directory, this->settings.execution.n_threads, this->settings.output.suppress_symx_compiler_output);
 	this->console.print(symx_print, Verbosity::Frames);
 
-	// Project to PD
+	//// Project to PD
 	if (this->settings.newton.project_to_PD) {
 		this->global_energy.set_project_to_PD(true);
 	}
 
-	// Print ndofs
+	//// Print ndofs
 	this->console.print("Degrees of freedom:", Verbosity::Frames);
 	for (int i = 0; i < (int)this->global_energy.dof_labels.size(); i++) {
 		this->console.print(fmt::format("\n\t {} {:d}", this->global_energy.dof_labels[i], this->global_energy.dof_ndofs[i]()), Verbosity::Frames);
 	}
+
+	// Write frame zero
+	this->_write_frame();
 }
 void stark::Simulation::_write_frame()
 {
-	const std::string base_path = this->output_directory + "/" + this->name + "_";
-	if (this->fps < 0.0) {
-		Output::logger->save_to_disk();
-		for (auto& ps : this->physical_systems) {
-			ps->write_frame(base_path + ps->get_name() + "_" + std::to_string(this->working_on_frame_number) + ".vtk");
-		}
-		this->output.console.print(std::to_string(this->working_on_frame_number) + ".vtk [" + std::to_string(this->time.current) + " s]\n", 1);
-		this->working_on_frame_number++;
+	auto write_frame_impl = [&]() 
+	{
+		this->callbacks.run_write_frame();
+		this->console.print(fmt::format("Frame: {:d}. Time: {:f}.\n", this->current_frame, this->current_time), Verbosity::Frames);
+		this->current_frame++;
+	};
+
+	if (this->settings.output.fps < 0) {
+		write_frame_impl();
 	}
 	else {
-		while (this->time.current > this->next_frame_time) {
-			Output::logger->save_to_disk();
-			for (auto& ps : this->physical_systems) {
-				ps->write_frame(base_path + ps->get_name() + "_" + std::to_string(this->working_on_frame_number) + ".vtk");
-			}
-			this->output.console.print(std::to_string(this->working_on_frame_number) + ".vtk [" + std::to_string(this->time.current) + " s]\n", 1);
-			this->next_frame_time += 1.0/(double)this->fps;
-			this->working_on_frame_number++;
+		while (this->current_time > this->next_frame_time) {
+			write_frame_impl();
+			this->next_frame_time += 1.0/(double)this->settings.output.fps;
 		}
 	}
+	this->logger.save_to_disk();
 }
 

@@ -35,7 +35,7 @@ namespace stark::models
 	template<typename SCALAR, typename VECTOR3D>
 	SCALAR distance_line_line(const VECTOR3D& v11, const VECTOR3D& v12, const VECTOR3D& v21, const VECTOR3D& v22)
 	{
-		const Scalar signed_d = (v11 - v21).dot((v12 - v11).cross3(v22 - v21).normalized());
+		const SCALAR signed_d = (v11 - v21).dot((v12 - v11).cross3(v22 - v21).normalized());
 		return sqrt(signed_d * signed_d);
 	}
 

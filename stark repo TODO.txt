@@ -15,6 +15,8 @@ stark repo TODO
 	* Trace and debug info
 	* Remove dependency to JanBenderUtilities. We just need mkdirs.
 	* Check for NaNs in symx as an option in Stark::Settings
+	* Frame interpolation
+	* Console doesn´t work until simulation.setup()
 
 Specific to energies
 --------------------

@@ -26,9 +26,9 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 
 		// Linear system
 		//// Evaluate and assemble
-		logger.start_timing("assemble_linear_system");
+		logger.start_timing("evaluate_E_grad_hess");
 		symx::Assembled assembled = global_energy.evaluate_E_grad_hess();
-		logger.stop_timing_add("assemble_linear_system");
+		logger.stop_timing_add("evaluate_E_grad_hess");
 		logger.add_to_timer("compiled_E_g_h (acc)", assembled.compiled_runtime);
 		console.print(fmt::format("dE = {:.2e}  |", assembled.grad.norm()), Verbosity::NewtonIterations);
 
@@ -92,9 +92,9 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		console.print(fmt::format("max step = {:.2e}  |", step), Verbosity::NewtonIterations);
 
 		// Convergence?
-		logger.start_timing("assemble_gradient");
+		logger.start_timing("evaluate_E_grad");
 		assembled = global_energy.evaluate_E_grad();
-		logger.stop_timing_add("assemble_gradient");
+		logger.stop_timing_add("evaluate_E_grad");
 		logger.add_to_timer("compiled_E_g (acc)", assembled.compiled_runtime);
 		residual = assembled.grad.norm();
 		console.print(fmt::format("dE1 = {:.2e}", residual), Verbosity::NewtonIterations);
@@ -116,7 +116,9 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			global_energy.set_dofs(this->u1.data());
 
 			// Sequence
+			logger.start_timing("evaluate_E");
 			assembled = global_energy.evaluate_E();
+			logger.stop_timing_add("evaluate_E");
 			logger.add_to_timer("compiled_E (acc)", assembled.compiled_runtime);
 
 			// Counters
@@ -164,5 +166,10 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 	console.print("  |  #newton: " + std::to_string(newton_it), Verbosity::TimeSteps);
 	console.print("  |  #CG/newton: " + std::to_string((int)(total_CG_it/newton_it)), Verbosity::TimeSteps);
 	console.print("  |  #line_search/newton: " + std::to_string((int)(total_line_search_it/newton_it)), Verbosity::TimeSteps);
+
+	logger.add_to_counter("newton_iterations", newton_it);
+	logger.add_to_counter("CG_iterations", total_CG_it);
+	logger.add_to_counter("line_search_iterations", total_line_search_it);
+
 	return NewtonError::Successful;
 }

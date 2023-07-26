@@ -35,13 +35,19 @@ void stark::utils::Logger::add_to_timer(const std::string label, const double t)
 	}
 	this->timers[label] += t;
 }
+void stark::utils::Logger::add_to_counter(const std::string label, const int v)
+{
+	if (this->counters.find(label) == this->counters.end()) {
+		this->counters[label] = 0;
+	}
+	this->counters[label] += v;
+}
 void stark::utils::Logger::set_path(const std::string path)
 {
 	this->path = path;
 }
 void stark::utils::Logger::save_to_disk(const std::string path)
 {
-	// Open the file
 	std::ofstream outfile(path);
 	if (!outfile) {
 		std::cout << "stark::utils::Logger::save_to_disk error: Cannot open file " << path << std::endl;
@@ -59,6 +65,11 @@ void stark::utils::Logger::save_to_disk(const std::string path)
 	for (auto& pair : this->timers) {
 		outfile << pair.first << ": " << pair.second << std::endl;
 	}
+
+	for (auto& pair : this->counters) {
+		outfile << pair.first << ": " << pair.second << std::endl;
+	}
+
 	outfile.close();
 }
 void stark::utils::Logger::save_to_disk()
