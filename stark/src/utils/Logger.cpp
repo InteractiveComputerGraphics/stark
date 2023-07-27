@@ -46,6 +46,10 @@ void stark::utils::Logger::set_path(const std::string path)
 {
 	this->path = path;
 }
+void stark::utils::Logger::add(const std::string label, const std::string v)
+{
+	this->series[label].push_back(v);
+}
 void stark::utils::Logger::save_to_disk(const std::string path)
 {
 	std::ofstream outfile(path);

@@ -6,8 +6,7 @@
 #include <functional>
 #include <immintrin.h>
 
-#include "BlockedSparseMatrix.hpp"
-
+#include "AlignmentAllocator.h"
 
 namespace cg
 {
@@ -195,13 +194,13 @@ namespace cg
         }
 
         /* --------------  Allocations  -------------- */
-        avx::avector<FLOAT, 32> r_vector(size);
+        bsm::avx::avector<FLOAT, 32> r_vector(size);
         FLOAT* r = r_vector.data();
-        avx::avector<FLOAT, 32> z_vector(size);
+        bsm::avx::avector<FLOAT, 32> z_vector(size);
         FLOAT* z = z_vector.data();
-        avx::avector<FLOAT, 32> p_vector(size);
+        bsm::avx::avector<FLOAT, 32> p_vector(size);
         FLOAT* p = p_vector.data();
-        avx::avector<FLOAT, 32> Ap_vector(size);
+        bsm::avx::avector<FLOAT, 32> Ap_vector(size);
         FLOAT* Ap = Ap_vector.data();
 
         /* --------------  Initialziation  -------------- */

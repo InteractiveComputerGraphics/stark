@@ -23,6 +23,7 @@ namespace stark::utils
 		void save_to_disk(const std::string path);
 		void save_to_disk();
 		void set_path(const std::string path);
+		void add(const std::string label, const std::string v);
 
 		template<typename T>
 		void add(const std::string label, const T v)

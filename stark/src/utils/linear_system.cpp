@@ -12,7 +12,7 @@ int stark::utils::solve_linear_system_with_CG(Eigen::VectorXd& solution_with_ini
 	return info.n_iterations;
 }
 
-bool stark::utils::solve_linear_system_with_directLU(Eigen::VectorXd& solution, BCRS& lhs, const Eigen::VectorXd& rhs)
+void stark::utils::solve_linear_system_with_directLU(Eigen::VectorXd& solution, BCRS& lhs, const Eigen::VectorXd& rhs)
 {
 	std::vector<Eigen::Triplet<double>> triplets;
 	lhs.to_triplets(triplets);

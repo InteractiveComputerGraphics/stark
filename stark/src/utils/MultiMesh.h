@@ -62,7 +62,7 @@ namespace stark::utils
 		// Append connectivity
 		const int offset = (int)this->vertices.size();
 		for (const std::array<int, N>& element : connectivity) {
-			std::array<int, N>& element_offset = element;
+			std::array<int, N> element_offset = element;
 			for (int& idx : element_offset) {
 				idx += offset;
 			}

@@ -130,7 +130,7 @@ namespace JanBenderUtilities
 
 			if (stat(path.c_str(), &st) != 0)
 			{
-#if WIN32
+#ifdef WIN32
 				status = _mkdir(path.c_str());
 #else
 				status = mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
