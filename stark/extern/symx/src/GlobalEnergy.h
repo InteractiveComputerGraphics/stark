@@ -55,11 +55,11 @@ namespace symx
 		void add_energy(std::string name, const std::vector<std::array<int32_t, N>>& arr, std::function<void(Energy&, Element&)> energy);
 		void add_external_contributions(std::function<void(Assembly&)> E, std::function<void(Assembly&)> E_grad, std::function<void(Assembly&)> E_grad_hess);
 
-		void add_dof_array(std::function<double*()> data, std::function<int32_t()> ndofs, std::string label = "");
+		DoF add_dof_array(std::function<double*()> data, std::function<int32_t()> ndofs, std::string label = "");
 		template<typename STATIC_VECTOR>  // std::vector<std::array<double, 3>>, std::vector<Eigen::Vector3d>...
-		void add_dof_array(std::vector<STATIC_VECTOR>& arr, std::string label = "");
+		DoF add_dof_array(std::vector<STATIC_VECTOR>& arr, std::string label = "");
 		template<typename DYNAMIC_VECTOR>  // std::vector<double>, Eigen::VectorXd...
-		void add_dof_array(DYNAMIC_VECTOR& arr, std::string label = "");
+		DoF add_dof_array(DYNAMIC_VECTOR& arr, std::string label = "");
 
 		std::string compile(std::string working_directory, const int n_threads = -1, bool suppress_compiler_output = true);
 		Assembled evaluate_E();
@@ -85,13 +85,13 @@ namespace symx
 		this->add_energy(name, l2data_int(arr), l2n_elements_int(arr), N, energy);
 	}
 	template<typename STATIC_VECTOR>
-	inline void GlobalEnergy::add_dof_array(std::vector<STATIC_VECTOR>& arr, std::string label)
+	inline DoF GlobalEnergy::add_dof_array(std::vector<STATIC_VECTOR>& arr, std::string label)
 	{
-		this->add_dof_array(l2data_double_mut(arr), l2count_double(arr), label);
+		return this->add_dof_array(l2data_double_mut(arr), l2count_double(arr), label);
 	}
 	template<typename DYNAMIC_VECTOR>
-	inline void GlobalEnergy::add_dof_array(DYNAMIC_VECTOR& arr, std::string label)
+	inline DoF GlobalEnergy::add_dof_array(DYNAMIC_VECTOR& arr, std::string label)
 	{
-		this->add_dof_array(l2data_double_mut(arr), l2count_double(arr), label);
+		return this->add_dof_array(l2data_double_mut(arr), l2count_double(arr), label);
 	}
 }

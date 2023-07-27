@@ -9,7 +9,7 @@ void stark::models::Cloth::init(Stark& sim)
 	this->_init_simulation_structures(sim.settings.execution.n_threads);
 
 	// DoFs
-	sim.global_energy.add_dof_array(this->model.v1, "cloth_v1");
+	symx::DoF dof = sim.global_energy.add_dof_array(this->model.v1);
 
 	// Callbacks
 	sim.callbacks.before_time_step.push_back([&]() { this->_before_time_step(sim); });
@@ -24,11 +24,11 @@ void stark::models::Cloth::init(Stark& sim)
 		[&](symx::Energy& energy, symx::Element& node)
 		{
 			//// Create symbols
-			symx::Scalar mass = energy.make_scalar(this->lumped_mass, node[0]);
+			symx::Vector v1 = energy.make_dof_vector(dof, this->model.v1, node[0]);
 			symx::Vector x0 = energy.make_vector(this->model.x0, node[0]);
 			symx::Vector v0 = energy.make_vector(this->model.v0, node[0]);
-			symx::Vector v1 = energy.make_vector(this->model.v1, node[0]);
 			symx::Vector a = energy.make_vector(this->model.a, node[0]);
+			symx::Scalar mass = energy.make_scalar(this->lumped_mass, node[0]);
 
 			symx::Scalar damping = energy.make_scalar(this->damping);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
@@ -54,8 +54,8 @@ void stark::models::Cloth::init(Stark& sim)
 			std::vector<symx::Index> triangle = mesh_idx_triangle.slice(2, 5);
 
 			// Create symbols
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(dof, this->model.v1, triangle);
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, triangle);
-			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, triangle);
 			symx::Matrix DXinv = energy.make_matrix(this->DXinv, { 2, 2 }, tri_idx);
 			symx::Scalar area = energy.make_scalar(this->triangle_area_rest, tri_idx);
 			symx::Scalar E = energy.make_scalar(this->young_modulus, mesh_idx);
@@ -96,8 +96,8 @@ void stark::models::Cloth::init(Stark& sim)
 			std::vector<symx::Index> triangle = mesh_idx_triangle.slice(2, 5);
 
 			// Create symbols
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(dof, this->model.v1, triangle);
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, triangle);
-			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, triangle);
 			symx::Matrix DXinv = energy.make_matrix(this->DXinv, { 2, 2 }, tri_idx);
 			symx::Scalar area = energy.make_scalar(this->triangle_area_rest, tri_idx);
 			symx::Scalar strain_limiting_start = energy.make_scalar(this->strain_limiting_start, mesh_idx);
@@ -140,8 +140,8 @@ void stark::models::Cloth::init(Stark& sim)
 			std::vector<symx::Index> internal_edge = mesh_idx_internal_edge.slice(2, 6);
 
 			// Create symbols
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(dof, this->model.v1, internal_edge);
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, internal_edge);
-			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, internal_edge);
 			symx::Matrix Q = energy.make_matrix(this->DXinv, { 4, 4 }, ie_idx);
 			symx::Scalar bending_stiffness = energy.make_scalar(this->bending_stiffness, mesh_idx);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
@@ -169,8 +169,8 @@ void stark::models::Cloth::init(Stark& sim)
 			symx::Index node_idx = node[1];
 
 			//// Create symbols
+			symx::Vector v1 = energy.make_dof_vector(dof, this->model.v1, node_idx);
 			symx::Vector x0 = energy.make_vector(this->model.x0, node_idx);
-			symx::Vector v1 = energy.make_vector(this->model.v1, node_idx);
 			symx::Vector x1_prescribed = energy.make_vector(this->prescribed_positions, constraint_idx);
 			symx::Scalar k = energy.make_scalar(sim.settings.simulation.boundary_conditions_stiffness);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
@@ -189,8 +189,8 @@ void stark::models::Cloth::init(Stark& sim)
 		[&](symx::Energy& energy, symx::Element& node_pair)
 		{
 			//// Create symbols
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(dof, this->model.v1, node_pair);
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, node_pair);
-			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, node_pair);
 			symx::Scalar k = energy.make_scalar(sim.settings.simulation.boundary_conditions_stiffness);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 
@@ -208,8 +208,8 @@ void stark::models::Cloth::init(Stark& sim)
 		// Common symbol creation and manipulation functions ------------------------
 		auto get_x1 = [&](std::vector<symx::Index> conn, symx::Energy& energy)
 		{
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(dof, this->model.v1, conn);
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, conn);
-			std::vector<symx::Vector> v1 = energy.make_vectors(this->model.v1, conn);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 			return euler_integration(x0, v1, dt);
 		};

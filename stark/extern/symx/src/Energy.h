@@ -10,6 +10,8 @@
 
 namespace symx
 {
+	struct DoF { int idx; };
+
 	class Energy
 	{
 	private:
@@ -41,7 +43,7 @@ namespace symx
 
 		// Symbols
 		SymbolicWorkSpace sws;
-		std::vector<std::pair<std::pair<Vector, Index>, std::function<const double*()>>> block_symbols_data_pairs;
+		//std::vector<std::pair<std::pair<Vector, Index>, std::function<const double*()>>> block_symbols_data_pairs;
 		std::vector<Scalar> dof_symbols;
 		std::unique_ptr<Scalar> expr = nullptr;
 		int name_conter = 0;
@@ -89,6 +91,13 @@ namespace symx
 		template<typename DYNAMIC_VECTOR>
 		Vector make_vector(DYNAMIC_VECTOR& arr, const int32_t stride, const Index& idx, const std::string name = "");
 
+		// Make DoF Vector
+		Vector make_dof_vector(const DoF& dof, std::function<const double* ()> data, const int32_t stride, const Index& idx, const std::string name = "");
+		template<typename STATIC_VECTOR>
+		Vector make_dof_vector(const DoF& dof, std::vector<STATIC_VECTOR>& arr, const Index& idx, const std::string name = "");
+		template<typename DYNAMIC_VECTOR>
+		Vector make_dof_vector(const DoF& dof, DYNAMIC_VECTOR& arr, const int32_t stride, const Index& idx, const std::string name = "");
+
 		// Make Vectors
 		std::vector<Vector> make_vectors(std::function<const double* ()> data, const int32_t stride, const std::vector<Index>& indices, const std::string name = "");
 		template<typename STATIC_VECTOR>
@@ -97,6 +106,15 @@ namespace symx
 		std::vector<Vector> make_vectors(std::vector<STATIC_VECTOR>& arr, const Element& element, const std::string name = "");
 		template<typename DYNAMIC_VECTOR>
 		std::vector<Vector> make_vectors(DYNAMIC_VECTOR& arr, const int32_t stride, const std::vector<Index>& indices, const std::string name = "");
+
+		// Make DoF Vectors
+		std::vector<Vector> make_dof_vectors(const DoF& dof, std::function<const double* ()> data, const int32_t stride, const std::vector<Index>& indices, const std::string name = "");
+		template<typename STATIC_VECTOR>
+		std::vector<Vector> make_dof_vectors(const DoF& dof, std::vector<STATIC_VECTOR>& arr, const std::vector<Index>& indices, const std::string name = "");
+		template<typename STATIC_VECTOR>
+		std::vector<Vector> make_dof_vectors(const DoF& dof, std::vector<STATIC_VECTOR>& arr, const Element& element, const std::string name = "");
+		template<typename DYNAMIC_VECTOR>
+		std::vector<Vector> make_dof_vectors(const DoF& dof, DYNAMIC_VECTOR& arr, const int32_t stride, const std::vector<Index>& indices, const std::string name = "");
 
 		// Make Matrix
 		Matrix make_matrix(std::function<const double* ()> data, const std::array<int, 2> shape, const Index& idx, const std::string name = "");
@@ -115,7 +133,6 @@ namespace symx
 		void evaluate_E_grad_hess(Assembly& assembly);
 
 	private:
-		void _gather_dofs(std::vector<std::function<double*()>> dof_arrays);
 		void _update_connectivity_conditionally(const int n_threads);
 		std::string _get_symbol_name(std::string user_name);
 		void _init(std::string name, std::string working_directory, std::function<const int32_t* ()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element);
@@ -152,6 +169,16 @@ namespace symx
 		return this->make_vector(l2data_double(arr), stride, idx, name);
 	}
 	template<typename STATIC_VECTOR>
+	inline Vector Energy::make_dof_vector(const DoF& dof, std::vector<STATIC_VECTOR>& arr, const Index& idx, const std::string name)
+	{
+		return this->make_dof_vector(dof, l2data_double(arr), sizeof(STATIC_VECTOR)/8, idx, name);
+	}
+	template<typename DYNAMIC_VECTOR>
+	inline Vector Energy::make_dof_vector(const DoF& dof, DYNAMIC_VECTOR& arr, const int32_t stride, const Index& idx, const std::string name)
+	{
+		return this->make_dof_vector(dof, l2data_double(arr), stride, idx, name);
+	}
+	template<typename STATIC_VECTOR>
 	inline std::vector<Vector> Energy::make_vectors(std::vector<STATIC_VECTOR>& arr, const std::vector<Index>& indices, const std::string name)
 	{
 		return this->make_vectors(l2data_double(arr), sizeof(STATIC_VECTOR)/8, indices, name);
@@ -165,6 +192,21 @@ namespace symx
 	inline std::vector<Vector> Energy::make_vectors(DYNAMIC_VECTOR& arr, const int32_t stride, const std::vector<Index>& indices, const std::string name)
 	{
 		return this->make_vectors(l2data_double(arr), stride, indices, name);
+	}
+	template<typename STATIC_VECTOR>
+	inline std::vector<Vector> Energy::make_dof_vectors(const DoF& dof, std::vector<STATIC_VECTOR>& arr, const std::vector<Index>& indices, const std::string name)
+	{
+		return this->make_dof_vectors(dof, l2data_double(arr), sizeof(STATIC_VECTOR)/8, indices, name);
+	}
+	template<typename STATIC_VECTOR>
+	inline std::vector<Vector> Energy::make_dof_vectors(const DoF& dof, std::vector<STATIC_VECTOR>& arr, const Element& element, const std::string name)
+	{
+		return this->make_dof_vectors(dof, arr, element.all(), name);
+	}
+	template<typename DYNAMIC_VECTOR>
+	inline std::vector<Vector> Energy::make_dof_vectors(const DoF& dof, DYNAMIC_VECTOR& arr, const int32_t stride, const std::vector<Index>& indices, const std::string name)
+	{
+		return this->make_dof_vectors(dof, l2data_double(arr), stride, indices, name);
 	}
 	template<typename STATIC_VECTOR>
 	inline Matrix Energy::make_matrix(std::vector<STATIC_VECTOR>& arr, const std::array<int, 2> shape, const Index& idx, const std::string name)

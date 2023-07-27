@@ -19,10 +19,14 @@ stark repo TODO
 	* Console doesn´t work until simulation.setup()
 	* Do we put simulation in stark::models ?
 
+Documentation
+-------------
+	* DoFs must be non-empty at initialization time. Otherwise they will not be added to SymX.
+
 Specific to energies
 --------------------
 	* Stable neohookean for cloth
-	
+	icra24_bosch_rwth
 	
 Architecture
 ------------

@@ -6,11 +6,12 @@ void symx::GlobalEnergy::add_external_contributions(std::function<void(Assembly&
 	this->external_E_grad.push_back(E_grad);
 	this->external_E_grad_hess.push_back(E_grad_hess);
 }
-void symx::GlobalEnergy::add_dof_array(std::function<double* ()> data, std::function<int32_t()> ndofs, std::string label)
+symx::DoF symx::GlobalEnergy::add_dof_array(std::function<double* ()> data, std::function<int32_t()> ndofs, std::string label)
 {
 	this->dof_data.push_back(data);
 	this->dof_ndofs.push_back(ndofs);
 	this->dof_labels.push_back(label);
+	return { (int)this->dof_data.size() - 1 };
 }
 void symx::GlobalEnergy::add_energy(std::string name, std::function<const int32_t* ()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element, std::function<void(Energy&, Element&)> energy)
 {

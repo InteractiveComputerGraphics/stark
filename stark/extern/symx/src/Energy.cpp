@@ -28,7 +28,11 @@ void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arra
 		std::cout << "symx::Energy error: Expression not set in energy " << this->name << std::endl;
 		exit(-1);
 	}
-	this->_gather_dofs(dof_arrays);
+	if (this->dof_symbols.size() == 0) {
+		std::cout << "symx::Energy error: Energy does not have degrees of freedom (DoF) " << this->name << std::endl;
+		exit(-1);
+	}
+
 	this->has_branches = this->expr->has_branch();
 	if (this->has_branches) {
 		this->compiled_derivatives_d.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, /*TODO:*/ 3, suppress_compiler_output);
@@ -55,7 +59,6 @@ void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arra
 	// Clear symbolic allocations
 	this->n_bytes_symbols = this->sws.expressions.expressions.size() * sizeof(symx::Expr);
 	this->dof_symbols.clear();
-	this->block_symbols_data_pairs.clear();
 	this->sws = SymbolicWorkSpace();
 	this->expr = nullptr;
 }
@@ -102,7 +105,16 @@ symx::Vector symx::Energy::make_vector(std::function<const double*()> data, cons
 	this->compiled_derivatives.set_vectors({ vector }, { idx }, data);
 	this->compiled_derivatives_d.set_vectors({ vector }, { idx }, data);
 	this->compiled_condition.set_vectors({ vector }, { idx }, data);
-	this->block_symbols_data_pairs.push_back({ {vector, idx}, data });
+	return vector;
+}
+symx::Vector symx::Energy::make_dof_vector(const DoF& dof, std::function<const double* ()> data, const int32_t stride, const Index& idx, const std::string name)
+{
+	symx::Vector vector = this->make_vector(data, stride, idx, name);
+	assert(vector.size() == 3);
+	this->dof_block_global_index.push_back({ dof.idx, idx.idx });
+	for (int i = 0; i < vector.size(); i++) {
+		this->dof_symbols.push_back(vector[i]);
+	}
 	return vector;
 }
 std::vector<symx::Vector> symx::Energy::make_vectors(std::function<const double* ()> data, const int32_t stride, const std::vector<Index>& indices, const std::string name)
@@ -111,6 +123,15 @@ std::vector<symx::Vector> symx::Energy::make_vectors(std::function<const double*
 	std::vector<Vector> vectors;
 	for (size_t i = 0; i < indices.size(); i++) {
 		vectors.push_back(this->make_vector(data, stride, indices[i], name_ + std::to_string(i)));
+	}
+	return vectors;
+}
+std::vector<symx::Vector> symx::Energy::make_dof_vectors(const DoF& dof, std::function<const double* ()> data, const int32_t stride, const std::vector<Index>& indices, const std::string name)
+{
+	const std::string name_ = this->_get_symbol_name(name);
+	std::vector<Vector> vectors;
+	for (size_t i = 0; i < indices.size(); i++) {
+		vectors.push_back(this->make_dof_vector(dof, data, stride, indices[i], name_ + std::to_string(i)));
 	}
 	return vectors;
 }
@@ -238,28 +259,6 @@ void symx::Energy::evaluate_E_grad_hess(Assembly& assembly)
 	}
 }
 
-void symx::Energy::_gather_dofs(std::vector<std::function<double*()>> dof_arrays)
-{
-	// Hardcoded to dofs being only 3D vectors. We keep one mapping per block.
-	for (int block_i = 0; block_i < (int)this->block_symbols_data_pairs.size(); block_i++) {
-		const std::function<const double* ()> data = this->block_symbols_data_pairs[block_i].second;
-
-		for (int dofs_set = 0; dofs_set < (int)dof_arrays.size(); dofs_set++) {
-			const std::function<const double* ()> dof_data = dof_arrays[dofs_set];
-			if (data() == dof_data()) {
-				const std::pair<Vector, Index>& symbol_idx = this->block_symbols_data_pairs[block_i].first;
-				const Vector& vector = symbol_idx.first;
-				const Index& conn_idx = symbol_idx.second;
-				this->dof_block_global_index.push_back({ dofs_set, conn_idx.idx });
-
-				assert(vector.size() == 3);
-				for (int i = 0; i < vector.size(); i++) {
-					this->dof_symbols.push_back(vector[i]);
-				}
-			}
-		}
-	}
-}
 void symx::Energy::_update_connectivity_conditionally(const int n_threads)
 {
 	const int n_original_elements = this->compiled_condition.connectivity_n_elements();
