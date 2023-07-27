@@ -9,6 +9,12 @@ void push_back_if_not_present(std::vector<int>& v, const int value)
 		v.push_back(value);
 	}
 }
+double deg2rad(const double deg)
+{
+	static constexpr double PI = 3.14159265358979323846;
+	return 2.0 * PI * (deg / 360.0);
+}
+
 // ========================================================================================================
 
 Eigen::Vector3d stark::utils::triangle_normal(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2)
@@ -187,5 +193,42 @@ void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Ve
 		vtk_file.set_points_from_twice_indexable(vertices);
 		vtk_file.set_cells_from_twice_indexable(triangles, vtkio::CellType::Triangle);
 		vtk_file.write(path);
+	}
+}
+
+void stark::utils::move(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& translation)
+{
+	for (Eigen::Vector3d& point : points) {
+		point += translation;
+	}
+}
+
+void stark::utils::rotate_deg(std::vector<Eigen::Vector3d>& points, const double angle, const Eigen::Vector3d& axis)
+{
+	Eigen::Matrix3d R = Eigen::AngleAxis<double>(deg2rad(angle), axis.normalized()).toRotationMatrix();
+	for (Eigen::Vector3d& point : points) {
+		point = R * point;
+	}
+}
+
+void stark::utils::rotate_deg(std::vector<Eigen::Vector3d>& points, const double angle, const Eigen::Vector3d& axis, const Eigen::Vector3d& pivot)
+{
+	move(points, -pivot);
+	rotate_deg(points, angle, axis);
+	move(points, pivot);
+}
+
+void stark::utils::scale(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& scale)
+{
+	for (Eigen::Vector3d& point : points) {
+		point = scale.cwiseProduct(point);
+	}
+}
+
+void stark::utils::mirror(std::vector<Eigen::Vector3d>& points, const int dim, const double pivot)
+{
+	for (Eigen::Vector3d& point : points) {
+		const double dist = point[dim] - pivot;
+		point[dim] = pivot - dist;
 	}
 }

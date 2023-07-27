@@ -26,4 +26,10 @@ namespace stark::utils
 	void generate_triangular_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, const Eigen::Vector2d& bottom, const Eigen::Vector2d& top, const std::array<int, 2>& n_quads_per_dim, const double z = 0.0);
 	void write_VTK(const std::string path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const bool generate_normals = true);
 
+	//// Transformations
+	void move(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& translation);
+	void rotate_deg(std::vector<Eigen::Vector3d>& points, const double angle, const Eigen::Vector3d& axis);
+	void rotate_deg(std::vector<Eigen::Vector3d>& points, const double angle, const Eigen::Vector3d& axis, const Eigen::Vector3d& pivot);
+	void scale(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& scale);
+	void mirror(std::vector<Eigen::Vector3d>& points, const int dim, const double pivot = 0.0);
 }
