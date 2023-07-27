@@ -1,14 +1,11 @@
 #include <iostream>
 
 #include <Eigen/Dense>
-#include "../stark/src/hola.h"
 
 #include <stark>
 
 int main()
 {
-	stark_hola();
-
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "test";
 	settings.output.output_directory = "../output/test";

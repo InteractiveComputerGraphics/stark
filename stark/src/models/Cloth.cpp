@@ -9,7 +9,7 @@ void stark::models::Cloth::init(Stark& sim)
 	this->_init_simulation_structures(sim.settings.execution.n_threads);
 
 	// DoFs
-	symx::DoF dof = sim.global_energy.add_dof_array(this->model.v1);
+	symx::DoF dof = sim.global_energy.add_dof_array(this->model.v1, "cloth_v1");
 
 	// Callbacks
 	sim.callbacks.before_time_step.push_back([&]() { this->_before_time_step(sim); });

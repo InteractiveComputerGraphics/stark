@@ -66,12 +66,12 @@ stark::Settings::Settings()
 	this->simulation.adaptive_time_step.n_successful_iterations_to_increase = 5;
 
 	//// Adaptive Contact stiffness
-	this->simulation.adaptive_time_step.value = 1e3;
-	this->simulation.adaptive_time_step.min = 1e3;
-	this->simulation.adaptive_time_step.max = 1e15;
-	this->simulation.adaptive_time_step.success_multiplier = 1.0;
-	this->simulation.adaptive_time_step.failure_multiplier = 2.0;
-	this->simulation.adaptive_time_step.n_successful_iterations_to_increase = std::numeric_limits<int>::max();
+	this->contact.adaptive_contact_stiffness.value = 1e3;
+	this->contact.adaptive_contact_stiffness.min = 1e3;
+	this->contact.adaptive_contact_stiffness.max = 1e15;
+	this->contact.adaptive_contact_stiffness.success_multiplier = 1.0;
+	this->contact.adaptive_contact_stiffness.failure_multiplier = 2.0;
+	this->contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = std::numeric_limits<int>::max();
 }
 
 std::string stark::Settings::as_string() const
@@ -117,5 +117,6 @@ std::string stark::Settings::as_string() const
 	out += "\n         end_simulation_time: " + fmt::format("{:.1e}", this->execution.end_simulation_time);
 	out += "\n         end_frame: " + fmt::format("{:d}", this->execution.end_frame);
 	out += "\n         n_threads: " + fmt::format("{:d}", this->execution.n_threads);
+	out += "\n\n";
 	return out;
 }

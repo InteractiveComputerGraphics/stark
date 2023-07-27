@@ -85,7 +85,7 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 	this->runtime_codegen = 0.0;
 	this->runtime_compilation = 0.0;
 	this->symbols_bytes = 0;
-	output += "Energies:\n";
+	output += "SymX energies:\n";
 
 	#pragma omp parallel for num_threads(this->n_threads)
 	for (int i = 0; i < (int)this->energies.size(); i++) {
@@ -108,10 +108,10 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 		this->symbols_bytes += this->energies[i]->n_bytes_symbols;
 
 		if (this->energies[i]->was_cached) {
-			output += "\t" + this->energies[i]->name + "... loaded. (" + std::to_string(t1 - t0) + " s)\n";
+			output += "\t " + this->energies[i]->name + "... loaded. (" + std::to_string(t1 - t0) + " s)\n";
 		}
 		else {
-			output += "\t" + this->energies[i]->name + "... compiled. (" + std::to_string(t1 - t0) + " s)\n";
+			output += "\t " + this->energies[i]->name + "... compiled. (" + std::to_string(t1 - t0) + " s)\n";
 		}
 	}
 	std::string slow_compile_note;
@@ -119,10 +119,11 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 	slow_compile_note = "(Note: MSVC takes a lot of time just to load!)";
 	#endif
 
-	output += "Differentiation (acc): " + std::to_string(this->runtime_differentiation) + " s.\n";
-	output += "Code generation (acc): " + std::to_string(this->runtime_codegen) + " s.\n";
-	output += "Compilation (acc): " + std::to_string(this->runtime_compilation) + " s. " + slow_compile_note + "\n";
-	output += "Symbol peak memory: " + std::to_string(this->symbols_bytes/1024) + " KB.\n";
+	output += "SymX stats\n";
+	output += "\t Differentiation (acc): " + std::to_string(this->runtime_differentiation) + " s.\n";
+	output += "\t Code generation (acc): " + std::to_string(this->runtime_codegen) + " s.\n";
+	output += "\t Compilation (acc): " + std::to_string(this->runtime_compilation) + " s. " + slow_compile_note + "\n";
+	output += "\t Symbol peak memory: " + std::to_string(this->symbols_bytes/1024) + " KB.\n";
 	this->is_initialized = true;
 	return output;
 }

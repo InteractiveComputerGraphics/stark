@@ -26,8 +26,6 @@ add_subdirectory(extern/fmt)
 # Source files
 set(SOLVER_FILES
 	include/stark
-	src/hola.h
-	src/hola.cpp
 	src/solver/Settings.cpp
 	src/solver/Settings.h
 	src/solver/Callbacks.h
