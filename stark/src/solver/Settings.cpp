@@ -38,12 +38,12 @@ std::string to_string(const bool v)
 std::string to_string(const stark::AdaptiveParameter& v)
 {
 	std::string out;
-	out += fmt::format("\n\t\t\t value: {:2e}", v.value);
-	out += fmt::format("\n\t\t\t min: {:2e}", v.min);
-	out += fmt::format("\n\t\t\t max: {:2e}", v.max);
-	out += fmt::format("\n\t\t\t success_multiplier: {:f}", v.success_multiplier);
-	out += fmt::format("\n\t\t\t failure_multiplier: {:f}", v.failure_multiplier);
-	out += fmt::format("\n\t\t\t n_successful_iterations_to_increase: {:d}", v.n_successful_iterations_to_increase);
+	out += fmt::format("\n             value: {:.2e}", v.value);
+	out += fmt::format("\n             min: {:.2e}", v.min);
+	out += fmt::format("\n             max: {:.2e}", v.max);
+	out += fmt::format("\n             success_multiplier: {:f}", v.success_multiplier);
+	out += fmt::format("\n             failure_multiplier: {:f}", v.failure_multiplier);
+	out += fmt::format("\n             n_successful_iterations_to_increase: {:d}", v.n_successful_iterations_to_increase);
 	return out;
 }
 std::string to_string(const Eigen::Vector3d& v)
@@ -55,7 +55,7 @@ std::string to_string(const Eigen::Vector3d& v)
 stark::Settings::Settings()
 {
 	// Initialize default parameters
-	this->execution.n_threads = omp_get_num_threads();
+	this->execution.n_threads = omp_get_max_threads();
 	
 	//// Adaptive Time step
 	this->simulation.adaptive_time_step.value = 0.01; // [s]
@@ -80,40 +80,42 @@ std::string stark::Settings::as_string() const
 
 	out += "\nStark Settings";
 	
-	out += "\n\t Output";
-	out += "\n\t\t simulation_name: " + this->output.simulation_name;
-	out += "\n\t\t output_directory: " + this->output.output_directory;
-	out += "\n\t\t codegen_directory: " + this->output.codegen_directory;
-	out += "\n\t\t fps: " + std::to_string(this->output.fps);
-	out += "\n\t\t console_verbosity: " + to_string(this->output.console_verbosity);
-	out += "\n\t\t console_output_to: " + to_string(this->output.console_output_to);
-	out += "\n\t\t suppress_symx_compiler_output: " + to_string(this->output.suppress_symx_compiler_output);
+	out += "\n     Output";
+	out += "\n         simulation_name: " + fmt::format("\"{}\"", this->output.simulation_name);
+	out += "\n         output_directory: " + fmt::format("\"{}\"", this->output.output_directory);
+	out += "\n         codegen_directory: " + fmt::format("\"{}\"", this->output.codegen_directory);
+	out += "\n         fps: " + std::to_string(this->output.fps);
+	out += "\n         console_verbosity: " + to_string(this->output.console_verbosity);
+	out += "\n         console_output_to: " + to_string(this->output.console_output_to);
+	out += "\n         suppress_symx_compiler_output: " + to_string(this->output.suppress_symx_compiler_output);
 
-	out += "\n\t Stark";
-	out += "\n\t\t adaptive_time_step" + to_string(this->simulation.adaptive_time_step);
-	out += "\n\t\t gravity" + to_string(this->simulation.gravity);
-	out += "\n\t\t boundary_conditions_stiffness" + fmt::format("{:1e}", this->simulation.boundary_conditions_stiffness);
+	out += "\n     Simulation";
+	out += "\n         adaptive_time_step" + to_string(this->simulation.adaptive_time_step);
+	out += "\n         gravity: " + to_string(this->simulation.gravity);
+	out += "\n         boundary_conditions_stiffness: " + fmt::format("{:.1e}", this->simulation.boundary_conditions_stiffness);
 
-	out += "\n\t Contact";
-	out += "\n\t\t adaptive_contact_stiffness" + to_string(this->contact.adaptive_contact_stiffness);
-	out += "\n\t\t dhat" + fmt::format("{:1e}", this->contact.dhat);
-	out += "\n\t\t collisions_enabled" + to_string(this->contact.collisions_enabled);
+	out += "\n     Contact";
+	out += "\n         adaptive_contact_stiffness" + to_string(this->contact.adaptive_contact_stiffness);
+	out += "\n         dhat: " + fmt::format("{:.1e}", this->contact.dhat);
+	out += "\n         collisions_enabled: " + to_string(this->contact.collisions_enabled);
+	out += "\n         triangle_point_enabled: " + to_string(this->contact.triangle_point_enabled);
+	out += "\n         edge_edge_enabled: " + to_string(this->contact.edge_edge_enabled);
 
-	out += "\n\t Newton's Method";
-	out += "\n\t\t newton_tol" + fmt::format("{:e}", this->newton.newton_tol);
-	out += "\n\t\t max_newton_iterations" + std::to_string(this->newton.max_newton_iterations);
-	out += "\n\t\t max_line_search_iterations" + std::to_string(this->newton.max_line_search_iterations);
-	out += "\n\t\t line_search_multiplier" + fmt::format("{:f}", this->newton.line_search_multiplier);
-	out += "\n\t\t cg_tol" + fmt::format("{:e}", this->newton.cg_tol);
-	out += "\n\t\t cg_max_iterations_multiplier" + fmt::format("{:f}", this->newton.cg_max_iterations_multiplier);
-	out += "\n\t\t use_direct_linear_solve: " + to_string(this->newton.use_direct_linear_solve);
-	out += "\n\t\t project_to_PD: " + to_string(this->newton.project_to_PD);
-	out += "\n\t\t debug_line_search_output: " + to_string(this->newton.debug_line_search_output);
+	out += "\n     Newton's Method";
+	out += "\n         newton_tol: " + fmt::format("{:.1e}", this->newton.newton_tol);
+	out += "\n         max_newton_iterations: " + std::to_string(this->newton.max_newton_iterations);
+	out += "\n         max_line_search_iterations: " + std::to_string(this->newton.max_line_search_iterations);
+	out += "\n         line_search_multiplier: " + fmt::format("{:f}", this->newton.line_search_multiplier);
+	out += "\n         cg_tol: " + fmt::format("{:.1e}", this->newton.cg_tol);
+	out += "\n         cg_max_iterations_multiplier: " + fmt::format("{:f}", this->newton.cg_max_iterations_multiplier);
+	out += "\n         use_direct_linear_solve: " + to_string(this->newton.use_direct_linear_solve);
+	out += "\n         project_to_PD: " + to_string(this->newton.project_to_PD);
+	out += "\n         debug_line_search_output: " + to_string(this->newton.debug_line_search_output);
 
-	out += "\n\t Execution";
-	out += "\n\t\t allowed_execution_time" + fmt::format("{:f}", this->execution.allowed_execution_time);
-	out += "\n\t\t end_simulation_time" + fmt::format("{:f}", this->execution.end_simulation_time);
-	out += "\n\t\t end_frame" + fmt::format("{:d}", this->execution.end_frame);
-	out += "\n\t\t n_threads" + fmt::format("{:d}", this->execution.n_threads);
+	out += "\n     Execution";
+	out += "\n         allowed_execution_time: " + fmt::format("{:.1e}", this->execution.allowed_execution_time);
+	out += "\n         end_simulation_time: " + fmt::format("{:.1e}", this->execution.end_simulation_time);
+	out += "\n         end_frame: " + fmt::format("{:d}", this->execution.end_frame);
+	out += "\n         n_threads: " + fmt::format("{:d}", this->execution.n_threads);
 	return out;
 }

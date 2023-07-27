@@ -1,2 +1,3 @@
 #pragma once
-#include "../src/solver/Simulator.h"
+#include "../src/solver/Stark.h"
+#include "../src/models/Simulation.h"

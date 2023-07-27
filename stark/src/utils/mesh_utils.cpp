@@ -60,6 +60,10 @@ void stark::utils::find_internal_angles(std::vector<std::array<int, 4>>& interna
 	/*
 		For each edge in the triangle mesh, find the 2 nodes that are common neighbors of both edge end-points.
 	*/
+	internal_angles.clear();
+	if (triangles.size() == 0) {
+		return;
+	}
 
 	std::vector<std::vector<int>> node_node_map;
 	find_node_node_map_simplex(node_node_map, &triangles[0][0], (int)triangles.size(), 3, n_nodes);

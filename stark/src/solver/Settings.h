@@ -32,6 +32,8 @@ namespace stark
 			AdaptiveParameter adaptive_contact_stiffness;
 			double dhat = 1e-3;
 			bool collisions_enabled = true;
+			bool triangle_point_enabled = true;
+			bool edge_edge_enabled = true;
 		};
 		struct NewtonsMethod
 		{

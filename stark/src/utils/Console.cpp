@@ -34,7 +34,7 @@ void stark::utils::Console::print(const std::string str)
 	if (this->output_to == OutputTo::FileOnly || this->output_to == OutputTo::FileAndConsole) {
 		(*this->ofstream_ptr) << str << std::flush;
 	}
-	else if (this->output_to == OutputTo::ConsoleOnly || this->output_to == OutputTo::FileAndConsole) {
+	if (this->output_to == OutputTo::ConsoleOnly || this->output_to == OutputTo::FileAndConsole) {
 		std::cout << str << std::flush;
 	}
 }

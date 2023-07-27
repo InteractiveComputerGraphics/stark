@@ -21,6 +21,7 @@ endif()
 # Dependencies
 add_subdirectory(extern/symx)
 add_subdirectory(extern/TriangleMeshCollisionDetection)
+add_subdirectory(extern/fmt)
 
 # Source files
 set(SOLVER_FILES
@@ -81,6 +82,7 @@ target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/symx/
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/vtkio/include)
 
 ## fmt
+target_link_libraries(stark fmt::fmt)
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/fmt/include)
 
 ## JanBenderUtilities

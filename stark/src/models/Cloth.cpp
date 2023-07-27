@@ -204,8 +204,7 @@ void stark::models::Cloth::init(Stark& sim)
 	);
 
 	/* -------------  Collisions ------------- */
-	if (sim.settings.contact.collisions_enabled) {
-
+	{
 		// Common symbol creation and manipulation functions ------------------------
 		auto get_x1 = [&](std::vector<symx::Index> conn, symx::Energy& energy)
 		{
@@ -222,10 +221,10 @@ void stark::models::Cloth::init(Stark& sim)
 		auto set_barrier_energy = [&](const symx::Scalar& d, symx::Energy& energy)
 		{
 			symx::Scalar k = energy.make_scalar(sim.settings.contact.adaptive_contact_stiffness.value);
-			symx::Scalar dhat = energy.make_scalar(this->dhat);
+			symx::Scalar dhat = energy.make_scalar(sim.settings.contact.dhat);
 			symx::Scalar E = barrier_energy(d, dhat, k);
 			energy.set_expression(E);
-			energy.activate(this->activate_collisions);
+			energy.activate(sim.settings.contact.collisions_enabled);
 		};
 		// -----------------------------------------------------------------------------
 
@@ -515,7 +514,6 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 		const int n = (int)internal_angles.size();
 		this->conn_numbered_mesh_internal_edges.resize(n);
 		this->bergou_Q_matrix.resize(n);
-		this->edges = edges;
 
 		#pragma omp parallel for schedule(static) num_threads(n_threads)
 		for (int internal_angle_i = 0; internal_angle_i < n; internal_angle_i++) {
@@ -550,6 +548,11 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 			const int mesh_i = mesh_rest.get_mesh_containing_vertex(indices[0]);
 			this->conn_numbered_mesh_internal_edges[internal_angle_i] = { internal_angle_i, mesh_i, indices[0], indices[1], indices[2], indices[3] };
 		}
+	}
+
+	// Collisions
+	if (this->changed_discretization) {
+		utils::find_edges(this->edges, mesh_rest.connectivity, mesh_rest.get_n_vertices());
 	}
 
 	// Prescribed nodes
@@ -618,15 +621,15 @@ void stark::models::Cloth::_write_frame(Stark& sim)
 }
 void stark::models::Cloth::_update_contacts(Stark& sim)
 {
-	if (!this->activate_collisions) { return; }
+	if (sim.settings.contact.collisions_enabled) { return; }
 
 	// Run CD
 	this->_update_collision_x(sim);
 	this->pd.clear();
 	this->pd.add_mesh(&this->collision_x[0][0], (int)this->collision_x.size(), &this->model.mesh.connectivity[0][0], this->model.mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
-	this->pd.disable_edge_edge(this->disable_edge_edge);
-	this->pd.disable_point_triangle(this->disable_point_triangle);
-	const tmcd::ProximityResults& proximity = this->pd.run(this->dhat);
+	this->pd.disable_point_triangle(!sim.settings.contact.triangle_point_enabled);
+	this->pd.disable_edge_edge(!sim.settings.contact.edge_edge_enabled);
+	const tmcd::ProximityResults& proximity = this->pd.run(sim.settings.contact.dhat);
 
 	// Fill connectivities
 	this->contacts.point_point.clear();

@@ -7,10 +7,14 @@ set (CMAKE_CXX_FLAGS "-DEIGEN_MPL2_ONLY")
 set(SOURCE_FILES
     main.cpp
 	)
-    
+
+# Create executable    
 add_executable(app ${SOURCE_FILES})
 
+# Include/link dependencies
+## Stark
 target_link_libraries(app stark)
+target_include_directories(app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../stark/include)
 
-
+## Eigen
 target_include_directories(app PUBLIC ${EIGEN3_INCLUDE_DIR})

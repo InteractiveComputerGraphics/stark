@@ -70,10 +70,6 @@ namespace stark::models
 		tmcd::IntersectionDetection id;
 		tmcd::ProximityDetection pd;
 		ClothSelfContacts contacts;
-		double dhat = 1e-3;
-		bool activate_collisions = true;
-		bool disable_edge_edge = false;
-		bool disable_point_triangle = false;
 
 		/* Methods */
 		// Physical System Interface
