@@ -9,11 +9,11 @@ symx::Element::Element(const int32_t& n_items_per_element)
 		this->indices[i].idx = i;
 	}
 }
-symx::Index symx::Element::operator[](const int i)
+symx::Index symx::Element::operator[](const int i) const
 {
 	return this->indices[i];
 }
-std::vector<symx::Index> symx::Element::slice(const int begin, const int end)
+std::vector<symx::Index> symx::Element::slice(const int begin, const int end) const
 {
 	assert(begin >= 0);
 	assert(end <= this->indices.size());
@@ -24,7 +24,7 @@ std::vector<symx::Index> symx::Element::slice(const int begin, const int end)
 	}
 	return indices;
 }
-std::vector<symx::Index> symx::Element::all()
+std::vector<symx::Index> symx::Element::all() const
 {
 	return this->slice(0, (int)this->indices.size());
 }

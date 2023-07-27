@@ -1,36 +1,36 @@
-#include "Simulation.h"
+#include "Stark.h"
 
 #include <iostream>
 
 #include <JanBenderUtilities/FileSystem.h>
 
-stark::Simulation::Simulation(Settings& settings)
+stark::Stark::Stark(const Settings& settings)
 {
 	this->settings = settings;
 
 	// Check mandatory arguments
 	if (settings.output.codegen_directory == "") {
-		std::cout << "stark::Simulation::setup() error: Settings.output.codegen_directory must be set" << std::endl;
+		std::cout << "stark::Stark::setup() error: Settings.output.codegen_directory must be set" << std::endl;
 		exit(-1);
 	}
 	if (settings.output.output_directory == "") {
-		std::cout << "stark::Simulation::setup() error: Settings.output.output_directory must be set" << std::endl;
+		std::cout << "stark::Stark::setup() error: Settings.output.output_directory must be set" << std::endl;
 		exit(-1);
 	}
 	if (settings.output.simulation_name == "") {
-		std::cout << "stark::Simulation::setup() error: Settings.output.simulation_name must be set" << std::endl;
+		std::cout << "stark::Stark::setup() error: Settings.output.simulation_name must be set" << std::endl;
 		exit(-1);
 	}
 
 	// Create folders
 	int status = JanBenderUtilities::FileSystem::makeDirs(settings.output.codegen_directory);
 	if (status != 0) {
-		std::cout << "stark::Simulation::setup() error: Cannot create folder " << settings.output.codegen_directory << std::endl;
+		std::cout << "stark::Stark::setup() error: Cannot create folder " << settings.output.codegen_directory << std::endl;
 		exit(-1);
 	}
 	status = JanBenderUtilities::FileSystem::makeDirs(settings.output.output_directory);
 	if (status != 0) {
-		std::cout << "stark::Simulation::setup() error: Cannot create folder " << settings.output.output_directory << std::endl;
+		std::cout << "stark::Stark::setup() error: Cannot create folder " << settings.output.output_directory << std::endl;
 		exit(-1);
 	}
 
@@ -42,7 +42,7 @@ stark::Simulation::Simulation(Settings& settings)
 	// Print settings
 	this->console.print(this->settings.as_string(), Verbosity::TimeSteps);
 }
-bool stark::Simulation::run_one_step()
+bool stark::Stark::run_one_step()
 {
 	if (!this->is_init) {
 		this->_initialize();
@@ -86,7 +86,7 @@ bool stark::Simulation::run_one_step()
 	this->logger.add_to_counter("time_steps", 1);
 	return true;
 }
-bool stark::Simulation::run(std::function<void()> callback)
+bool stark::Stark::run(std::function<void()> callback)
 {
 	const double t0 = omp_get_wtime();
 	while (
@@ -126,12 +126,12 @@ bool stark::Simulation::run(std::function<void()> callback)
 	}
 	return true;
 }
-std::string stark::Simulation::get_vtk_path(std::string name) const
+std::string stark::Stark::get_vtk_path(std::string name) const
 {
 	return this->settings.output.output_directory + "/" + this->settings.output.simulation_name + "_" + name + "_" + std::to_string(this->current_frame) + ".vtk";
 }
 
-void stark::Simulation::_initialize()
+void stark::Stark::_initialize()
 {
 	this->is_init = true;
 
@@ -154,7 +154,7 @@ void stark::Simulation::_initialize()
 	// Write frame zero
 	this->_write_frame();
 }
-void stark::Simulation::_write_frame()
+void stark::Stark::_write_frame()
 {
 	auto write_frame_impl = [&]() 
 	{

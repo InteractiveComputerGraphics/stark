@@ -17,6 +17,7 @@ stark repo TODO
 	* Check for NaNs in symx as an option in Stark::Settings
 	* Frame interpolation
 	* Console doesn´t work until simulation.setup()
+	* Do we put simulation in stark::models ?
 
 Specific to energies
 --------------------

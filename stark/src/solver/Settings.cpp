@@ -89,7 +89,7 @@ std::string stark::Settings::as_string() const
 	out += "\n\t\t console_output_to: " + to_string(this->output.console_output_to);
 	out += "\n\t\t suppress_symx_compiler_output: " + to_string(this->output.suppress_symx_compiler_output);
 
-	out += "\n\t Simulation";
+	out += "\n\t Stark";
 	out += "\n\t\t adaptive_time_step" + to_string(this->simulation.adaptive_time_step);
 	out += "\n\t\t gravity" + to_string(this->simulation.gravity);
 	out += "\n\t\t boundary_conditions_stiffness" + fmt::format("{:1e}", this->simulation.boundary_conditions_stiffness);
@@ -97,6 +97,7 @@ std::string stark::Settings::as_string() const
 	out += "\n\t Contact";
 	out += "\n\t\t adaptive_contact_stiffness" + to_string(this->contact.adaptive_contact_stiffness);
 	out += "\n\t\t dhat" + fmt::format("{:1e}", this->contact.dhat);
+	out += "\n\t\t collisions_enabled" + to_string(this->contact.collisions_enabled);
 
 	out += "\n\t Newton's Method";
 	out += "\n\t\t newton_tol" + fmt::format("{:e}", this->newton.newton_tol);

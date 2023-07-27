@@ -5,7 +5,7 @@
 #include <TriangleMeshCollisionDetection>
 #include <vtkio>
 
-#include "../sim/Simulation.h"
+#include "../solver/Stark.h"
 #include "../utils/MeshWithDynamics.h"
 #include "../utils/unordered_array_set_and_map.h"
 
@@ -77,7 +77,7 @@ namespace stark::models
 
 		/* Methods */
 		// Physical System Interface
-		void init(Simulation& sim);
+		void init(Stark& sim);
 
 		// Cloth interface
 		//// Setters
@@ -111,16 +111,16 @@ namespace stark::models
 		const utils::TriangleMultiMesh& get_mesh() const;
 
 	private:
-		// Simulation callbacks
-		void _before_time_step(Simulation& sim);
-		void _after_time_step(Simulation& sim);
-		bool _is_valid_configuration(Simulation& sim);
-		void _write_frame(Simulation& sim);
+		// Stark callbacks
+		void _before_time_step(Stark& sim);
+		void _after_time_step(Stark& sim);
+		bool _is_valid_configuration(Stark& sim);
+		void _write_frame(Stark& sim);
 
 		// Helpers
 		void _exit_if_cloth_not_declared(const int cloth_id);
 		void _init_simulation_structures(const int n_threads);
-		void _update_collision_x(Simulation& sim);
-		void _update_contacts(Simulation& sim);
+		void _update_collision_x(Stark& sim);
+		void _update_contacts(Stark& sim);
 	};
 }

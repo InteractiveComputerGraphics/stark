@@ -21,7 +21,7 @@ namespace stark
 			OutputTo console_output_to = OutputTo::FileAndConsole;
 			bool suppress_symx_compiler_output = true;
 		};
-		struct Simulation
+		struct Stark
 		{
 			AdaptiveParameter adaptive_time_step;
 			Eigen::Vector3d gravity = { 0.0, 0.0, -9.81 };
@@ -31,6 +31,7 @@ namespace stark
 		{
 			AdaptiveParameter adaptive_contact_stiffness;
 			double dhat = 1e-3;
+			bool collisions_enabled = true;
 		};
 		struct NewtonsMethod
 		{
@@ -55,7 +56,7 @@ namespace stark
 		};
 
 		Output output;
-		Simulation simulation;
+		Stark simulation;
 		NewtonsMethod newton;
 		Contact contact;
 		Execution execution;

@@ -13,7 +13,7 @@
 
 namespace stark
 {
-	class Simulation
+	class Stark
 	{
 	public:
 		/* Fields */
@@ -30,7 +30,7 @@ namespace stark
 
 
 		/* Methods */
-		Simulation(Settings& settings);
+		Stark(const Settings& settings);
 		bool run_one_step();
 		bool run(std::function<void()> callback = nullptr);
 		std::string get_vtk_path(std::string name) const;

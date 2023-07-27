@@ -27,15 +27,15 @@ set(SOLVER_FILES
 	include/stark
 	src/hola.h
 	src/hola.cpp
-	src/sim/Settings.cpp
-	src/sim/Settings.h
-	src/sim/Callbacks.h
-	src/sim/AdaptiveParameter.cpp
-	src/sim/AdaptiveParameter.h
-	src/sim/NewtonsMethod.cpp
-	src/sim/NewtonsMethod.h
-	src/sim/Simulation.cpp
-	src/sim/Simulation.h
+	src/solver/Settings.cpp
+	src/solver/Settings.h
+	src/solver/Callbacks.h
+	src/solver/AdaptiveParameter.cpp
+	src/solver/AdaptiveParameter.h
+	src/solver/NewtonsMethod.cpp
+	src/solver/NewtonsMethod.h
+	src/solver/Stark.cpp
+	src/solver/Stark.h
 	)
 
 set(MODELS_FILES
@@ -44,6 +44,8 @@ set(MODELS_FILES
 	src/models/time_integration.cpp
 	src/models/Cloth.h
 	src/models/Cloth.cpp
+	src/models/Simulation.h
+	src/models/Simulation.cpp
 	)
 
 set(UTILS_FILES

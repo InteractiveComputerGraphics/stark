@@ -159,7 +159,7 @@ namespace symx
 	template<typename STATIC_VECTOR>
 	inline std::vector<Vector> Energy::make_vectors(std::vector<STATIC_VECTOR>& arr, const Element& element, const std::string name)
 	{
-		this->make_vectors(arr, element.all(), name);
+		return this->make_vectors(arr, element.all(), name);
 	}
 	template<typename DYNAMIC_VECTOR>
 	inline std::vector<Vector> Energy::make_vectors(DYNAMIC_VECTOR& arr, const int32_t stride, const std::vector<Index>& indices, const std::string name)
