@@ -25,6 +25,7 @@ stark repo TODO
 	* NewtonsMethod is a mess
 		callbacks and evaluation should go together
 		does it make sense that it is it's own class? Maybe a function is better?
+		Timings don't add up to "total" because of aborted time steps
 	
 
 Documentation

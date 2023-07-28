@@ -42,54 +42,6 @@ stark::Stark::Stark(const Settings& settings)
 	// Print settings
 	this->console.print(this->settings.as_string(), Verbosity::TimeSteps);
 }
-bool stark::Stark::run_one_step()
-{
-	if (!this->is_init) {
-		this->_initialize();
-	}
-
-	this->logger.start_timing("total");
-	this->console.print(fmt::format("\t dt: {:.6f} ms  |  log10(k): {:.1e}\n", 1000.0 * this->settings.simulation.adaptive_time_step.value, this->settings.contact.adaptive_contact_stiffness.value), Verbosity::TimeSteps);
-
-	this->callbacks.run_before_time_step();
-
-	// Time step
-	if (this->global_energy.get_total_n_dofs() > 0) {
-		const double t0 = omp_get_wtime();
-		this->logger.start_timing("step");
-		NewtonError err = this->newton.solve(this->global_energy, this->callbacks, this->settings, this->console, this->logger);
-		this->logger.stop_timing_add("step");
-		const double t1 = omp_get_wtime();
-		this->console.print(fmt::format("  |  runtime: {:.0f} ms\n", 1000.0 * (t1 - t0)), Verbosity::TimeSteps);
-
-		if (err == NewtonError::InvalidConfiguration) {
-			this->settings.contact.adaptive_contact_stiffness.failed_iteration();
-			return this->run_one_step();
-		}
-		else if (err != NewtonError::Successful) {
-			this->settings.simulation.adaptive_time_step.failed_iteration();
-			if (this->settings.simulation.adaptive_time_step.value < this->settings.simulation.adaptive_time_step.min) {
-				this->console.print(fmt::format("Min time step size reached ({:.e}). Exiting simulation.\n", this->settings.simulation.adaptive_time_step.min), Verbosity::Frames);
-				this->logger.save_to_disk();
-				return false;
-			}
-			return this->run_one_step();
-		}
-	}
-	this->logger.add("dt", this->settings.simulation.adaptive_time_step.value);
-	this->logger.add("time", this->current_time);
-	this->logger.add("frame", this->current_frame);
-
-	this->callbacks.run_after_time_step();
-
-	this->_write_frame();
-	this->settings.contact.adaptive_contact_stiffness.successful_iteration();
-	this->settings.simulation.adaptive_time_step.successful_iteration();
-	this->logger.add_to_counter("time_steps", 1);
-	this->current_time += this->settings.simulation.adaptive_time_step.value;
-	this->logger.stop_timing_add("total");
-	return true;
-}
 bool stark::Stark::run(std::function<void()> callback)
 {
 	const double t0 = omp_get_wtime();
@@ -127,6 +79,54 @@ bool stark::Stark::run(std::function<void()> callback)
 	else {
 		this->console.print(fmt::format("\t directLU: {:.3f} s\n", this->logger.timers["directLU"]), Verbosity::Frames);
 	}
+	return true;
+}
+bool stark::Stark::run_one_step()
+{
+	if (!this->is_init) {
+		this->_initialize();
+	}
+
+	this->logger.start_timing("total");
+	this->console.print(fmt::format("\t dt: {:.6f} ms | log10(k): {:.1e} | ", 1000.0 * this->settings.simulation.adaptive_time_step.value, this->settings.contact.adaptive_contact_stiffness.value), Verbosity::TimeSteps);
+
+	this->callbacks.run_before_time_step();
+
+	// Time step
+	if (this->global_energy.get_total_n_dofs() > 0) {
+		const double t0 = omp_get_wtime();
+		this->logger.start_timing("step");
+		NewtonError err = this->newton.solve(this->global_energy, this->callbacks, this->settings, this->console, this->logger);
+		this->logger.stop_timing_add("step");
+		const double t1 = omp_get_wtime();
+		this->console.print(fmt::format(" | runtime: {:.0f} ms\n", 1000.0 * (t1 - t0)), Verbosity::TimeSteps);
+
+		if (err == NewtonError::InvalidConfiguration) {
+			this->settings.contact.adaptive_contact_stiffness.failed_iteration();
+			return this->run_one_step();
+		}
+		else if (err != NewtonError::Successful) {
+			this->settings.simulation.adaptive_time_step.failed_iteration();
+			if (this->settings.simulation.adaptive_time_step.value < this->settings.simulation.adaptive_time_step.min) {
+				this->console.print(fmt::format("Min time step size reached ({:.e}). Exiting simulation.\n", this->settings.simulation.adaptive_time_step.min), Verbosity::Frames);
+				this->logger.save_to_disk();
+				return false;
+			}
+			return this->run_one_step();
+		}
+	}
+	this->logger.add("dt", this->settings.simulation.adaptive_time_step.value);
+	this->logger.add("time", this->current_time);
+	this->logger.add("frame", this->current_frame);
+
+	this->callbacks.run_after_time_step();
+
+	this->_write_frame();
+	this->settings.contact.adaptive_contact_stiffness.successful_iteration();
+	this->settings.simulation.adaptive_time_step.successful_iteration();
+	this->logger.add_to_counter("time_steps", 1);
+	this->current_time += this->settings.simulation.adaptive_time_step.value;
+	this->logger.stop_timing_add("total");
 	return true;
 }
 std::string stark::Stark::get_vtk_path(std::string name) const

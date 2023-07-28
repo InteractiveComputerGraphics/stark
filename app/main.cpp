@@ -15,7 +15,7 @@ int main()
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 1.0;
 	//settings.execution.n_threads = 1;
-	settings.newton.use_direct_linear_solve = false;
+	//settings.newton.use_direct_linear_solve = false;
 	settings.contact.collisions_enabled = false;
 
 	stark::models::Simulation simulation(settings);
