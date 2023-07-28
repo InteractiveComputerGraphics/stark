@@ -92,6 +92,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		console.print(fmt::format("max step = {:.2e}  |", step), Verbosity::NewtonIterations);
 
 		// Convergence?
+		assembled = global_energy.evaluate_E_grad();
 		logger.start_timing("evaluate_E_grad");
 		assembled = global_energy.evaluate_E_grad();
 		logger.stop_timing_add("evaluate_E_grad");

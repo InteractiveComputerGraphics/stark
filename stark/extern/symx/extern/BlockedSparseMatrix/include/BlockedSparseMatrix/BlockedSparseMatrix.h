@@ -916,13 +916,14 @@ namespace bsm
 			exit(-1);
 		}
 		
-		int n_threads_ = (n_threads == -1) ? omp_get_num_procs() / 2 : n_threads;
+		const int n_threads_ = (n_threads == -1) ? omp_get_num_procs() / 2 : n_threads;
+		const bool sequential = n_threads_ < this->n_block_rows;
 		constexpr int BLOCK_SIZE = BLOCK_ROWS * BLOCK_COLS;
 		constexpr int NUMBERS_PER_AVX_LINE = sizeof(__m256d) / sizeof(OPERATION_FLOAT);
 		constexpr int N_AVX_LINES_PER_BLOCK_COLUMN = (BLOCK_ROWS % NUMBERS_PER_AVX_LINE == 0) ? BLOCK_ROWS / NUMBERS_PER_AVX_LINE : BLOCK_ROWS / NUMBERS_PER_AVX_LINE + 1;
 
 		// We spawn threads here
-		#pragma omp parallel num_threads(n_threads_) if(n_threads_ >= this->n_block_rows)
+		#pragma omp parallel num_threads(n_threads_)
 		{
 			// Thread workload distribution computation: Each thread gets equal number of non-zero blocks
 			const int thread_id = omp_get_thread_num();
@@ -936,11 +937,18 @@ namespace bsm
 			// We use binary search (std::lower_bound) to find the block row range limits
 			int block_row_begin = 0;
 			int block_row_end = this->n_block_rows;
-			if (thread_id != 0) {
-				block_row_begin = (int)std::distance(it_begin, std::lower_bound(it_begin, it_end, thread_id * chunksize));
-			}
-			if (thread_id != n_threads_ - 1) {
-				block_row_end = (int)std::distance(it_begin, std::lower_bound(it_begin + block_row_begin, it_end, (thread_id + 1) * chunksize));
+			if (sequential) {
+				if (thread_id > 0) {
+					block_row_end = 0;
+				}
+			} 
+			else {
+				if (thread_id != 0) {
+					block_row_begin = (int)std::distance(it_begin, std::lower_bound(it_begin, it_end, thread_id * chunksize));
+				}
+				if (thread_id != n_threads_ - 1) {
+					block_row_end = (int)std::distance(it_begin, std::lower_bound(it_begin + block_row_begin, it_end, (thread_id + 1) * chunksize));
+				}
 			}
 
 			// Each thread works on its own block row range
@@ -1157,7 +1165,7 @@ namespace bsm
 			const __m256d* v_avx = reinterpret_cast<const __m256d*>(v);
 			const int n_avx = this->n_rows / 4;
 
-			#pragma omp parallel for schedule(static) num_threads(n_threads_) if(n_threads != 1)
+			#pragma omp parallel for schedule(static) num_threads(n_threads_)
 			for (int i = 0; i < n_avx; i++) {
 				s_avx[i] = _mm256_mul_pd(diag_inv_avx[i], v_avx[i]);
 			}

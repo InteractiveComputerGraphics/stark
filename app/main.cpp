@@ -12,14 +12,14 @@ int main()
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 1.0;
-	//settings.execution.n_threads = 16;
-	settings.newton.use_direct_linear_solve = true;
+	settings.execution.n_threads = 2;
+	settings.newton.use_direct_linear_solve = false;
 	settings.contact.collisions_enabled = false;
 
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
-	const int n = 1;
+	const int n = 2;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n });
