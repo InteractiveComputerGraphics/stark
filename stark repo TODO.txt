@@ -22,6 +22,10 @@ stark repo TODO
 	* It needs to be revisited as building something completely from zero ala hello world.
 		There are a lot of error catches we should put in place (like no dofs, no energies, empty stuff...)
 	* Timings per energy
+	* NewtonsMethod is a mess
+		callbacks and evaluation should go together
+		does it make sense that it is it's own class? Maybe a function is better?
+	
 
 Documentation
 -------------

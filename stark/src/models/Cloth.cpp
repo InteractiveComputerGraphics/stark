@@ -621,11 +621,12 @@ void stark::models::Cloth::_write_frame(Stark& sim)
 }
 void stark::models::Cloth::_update_contacts(Stark& sim)
 {
-	if (sim.settings.contact.collisions_enabled) { return; }
+	if (!sim.settings.contact.collisions_enabled) { return; }
 
 	// Run CD
 	this->_update_collision_x(sim);
 	this->pd.clear();
+	this->pd.set_n_threads(sim.settings.execution.n_threads);
 	this->pd.add_mesh(&this->collision_x[0][0], (int)this->collision_x.size(), &this->model.mesh.connectivity[0][0], this->model.mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
 	this->pd.disable_point_triangle(!sim.settings.contact.triangle_point_enabled);
 	this->pd.disable_edge_edge(!sim.settings.contact.edge_edge_enabled);
@@ -651,8 +652,10 @@ void stark::models::Cloth::_update_contacts(Stark& sim)
 }
 bool stark::models::Cloth::_is_valid_configuration(Stark& sim)
 {
+	if (!sim.settings.contact.collisions_enabled) { return true; }
 	this->_update_collision_x(sim);
 	this->id.clear();
+	this->id.set_n_threads(sim.settings.execution.n_threads);
 	this->id.add_mesh(&this->collision_x[0][0], (int)this->collision_x.size(), &this->model.mesh.connectivity[0][0], this->model.mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
 	const tmcd::IntersectionResults& intersections = this->id.run();
 	return intersections.edge_triangle.size() == 0;

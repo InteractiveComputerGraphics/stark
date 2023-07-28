@@ -27,7 +27,9 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		// Linear system
 		//// Evaluate and assemble
 		logger.start_timing("evaluate_E_grad_hess");
+		callbacks.run_before_energy_evaluation();
 		symx::Assembled assembled = global_energy.evaluate_E_grad_hess();
+		callbacks.run_after_energy_evaluation();
 		logger.stop_timing_add("evaluate_E_grad_hess");
 		logger.add_to_timer("compiled_E_g_h (acc)", assembled.compiled_runtime);
 		console.print(fmt::format("dE0 = {:.2e}  |", assembled.grad->norm()), Verbosity::NewtonIterations);
@@ -92,9 +94,10 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		console.print(fmt::format("max step = {:.2e}  |", step), Verbosity::NewtonIterations);
 
 		// Convergence?
-		assembled = global_energy.evaluate_E_grad();
 		logger.start_timing("evaluate_E_grad");
+		callbacks.run_before_energy_evaluation();
 		assembled = global_energy.evaluate_E_grad();
+		callbacks.run_after_energy_evaluation();
 		logger.stop_timing_add("evaluate_E_grad");
 		logger.add_to_timer("compiled_E_g (acc)", assembled.compiled_runtime);
 		residual = assembled.grad->norm();
@@ -118,7 +121,9 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 
 			// Sequence
 			logger.start_timing("evaluate_E");
+			callbacks.run_before_energy_evaluation();
 			assembled = global_energy.evaluate_E();
+			callbacks.run_after_energy_evaluation();
 			logger.stop_timing_add("evaluate_E");
 			logger.add_to_timer("compiled_E (acc)", assembled.compiled_runtime);
 
