@@ -20,7 +20,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		newton_it++;
 		this->it_count++;
 		if (newton_it == settings.newton.max_newton_iterations) {
-			console.print(fmt::format("\t| Max Newton iterations reached ({:d}) with residual {:.2e}\n", settings.newton.max_newton_iterations, residual), Verbosity::TimeSteps);
+			console.print(fmt::format("\n\t\t -> Max Newton iterations reached ({:d}) with residual {:.2e}\n", settings.newton.max_newton_iterations, residual), Verbosity::TimeSteps);
 			return NewtonError::TooManyNewtonIterations;
 		}
 
@@ -52,7 +52,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			logger.stop_timing_add("CG");
 
 			if (iterations == max_iterations) {  // TODO: Check
-				console.print("\t| CG didn't converged.", Verbosity::TimeSteps);
+				console.print("\n\t\t -> CG didn't converged.", Verbosity::TimeSteps);
 				return NewtonError::TooManyCGIterations;
 			}
 		}
@@ -66,7 +66,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 
 		// Sufficient descend
 		if (precomputed_dot > 0.0) {
-			console.print("\t| Line search doesn't descend.", Verbosity::TimeSteps);
+			console.print("\n\t\t -> Line search doesn't descend.", Verbosity::TimeSteps);
 			return NewtonError::LineSearchDoesntDescend;
 		}
 
@@ -78,7 +78,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		while (true) {
 
 			if (step < 0.01) {
-				console.print("\t| Valid step too small (less than 1%).", Verbosity::TimeSteps);
+				console.print("\n\t\t -> Valid step too small (less than 1%).", Verbosity::TimeSteps);
 				return NewtonError::InvalidConfiguration;
 			}
 
@@ -131,7 +131,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			line_search_it++;
 
 			if (line_search_it == settings.newton.max_line_search_iterations) {
-				console.print(fmt::format("\t| Max line search iterations reached ({d})", settings.newton.max_line_search_iterations), Verbosity::TimeSteps);
+				console.print(fmt::format("\n\t\t -> Max line search iterations reached ({d})", settings.newton.max_line_search_iterations), Verbosity::TimeSteps);
 				return NewtonError::TooManyLineSearchIterations;
 			}
 		}

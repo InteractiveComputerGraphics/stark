@@ -373,9 +373,9 @@ void stark::models::Cloth::set_material_preset(const int cloth_id, const Materia
 	switch (material)
 	{
 	case MaterialPreset::Cotton:
-		this->set_density(cloth_id, 0.3);
-		this->set_strain_parameters(cloth_id, 1e3, 0.3, 1.1);
-		this->set_bending_stiffness(cloth_id, 1e-4);
+		this->set_density(cloth_id, 0.2);
+		this->set_strain_parameters(cloth_id, 30.0, 0.3, 1.1);
+		this->set_bending_stiffness(cloth_id, 1e-5);
 		break;
 	default:
 		std::cout << "stark::models::Cloth::set_material_preset() error: cloth material preset not defined." << std::endl;

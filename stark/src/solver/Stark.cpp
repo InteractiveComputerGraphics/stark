@@ -99,7 +99,10 @@ bool stark::Stark::run_one_step()
 		NewtonError err = this->newton.solve(this->global_energy, this->callbacks, this->settings, this->console, this->logger);
 		this->logger.stop_timing_add("step");
 		const double t1 = omp_get_wtime();
-		this->console.print(fmt::format(" | runtime: {:.0f} ms\n", 1000.0 * (t1 - t0)), Verbosity::TimeSteps);
+
+		if (err == NewtonError::Successful) {
+			this->console.print(fmt::format(" | runtime: {:.0f} ms\n", 1000.0 * (t1 - t0)), Verbosity::TimeSteps);
+		}
 
 		if (err == NewtonError::InvalidConfiguration) {
 			this->settings.contact.adaptive_contact_stiffness.failed_iteration();
