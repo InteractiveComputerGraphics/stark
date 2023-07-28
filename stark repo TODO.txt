@@ -26,6 +26,8 @@ stark repo TODO
 		callbacks and evaluation should go together
 		does it make sense that it is it's own class? Maybe a function is better?
 		Timings don't add up to "total" because of aborted time steps
+		
+	* Parallel edge-edge case gives a lot of convergence problems. I need a solution for this...
 	
 
 Documentation

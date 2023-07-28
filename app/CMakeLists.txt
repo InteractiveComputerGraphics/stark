@@ -5,6 +5,8 @@ endif()
 set (CMAKE_CXX_FLAGS "-DEIGEN_MPL2_ONLY")
 
 set(SOURCE_FILES
+    scenes.cpp
+    scenes.h
     main.cpp
 	)
 

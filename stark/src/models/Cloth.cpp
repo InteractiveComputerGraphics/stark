@@ -653,6 +653,7 @@ void stark::models::Cloth::_update_contacts(Stark& sim)
 bool stark::models::Cloth::_is_valid_configuration(Stark& sim)
 {
 	if (!sim.settings.contact.collisions_enabled) { return true; }
+	if (!sim.settings.contact.enable_intersection_test) { return true; }
 	this->_update_collision_x(sim);
 	this->id.clear();
 	this->id.set_n_threads(sim.settings.execution.n_threads);

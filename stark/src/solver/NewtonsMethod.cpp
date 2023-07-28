@@ -15,7 +15,6 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 	int total_CG_it = 0;
 	double residual = std::numeric_limits<double>::max();
 	while (residual > settings.newton.newton_tol) {
-		console.print(fmt::format("\n\t\t {:d}. ", newton_it), Verbosity::NewtonIterations);
 		
 		newton_it++;
 		this->it_count++;
@@ -23,6 +22,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			console.print(fmt::format("\n\t\t -> Max Newton iterations reached ({:d}) with residual {:.2e}\n", settings.newton.max_newton_iterations, residual), Verbosity::TimeSteps);
 			return NewtonError::TooManyNewtonIterations;
 		}
+		console.print(fmt::format("\n\t\t {:d}. ", newton_it), Verbosity::NewtonIterations);
 
 		// Linear system
 		//// Evaluate and assemble
@@ -52,7 +52,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			logger.stop_timing_add("CG");
 
 			if (iterations == max_iterations) {  // TODO: Check
-				console.print("\n\t\t -> CG didn't converged.", Verbosity::TimeSteps);
+				console.print("\n\t\t -> CG didn't converged.\n", Verbosity::TimeSteps);
 				return NewtonError::TooManyCGIterations;
 			}
 		}
@@ -66,7 +66,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 
 		// Sufficient descend
 		if (precomputed_dot > 0.0) {
-			console.print("\n\t\t -> Line search doesn't descend.", Verbosity::TimeSteps);
+			console.print("\n\t\t -> Line search doesn't descend.\n", Verbosity::TimeSteps);
 			return NewtonError::LineSearchDoesntDescend;
 		}
 
@@ -78,7 +78,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		while (true) {
 
 			if (step < 0.01) {
-				console.print("\n\t\t -> Valid step too small (less than 1%).", Verbosity::TimeSteps);
+				console.print("\n\t\t -> Valid step too small (less than 1%).\n", Verbosity::TimeSteps);
 				return NewtonError::InvalidConfiguration;
 			}
 
@@ -112,7 +112,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		logger.start_timing("line_search");
 		int line_search_it = 0;
 		while (*assembled.E > suitable_backtracking_energy) {
-			console.print(fmt::format("\n\t\t\t {:d}. E/E_bt = {:.2e}", line_search_it, (*assembled.E)/suitable_backtracking_energy), Verbosity::NewtonIterations);
+			console.print(fmt::format("\n\t\t\t {:d}. step = {:.2e} | (1.0 - E/E_bt) = {:.2e}", line_search_it, step, 1.0 - (*assembled.E)/suitable_backtracking_energy), Verbosity::NewtonIterations);
 
 			// Reduce step
 			step *= settings.newton.line_search_multiplier;
@@ -131,7 +131,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			line_search_it++;
 
 			if (line_search_it == settings.newton.max_line_search_iterations) {
-				console.print(fmt::format("\n\t\t -> Max line search iterations reached ({d})", settings.newton.max_line_search_iterations), Verbosity::TimeSteps);
+				console.print(fmt::format("\n\t\t\t\t -> Max line search iterations reached ({:d}).\n", settings.newton.max_line_search_iterations), Verbosity::TimeSteps);
 				return NewtonError::TooManyLineSearchIterations;
 			}
 		}
@@ -143,6 +143,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 
 				this->line_search_debug_logger.add(label, fmt::format("{:.6e}", base_E));
 				this->line_search_debug_logger.add(label, fmt::format("{:.6e}", 1.0 - suitable_backtracking_energy / base_E));
+				this->line_search_debug_logger.add(label, fmt::format("{:.6e}", this->du.norm()));
 				for (double fstep = -1.0; fstep < 2.0; fstep += 0.01) {
 					if (this->debug_output_counter == 0) {
 						this->line_search_debug_logger.add("normalized_step_length", fmt::format("{:.6e}", fstep));
@@ -150,7 +151,9 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 
 					this->u1 = this->u0 + fstep * this->du;
 					global_energy.set_dofs(this->u1.data());
+					callbacks.run_before_energy_evaluation();
 					assembled = global_energy.evaluate_E();
+					callbacks.run_after_energy_evaluation();
 					const double v = (1.0 - (*assembled.E) / base_E);
 					this->line_search_debug_logger.add(label, fmt::format("{:.6e}", v));
 				}
@@ -161,6 +164,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 				// Restore state
 				this->u1 = this->u0 + step * this->du;
 				global_energy.set_dofs(this->u1.data());
+				console.print(fmt::format("\n\t\t\t\t line_search.txt updated [{}]", label), Verbosity::NewtonIterations);
 			}
 		}
 

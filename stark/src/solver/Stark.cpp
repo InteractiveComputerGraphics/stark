@@ -103,12 +103,10 @@ bool stark::Stark::run_one_step()
 		if (err == NewtonError::Successful) {
 			this->console.print(fmt::format(" | runtime: {:.0f} ms\n", 1000.0 * (t1 - t0)), Verbosity::TimeSteps);
 		}
-
-		if (err == NewtonError::InvalidConfiguration) {
-			this->settings.contact.adaptive_contact_stiffness.failed_iteration();
-			return this->run_one_step();
-		}
-		else if (err != NewtonError::Successful) {
+		else {
+			if (err == NewtonError::InvalidConfiguration) {
+				this->settings.contact.adaptive_contact_stiffness.failed_iteration();
+			}
 			this->settings.simulation.adaptive_time_step.failed_iteration();
 			if (this->settings.simulation.adaptive_time_step.value < this->settings.simulation.adaptive_time_step.min) {
 				this->console.print(fmt::format("Min time step size reached ({:.e}). Exiting simulation.\n", this->settings.simulation.adaptive_time_step.min), Verbosity::Frames);
