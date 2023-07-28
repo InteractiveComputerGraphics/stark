@@ -85,7 +85,7 @@ void stark::models::Cloth::init(Stark& sim)
 			energy.set_expression(Energy);
 		}
 	);
-
+	
 	//// Strain limiting
 	sim.global_energy.add_energy("cloth_strain_limiting", this->conn_mesh_numbered_triangles,
 		[&](symx::Energy& energy, symx::Element& mesh_idx_triangle)
@@ -129,7 +129,7 @@ void stark::models::Cloth::init(Stark& sim)
 			energy.activate(this->is_strain_limiting_active);
 		}
 	);
-
+	
 	//// Bergou06 Bending Energy
 	sim.global_energy.add_energy("cloth_bending", this->conn_numbered_mesh_internal_edges,
 		[&](symx::Energy& energy, symx::Element& mesh_idx_internal_edge)
@@ -142,7 +142,7 @@ void stark::models::Cloth::init(Stark& sim)
 			// Create symbols
 			std::vector<symx::Vector> v1 = energy.make_dof_vectors(dof, this->model.v1, internal_edge);
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, internal_edge);
-			symx::Matrix Q = energy.make_matrix(this->DXinv, { 4, 4 }, ie_idx);
+			symx::Matrix Q = energy.make_matrix(this->bergou_Q_matrix, { 4, 4 }, ie_idx);
 			symx::Scalar bending_stiffness = energy.make_scalar(this->bending_stiffness, mesh_idx);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 
@@ -159,7 +159,7 @@ void stark::models::Cloth::init(Stark& sim)
 			energy.set_expression(E);
 		}
 	);
-
+	
 	//// Prescribed nodes
 	sim.global_energy.add_energy("cloth_prescribed_positions", this->conn_enumerated_prescribed_positions,
 		[&](symx::Energy& energy, symx::Element& node)
@@ -598,6 +598,10 @@ void stark::models::Cloth::_update_collision_x(Stark& sim)
 
 void stark::models::Cloth::_before_time_step(Stark& sim)
 {
+	// x0 <- x1
+	this->model.x0 = this->model.x1;
+	this->model.v0 = this->model.v1;
+
 	this->_init_simulation_structures(sim.settings.execution.n_threads);
 	std::fill(this->model.v1.begin(), this->model.v1.end(), Eigen::Vector3d::Zero());
 }
@@ -608,10 +612,6 @@ void stark::models::Cloth::_after_time_step(Stark& sim)
 	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
 		this->model.x1[i] = this->model.x0[i] + dt * this->model.v1[i];
 	}
-
-	// x0 <- x1
-	this->model.x0 = this->model.x1;
-	this->model.v0 = this->model.v1;
 }
 void stark::models::Cloth::_write_frame(Stark& sim)
 {

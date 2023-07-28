@@ -21,6 +21,7 @@ stark repo TODO
 	* Naming of NewtonsMethod is confusing because it is technically the time step.
 	* It needs to be revisited as building something completely from zero ala hello world.
 		There are a lot of error catches we should put in place (like no dofs, no energies, empty stuff...)
+	* Timings per energy
 
 Documentation
 -------------

@@ -30,11 +30,11 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		symx::Assembled assembled = global_energy.evaluate_E_grad_hess();
 		logger.stop_timing_add("evaluate_E_grad_hess");
 		logger.add_to_timer("compiled_E_g_h (acc)", assembled.compiled_runtime);
-		console.print(fmt::format("dE = {:.2e}  |", assembled.grad.norm()), Verbosity::NewtonIterations);
+		console.print(fmt::format("dE0 = {:.2e}  |", assembled.grad->norm()), Verbosity::NewtonIterations);
 
 		//// Solve
 		this->du.resize(ndofs);
-		const Eigen::VectorXd rhs = -1.0 * assembled.grad;
+		const Eigen::VectorXd rhs = -1.0 * (*assembled.grad);
 
 		if (settings.newton.use_direct_linear_solve) {  // TODO: Clarify that one is directLU and the other is BCG without PSD checks
 			logger.start_timing("directLU");
@@ -57,10 +57,10 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		console.print(fmt::format("du = {:.2e}  |", this->du.norm()), Verbosity::NewtonIterations);
 
 		// Line search (for later use)
-		const double base_E = assembled.E;
-		const double precomputed_dot = this->du.dot(assembled.grad);
-		const double suitable_backtracking_energy = assembled.E + 1e-4 * precomputed_dot;
-		console.print(fmt::format("dE*du = {:.2e}  |", precomputed_dot), Verbosity::NewtonIterations);
+		const double base_E = *assembled.E;
+		const double precomputed_dot = this->du.dot(*assembled.grad);
+		const double suitable_backtracking_energy = base_E + 1e-4 * precomputed_dot;
+		console.print(fmt::format("dE0*du = {:.2e}  |", precomputed_dot), Verbosity::NewtonIterations);
 
 		// Sufficient descend
 		if (precomputed_dot > 0.0) {
@@ -96,7 +96,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		assembled = global_energy.evaluate_E_grad();
 		logger.stop_timing_add("evaluate_E_grad");
 		logger.add_to_timer("compiled_E_g (acc)", assembled.compiled_runtime);
-		residual = assembled.grad.norm();
+		residual = assembled.grad->norm();
 		console.print(fmt::format("dE1 = {:.2e}", residual), Verbosity::NewtonIterations);
 
 		if (residual < settings.newton.newton_tol) {
@@ -107,8 +107,8 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		const double step_valid_configuration = step;
 		logger.start_timing("line_search");
 		int line_search_it = 0;
-		while (assembled.E > suitable_backtracking_energy) {
-			console.print(fmt::format("\n\t\t\t {:d}. E/E_bt = {:.2e}", line_search_it, assembled.E/suitable_backtracking_energy), Verbosity::NewtonIterations);
+		while (*assembled.E > suitable_backtracking_energy) {
+			console.print(fmt::format("\n\t\t\t {:d}. E/E_bt = {:.2e}", line_search_it, (*assembled.E)/suitable_backtracking_energy), Verbosity::NewtonIterations);
 
 			// Reduce step
 			step *= settings.newton.line_search_multiplier;
@@ -146,7 +146,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 					this->u1 = this->u0 + fstep * this->du;
 					global_energy.set_dofs(this->u1.data());
 					assembled = global_energy.evaluate_E();
-					const double v = (1.0 - assembled.E / base_E);
+					const double v = (1.0 - (*assembled.E) / base_E);
 					this->line_search_debug_logger.add(label, fmt::format("{:.6e}", v));
 				}
 

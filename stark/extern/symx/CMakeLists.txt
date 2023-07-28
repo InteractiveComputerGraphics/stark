@@ -1,10 +1,4 @@
-# OpenMP
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
+cmake_minimum_required(VERSION 3.9)
 
 # Enable SIMD instructions and suppress related warnings
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -69,5 +63,19 @@ set(SOURCE_FILES
 
 # Add library
 add_library(symx ${SOURCE_FILES})
-target_include_directories(symx PUBLIC extern)
+
+# Include/link dependencies
+## OpenMP
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(symx OpenMP::OpenMP_CXX)
+endif()
+
+## Eigen
 target_include_directories(symx PUBLIC ${EIGEN3_INCLUDE_DIR})
+
+## BlockedSparseMatrix
+target_include_directories(symx PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/BlockedSparseMatrix/include)
+
+## picoSHA2
+target_include_directories(symx PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/picoSHA2/include)

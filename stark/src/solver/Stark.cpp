@@ -117,16 +117,15 @@ bool stark::Stark::run(std::function<void()> callback)
 
 	//// Runtime
 	this->console.print("Runtime\n", Verbosity::Frames);
-	this->console.print(fmt::format("\t total: {:.1f} s\n", this->logger.timers["total"]), Verbosity::Frames);
-	this->console.print(fmt::format("\t evaluate_E_grad_hess: {:.1f} s\n", this->logger.timers["evaluate_E_grad_hess"]), Verbosity::Frames);
-	this->console.print(fmt::format("\t evaluate_E_grad_hess: {:.1f} s\n", this->logger.timers["evaluate_E_grad_hess"]), Verbosity::Frames);
-	this->console.print(fmt::format("\t evaluate_E_grad: {:.1f} s\n", this->logger.timers["evaluate_E_grad"]), Verbosity::Frames);
-	this->console.print(fmt::format("\t evaluate_E: {:.1f} s\n", this->logger.timers["evaluate_E"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t total: {:.3f} s\n", this->logger.timers["total"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t evaluate_E_grad_hess: {:.3f} s\n", this->logger.timers["evaluate_E_grad_hess"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t evaluate_E_grad: {:.3f} s\n", this->logger.timers["evaluate_E_grad"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t evaluate_E: {:.3f} s\n", this->logger.timers["evaluate_E"]), Verbosity::Frames);
 	if (!this->settings.newton.use_direct_linear_solve) {
-		this->console.print(fmt::format("\t CG: {:.1f} s\n", this->logger.timers["CG"]), Verbosity::Frames);
+		this->console.print(fmt::format("\t CG: {:.3f} s\n", this->logger.timers["CG"]), Verbosity::Frames);
 	}
 	else {
-		this->console.print(fmt::format("\t directLU: {:.1f} s\n", this->logger.timers["directLU"]), Verbosity::Frames);
+		this->console.print(fmt::format("\t directLU: {:.3f} s\n", this->logger.timers["directLU"]), Verbosity::Frames);
 	}
 	return true;
 }

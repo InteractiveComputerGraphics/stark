@@ -5,7 +5,8 @@ int stark::utils::solve_linear_system_with_CG(Eigen::VectorXd& solution_with_ini
 	lhs.set_preconditioner(bsm::Preconditioner::BlockDiagonal);
 	lhs.prepare_preconditioning(n_threads);
 
-	cg::Info info = cg::solve<double>(solution_with_initial_guess.data(), rhs.data(), (int)rhs.size(), tol, max_iterations,
+	const int ndofs = (int)rhs.size();
+	cg::Info info = cg::solve<double>(solution_with_initial_guess.data(), rhs.data(), ndofs, tol, max_iterations,
 		[&](double* b, const double* x, const int size) { lhs.spmxv_from_ptr(b, x, n_threads);  },
 		[&](double* z, const double* r, const int size) { lhs.apply_preconditioning(z, r, n_threads); }
 	, n_threads);

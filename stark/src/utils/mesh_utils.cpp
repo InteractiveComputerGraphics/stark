@@ -114,7 +114,7 @@ void stark::utils::compute_node_normals(std::vector<Eigen::Vector3d>& output, co
 }
 void stark::utils::generate_triangular_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, const Eigen::Vector2d& bottom, const Eigen::Vector2d& top, const std::array<int, 2>& n_quads_per_dim, const double z)
 {
-	assert(bottom[0] <= top[0] && bottom[1] <= top[1] && bottom[2] <= top[2]);
+	assert(bottom[0] <= top[0] && bottom[1] <= top[1]);
 
 	// Precomputation
 	const int nx = n_quads_per_dim[0] + 1;
@@ -185,13 +185,13 @@ void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Ve
 		vtk_file.write_empty(path);
 	}
 	else {
+		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.set_cells_from_twice_indexable(triangles, vtkio::CellType::Triangle);
 		if (generate_normals) {
 			std::vector<Eigen::Vector3d> normals;
 			compute_node_normals(normals, vertices, triangles);
 			vtk_file.set_point_data_from_twice_indexable("normals", normals, vtkio::AttributeType::Vectors);
 		}
-		vtk_file.set_points_from_twice_indexable(vertices);
-		vtk_file.set_cells_from_twice_indexable(triangles, vtkio::CellType::Triangle);
 		vtk_file.write(path);
 	}
 }

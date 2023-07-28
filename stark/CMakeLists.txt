@@ -1,12 +1,6 @@
-# OpenMP
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
+cmake_minimum_required(VERSION 3.9)
 
-# Eigen (also used in projects below)
+# Eigen path (also used in projects below)
 set(EIGEN3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/Eigen)
 if( NOT EIGEN3_INCLUDE_DIR )
     message( FATAL_ERROR "Please point the environment variable EIGEN3_INCLUDE_DIR to the include directory of your Eigen3 installation.")
@@ -65,6 +59,12 @@ set(UTILS_FILES
 add_library(stark ${SOLVER_FILES} ${MODELS_FILES} ${UTILS_FILES})
 
 # Include/link dependencies
+## OpenMP
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(stark OpenMP::OpenMP_CXX)
+endif()
+
 ## SymX
 target_link_libraries(stark symx)
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/symx/include)

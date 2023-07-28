@@ -392,6 +392,9 @@ namespace symx
 		using UNDERLYING_FLOAT = UNDERLYING_TYPE<COMPILED_FLOAT>;
 		constexpr int N_SIMD = get_n_items_in_simd<COMPILED_FLOAT>();
 
+		// Init
+		this->thread_compiled_timing.reset(n_threads);
+
 		// Update connectivity and pointers
 		const int32_t n_elements = this->connectivity_n_elements();
 		if (n_elements == 0) { return; } // Early exit
@@ -437,7 +440,7 @@ namespace symx
 		// Connectivity loop
 		const int total_avx_lines = (n_elements % N_SIMD == 0) ? n_elements / N_SIMD : n_elements / N_SIMD + 1;
 
-		this->thread_compiled_timing.reset(n_threads);
+		
 		#pragma omp parallel for schedule(static) num_threads(n_threads) if(total_avx_lines > 2*n_threads)
 		for (int avx_i = 0; avx_i < total_avx_lines; avx_i++) {
 			const int thread_id = omp_get_thread_num();

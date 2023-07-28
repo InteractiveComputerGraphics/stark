@@ -1,9 +1,5 @@
 #include "Assembly.h"
 
-symx::Assembly::~Assembly()
-{
-}
-
 void symx::Assembly::reset(const std::vector<int>& dof_set_offsets, const int n_threads, const bool reset_hess, const bool reset_grad)
 {
 	this->dof_set_offsets = dof_set_offsets;

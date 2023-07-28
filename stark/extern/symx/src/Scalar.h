@@ -3,7 +3,7 @@
 #include <vector>
 #include <cassert>
 
-#include "../extern/picoSHA2/picosha2.h"
+#include <picoSHA2/picosha2.h>
 
 #include "Expressions.h"
 
