@@ -187,6 +187,9 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 				case EdgeEdgeDistanceType::EA_EB:
 					this->thread_results[thread_id].edge_edge.push_back({ {edge_a.set, { ea[0], ea[1] }}, {edge_b.set, { eb[0], eb[1] }} });
 					break;
+
+				case EdgeEdgeDistanceType::Parallel:
+					break;
 				}
 			}
 		}

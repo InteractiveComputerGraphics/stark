@@ -4,9 +4,11 @@
     https://github.com/ipc-sim/ipc-toolkit/blob/main
 */
 
+#include <iostream>
 #include <cassert>
 #include <array>
 #include <cstdint>
+#include <limits>
 
 double point_point_sq_distance(const tmcd::Vec3d& p0, const tmcd::Vec3d& p1)
 {
@@ -79,7 +81,9 @@ std::array<double, 2> point_triangle_unrolled_edge_parametrization(const tmcd::V
 
 tmcd::EdgeEdgeDistanceType tmcd::edge_edge_distance_type(const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1)
 {
-    constexpr double PARALLEL_THRESHOLD = 1.0e-20;
+	// DEGUB: Find the correct tolerance
+    constexpr double PARALLEL_THRESHOLD = 1e-20;
+	constexpr double PARALLEL_DEG_THRESHOLD = 0.001;
 
     const Vec3d u = ea1 - ea0;
     const Vec3d v = eb1 - eb0;
@@ -105,8 +109,14 @@ tmcd::EdgeEdgeDistanceType tmcd::edge_edge_distance_type(const Vec3d& ea0, const
 
 	// Special handling for parallel edges
 	const double parallel_tolerance = PARALLEL_THRESHOLD * std::max(1.0, a * c);
-	if (u.cross(v).squaredNorm() < parallel_tolerance) {
-		return edge_edge_parallel_distance_type(ea0, ea1, eb0, eb1);
+	//const double cross_norm_squared = u.cross(v).squaredNorm();
+
+	const double angle = 180.0 * std::acos(u.dot(v) / (u.norm() * v.norm())) / 3.14159265358979323846;  // DEBUG
+	std::cout << "angle: " << angle << std::endl;
+	if (angle < PARALLEL_DEG_THRESHOLD) {
+		std::cout << "X" << std::endl;
+		return EdgeEdgeDistanceType::Parallel;
+		//return edge_edge_parallel_distance_type(ea0, ea1, eb0, eb1);
 	}
 
 	EdgeEdgeDistanceType default_case = EdgeEdgeDistanceType::EA_EB;
@@ -209,32 +219,16 @@ double tmcd::edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const V
 {
     nearest_entity = edge_edge_distance_type(ea0, ea1, eb0, eb1);
     switch (nearest_entity) {
-    case EdgeEdgeDistanceType::EA0_EB0:
-        return point_point_sq_distance(ea0, eb0);
-
-    case EdgeEdgeDistanceType::EA0_EB1:
-        return point_point_sq_distance(ea0, eb1);
-
-    case EdgeEdgeDistanceType::EA1_EB0:
-        return point_point_sq_distance(ea1, eb0);
-
-    case EdgeEdgeDistanceType::EA1_EB1:
-        return point_point_sq_distance(ea1, eb1);
-
-    case EdgeEdgeDistanceType::EA_EB0:
-        return point_line_sq_distance(eb0, ea0, ea1);
-
-    case EdgeEdgeDistanceType::EA_EB1:
-        return point_line_sq_distance(eb1, ea0, ea1);
-
-    case EdgeEdgeDistanceType::EA0_EB:
-        return point_line_sq_distance(ea0, eb0, eb1);
-
-    case EdgeEdgeDistanceType::EA1_EB:
-        return point_line_sq_distance(ea1, eb0, eb1);
-
-    case EdgeEdgeDistanceType::EA_EB:
-        return line_line_sq_distance(ea0, ea1, eb0, eb1);
+    case EdgeEdgeDistanceType::EA0_EB0: return point_point_sq_distance(ea0, eb0);
+    case EdgeEdgeDistanceType::EA0_EB1: return point_point_sq_distance(ea0, eb1);
+    case EdgeEdgeDistanceType::EA1_EB0: return point_point_sq_distance(ea1, eb0);
+    case EdgeEdgeDistanceType::EA1_EB1: return point_point_sq_distance(ea1, eb1);
+    case EdgeEdgeDistanceType::EA_EB0: return point_line_sq_distance(eb0, ea0, ea1);
+    case EdgeEdgeDistanceType::EA_EB1: return point_line_sq_distance(eb1, ea0, ea1);
+    case EdgeEdgeDistanceType::EA0_EB: return point_line_sq_distance(ea0, eb0, eb1);
+    case EdgeEdgeDistanceType::EA1_EB: return point_line_sq_distance(ea1, eb0, eb1);
+    case EdgeEdgeDistanceType::EA_EB: return line_line_sq_distance(ea0, ea1, eb0, eb1);
+    case EdgeEdgeDistanceType::Parallel: return std::numeric_limits<double>::max();
 
     default:
         return 0.0;  // Supresses warning. This case can't happen.

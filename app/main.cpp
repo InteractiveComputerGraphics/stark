@@ -5,5 +5,6 @@
 int main()
 {
 	//hanging_cloth();
-	collision_cloth_test();
+	//collision_cloth_test();
+	collision_cloth_parallel_edge_test();
 }

@@ -23,6 +23,7 @@ namespace tmcd
         /// The edges are closest at vertex 1 of edge A and the interior of edge B.
         EA1_EB,
         EA_EB, ///< The edges are closest at an interior point of edge A and B.
+        Parallel
     };
     EdgeEdgeDistanceType edge_edge_distance_type(const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1);
     EdgeEdgeDistanceType edge_edge_parallel_distance_type(const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1);

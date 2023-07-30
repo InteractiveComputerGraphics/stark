@@ -5,7 +5,7 @@ void hanging_cloth()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "hanging_cloth";
-	settings.output.output_directory = "../output/hanging_cloth";
+	settings.output.output_directory = "../output/" + settings.output.simulation_name;
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.execution.end_simulation_time = 10.0;
@@ -33,12 +33,11 @@ void hanging_cloth()
 		}
 	);
 }
-
 void collision_cloth_test()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "collision_cloth_test";
-	settings.output.output_directory = "../output/collision_cloth_test";
+	settings.output.output_directory = "../output/" + settings.output.simulation_name;
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 2.0;
@@ -68,6 +67,47 @@ void collision_cloth_test()
 	const int fall_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
 
 	simulation.cloth.set_damping(0.2);
+
+	// Run
+	simulation.stark.run();
+}
+void collision_cloth_parallel_edge_test()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "collision_cloth_parallel_edge_test";
+	settings.output.output_directory = "../output/" + settings.output.simulation_name;
+	settings.output.codegen_directory = "../output/codegen";
+	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
+	settings.execution.end_simulation_time = 2.0;
+	settings.execution.n_threads = 1;
+	settings.simulation.gravity = {0, 0, 0};
+
+	settings.newton.debug_line_search_output = false;
+	settings.newton.use_direct_linear_solve = false;
+	settings.newton.project_to_PD = false;
+
+	settings.contact.collisions_enabled = true;
+	settings.contact.edge_edge_enabled = true;
+	settings.contact.enable_intersection_test = true;
+	settings.contact.dhat = 0.1;
+	stark::models::Simulation simulation(settings);
+
+	// Cloth
+	const int n = 1;
+	std::vector<Eigen::Vector3d> vertices;
+	std::vector<std::array<int, 3>> triangles;
+	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n });
+	const int large_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
+	for (int i = 0; i < (int)vertices.size(); i++) {
+		simulation.cloth.set_vertex_target_position_as_initial(large_id, i);
+	}
+	stark::utils::scale(vertices, {0.5, 0.5, 1.0});
+	stark::utils::move(vertices, { 0.8, 0.0, 0.0 });
+	stark::utils::rotate_deg(vertices, 0.000001, Eigen::Vector3d::UnitX());
+	const int small_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
+	for (int i = 0; i < (int)vertices.size(); i++) {
+		simulation.cloth.set_vertex_target_position_as_initial(small_id, i);
+	}
 
 	// Run
 	simulation.stark.run();

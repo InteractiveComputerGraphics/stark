@@ -28,6 +28,15 @@ stark repo TODO
 		Timings don't add up to "total" because of aborted time steps
 		
 	* Parallel edge-edge case gives a lot of convergence problems. I need a solution for this...
+		- I **really** have to understand everything that happens in the edge-edge. Sometimes I think I understand it and then it goes into another branch where I have no clue what happens.
+		- Stop reporting perfectly parallel edges
+		- I need to come up with the logic for discarding/accepting parallel edges configurations
+		
+	-> Can I come up with a better edge-edge distance function?
+		Just some distance related function from 4 points. 
+		Maybe the point-point distance that is magnetized to the center as they get parallel?
+	
+	
 	
 
 Documentation
