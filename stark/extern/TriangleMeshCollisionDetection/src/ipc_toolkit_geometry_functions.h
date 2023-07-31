@@ -25,9 +25,10 @@ namespace tmcd
         EA_EB, ///< The edges are closest at an interior point of edge A and B.
         Parallel
     };
-    EdgeEdgeDistanceType edge_edge_distance_type(const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1);
+    EdgeEdgeDistanceType edge_edge_distance_type(const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1, const double& parallel_cross_norm_threshold);
     EdgeEdgeDistanceType edge_edge_parallel_distance_type(const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1);
-    double edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1);
+    double edge_edge_sq_distance_from_type(const EdgeEdgeDistanceType& nearest_entity, const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1);
+    double edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1, const double& parallel_cross_norm_threshold);
 
     /// @brief Closest pair between a point and triangle.
     enum class PointTriangleDistanceType {

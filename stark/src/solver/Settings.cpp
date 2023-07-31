@@ -51,7 +51,6 @@ std::string to_string(const Eigen::Vector3d& v)
 	return fmt::format("({:f}, {:f}, {:f})", v[0], v[1], v[2]);
 }
 
-
 stark::Settings::Settings()
 {
 	// Initialize default parameters
@@ -97,6 +96,8 @@ std::string stark::Settings::as_string() const
 	out += "\n     Contact";
 	out += "\n         adaptive_contact_stiffness" + to_string(this->contact.adaptive_contact_stiffness);
 	out += "\n         dhat: " + fmt::format("{:.1e}", this->contact.dhat);
+	out += "\n         edge_edge_cross_norm_cutoff: " + fmt::format("{:.1e}", this->contact.edge_edge_cross_norm_cutoff);
+	out += "\n         edge_edge_cross_norm_threshold: " + fmt::format("{:.1e}", this->contact.edge_edge_cross_norm_threshold);
 	out += "\n         collisions_enabled: " + to_string(this->contact.collisions_enabled);
 	out += "\n         triangle_point_enabled: " + to_string(this->contact.triangle_point_enabled);
 	out += "\n         edge_edge_enabled: " + to_string(this->contact.edge_edge_enabled);

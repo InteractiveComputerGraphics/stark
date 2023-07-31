@@ -79,11 +79,10 @@ std::array<double, 2> point_triangle_unrolled_edge_parametrization(const tmcd::V
 }
 
 
-tmcd::EdgeEdgeDistanceType tmcd::edge_edge_distance_type(const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1)
+tmcd::EdgeEdgeDistanceType tmcd::edge_edge_distance_type(const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1, const double& parallel_cross_norm_threshold)
 {
 	// DEGUB: Find the correct tolerance
     constexpr double PARALLEL_THRESHOLD = 1e-20;
-	constexpr double PARALLEL_DEG_THRESHOLD = 0.001;
 
     const Vec3d u = ea1 - ea0;
     const Vec3d v = eb1 - eb0;
@@ -111,10 +110,11 @@ tmcd::EdgeEdgeDistanceType tmcd::edge_edge_distance_type(const Vec3d& ea0, const
 	const double parallel_tolerance = PARALLEL_THRESHOLD * std::max(1.0, a * c);
 	//const double cross_norm_squared = u.cross(v).squaredNorm();
 
-	const double angle = 180.0 * std::acos(u.dot(v) / (u.norm() * v.norm())) / 3.14159265358979323846;  // DEBUG
-	std::cout << "angle: " << angle << std::endl;
-	if (angle < PARALLEL_DEG_THRESHOLD) {
-		std::cout << "X" << std::endl;
+	const double cos_angle = u.dot(v) / (u.norm() * v.norm());
+	const double cross_norm = u.cross(v).norm();
+	//std::cout << "angle deg: " << 180.0 * std::acos(cos_angle) / 3.14159265358979323846 << ", cross_norm: " << cross_norm << std::endl;
+	if (cross_norm < parallel_cross_norm_threshold) {
+		//std::cout << "X" << std::endl;
 		return EdgeEdgeDistanceType::Parallel;
 		//return edge_edge_parallel_distance_type(ea0, ea1, eb0, eb1);
 	}
@@ -215,9 +215,8 @@ tmcd::EdgeEdgeDistanceType tmcd::edge_edge_parallel_distance_type(const Vec3d& e
 	assert(eac != 2 || ebc != 2); // This case results in a degenerate line-line
 	return EdgeEdgeDistanceType(ebc < 2 ? (eac << 1 | ebc) : (6 + eac));
 }
-double tmcd::edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1)
+double tmcd::edge_edge_sq_distance_from_type(const EdgeEdgeDistanceType& nearest_entity, const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1)
 {
-    nearest_entity = edge_edge_distance_type(ea0, ea1, eb0, eb1);
     switch (nearest_entity) {
     case EdgeEdgeDistanceType::EA0_EB0: return point_point_sq_distance(ea0, eb0);
     case EdgeEdgeDistanceType::EA0_EB1: return point_point_sq_distance(ea0, eb1);
@@ -228,11 +227,24 @@ double tmcd::edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const V
     case EdgeEdgeDistanceType::EA0_EB: return point_line_sq_distance(ea0, eb0, eb1);
     case EdgeEdgeDistanceType::EA1_EB: return point_line_sq_distance(ea1, eb0, eb1);
     case EdgeEdgeDistanceType::EA_EB: return line_line_sq_distance(ea0, ea1, eb0, eb1);
-    case EdgeEdgeDistanceType::Parallel: return std::numeric_limits<double>::max();
-
+    case EdgeEdgeDistanceType::Parallel: 
+		std::cout << "tmcd::edge_edge_sq_distance_from_type() error: Can't compute distances from type Parallel." << std::endl;
+		exit(-1);
+		return 0.0;
     default:
         return 0.0;  // Supresses warning. This case can't happen.
     }
+}
+double tmcd::edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1, const double& parallel_cross_norm_threshold)
+{
+    nearest_entity = edge_edge_distance_type(ea0, ea1, eb0, eb1, parallel_cross_norm_threshold);
+	if (nearest_entity == EdgeEdgeDistanceType::Parallel) {
+		EdgeEdgeDistanceType subtype = edge_edge_parallel_distance_type(ea0, ea1, eb0, eb1);
+		return edge_edge_sq_distance_from_type(subtype, ea0, ea1, eb0, eb1);
+	}
+	else {
+		return edge_edge_sq_distance_from_type(nearest_entity, ea0, ea1, eb0, eb1);
+	}
 }
 tmcd::PointTriangleDistanceType tmcd::point_triangle_distance_type(const Vec3d& p, const Vec3d& t0, const Vec3d& t1, const Vec3d& t2)
 {

@@ -1,5 +1,6 @@
 #include "ProximityDetection.h"
 
+#include <iostream>
 #include <omp.h>
 
 #include "helpers.h"
@@ -29,6 +30,10 @@ void ProximityDetection::clear()
 	this->bp.clear();
 	this->results.clear();
 }
+void tmcd::ProximityDetection::set_edge_edge_parallel_threshold(const double cos_angle)
+{
+	this->edge_edge_parallel_cross_norm_threshold = cos_angle;
+}
 int32_t ProximityDetection::get_n_meshes() const
 {
 	return this->bp.get_n_meshes();
@@ -57,6 +62,11 @@ void tmcd::ProximityDetection::disable_edge_edge(const bool disable)
 
 const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, const BroadPhaseStrategy strat)
 {
+	if (this->edge_edge_parallel_cross_norm_threshold < 0.0) {
+		std::cout << "tmcd::ProximityDetection::run() error: edge-edge parallel threshold not set. Use ProximityDetection.set_edge_edge_parallel_threshold()." << std::endl;
+		exit(-1);
+	}
+
 	const double total_t0 = omp_get_wtime();
 
 	// Run broad phase
@@ -147,7 +157,7 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 			const Vec3d q = this->meshes.get_coords(edge_b.set, eb[1]);
 
 			EdgeEdgeDistanceType nearest_entity;
-			const double dist_sq = edge_edge_sq_distance(nearest_entity, a, b, p, q);
+			const double dist_sq = edge_edge_sq_distance(nearest_entity, a, b, p, q, this->edge_edge_parallel_cross_norm_threshold);
 			if (dist_sq < enlargement_sq) {
 
 				const int thread_id = omp_get_thread_num();
@@ -189,6 +199,8 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 					break;
 
 				case EdgeEdgeDistanceType::Parallel:
+					// DEBUG: Do not report
+					//this->thread_results[thread_id].edge_edge.push_back({ {edge_a.set, { ea[0], ea[1] }}, {edge_b.set, { eb[0], eb[1] }} });
 					break;
 				}
 			}

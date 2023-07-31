@@ -20,6 +20,7 @@ void symx::Energy::set_conditional_expression(const Scalar& expr, const Scalar& 
 	this->cond = std::make_unique<Scalar>(cond);
 	this->compiled_derivatives.update_connectivity(l2data_int(this->connectivity_after_condition), l2n_elements_int(this->connectivity_after_condition, this->n_items_per_element));
 	this->compiled_derivatives_d.update_connectivity(l2data_int(this->connectivity_after_condition), l2n_elements_int(this->connectivity_after_condition, this->n_items_per_element));
+	this->compiled_condition.update_connectivity(l2data_int(this->connectivity_after_condition), l2n_elements_int(this->connectivity_after_condition, this->n_items_per_element));
 	this->has_condition = true;
 }
 void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arrays, const bool suppress_compiler_output)
@@ -262,6 +263,7 @@ void symx::Energy::evaluate_E_grad_hess(Assembly& assembly)
 void symx::Energy::_update_connectivity_conditionally(const int n_threads)
 {
 	const int n_original_elements = this->compiled_condition.connectivity_n_elements();
+	if (n_original_elements == 0) { return; }
 	this->positive_conditions.resize(n_original_elements);
 	this->compiled_condition.run(n_threads,
 		[this](const int32_t iteration, const int32_t thread_id, const int32_t* conn, const double* sol)

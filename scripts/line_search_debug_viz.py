@@ -2,12 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use("seaborn-v0_8")
 
-path = "D:/builds/stark/output/\collision_cloth_parallel_edge_test/line_search.txt"
+path = "D:/builds/stark/output/collision_cloth_parallel_edge_test/line_search.txt"
 
 series = {line.split(":")[0]: np.array(line.split(":")[1][:-2].split(", "), np.float64) for line in open(path).read().split("\n") if len(line) > 0}
 
 x = series["normalized_step_length"]
-s = series["5"]
+s = series["0"]
 
 plt.close()
 plt.figure()

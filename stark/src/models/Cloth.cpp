@@ -267,8 +267,27 @@ void stark::models::Cloth::init(Stark& sim)
 			{
 				std::vector<symx::Vector> P = get_x1({ conn[0], conn[1] }, energy);
 				std::vector<symx::Vector> Q = get_x1({ conn[2], conn[3] }, energy);
-				symx::Scalar d = distance_line_line<symx::Scalar>(P[0], P[1], Q[0], Q[1]);
-				set_barrier_energy(d, energy);
+				symx::Scalar k = energy.make_scalar(sim.settings.contact.adaptive_contact_stiffness.value);
+				symx::Scalar dhat = energy.make_scalar(sim.settings.contact.dhat);
+				symx::Scalar cutoff = energy.make_scalar(sim.settings.contact.edge_edge_cross_norm_cutoff);
+				symx::Scalar threshold = energy.make_scalar(sim.settings.contact.edge_edge_cross_norm_threshold);
+
+				// Line-Line distance
+				symx::Vector u = P[1] - P[0];
+				symx::Vector v = Q[1] - Q[0];
+				symx::Vector n = u.cross3(v);
+				symx::Scalar n_norm = n.norm();
+				symx::Vector n_normalized = n/n_norm;
+				symx::Scalar signed_d = u.dot(n_normalized);
+				symx::Scalar d = symx::sqrt(signed_d.powN(2));
+
+				// Mollified energy
+				//symx::Scalar mollifier = mollifier_cubic(n_norm, cutoff, threshold);
+				symx::Scalar E = barrier_energy(d, dhat, k);
+				//symx::Scalar E = mollifier*barrier_energy(d, dhat, k);
+				energy.set_expression(E);
+				//energy.set_conditional_expression(E, n_norm - cutoff);
+				energy.activate(sim.settings.contact.collisions_enabled);
 			}
 		);
 	}
@@ -627,6 +646,7 @@ void stark::models::Cloth::_update_contacts(Stark& sim)
 	this->_update_collision_x(sim);
 	this->pd.clear();
 	this->pd.set_n_threads(sim.settings.execution.n_threads);
+	this->pd.set_edge_edge_parallel_threshold(sim.settings.contact.edge_edge_cross_norm_cutoff); // Do not report parallel edges under cutoff cross product
 	this->pd.add_mesh(&this->collision_x[0][0], (int)this->collision_x.size(), &this->model.mesh.connectivity[0][0], this->model.mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
 	this->pd.disable_point_triangle(!sim.settings.contact.triangle_point_enabled);
 	this->pd.disable_edge_edge(!sim.settings.contact.edge_edge_enabled);
@@ -649,6 +669,8 @@ void stark::models::Cloth::_update_contacts(Stark& sim)
 	for (const auto& pair : proximity.edge_edge) {
 		this->contacts.edge_edge.push_back({ pair.first.vertices[0], pair.first.vertices[1], pair.second.vertices[0], pair.second.vertices[1] });
 	}
+
+	std::cout << fmt::format("{} - {} - {} - {}", proximity.point_point.size(), proximity.point_edge.size(), proximity.point_triangle.size(), proximity.edge_edge.size()) << std::endl;
 }
 bool stark::models::Cloth::_is_valid_configuration(Stark& sim)
 {
