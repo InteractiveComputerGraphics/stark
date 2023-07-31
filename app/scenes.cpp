@@ -104,7 +104,7 @@ void collision_cloth_parallel_edge_test()
 	}
 	stark::utils::scale(vertices, {0.5, 0.5, 1.0});
 	stark::utils::move(vertices, { 0.8, 0.0, 0.0 });
-	stark::utils::rotate_deg(vertices, 10.0, Eigen::Vector3d::UnitX());
+	stark::utils::rotate_deg(vertices, 0.05, Eigen::Vector3d::UnitX());
 	const int small_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
 	//for (int i = 0; i < (int)vertices.size(); i++) {
 	//	simulation.cloth.set_vertex_target_position_as_initial(small_id, i);

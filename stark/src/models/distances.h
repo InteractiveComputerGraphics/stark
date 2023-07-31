@@ -36,10 +36,12 @@ namespace stark::models
 		return sqrt(d*d);
 	}
 	template<typename SCALAR, typename VECTOR3D>
-	SCALAR distance_line_line(const VECTOR3D& v11, const VECTOR3D& v12, const VECTOR3D& v21, const VECTOR3D& v22)
+	SCALAR distance_line_line(const VECTOR3D& a, const VECTOR3D& b, const VECTOR3D& p, const VECTOR3D& q)
 	{
-		const SCALAR signed_d = (v11 - v21).dot((v12 - v11).cross3(v22 - v21).normalized());
-		return sqrt(signed_d * signed_d);
+		symx::Vector n = (b - a).cross3(q - p);
+		symx::Scalar l = (p - a).dot(normal);
+		symx::Scalar d2 = l*l/n.dot(n);
+		return sqrt(d2);
 	}
 
 	//template<typename POTENTIAL>

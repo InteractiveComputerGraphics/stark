@@ -30,9 +30,9 @@ void ProximityDetection::clear()
 	this->bp.clear();
 	this->results.clear();
 }
-void tmcd::ProximityDetection::set_edge_edge_parallel_threshold(const double cos_angle)
+void tmcd::ProximityDetection::set_edge_edge_parallel_threshold(const double cross_norm)
 {
-	this->edge_edge_parallel_cross_norm_threshold = cos_angle;
+	this->edge_edge_parallel_cross_norm_threshold = cross_norm;
 }
 int32_t ProximityDetection::get_n_meshes() const
 {
@@ -199,8 +199,6 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 					break;
 
 				case EdgeEdgeDistanceType::Parallel:
-					// DEBUG: Do not report
-					//this->thread_results[thread_id].edge_edge.push_back({ {edge_a.set, { ea[0], ea[1] }}, {edge_b.set, { eb[0], eb[1] }} });
 					break;
 				}
 			}

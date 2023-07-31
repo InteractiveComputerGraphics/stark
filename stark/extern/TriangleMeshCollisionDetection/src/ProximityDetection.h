@@ -14,7 +14,7 @@ namespace tmcd
 		~ProximityDetection() = default;
 
 		void clear();
-		void set_edge_edge_parallel_threshold(const double cos_angle);
+		void set_edge_edge_parallel_threshold(const double cross_norm);
 		void set_n_threads(const int32_t n_threads);
 		int32_t get_n_threads() const;
 		void set_max_recursion(const int32_t cap = 20);
@@ -36,7 +36,7 @@ namespace tmcd
 		/* Fields */
 		BroadPhasePTEE bp;
 		internals::Meshes meshes;
-		double edge_edge_parallel_cross_norm_threshold = -1.0;
+		double edge_edge_parallel_cross_norm_threshold = 1e-10;
 		bool is_point_triangle_disabled = false;
 		bool is_edge_edge_disabled = false;
 
