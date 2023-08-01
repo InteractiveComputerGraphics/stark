@@ -9,7 +9,7 @@ path = "D:/builds/stark/output/wrap/line_search.txt"
 series = {line.split(":")[0]: np.array(line.split(":")[1][:-2].split(", "), np.float64) for line in open(path).read().split("\n") if len(line) > 0}
 
 x = series["normalized_step_length"]
-s = series["108"]
+s = series["2363"]
 
 plt.close()
 plt.figure()

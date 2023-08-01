@@ -33,6 +33,12 @@ double point_plane_sq_distance(const tmcd::Vec3d& p, const tmcd::Vec3d& t0, cons
 {
     return point_plane_sq_distance(p, t0, (t1 - t0).cross(t2 - t0));
 }
+double clamp(double v, double min, double max)
+{
+	if (v < min) { return min; }
+	if (v > max) { return max; }
+	return v;
+}
 double tmcd::edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1, const double parallel_cross_norm_threshold)
 {
 	// Based on Ericson05: Real-time collision detection
