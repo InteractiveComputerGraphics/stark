@@ -35,6 +35,9 @@ double point_plane_sq_distance(const tmcd::Vec3d& p, const tmcd::Vec3d& t0, cons
 }
 double tmcd::edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1, const double parallel_cross_norm_threshold)
 {
+	// Based on Ericson05: Real-time collision detection
+	// Note that degenerated cases have been omitted and parallel cases have a special treatment
+
 	const Vec3d da = ea1 - ea0; // Direction vector of segment S0
 	const Vec3d db = eb1 - eb0; // Direction vector of segment S1
 	const Vec3d r = ea0 - eb0;
@@ -44,11 +47,9 @@ double tmcd::edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const V
 	const double b = da.dot(db);
 	const double c = da.dot(r);
 	const double denom = a * e - b * b; // Always nonnegative
-	const double s = (b * f - c * e) / denom;  // arc of the closest point on L1 to L2
-	const double t = (b * s + f) / e;  // arc of the closest point on L2 to L1
+	const double cross_sq_norm = denom; // Same as da.cross(db).squaredNorm();
 
 	// Parallel cases (this particular check is relevant for IPC type of contact)
-	const double cross_sq_norm = da.cross(db).squaredNorm();
 	if (cross_sq_norm < parallel_cross_norm_threshold*parallel_cross_norm_threshold) {
 
 		// Check whether the edges overlap or are in front or behind each other
@@ -85,6 +86,17 @@ double tmcd::edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const V
 	}
 
 	// Non parallel cases
+	double s = clamp((b * f - c * e) / denom, 0.0, 1.0);  // arc of the closest point on L1 to L2
+	double t = (b * s + f) / e;  // arc of the closest point on L2 to L1
+	if (t < 0.0) {
+		t = 0.0;
+		s = clamp(-c / a, 0.0, 1.0);
+	}
+	else if (t > 1.0) {
+		t = 1.0;
+		s = clamp((b - c) / a, 0.0, 1.0);
+	}
+
 	if (s <= 0.0) {
 		if (t <= 0.0) {
 			nearest_entity = EdgeEdgeDistanceType::EA0_EB0;

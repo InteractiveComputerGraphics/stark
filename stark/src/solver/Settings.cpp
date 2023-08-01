@@ -54,7 +54,7 @@ std::string to_string(const Eigen::Vector3d& v)
 stark::Settings::Settings()
 {
 	// Initialize default parameters
-	this->execution.n_threads = omp_get_max_threads()/8;
+	this->execution.n_threads = omp_get_max_threads()/2;
 	
 	//// Adaptive Time step
 	this->simulation.adaptive_time_step.value = 0.01; // [s]

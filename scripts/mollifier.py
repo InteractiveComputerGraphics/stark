@@ -23,9 +23,6 @@ for k, v in cse[0]:
     print("const double %s = %s" % (k, v))
 print("const double f = %s" % cse[1][0])
 
-
-    
-
 def f_eval(x_, cutoff_, threshold_):
     if x_ < cutoff_:
         return 0.0

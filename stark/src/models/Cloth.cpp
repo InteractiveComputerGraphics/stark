@@ -680,7 +680,7 @@ void stark::models::Cloth::_update_contacts(Stark& sim)
 		this->contacts.edge_edge.push_back({ pair.first.vertices[0], pair.first.vertices[1], pair.second.vertices[0], pair.second.vertices[1] });
 	}
 
-	std::cout << fmt::format("{} - {} - {} - {}", proximity.point_point.size(), proximity.point_edge.size(), proximity.point_triangle.size(), proximity.edge_edge.size()) << " | ";
+	//std::cout << fmt::format("\n{} - {} - {} - {}", proximity.point_point.size(), proximity.point_edge.size(), proximity.point_triangle.size(), proximity.edge_edge.size()) << " | ";
 }
 bool stark::models::Cloth::_is_valid_configuration(Stark& sim)
 {
