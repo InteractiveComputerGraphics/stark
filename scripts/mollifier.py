@@ -18,8 +18,13 @@ sol = sympy.solve([
     df.subs({x: threshold})
     ], [a, b, c, d])
 
-for k, v in sol.items():
-    print("%s = %s" % (k, v))
+cse = sympy.cse(f.subs(sol))
+for k, v in cse[0]:
+    print("const double %s = %s" % (k, v))
+print("const double f = %s" % cse[1][0])
+
+
+    
 
 def f_eval(x_, cutoff_, threshold_):
     if x_ < cutoff_:

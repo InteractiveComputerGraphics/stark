@@ -280,9 +280,21 @@ void stark::models::Cloth::init(Stark& sim)
 				symx::Scalar d = symx::sqrt(d2);
 
 				// Mollified energy
-				symx::Scalar mollifier = mollifier_cubic(n_sq_norm, cutoff, threshold);
+				//symx::Scalar mollifier = mollifier_cubic(n_sq_norm, cutoff, threshold);
+				symx::Scalar x = n_sq_norm;
+				symx::Scalar x0 = 3.0*cutoff;
+				symx::Scalar x1 = 3.0*threshold;
+				symx::Scalar x2 = cutoff.powN(3) - cutoff.powN(2)*x1;
+				symx::Scalar x3 = 1.0/(-threshold.powN(3) + threshold.powN(2)*x0 + x2);
+				symx::Scalar f = 6.0*cutoff*threshold*x*x3 + 2.0*x.powN(3)*x3 + x.powN(2)*x3*(-x0 - x1) + x2*x3;
+				symx::Scalar lower_split = symx::branch(x - cutoff, f, x.get_zero());
+				symx::Scalar higher_split = symx::branch(x - threshold, x.get_one(), lower_split);
+				symx::Scalar mollifier_ = higher_split;
+
+				//symx::Scalar mollifier_ = symx::branch(n_sq_norm - cutoff, mollifier, d.get_zero());
 				//symx::Scalar E = barrier_energy(d, dhat, k);
-				symx::Scalar E = mollifier*barrier_energy(d, dhat, k);
+				symx::Scalar E = mollifier_*barrier_energy(d, dhat, k);
+				//symx::Scalar E = mollifier*barrier_energy(d, dhat, k);
 				energy.set_expression(E);
 				//energy.set_conditional_expression(E, n_sq_norm - cutoff);
 				energy.activate(sim.settings.contact.collisions_enabled);
