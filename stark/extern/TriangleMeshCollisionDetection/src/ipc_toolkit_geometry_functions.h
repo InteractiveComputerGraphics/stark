@@ -22,11 +22,11 @@ namespace tmcd
         EA0_EB,
         /// The edges are closest at vertex 1 of edge A and the interior of edge B.
         EA1_EB,
-        EA_EB, ///< The edges are closest at an interior point of edge A and B.
-        Parallel
+        EA_EB ///< The edges are closest at an interior point of edge A and B.
     };
-    double edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1, const double parallel_cross_norm_threshold = 1e-20);
-
+    double edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1, const double parallel_cross_norm_sq_tolerance = 1e-20);
+    EdgeEdgeDistanceType edge_edge_distance_type(const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1, const double parallel_cross_norm_sq_tolerance = 1e-20);
+    EdgeEdgeDistanceType edge_edge_parallel_distance_type(const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1);
 
     /// @brief Closest pair between a point and triangle.
     enum class PointTriangleDistanceType {

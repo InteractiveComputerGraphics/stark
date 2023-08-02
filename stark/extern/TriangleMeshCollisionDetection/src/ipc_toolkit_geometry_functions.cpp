@@ -39,112 +39,167 @@ double clamp(double v, double min, double max)
 	if (v > max) { return max; }
 	return v;
 }
-double tmcd::edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1, const double parallel_cross_norm_threshold)
+double tmcd::edge_edge_sq_distance(EdgeEdgeDistanceType& nearest_entity, const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1, const double parallel_cross_norm_sq_tolerance)
 {
-	// Based on Ericson05: Real-time collision detection
-	// Note that degenerated cases have been omitted and parallel cases have a special treatment
+	nearest_entity = edge_edge_distance_type(ea0, ea1, eb0, eb1, parallel_cross_norm_sq_tolerance);
+	switch (nearest_entity) {
+	case EdgeEdgeDistanceType::EA0_EB0:
+		return point_point_sq_distance(ea0, eb0);
 
-	const Vec3d da = ea1 - ea0; // Direction vector of segment S0
-	const Vec3d db = eb1 - eb0; // Direction vector of segment S1
-	const Vec3d r = ea0 - eb0;
-	const double a = da.dot(da); // Squared length of segment S1, always nonnegative
-	const double e = db.dot(db); // Squared length of segment S2, always nonnegative
-	const double f = db.dot(r);
-	const double b = da.dot(db);
-	const double c = da.dot(r);
-	const double denom = a * e - b * b; // Always nonnegative
-	const double cross_sq_norm = denom; // Same as da.cross(db).squaredNorm();
+	case EdgeEdgeDistanceType::EA0_EB1:
+		return point_point_sq_distance(ea0, eb1);
 
-	// Parallel cases (this particular check is relevant for IPC type of contact)
-	if (cross_sq_norm < parallel_cross_norm_threshold*parallel_cross_norm_threshold) {
+	case EdgeEdgeDistanceType::EA1_EB0:
+		return point_point_sq_distance(ea1, eb0);
 
-		// Check whether the edges overlap or are in front or behind each other
-		// TODO: Avoid sqrt ?
-		const double la = da.norm();
-		const Vec3d da_ = da/la;
-		const double b0_ = (eb0 - ea0).dot(da_)/la;
-		const double b1_ = (eb1 - ea0).dot(da_)/la;
+	case EdgeEdgeDistanceType::EA1_EB1:
+		return point_point_sq_distance(ea1, eb1);
 
-		if (b0_ <= 0.0 && b1_ <= 0.0) { // Parallel but eb fully behind a0
-			if (b0_ < b1_) {
-				nearest_entity = EdgeEdgeDistanceType::EA0_EB1;
-				return point_point_sq_distance(ea0, eb1);
-			}
-			else {
-				nearest_entity = EdgeEdgeDistanceType::EA0_EB0;
-				return point_point_sq_distance(ea0, eb0);
-			}
-		}
-		else if (b0_ >= 1.0 && b1_ >= 1.0) {  // Parallel but eb fully after a1
-			if (b0_ < b1_) {
-				nearest_entity = EdgeEdgeDistanceType::EA1_EB0;
-				return point_point_sq_distance(ea1, eb0);
-			}
-			else {
-				nearest_entity = EdgeEdgeDistanceType::EA1_EB1;
-				return point_point_sq_distance(ea1, eb1);
-			}
-		}
-		else {  // Parallel with an overlap
-			nearest_entity = EdgeEdgeDistanceType::Parallel;
-			return point_line_sq_distance(ea0, eb0, eb1);
-		}
+	case EdgeEdgeDistanceType::EA_EB0:
+		return point_line_sq_distance(eb0, ea0, ea1);
+
+	case EdgeEdgeDistanceType::EA_EB1:
+		return point_line_sq_distance(eb1, ea0, ea1);
+
+	case EdgeEdgeDistanceType::EA0_EB:
+		return point_line_sq_distance(ea0, eb0, eb1);
+
+	case EdgeEdgeDistanceType::EA1_EB:
+		return point_line_sq_distance(ea1, eb0, eb1);
+
+	case EdgeEdgeDistanceType::EA_EB:
+		return line_line_sq_distance(ea0, ea1, eb0, eb1);
+
+	default:
+		throw std::invalid_argument(
+			"Invalid distance type for edge-edge distance!");
+	}
+}
+tmcd::EdgeEdgeDistanceType tmcd::edge_edge_distance_type(const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1, const double parallel_cross_norm_sq_tolerance)
+{
+	const Vec3d u = ea1 - ea0;
+	const Vec3d v = eb1 - eb0;
+	const Vec3d w = ea0 - eb0;
+
+	const double a = u.squaredNorm(); // always ≥ 0
+	const double b = u.dot(v);
+	const double c = v.squaredNorm(); // always ≥ 0
+	const double d = u.dot(w);
+	const double e = v.dot(w);
+	const double D = a * c - b * b; // always ≥ 0
+
+	// Degenerate cases should not happen in practice, but we handle them
+	if (a == 0.0 && c == 0.0) {
+		return EdgeEdgeDistanceType::EA0_EB0;
+	}
+	else if (a == 0.0) {
+		return EdgeEdgeDistanceType::EA0_EB;
+	}
+	else if (c == 0.0) {
+		return EdgeEdgeDistanceType::EA_EB0;
 	}
 
-	// Non parallel cases
-	double s = clamp((b * f - c * e) / denom, 0.0, 1.0);  // arc of the closest point on L1 to L2
-	double t = (b * s + f) / e;  // arc of the closest point on L2 to L1
-	if (t < 0.0) {
-		t = 0.0;
-		s = clamp(-c / a, 0.0, 1.0);
-	}
-	else if (t > 1.0) {
-		t = 1.0;
-		s = clamp((b - c) / a, 0.0, 1.0);
+	// Special handling for parallel edges
+	// Original tolerance  ->  const double parallel_tolerance = PARALLEL_THRESHOLD * std::max(1.0, a * c);
+	if (u.cross(v).squaredNorm() < parallel_cross_norm_sq_tolerance) {
+		return edge_edge_parallel_distance_type(ea0, ea1, eb0, eb1);
 	}
 
-	if (s <= 0.0) {
-		if (t <= 0.0) {
-			nearest_entity = EdgeEdgeDistanceType::EA0_EB0;
-			return point_point_sq_distance(ea0, eb0);
-		}
-		else if (t >= 1.0) {
-			nearest_entity = EdgeEdgeDistanceType::EA0_EB1;
-			return point_point_sq_distance(ea0, eb1);
-		}
-		else {
-			nearest_entity = EdgeEdgeDistanceType::EA0_EB;
-			return point_line_sq_distance(ea0, eb0, eb1);
-		}
+	EdgeEdgeDistanceType default_case = EdgeEdgeDistanceType::EA_EB;
+
+	// compute the line parameters of the two closest points
+	const double sN = (b * e - c * d);
+	double tN, tD;   // tc = tN / tD
+	if (sN <= 0.0) { // sc < 0 ⟹ the s=0 edge is visible
+		tN = e;
+		tD = c;
+		default_case = EdgeEdgeDistanceType::EA0_EB;
 	}
-	else if (s >= 1.0) {
-		if (t <= 0.0) {
-			nearest_entity = EdgeEdgeDistanceType::EA1_EB0;
-			return point_point_sq_distance(ea1, eb0);
-		}
-		else if (t >= 1.0) {
-			nearest_entity = EdgeEdgeDistanceType::EA1_EB1;
-			return point_point_sq_distance(ea1, eb1);
-		}
-		else {
-			nearest_entity = EdgeEdgeDistanceType::EA1_EB;
-			return point_line_sq_distance(ea1, eb0, eb1);
-		}
+	else if (sN >= D) { // sc > 1 ⟹ the s=1 edge is visible
+		tN = e + b;
+		tD = c;
+		default_case = EdgeEdgeDistanceType::EA1_EB;
 	}
 	else {
-		if (t <= 0.0) {
-			nearest_entity = EdgeEdgeDistanceType::EA_EB0;
-			return point_line_sq_distance(eb0, ea0, ea1);
+		tN = (a * e - b * d);
+		tD = D; // default tD = D ≥ 0
+		if (tN > 0.0 && tN < tD
+			&& u.cross(v).squaredNorm() < parallel_cross_norm_sq_tolerance) {
+			// avoid coplanar or nearly parallel EE
+			if (sN < D / 2) {
+				tN = e;
+				tD = c;
+				default_case = EdgeEdgeDistanceType::EA0_EB;
+			}
+			else {
+				tN = e + b;
+				tD = c;
+				default_case = EdgeEdgeDistanceType::EA1_EB;
+			}
 		}
-		else if (t >= 1.0) {
-			nearest_entity = EdgeEdgeDistanceType::EA_EB1;
-			return point_line_sq_distance(eb1, ea0, ea1);
+		// else default_case stays EdgeEdgeDistanceType::EA_EB
+	}
+
+	if (tN <= 0.0) { // tc < 0 ⟹ the t=0 edge is visible
+		// recompute sc for this edge
+		if (-d <= 0.0) {
+			return EdgeEdgeDistanceType::EA0_EB0;
+		}
+		else if (-d >= a) {
+			return EdgeEdgeDistanceType::EA1_EB0;
 		}
 		else {
-			nearest_entity = EdgeEdgeDistanceType::EA_EB;
-			return line_line_sq_distance(ea0, ea1, eb0, eb1);
+			return EdgeEdgeDistanceType::EA_EB0;
 		}
 	}
+	else if (tN >= tD) { // tc > 1 ⟹ the t=1 edge is visible
+	 // recompute sc for this edge
+		if ((-d + b) <= 0.0) {
+			return EdgeEdgeDistanceType::EA0_EB1;
+		}
+		else if ((-d + b) >= a) {
+			return EdgeEdgeDistanceType::EA1_EB1;
+		}
+		else {
+			return EdgeEdgeDistanceType::EA_EB1;
+		}
+	}
+
+	return default_case;
+}
+tmcd::EdgeEdgeDistanceType tmcd::edge_edge_parallel_distance_type(const Vec3d& ea0, const Vec3d& ea1, const Vec3d& eb0, const Vec3d& eb1)
+{
+	const Vec3d ea = ea1 - ea0;
+	const double alpha = (eb0 - ea0).dot(ea) / ea.squaredNorm();
+	const double beta = (eb1 - ea0).dot(ea) / ea.squaredNorm();
+
+	uint8_t eac; // 0: EA0, 1: EA1, 2: EA
+	uint8_t ebc; // 0: EB0, 1: EB1, 2: EB
+	if (alpha < 0) {
+		eac = (0 <= beta && beta <= 1) ? 2 : 0;
+		ebc = (beta <= alpha) ? 0 : (beta <= 1 ? 1 : 2);
+	}
+	else if (alpha > 1) {
+		eac = (0 <= beta && beta <= 1) ? 2 : 1;
+		ebc = (beta >= alpha) ? 0 : (0 <= beta ? 1 : 2);
+	}
+	else {
+		eac = 2;
+		ebc = 0;
+	}
+
+	// f(0, 0) = 0000 = 0 -> EA0_EB0
+	// f(0, 1) = 0001 = 1 -> EA0_EB1
+	// f(1, 0) = 0010 = 2 -> EA1_EB0
+	// f(1, 1) = 0011 = 3 -> EA1_EB1
+	// f(2, 0) = 0100 = 4 -> EA_EB0
+	// f(2, 1) = 0101 = 5 -> EA_EB1
+	// f(0, 2) = 0110 = 6 -> EA0_EB
+	// f(1, 2) = 0111 = 7 -> EA1_EB
+	// f(2, 2) = 1000 = 8 -> EA_EB
+
+	assert(eac != 2 || ebc != 2); // This case results in a degenerate line-line
+	return EdgeEdgeDistanceType(ebc < 2 ? (eac << 1 | ebc) : (6 + eac));
 }
 std::array<double, 2> point_triangle_unrolled_edge_parametrization(const tmcd::Vec3d& p, const tmcd::Vec3d& e0, const tmcd::Vec3d& e1, const tmcd::Vec3d& n)
 {

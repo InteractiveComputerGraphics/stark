@@ -30,9 +30,13 @@ void ProximityDetection::clear()
 	this->bp.clear();
 	this->results.clear();
 }
-void tmcd::ProximityDetection::set_edge_edge_parallel_threshold(const double cross_norm)
+void tmcd::ProximityDetection::set_edge_edge_parallel_threshold(const double cross_norm_sq)
 {
-	this->edge_edge_parallel_cross_norm_threshold = cross_norm;
+	this->edge_edge_parallel_cross_norm_sq_threshold = cross_norm_sq;
+}
+void tmcd::ProximityDetection::set_edge_edge_parallel_cutoff(const double cross_norm_sq)
+{
+	this->edge_edge_parallel_cross_norm_sq_cutoff = cross_norm_sq;
 }
 int32_t ProximityDetection::get_n_meshes() const
 {
@@ -62,10 +66,10 @@ void tmcd::ProximityDetection::disable_edge_edge(const bool disable)
 
 const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, const BroadPhaseStrategy strat)
 {
-	if (this->edge_edge_parallel_cross_norm_threshold < 0.0) {
-		std::cout << "tmcd::ProximityDetection::run() error: edge-edge parallel threshold not set. Use ProximityDetection.set_edge_edge_parallel_threshold()." << std::endl;
-		exit(-1);
-	}
+	//if (this->edge_edge_parallel_cross_norm_sq_threshold < 0.0) {
+	//	std::cout << "tmcd::ProximityDetection::run() error: edge-edge parallel threshold not set. Use ProximityDetection.set_edge_edge_parallel_threshold()." << std::endl;
+	//	exit(-1);
+	//}
 
 	const double total_t0 = omp_get_wtime();
 
@@ -157,10 +161,19 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 			const Vec3d q = this->meshes.get_coords(edge_b.set, eb[1]);
 
 			EdgeEdgeDistanceType nearest_entity;
-			const double dist_sq = edge_edge_sq_distance(nearest_entity, a, b, p, q, this->edge_edge_parallel_cross_norm_threshold);
+			const double dist_sq = edge_edge_sq_distance(nearest_entity, a, b, p, q, this->edge_edge_parallel_cross_norm_sq_threshold);
 			if (dist_sq < enlargement_sq) {
-
 				const int thread_id = omp_get_thread_num();
+
+				// All cases (not only edge-edge) that are almost parallel are classified to edge-edge
+				const double cross_norm_sq = (b - a).cross(q - p).squaredNorm();
+				if (cross_norm_sq < this->edge_edge_parallel_cross_norm_sq_cutoff) {
+					continue;
+				}
+				if (cross_norm_sq < this->edge_edge_parallel_cross_norm_sq_threshold) {
+					nearest_entity = EdgeEdgeDistanceType::EA_EB;
+				}
+
 				switch (nearest_entity) {
 				case EdgeEdgeDistanceType::EA0_EB0:
 					this->thread_results[thread_id].point_point.push_back({ {edge_a.set, ea[0]}, {edge_b.set, eb[0]} });
@@ -196,9 +209,6 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 
 				case EdgeEdgeDistanceType::EA_EB:
 					this->thread_results[thread_id].edge_edge.push_back({ {edge_a.set, { ea[0], ea[1] }}, {edge_b.set, { eb[0], eb[1] }} });
-					break;
-
-				case EdgeEdgeDistanceType::Parallel:
 					break;
 				}
 			}

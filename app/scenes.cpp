@@ -92,6 +92,8 @@ void collision_cloth_edge_edge_tests()
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.1;
+	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-18;
+	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-20;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
@@ -143,6 +145,8 @@ void collision_cloth_parallel_edge_test()
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.1;
+	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-0;
+	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-32;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
@@ -156,7 +160,7 @@ void collision_cloth_parallel_edge_test()
 	}
 	stark::utils::scale(vertices, {0.5, 0.5, 1.0});
 	stark::utils::move(vertices, { 0.8, 0.0, 0.0 });
-	stark::utils::rotate_deg(vertices, 0.1, Eigen::Vector3d::UnitX());
+	stark::utils::rotate_deg(vertices, 0.000001, Eigen::Vector3d::UnitX());
 	const int small_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
 	//for (int i = 0; i < (int)vertices.size(); i++) {
 	//	simulation.cloth.set_vertex_target_position_as_initial(small_id, i);

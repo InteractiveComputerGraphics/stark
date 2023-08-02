@@ -213,6 +213,10 @@ void stark::models::Cloth::init(Stark& sim)
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 			return euler_integration(x0, v1, dt);
 		};
+		auto get_X = [&](std::vector<symx::Index> conn, symx::Energy& energy)
+		{
+			return energy.make_vectors(this->model.mesh.vertices, conn);
+		};
 		auto barrier_energy = [&](const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k)
 		{
 			//symx::Scalar E = k * symx::log_barrier(d, dhat);
@@ -282,14 +286,27 @@ void stark::models::Cloth::init(Stark& sim)
 				// Mollified energy
 				//symx::Scalar mollifier = mollifier_cubic(n_sq_norm, cutoff, threshold);
 				symx::Scalar x = n_sq_norm;
-				symx::Scalar x0 = 3.0*cutoff;
-				symx::Scalar x1 = 3.0*threshold;
-				symx::Scalar x2 = cutoff.powN(3) - cutoff.powN(2)*x1;
-				symx::Scalar x3 = 1.0/(-threshold.powN(3) + threshold.powN(2)*x0 + x2);
-				symx::Scalar f = 6.0*cutoff*threshold*x*x3 + 2.0*x.powN(3)*x3 + x.powN(2)*x3*(-x0 - x1) + x2*x3;
-				symx::Scalar lower_split = symx::branch(x - cutoff, f, x.get_zero());
-				symx::Scalar higher_split = symx::branch(x - threshold, x.get_one(), lower_split);
-				symx::Scalar mollifier_ = higher_split;
+
+				// Mine
+				//symx::Scalar x0 = 3.0*cutoff;
+				//symx::Scalar x1 = 3.0*threshold;
+				//symx::Scalar x2 = cutoff.powN(3) - cutoff.powN(2)*x1;
+				//symx::Scalar x3 = 1.0/(-threshold.powN(3) + threshold.powN(2)*x0 + x2);
+				//symx::Scalar f = 6.0*cutoff*threshold*x*x3 + 2.0*x.powN(3)*x3 + x.powN(2)*x3*(-x0 - x1) + x2*x3;
+				//symx::Scalar lower_split = symx::branch(x - cutoff, f, x.get_zero());
+				//symx::Scalar higher_split = symx::branch(x - threshold, x.get_one(), lower_split);
+				//symx::Scalar mollifier_ = higher_split;
+
+				// IPC
+				std::vector<symx::Vector> P0 = get_X({ conn[0], conn[1] }, energy);
+				std::vector<symx::Vector> Q0 = get_X({ conn[2], conn[3] }, energy);
+				symx::Scalar eps_x = 1e-3 * (P0[0] - P0[1]).squared_norm()*(Q0[0] - Q0[1]).squared_norm();
+				symx::Scalar x_div_eps_x = x / eps_x;
+				symx::Scalar f = (-x_div_eps_x + 2.0) * x_div_eps_x;
+				symx::Scalar mollifier_ = symx::branch(x - eps_x, x.get_one(), f);
+
+
+
 
 				//symx::Scalar mollifier_ = symx::branch(n_sq_norm - cutoff, mollifier, d.get_zero());
 				//symx::Scalar E = barrier_energy(d, dhat, k);
@@ -656,7 +673,8 @@ void stark::models::Cloth::_update_contacts(Stark& sim)
 	this->_update_collision_x(sim);
 	this->pd.clear();
 	this->pd.set_n_threads(sim.settings.execution.n_threads);
-	this->pd.set_edge_edge_parallel_threshold(std::sqrt(sim.settings.contact.edge_edge_cross_norm_sq_cutoff)); // Do not report parallel edges under cutoff cross product
+	this->pd.set_edge_edge_parallel_threshold(sim.settings.contact.edge_edge_cross_norm_sq_threshold);
+	this->pd.set_edge_edge_parallel_cutoff(sim.settings.contact.edge_edge_cross_norm_sq_cutoff);
 	this->pd.add_mesh(&this->collision_x[0][0], (int)this->collision_x.size(), &this->model.mesh.connectivity[0][0], this->model.mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
 	this->pd.disable_point_triangle(!sim.settings.contact.triangle_point_enabled);
 	this->pd.disable_edge_edge(!sim.settings.contact.edge_edge_enabled);
