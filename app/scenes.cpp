@@ -190,8 +190,8 @@ void cloth_wrap()
 	settings.contact.triangle_point_enabled = true;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.01;
-	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-20;
-	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-16;
+	//settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-20;
+	//settings.contact.edge_edge_cross_norm_sq_threshold = 1e-16;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth

@@ -167,12 +167,14 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 
 				// All cases (not only edge-edge) that are almost parallel are classified to edge-edge
 				const double cross_norm_sq = (b - a).cross(q - p).squaredNorm();
-				if (cross_norm_sq < this->edge_edge_parallel_cross_norm_sq_cutoff) {
+				if (cross_norm_sq <= this->edge_edge_parallel_cross_norm_sq_cutoff) {
 					continue;
 				}
 				if (cross_norm_sq < this->edge_edge_parallel_cross_norm_sq_threshold) {
 					nearest_entity = EdgeEdgeDistanceType::EA_EB;
 				}
+
+				// TODO: I have to mollify all cases, not just EA_EB
 
 				switch (nearest_entity) {
 				case EdgeEdgeDistanceType::EA0_EB0:

@@ -288,22 +288,22 @@ void stark::models::Cloth::init(Stark& sim)
 				symx::Scalar x = n_sq_norm;
 
 				// Mine
-				//symx::Scalar x0 = 3.0*cutoff;
-				//symx::Scalar x1 = 3.0*threshold;
-				//symx::Scalar x2 = cutoff.powN(3) - cutoff.powN(2)*x1;
-				//symx::Scalar x3 = 1.0/(-threshold.powN(3) + threshold.powN(2)*x0 + x2);
-				//symx::Scalar f = 6.0*cutoff*threshold*x*x3 + 2.0*x.powN(3)*x3 + x.powN(2)*x3*(-x0 - x1) + x2*x3;
-				//symx::Scalar lower_split = symx::branch(x - cutoff, f, x.get_zero());
-				//symx::Scalar higher_split = symx::branch(x - threshold, x.get_one(), lower_split);
-				//symx::Scalar mollifier_ = higher_split;
+				symx::Scalar x0 = 3.0*cutoff;
+				symx::Scalar x1 = 3.0*threshold;
+				symx::Scalar x2 = cutoff.powN(3) - cutoff.powN(2)*x1;
+				symx::Scalar x3 = 1.0/(-threshold.powN(3) + threshold.powN(2)*x0 + x2);
+				symx::Scalar f = 6.0*cutoff*threshold*x*x3 + 2.0*x.powN(3)*x3 + x.powN(2)*x3*(-x0 - x1) + x2*x3;
+				symx::Scalar lower_split = symx::branch(x - cutoff, f, x.get_zero());
+				symx::Scalar higher_split = symx::branch(x - threshold, x.get_one(), lower_split);
+				symx::Scalar mollifier_ = higher_split;
 
 				// IPC
-				std::vector<symx::Vector> P0 = get_X({ conn[0], conn[1] }, energy);
-				std::vector<symx::Vector> Q0 = get_X({ conn[2], conn[3] }, energy);
-				symx::Scalar eps_x = 1e-3 * (P0[0] - P0[1]).squared_norm()*(Q0[0] - Q0[1]).squared_norm();
-				symx::Scalar x_div_eps_x = x / eps_x;
-				symx::Scalar f = (-x_div_eps_x + 2.0) * x_div_eps_x;
-				symx::Scalar mollifier_ = symx::branch(x - eps_x, x.get_one(), f);
+				//std::vector<symx::Vector> P0 = get_X({ conn[0], conn[1] }, energy);
+				//std::vector<symx::Vector> Q0 = get_X({ conn[2], conn[3] }, energy);
+				//symx::Scalar eps_x = 1e-3 * (P0[0] - P0[1]).squared_norm()*(Q0[0] - Q0[1]).squared_norm();
+				//symx::Scalar x_div_eps_x = x / eps_x;
+				//symx::Scalar f = (-x_div_eps_x + 2.0) * x_div_eps_x;
+				//symx::Scalar mollifier_ = symx::branch(x - eps_x, x.get_one(), f);
 
 
 
