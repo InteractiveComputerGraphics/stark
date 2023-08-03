@@ -21,7 +21,7 @@ namespace stark::models
 			std::vector<std::array<int32_t, 2>> point_point;
 			std::vector<std::array<int32_t, 3>> point_edge;
 			std::vector<std::array<int32_t, 4>> point_triangle;
-			std::vector<std::array<int32_t, 4>> edge_edge;
+			//std::vector<std::array<int32_t, 4>> edge_edge;
 		};
 
 
@@ -70,6 +70,9 @@ namespace stark::models
 		tmcd::IntersectionDetection id;
 		tmcd::ProximityDetection pd;
 		ClothSelfContacts contacts;
+		std::vector<std::array<int32_t, 6>> ee_point_point;
+		std::vector<std::array<int32_t, 5>> ee_point_edge;
+		std::vector<std::array<int32_t, 4>> ee_edge_edge;
 
 		/* Methods */
 		// Physical System Interface

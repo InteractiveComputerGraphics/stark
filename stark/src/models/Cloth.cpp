@@ -230,6 +230,28 @@ void stark::models::Cloth::init(Stark& sim)
 			energy.set_expression(E);
 			energy.activate(sim.settings.contact.collisions_enabled);
 		};
+		auto edge_edge_mollifier = [&](const symx::Scalar& cross_norm_sq, const symx::Scalar& cutoff, const symx::Scalar& threshold)
+		{
+			symx::Scalar x = cross_norm_sq;
+			symx::Scalar x0 = 3.0 * cutoff;
+			symx::Scalar x1 = 3.0 * threshold;
+			symx::Scalar x2 = cutoff.powN(3) - cutoff.powN(2) * x1;
+			symx::Scalar x3 = 1.0 / (-threshold.powN(3) + threshold.powN(2) * x0 + x2);
+			symx::Scalar f = 6.0 * cutoff * threshold * x * x3 + 2.0 * x.powN(3) * x3 + x.powN(2) * x3 * (-x0 - x1) + x2 * x3;
+			symx::Scalar lower_split = symx::branch(x - cutoff, f, x.get_zero());
+			symx::Scalar higher_split = symx::branch(x - threshold, x.get_one(), lower_split);
+			symx::Scalar mollifier = higher_split;
+
+			// IPC
+			//std::vector<symx::Vector> P0 = get_X({ conn[0], conn[1] }, energy);
+			//std::vector<symx::Vector> Q0 = get_X({ conn[2], conn[3] }, energy);
+			//symx::Scalar eps_x = 1e-3 * (P0[0] - P0[1]).squared_norm()*(Q0[0] - Q0[1]).squared_norm();
+			//symx::Scalar x_div_eps_x = x / eps_x;
+			//symx::Scalar f = (-x_div_eps_x + 2.0) * x_div_eps_x;
+			//symx::Scalar mollifier_ = symx::branch(x - eps_x, x.get_one(), f);
+
+			return mollifier;
+		};
 		// -----------------------------------------------------------------------------
 
 		// Point - Point
@@ -265,55 +287,71 @@ void stark::models::Cloth::init(Stark& sim)
 			}
 		);
 
-		// Edge - Edge
-		sim.global_energy.add_energy("collision_cloth_cloth_edge_edge", this->contacts.edge_edge,
+
+		// ------------------------------------------
+		
+		// Point - Point (EE)
+		sim.global_energy.add_energy("collision_cloth_cloth_point_point_ee", this->ee_point_point,
 			[&](symx::Energy& energy, symx::Element& conn)
 			{
-				std::vector<symx::Vector> P = get_x1({ conn[0], conn[1] }, energy);
-				std::vector<symx::Vector> Q = get_x1({ conn[2], conn[3] }, energy);
+				std::vector<symx::Vector> EA = get_x1({ conn[0], conn[1] }, energy);
+				std::vector<symx::Vector> PA = get_x1({ conn[2] }, energy);
+				std::vector<symx::Vector> EB = get_x1({ conn[3], conn[4] }, energy);
+				std::vector<symx::Vector> PB = get_x1({ conn[5] }, energy);
+				symx::Scalar k = energy.make_scalar(sim.settings.contact.adaptive_contact_stiffness.value);
+				symx::Scalar dhat = energy.make_scalar(sim.settings.contact.dhat);
+				symx::Scalar cutoff = energy.make_scalar(sim.settings.contact.edge_edge_cross_norm_sq_cutoff);
+				symx::Scalar threshold = energy.make_scalar(sim.settings.contact.edge_edge_cross_norm_sq_threshold);
+
+				symx::Scalar cross_norm_sq = (EA[1] - EA[0]).cross3(EB[1] - EB[0]).squared_norm();
+				symx::Scalar d = distance_point_point<symx::Scalar>(PA[0], PB[0]);
+
+				symx::Scalar E = edge_edge_mollifier(cross_norm_sq, cutoff, threshold)*barrier_energy(d, dhat, k);
+				energy.set_expression(E);
+				energy.activate(sim.settings.contact.collisions_enabled);
+			}
+		);
+
+		// Point - Edge (EE)
+		sim.global_energy.add_energy("collision_cloth_cloth_point_edge_ee", this->ee_point_edge,
+			[&](symx::Energy& energy, symx::Element& conn)
+			{
+				std::vector<symx::Vector> EA = get_x1({ conn[0], conn[1] }, energy);
+				std::vector<symx::Vector> PA = get_x1({ conn[2] }, energy);
+				std::vector<symx::Vector> EB = get_x1({ conn[3], conn[4] }, energy);
+				symx::Scalar k = energy.make_scalar(sim.settings.contact.adaptive_contact_stiffness.value);
+				symx::Scalar dhat = energy.make_scalar(sim.settings.contact.dhat);
+				symx::Scalar cutoff = energy.make_scalar(sim.settings.contact.edge_edge_cross_norm_sq_cutoff);
+				symx::Scalar threshold = energy.make_scalar(sim.settings.contact.edge_edge_cross_norm_sq_threshold);
+
+				symx::Scalar cross_norm_sq = (EA[1] - EA[0]).cross3(EB[1] - EB[0]).squared_norm();
+				symx::Scalar d = distance_point_line<symx::Scalar>(PA[0], EB[0], EB[1]);
+
+				symx::Scalar E = edge_edge_mollifier(cross_norm_sq, cutoff, threshold)*barrier_energy(d, dhat, k);
+				energy.set_expression(E);
+				energy.activate(sim.settings.contact.collisions_enabled);
+			}
+		);
+		// Edge - Edge (EE)
+		sim.global_energy.add_energy("collision_cloth_cloth_edge_edge", this->ee_edge_edge,
+			[&](symx::Energy& energy, symx::Element& conn)
+			{
+				std::vector<symx::Vector> EA = get_x1({ conn[0], conn[1] }, energy);
+				std::vector<symx::Vector> EB = get_x1({ conn[2], conn[3] }, energy);
 				symx::Scalar k = energy.make_scalar(sim.settings.contact.adaptive_contact_stiffness.value);
 				symx::Scalar dhat = energy.make_scalar(sim.settings.contact.dhat);
 				symx::Scalar cutoff = energy.make_scalar(sim.settings.contact.edge_edge_cross_norm_sq_cutoff);
 				symx::Scalar threshold = energy.make_scalar(sim.settings.contact.edge_edge_cross_norm_sq_threshold);
 
 				// Line-Line distance
-				symx::Vector n = (P[1] - P[0]).cross3(Q[1] - Q[0]);
-				symx::Scalar n_sq_norm = n.squared_norm();
-				symx::Scalar l = (Q[0] - P[0]).dot(n);
-				symx::Scalar d2 = l.powN(2)/n_sq_norm;
+				symx::Vector cross = (EA[1] - EA[0]).cross3(EB[1] - EB[0]);
+				symx::Scalar cross_norm_sq = cross.squared_norm();
+				symx::Scalar l = (EB[0] - EA[0]).dot(cross);
+				symx::Scalar d2 = l.powN(2)/ cross_norm_sq;
 				symx::Scalar d = symx::sqrt(d2);
 
-				// Mollified energy
-				//symx::Scalar mollifier = mollifier_cubic(n_sq_norm, cutoff, threshold);
-				symx::Scalar x = n_sq_norm;
-
-				// Mine
-				symx::Scalar x0 = 3.0*cutoff;
-				symx::Scalar x1 = 3.0*threshold;
-				symx::Scalar x2 = cutoff.powN(3) - cutoff.powN(2)*x1;
-				symx::Scalar x3 = 1.0/(-threshold.powN(3) + threshold.powN(2)*x0 + x2);
-				symx::Scalar f = 6.0*cutoff*threshold*x*x3 + 2.0*x.powN(3)*x3 + x.powN(2)*x3*(-x0 - x1) + x2*x3;
-				symx::Scalar lower_split = symx::branch(x - cutoff, f, x.get_zero());
-				symx::Scalar higher_split = symx::branch(x - threshold, x.get_one(), lower_split);
-				symx::Scalar mollifier_ = higher_split;
-
-				// IPC
-				//std::vector<symx::Vector> P0 = get_X({ conn[0], conn[1] }, energy);
-				//std::vector<symx::Vector> Q0 = get_X({ conn[2], conn[3] }, energy);
-				//symx::Scalar eps_x = 1e-3 * (P0[0] - P0[1]).squared_norm()*(Q0[0] - Q0[1]).squared_norm();
-				//symx::Scalar x_div_eps_x = x / eps_x;
-				//symx::Scalar f = (-x_div_eps_x + 2.0) * x_div_eps_x;
-				//symx::Scalar mollifier_ = symx::branch(x - eps_x, x.get_one(), f);
-
-
-
-
-				//symx::Scalar mollifier_ = symx::branch(n_sq_norm - cutoff, mollifier, d.get_zero());
-				//symx::Scalar E = barrier_energy(d, dhat, k);
-				symx::Scalar E = mollifier_*barrier_energy(d, dhat, k);
-				//symx::Scalar E = mollifier*barrier_energy(d, dhat, k);
+				symx::Scalar E = edge_edge_mollifier(cross_norm_sq, cutoff, threshold)*barrier_energy(d, dhat, k);
 				energy.set_expression(E);
-				//energy.set_conditional_expression(E, n_sq_norm - cutoff);
 				energy.activate(sim.settings.contact.collisions_enabled);
 			}
 		);
@@ -671,6 +709,7 @@ void stark::models::Cloth::_update_contacts(Stark& sim)
 
 	// Run CD
 	this->_update_collision_x(sim);
+
 	this->pd.clear();
 	this->pd.set_n_threads(sim.settings.execution.n_threads);
 	this->pd.set_edge_edge_parallel_threshold(sim.settings.contact.edge_edge_cross_norm_sq_threshold);
@@ -684,9 +723,9 @@ void stark::models::Cloth::_update_contacts(Stark& sim)
 	this->contacts.point_point.clear();
 	this->contacts.point_edge.clear();
 	this->contacts.point_triangle.clear();
-	this->contacts.edge_edge.clear();
+	//this->contacts.edge_edge.clear();
 	for (const auto& pair : proximity.point_point) {
-		this->contacts.point_point.push_back({pair.first.idx, pair.second.idx});
+		this->contacts.point_point.push_back({ pair.first.idx, pair.second.idx });
 	}
 	for (const auto& pair : proximity.point_edge) {
 		this->contacts.point_edge.push_back({ pair.first.idx, pair.second.vertices[0], pair.second.vertices[1] });
@@ -694,11 +733,30 @@ void stark::models::Cloth::_update_contacts(Stark& sim)
 	for (const auto& pair : proximity.point_triangle) {
 		this->contacts.point_triangle.push_back({ pair.first.idx, pair.second.vertices[0], pair.second.vertices[1], pair.second.vertices[2] });
 	}
-	for (const auto& pair : proximity.edge_edge) {
-		this->contacts.edge_edge.push_back({ pair.first.vertices[0], pair.first.vertices[1], pair.second.vertices[0], pair.second.vertices[1] });
-	}
+	//for (const auto& pair : proximity.edge_edge) {
+	//	this->contacts.edge_edge.push_back({ pair.first.vertices[0], pair.first.vertices[1], pair.second.vertices[0], pair.second.vertices[1] });
+	//}
 
-	//std::cout << fmt::format("\n{} - {} - {} - {}", proximity.point_point.size(), proximity.point_edge.size(), proximity.point_triangle.size(), proximity.edge_edge.size()) << " | ";
+	// DEBUG
+	{
+		// Fill connectivities
+		this->ee_point_point.clear();
+		this->ee_point_edge.clear();
+		this->ee_edge_edge.clear();
+		for (const auto& pair : proximity.ee_point_point) {
+			const tmcd::EdgePoint& ep_a = pair.first;
+			const tmcd::EdgePoint& ep_b = pair.second;
+			this->ee_point_point.push_back({ ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx, ep_b.edge.vertices[0], ep_b.edge.vertices[1], ep_b.point.idx });
+		}
+		for (const auto& pair : proximity.ee_point_edge) {
+			const tmcd::EdgePoint& ep_a = pair.first;
+			const tmcd::Edge& e_b = pair.second;
+			this->ee_point_edge.push_back({ ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx, e_b.vertices[0], e_b.vertices[1] });
+		}
+		for (const auto& pair : proximity.ee_edge_edge) {
+			this->ee_edge_edge.push_back({ pair.first.vertices[0], pair.first.vertices[1], pair.second.vertices[0], pair.second.vertices[1] });
+		}
+	}
 }
 bool stark::models::Cloth::_is_valid_configuration(Stark& sim)
 {

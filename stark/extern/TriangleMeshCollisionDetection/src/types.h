@@ -43,18 +43,35 @@ namespace tmcd
 			this->edge_edge.clear();
 		};
 	};
+	// DEBUG
+	struct EdgePoint
+	{
+		Edge edge;
+		Point point;
+	};
 	struct ProximityResults
 	{
 		std::vector<std::pair<Point, Point>> point_point;
 		std::vector<std::pair<Point, Edge>> point_edge;
 		std::vector<std::pair<Point, Triangle>> point_triangle;
-		std::vector<std::pair<Edge, Edge>> edge_edge;
+		//std::vector<std::pair<Edge, Edge>> edge_edge;
+
+		// DEBUG
+		std::vector<std::pair<EdgePoint, EdgePoint>> ee_point_point;
+		std::vector<std::pair<EdgePoint, Edge>> ee_point_edge;
+		std::vector<std::pair<Edge, Edge>> ee_edge_edge;
+
 		void clear()
 		{
 			this->point_point.clear();
 			this->point_edge.clear();
 			this->point_triangle.clear();
-			this->edge_edge.clear();
+			//this->edge_edge.clear();
+
+			// DEBUG
+			this->ee_point_point.clear();
+			this->ee_point_edge.clear();
+			this->ee_edge_edge.clear();
 		};
 	};
 	struct BroadPhaseETResults

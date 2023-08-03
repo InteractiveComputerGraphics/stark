@@ -170,48 +170,29 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 				if (cross_norm_sq <= this->edge_edge_parallel_cross_norm_sq_cutoff) {
 					continue;
 				}
-				if (cross_norm_sq < this->edge_edge_parallel_cross_norm_sq_threshold) {
-					nearest_entity = EdgeEdgeDistanceType::EA_EB;
-				}
+				//const bool almost_parallel = cross_norm_sq < this->edge_edge_parallel_cross_norm_sq_threshold;
 
 				// TODO: I have to mollify all cases, not just EA_EB
 
+				const Edge EA = { edge_a.set, { ea[0], ea[1] } };
+				const Edge EB = { edge_b.set, { eb[0], eb[1] } };
+				const Point EA0 = { edge_a.set, ea[0] };
+				const Point EA1 = { edge_a.set, ea[1] };
+				const Point EB0 = { edge_b.set, eb[0] };
+				const Point EB1 = { edge_b.set, eb[1] };
+
 				switch (nearest_entity) {
-				case EdgeEdgeDistanceType::EA0_EB0:
-					this->thread_results[thread_id].point_point.push_back({ {edge_a.set, ea[0]}, {edge_b.set, eb[0]} });
-					break;
+				case EdgeEdgeDistanceType::EA0_EB0: this->thread_results[thread_id].ee_point_point.push_back({ {EA, EA0}, {EB, EB0} }); break;
+				case EdgeEdgeDistanceType::EA0_EB1: this->thread_results[thread_id].ee_point_point.push_back({ {EA, EA0}, {EB, EB1} }); break;
+				case EdgeEdgeDistanceType::EA1_EB0: this->thread_results[thread_id].ee_point_point.push_back({ {EA, EA1}, {EB, EB0} }); break;
+				case EdgeEdgeDistanceType::EA1_EB1: this->thread_results[thread_id].ee_point_point.push_back({ {EA, EA1}, {EB, EB1} }); break;
 
-				case EdgeEdgeDistanceType::EA0_EB1:
-					this->thread_results[thread_id].point_point.push_back({ {edge_a.set, ea[0]}, {edge_b.set, eb[1]} });
-					break;
+				case EdgeEdgeDistanceType::EA_EB0: this->thread_results[thread_id].ee_point_edge.push_back({ {EB, EB0}, EA }); break;
+				case EdgeEdgeDistanceType::EA_EB1: this->thread_results[thread_id].ee_point_edge.push_back({ {EB, EB1}, EA }); break;
+				case EdgeEdgeDistanceType::EA0_EB: this->thread_results[thread_id].ee_point_edge.push_back({ {EA, EA0}, EB }); break;
+				case EdgeEdgeDistanceType::EA1_EB: this->thread_results[thread_id].ee_point_edge.push_back({ {EA, EA1}, EB }); break;
 
-				case EdgeEdgeDistanceType::EA1_EB0:
-					this->thread_results[thread_id].point_point.push_back({ {edge_a.set, ea[1]}, {edge_b.set, eb[0]} });
-					break;
-
-				case EdgeEdgeDistanceType::EA1_EB1:
-					this->thread_results[thread_id].point_point.push_back({ {edge_a.set, ea[1]}, {edge_b.set, eb[1]} });
-					break;
-
-				case EdgeEdgeDistanceType::EA_EB0:
-					this->thread_results[thread_id].point_edge.push_back({ {edge_b.set, eb[0]}, {edge_a.set, { ea[0], ea[1] }} });
-					break;
-
-				case EdgeEdgeDistanceType::EA_EB1:
-					this->thread_results[thread_id].point_edge.push_back({ {edge_b.set, eb[1]}, {edge_a.set, { ea[0], ea[1] }} });
-					break;
-
-				case EdgeEdgeDistanceType::EA0_EB:
-					this->thread_results[thread_id].point_edge.push_back({ {edge_a.set, ea[0]}, {edge_b.set, { eb[0], eb[1] }} });
-					break;
-
-				case EdgeEdgeDistanceType::EA1_EB:
-					this->thread_results[thread_id].point_edge.push_back({ {edge_a.set, ea[1]}, {edge_b.set, { eb[0], eb[1] }} });
-					break;
-
-				case EdgeEdgeDistanceType::EA_EB:
-					this->thread_results[thread_id].edge_edge.push_back({ {edge_a.set, { ea[0], ea[1] }}, {edge_b.set, { eb[0], eb[1] }} });
-					break;
+				case EdgeEdgeDistanceType::EA_EB: this->thread_results[thread_id].ee_edge_edge.push_back({ EA, EB }); break;
 				}
 			}
 		}
@@ -225,16 +206,34 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 	std::vector<std::vector<std::pair<Point, Edge>>*> thread_point_edge(n_threads);
 	std::vector<std::vector<std::pair<Point, Triangle>>*> thread_point_triangle(n_threads);
 	std::vector<std::vector<std::pair<Edge, Edge>>*> thread_edge_edge(n_threads);
+
+	// DEBUG
+	std::vector<std::vector<std::pair<EdgePoint, EdgePoint>>*> thread_ee_point_point(n_threads);
+	std::vector<std::vector<std::pair<EdgePoint, Edge>>*> thread_ee_point_edge(n_threads);
+	std::vector<std::vector<std::pair<Edge, Edge>>*> thread_ee_edge_edge(n_threads);
+
 	for (int thread_id = 0; thread_id < n_threads; thread_id++) {
 		thread_point_point[thread_id] = &this->thread_results[thread_id].point_point;
 		thread_point_edge[thread_id] = &this->thread_results[thread_id].point_edge;
 		thread_point_triangle[thread_id] = &this->thread_results[thread_id].point_triangle;
-		thread_edge_edge[thread_id] = &this->thread_results[thread_id].edge_edge;
+		//thread_edge_edge[thread_id] = &this->thread_results[thread_id].edge_edge;
+
+		// DEBUG
+		thread_ee_point_point[thread_id] = &this->thread_results[thread_id].ee_point_point;
+		thread_ee_point_edge[thread_id] = &this->thread_results[thread_id].ee_point_edge;
+		thread_ee_edge_edge[thread_id] = &this->thread_results[thread_id].ee_edge_edge;
 	}
 	parallel_concat(this->results.point_point, thread_point_point);
 	parallel_concat(this->results.point_edge, thread_point_edge);
 	parallel_concat(this->results.point_triangle, thread_point_triangle);
-	parallel_concat(this->results.edge_edge, thread_edge_edge);
+	//parallel_concat(this->results.edge_edge, thread_edge_edge);
+
+	// DEBUG
+	parallel_concat(this->results.ee_point_point, thread_ee_point_point);
+	parallel_concat(this->results.ee_point_edge, thread_ee_point_edge);
+	parallel_concat(this->results.ee_edge_edge, thread_ee_edge_edge);
+
+
 	t1 = omp_get_wtime();
 	this->runtime_merge = t1 - t0;
 
@@ -259,7 +258,7 @@ const info::ProximityDetection tmcd::ProximityDetection::get_info() const
 	info.n_proximal_point_point = (int32_t)this->results.point_point.size();
 	info.n_proximal_point_edge = (int32_t)this->results.point_edge.size();
 	info.n_proximal_point_triangle = (int32_t)this->results.point_triangle.size();
-	info.n_proximal_edge_edge = (int32_t)this->results.edge_edge.size();
+	//info.n_proximal_edge_edge = (int32_t)this->results.edge_edge.size();
 	info.n_threads = this->bp.get_n_threads();
 	info.runtime_compute_aabbs = info.broad_phase.runtime_compute_aabbs;
 	info.runtime_octree = info.broad_phase.runtime_octree;

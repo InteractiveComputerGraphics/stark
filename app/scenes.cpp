@@ -92,7 +92,7 @@ void collision_cloth_edge_edge_tests()
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.1;
-	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-18;
+	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-6;
 	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-20;
 	stark::models::Simulation simulation(settings);
 
@@ -145,7 +145,7 @@ void collision_cloth_parallel_edge_test()
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.1;
-	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-0;
+	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-12;
 	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-32;
 	stark::models::Simulation simulation(settings);
 
@@ -155,19 +155,36 @@ void collision_cloth_parallel_edge_test()
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n });
 	const int large_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
-	for (int i = 0; i < (int)vertices.size(); i++) {
-		simulation.cloth.set_vertex_target_position_as_initial(large_id, i);
-	}
 	stark::utils::scale(vertices, {0.5, 0.5, 1.0});
 	stark::utils::move(vertices, { 0.8, 0.0, 0.0 });
-	stark::utils::rotate_deg(vertices, 0.000001, Eigen::Vector3d::UnitX());
+	stark::utils::rotate_deg(vertices, 5.0, Eigen::Vector3d::UnitX());
 	const int small_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
-	//for (int i = 0; i < (int)vertices.size(); i++) {
-	//	simulation.cloth.set_vertex_target_position_as_initial(small_id, i);
-	//}
 
 	// Run
-	simulation.stark.run();
+	simulation.stark.run(
+		[&]()
+		{
+			const double t = simulation.stark.current_time;
+			const double v = 0.02;
+
+			const auto& mesh = simulation.cloth.model.mesh;
+			simulation.cloth.clear_vertex_target_position();
+			for (int i = 0; i < (int)vertices.size(); i++) {
+				simulation.cloth.set_vertex_target_position(large_id, i, mesh.vertices[i]);
+			}
+			for (int i = 0; i < (int)vertices.size(); i++) {
+				const Eigen::Vector3d& p = mesh.vertices[mesh.get_global_vertex_idx(small_id, i)];
+				//if (p.x() > 1.0) {
+					if (p.y() < 0.0) {
+						simulation.cloth.set_vertex_target_position(small_id, i, { p.x(), p.y(), p.z() + v * t });
+					}
+					else {
+						simulation.cloth.set_vertex_target_position(small_id, i, { p.x(), p.y(), p.z() - v * t });
+					}
+				//}
+			}
+		}
+	);
 }
 void cloth_wrap()
 {
@@ -190,12 +207,12 @@ void cloth_wrap()
 	settings.contact.triangle_point_enabled = true;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.01;
-	//settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-20;
-	//settings.contact.edge_edge_cross_norm_sq_threshold = 1e-16;
+	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-32;
+	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-6;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
-	const int n = 50;
+	const int n = 10;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n });
