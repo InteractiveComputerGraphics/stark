@@ -340,7 +340,7 @@ void cloth_wrap()
 	settings.output.output_directory = "../output/" + settings.output.simulation_name;
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
-	settings.execution.end_simulation_time = 20.0;
+	settings.execution.end_simulation_time = 25.0;
 	//settings.execution.n_threads = 1;
 	settings.simulation.gravity = { 0, 0, 0 };
 
@@ -361,7 +361,7 @@ void cloth_wrap()
 	const int n = 50;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
-	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n });
+	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n }, true);
 	const int cloth_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
 	simulation.cloth.is_strain_limiting_active = false;
 	simulation.cloth.set_damping(1.0);
@@ -371,19 +371,25 @@ void cloth_wrap()
 		[&]()
 		{
 			const double t = simulation.stark.current_time;
-			const double w = 0.5;
+			const double w = 2.0 * 3.1416 / 8.0;  // One turn every 8 seconds
+			const int n_turns = 3;
 
-			simulation.cloth.clear_vertex_target_position();
-			for (int i = 0; i < (int)vertices.size(); i++) {
-				if (vertices[i].x() < -0.49999) {
-					const double r = vertices[i].y();
-					simulation.cloth.set_vertex_target_position(cloth_id, i, { vertices[i].x(), r * std::cos(w * t), r * std::sin(w * t) });
+			const double angle_rad = w * t;
+			const double max_angle_rad = 2.0*3.1416*(double)n_turns;
+
+			if (angle_rad < max_angle_rad) {
+				simulation.cloth.clear_vertex_target_position();
+				for (int i = 0; i < (int)vertices.size(); i++) {
+					if (vertices[i].x() < -0.49999) {
+						const double r = vertices[i].y();
+						simulation.cloth.set_vertex_target_position(cloth_id, i, { vertices[i].x(), r * std::cos(w * t), r * std::sin(w * t) });
+					}
 				}
-			}
-			for (int i = 0; i < (int)vertices.size(); i++) {
-				if (vertices[i].x() > 0.49999) {
-					const double r = vertices[i].y();
-					simulation.cloth.set_vertex_target_position(cloth_id, i, { vertices[i].x(), r * std::cos(-w * t), r * std::sin(-w * t) });
+				for (int i = 0; i < (int)vertices.size(); i++) {
+					if (vertices[i].x() > 0.49999) {
+						const double r = vertices[i].y();
+						simulation.cloth.set_vertex_target_position(cloth_id, i, { vertices[i].x(), r * std::cos(-w * t), r * std::sin(-w * t) });
+					}
 				}
 			}
 		}

@@ -1,6 +1,7 @@
 #include "mesh_utils.h"
 
 #include <algorithm>
+#include <random>
 
 // Tools
 void push_back_if_not_present(std::vector<int>& v, const int value)
@@ -13,6 +14,15 @@ double deg2rad(const double deg)
 {
 	static constexpr double PI = 3.14159265358979323846;
 	return 2.0 * PI * (deg / 360.0);
+}
+double generate_random_double(double l) {
+	// Create a random number generator
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<double> dist(-l, l);
+
+	// Generate a random number between zero and l
+	return dist(gen);
 }
 
 // ========================================================================================================
@@ -112,7 +122,7 @@ void stark::utils::compute_node_normals(std::vector<Eigen::Vector3d>& output, co
 		normal.normalize();
 	}
 }
-void stark::utils::generate_triangular_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, const Eigen::Vector2d& bottom, const Eigen::Vector2d& top, const std::array<int, 2>& n_quads_per_dim, const double z)
+void stark::utils::generate_triangular_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, const Eigen::Vector2d& bottom, const Eigen::Vector2d& top, const std::array<int, 2>& n_quads_per_dim, const bool randomize, const double z)
 {
 	assert(bottom[0] <= top[0] && bottom[1] <= top[1]);
 
@@ -138,6 +148,11 @@ void stark::utils::generate_triangular_grid(std::vector<Eigen::Vector3d>& out_ve
 	for (int i = 0; i < nx; i++) {
 		for (int j = 0; j < ny; j++) {
 			out_vertices[ny * i + j] = { bottom[0] + i * dx, bottom[1] + j * dy, z };
+
+			if (randomize && i != 0 && i != (nx - 1) && j != 0 && j != (ny - 1)) {
+				out_vertices[ny * i + j][0] += generate_random_double(dx*0.2);
+				out_vertices[ny * i + j][1] += generate_random_double(dy*0.2);
+			}
 		}
 	}
 
