@@ -240,7 +240,8 @@ void stark::models::Cloth::init(Stark& sim)
 			symx::Scalar f = 6.0 * cutoff * threshold * x * x3 + 2.0 * x.powN(3) * x3 + x.powN(2) * x3 * (-x0 - x1) + x2 * x3;
 			symx::Scalar lower_split = symx::branch(x - cutoff, f, x.get_zero());
 			symx::Scalar higher_split = symx::branch(x - threshold, x.get_one(), lower_split);
-			symx::Scalar mollifier = higher_split;
+			//symx::Scalar mollifier = higher_split;
+			symx::Scalar mollifier = x.get_one();
 
 			// IPC
 			//std::vector<symx::Vector> P0 = get_X({ conn[0], conn[1] }, energy);
