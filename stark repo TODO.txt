@@ -35,6 +35,10 @@ stark repo TODO
 	-> Can I come up with a better edge-edge distance function?
 		Just some distance related function from 4 points. 
 		Maybe the point-point distance that is magnetized to the center as they get parallel?
+		
+	* Are sudden cutoff filters (edge-edge mollifier) better than S filters?
+		I guess S filters have no kinks, but anyway it´s all so microscopic that maybe the parabolic cutoff filters are better for convergence.
+	* Per-edge mollifier width to guarantee no penetrations.
 	
 	
 	

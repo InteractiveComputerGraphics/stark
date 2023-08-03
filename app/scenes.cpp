@@ -128,7 +128,7 @@ void collision_cloth_edge_edge_tests()
 void collision_cloth_parallel_edge_test_rotation()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "collision_cloth_parallel_edge_test_rotation";
+	settings.output.simulation_name = "collision_cloth_parallel_edge_test";
 	settings.output.output_directory = "../output/" + settings.output.simulation_name;
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
@@ -145,8 +145,8 @@ void collision_cloth_parallel_edge_test_rotation()
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.1;
-	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-12;
-	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-32;
+	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-30;
+	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-8;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
@@ -157,7 +157,7 @@ void collision_cloth_parallel_edge_test_rotation()
 	const int large_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
 	stark::utils::scale(vertices, {0.5, 0.5, 1.0});
 	stark::utils::move(vertices, { 0.8, 0.0, 0.0 });
-	stark::utils::rotate_deg(vertices, 5.0, Eigen::Vector3d::UnitX());
+	//stark::utils::rotate_deg(vertices, 5.0, Eigen::Vector3d::UnitX());
 	const int small_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
 
 	// Run
@@ -272,7 +272,7 @@ void collision_cloth_parallel_edge_test_slide()
 	stark::models::Simulation simulation(settings);
 
 	const bool shear = true;
-	const bool rotate = false;
+	const bool rotate = true;
 
 	// Cloth
 	const int n = 1;
@@ -344,7 +344,7 @@ void cloth_wrap()
 	//settings.execution.n_threads = 1;
 	settings.simulation.gravity = { 0, 0, 0 };
 
-	settings.newton.debug_line_search_output = true;
+	settings.newton.debug_line_search_output = false;
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 
@@ -352,13 +352,13 @@ void cloth_wrap()
 	settings.contact.edge_edge_enabled = true;
 	settings.contact.triangle_point_enabled = true;
 	settings.contact.enable_intersection_test = true;
-	settings.contact.dhat = 0.01;
-	settings.contact.edge_edge_cross_norm_sq_cutoff = 0.0;
+	settings.contact.dhat = 0.001;
+	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-30;
 	settings.contact.edge_edge_cross_norm_sq_threshold = 0.0;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
-	const int n = 10;
+	const int n = 50;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n });

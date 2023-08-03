@@ -30,10 +30,6 @@ void ProximityDetection::clear()
 	this->bp.clear();
 	this->results.clear();
 }
-void tmcd::ProximityDetection::set_edge_edge_parallel_threshold(const double cross_norm_sq)
-{
-	this->edge_edge_parallel_cross_norm_sq_threshold = cross_norm_sq;
-}
 void tmcd::ProximityDetection::set_edge_edge_parallel_cutoff(const double cross_norm_sq)
 {
 	this->edge_edge_parallel_cross_norm_sq_cutoff = cross_norm_sq;
@@ -161,7 +157,7 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 			const Vec3d q = this->meshes.get_coords(edge_b.set, eb[1]);
 
 			EdgeEdgeDistanceType nearest_entity;
-			const double dist_sq = edge_edge_sq_distance(nearest_entity, a, b, p, q, this->edge_edge_parallel_cross_norm_sq_threshold);
+			const double dist_sq = edge_edge_sq_distance(nearest_entity, a, b, p, q, this->edge_edge_parallel_cross_norm_sq_cutoff);
 			if (dist_sq < enlargement_sq) {
 				const int thread_id = omp_get_thread_num();
 
