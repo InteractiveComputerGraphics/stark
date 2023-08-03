@@ -39,7 +39,9 @@ stark repo TODO
 	* Explain IPC edge-edge
 	* Randomized meshes for cloth.
 	
-	* Per-edge mollifier width to guarantee no penetrations.
+	* Always write all the output to the console file, just dont show it to the screen.
+	* Time step in large simulations is dictated by line search not descend... can we just take the negative?
+	* Magnetic simulations
 	
 	
 	

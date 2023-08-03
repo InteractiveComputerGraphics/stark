@@ -166,6 +166,7 @@ void stark::Stark::_write_frame()
 		this->callbacks.run_write_frame();
 		this->console.print(fmt::format("Frame: {:d}. Time: {:.3f} s.\n", this->current_frame, this->current_time), Verbosity::Frames);
 		this->current_frame++;
+		this->logger.save_to_disk();
 	};
 
 	if (this->settings.output.fps < 0) {
@@ -177,6 +178,5 @@ void stark::Stark::_write_frame()
 			this->next_frame_time += 1.0/(double)this->settings.output.fps;
 		}
 	}
-	this->logger.save_to_disk();
 }
 
