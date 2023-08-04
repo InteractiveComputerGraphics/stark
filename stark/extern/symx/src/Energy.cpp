@@ -10,11 +10,11 @@ symx::Energy::Energy(std::string name, std::string working_directory, std::vecto
 {
 	this->_init(name, working_directory, l2data_int(arr), l2n_elements_int(arr, n_items_per_element), n_items_per_element);
 }
-void symx::Energy::set_expression(const Scalar& expr)
+void symx::Energy::set(const Scalar& expr)
 {
 	this->expr = std::make_unique<Scalar>(expr);
 }
-void symx::Energy::set_conditional_expression(const Scalar& expr, const Scalar& cond)
+void symx::Energy::set_with_condition(const Scalar& expr, const Scalar& cond)
 {
 	this->expr = std::make_unique<Scalar>(expr);
 	this->cond = std::make_unique<Scalar>(cond);

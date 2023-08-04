@@ -63,9 +63,9 @@ namespace symx
 		template<std::size_t N>
 		Energy(std::string name, std::string working_directory, std::vector<std::array<int32_t, N>>& arr);
 
-		void set_expression(const Scalar& expr);
+		void set(const Scalar& expr);
 		// When the condition is positive, the energy becomes active
-		void set_conditional_expression(const Scalar& expr, const Scalar& cond);
+		void set_with_condition(const Scalar& expr, const Scalar& cond);
 		bool is_expression_set() const;
 		void deferred_init(std::vector<std::function<double* ()>> dof_arrays, const bool suppress_compiler_output);
 		void activate(const bool activate);

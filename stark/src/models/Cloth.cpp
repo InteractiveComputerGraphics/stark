@@ -40,7 +40,7 @@ void stark::models::Cloth::init(Stark& sim)
 			symx::Vector dev = x1 - xhat;
 			symx::Vector dev2 = x1 - x0;
 			symx::Scalar E = 0.5 * mass * (dev.dot(dev) / (dt.powN(2)) + dev2.dot(dev2) * damping / dt);
-			energy.set_expression(E);
+			energy.set(E);
 		}
 	);
 
@@ -82,7 +82,7 @@ void stark::models::Cloth::init(Stark& sim)
 			symx::Scalar logJ = symx::log(J);
 			symx::Scalar energy_density = 0.5 * mu * (Ic - 3.0) - mu * logJ + 0.5 * lambda * logJ.powN(2);
 			symx::Scalar Energy = area * energy_density;
-			energy.set_expression(Energy);
+			energy.set(Energy);
 		}
 	);
 	
@@ -125,7 +125,7 @@ void stark::models::Cloth::init(Stark& sim)
 			symx::Vector s = F.singular_values_2x2();
 			symx::Scalar C = s[0] - strain_limiting_start;
 			symx::Scalar E = area * strain_limiting_stiffness * C.powN(3);
-			energy.set_conditional_expression(E, C);
+			energy.set_with_condition(E, C);
 			energy.activate(this->is_strain_limiting_active);
 		}
 	);
@@ -156,7 +156,7 @@ void stark::models::Cloth::init(Stark& sim)
 				E += x.transpose() * Q * x;
 			}
 			E *= bending_stiffness;
-			energy.set_expression(E);
+			energy.set(E);
 		}
 	);
 	
@@ -180,7 +180,7 @@ void stark::models::Cloth::init(Stark& sim)
 
 			// Energy
 			symx::Scalar E = 0.5 * k * (x1 - x1_prescribed).squared_norm();
-			energy.set_expression(E);
+			energy.set(E);
 		}
 	);
 
@@ -199,7 +199,7 @@ void stark::models::Cloth::init(Stark& sim)
 
 			// Energy
 			symx::Scalar E = 0.5 * k * (x1[0] - x1[1]).squared_norm();
-			energy.set_expression(E);
+			energy.set(E);
 		}
 	);
 
@@ -227,7 +227,7 @@ void stark::models::Cloth::init(Stark& sim)
 			symx::Scalar k = energy.make_scalar(sim.settings.contact.adaptive_contact_stiffness.value);
 			symx::Scalar dhat = energy.make_scalar(sim.settings.contact.dhat);
 			symx::Scalar E = barrier_energy(d, dhat, k);
-			energy.set_expression(E);
+			energy.set(E);
 			energy.activate(sim.settings.contact.collisions_enabled);
 		};
 		auto edge_edge_mollifier = [&](const symx::Scalar& cross_norm_sq, const symx::Scalar& eps_x, const symx::Scalar& cutoff, const symx::Scalar& threshold)
@@ -311,7 +311,7 @@ void stark::models::Cloth::init(Stark& sim)
 				symx::Scalar d = distance_point_point<symx::Scalar>(PA[0], PB[0]);
 
 				symx::Scalar E = edge_edge_mollifier(cross_norm_sq, eps_x, cutoff, threshold)*barrier_energy(d, dhat, k);
-				energy.set_expression(E);
+				energy.set(E);
 				energy.activate(sim.settings.contact.collisions_enabled);
 			}
 		);
@@ -333,7 +333,7 @@ void stark::models::Cloth::init(Stark& sim)
 				symx::Scalar d = distance_point_line<symx::Scalar>(PA[0], EB[0], EB[1]);
 
 				symx::Scalar E = edge_edge_mollifier(cross_norm_sq, eps_x, cutoff, threshold) * barrier_energy(d, dhat, k);
-				energy.set_expression(E);
+				energy.set(E);
 				energy.activate(sim.settings.contact.collisions_enabled);
 			}
 		);
@@ -357,7 +357,7 @@ void stark::models::Cloth::init(Stark& sim)
 
 				symx::Scalar eps_x = compute_eps_x(EA, EB);
 				symx::Scalar E = edge_edge_mollifier(cross_norm_sq, eps_x, cutoff, threshold) * barrier_energy(d, dhat, k);
-				energy.set_expression(E);
+				energy.set(E);
 				energy.activate(sim.settings.contact.collisions_enabled);
 			}
 		);
