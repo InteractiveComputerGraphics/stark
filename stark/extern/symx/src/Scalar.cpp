@@ -1,5 +1,20 @@
 #include "Scalar.h"
 
+// ------------------------------------------------------------------------------------------------------
+symx::Scalar double_to_scalar(const symx::Scalar& seed, const double v)
+{
+	if (v == 0.0) {
+		return seed.get_zero();
+	}
+	else if (v == 1.0) {
+		return seed.get_one();
+	}
+	else {
+		return v * seed.get_one();
+	}
+}
+// ------------------------------------------------------------------------------------------------------
+
 symx::Scalar& symx::Scalar::operator=(const Scalar& other)
 {
 	assert(&this->expressions == &other.expressions && "symx error: Cannot mix symbols from different workspaces");
@@ -417,28 +432,60 @@ symx::Scalar symx::tan(const Scalar& scalar)
 	return scalar.tan();
 }
 
+symx::Scalar symx::operator>(const Scalar& a, const Scalar& b)
+{
+	return a - b;
+}
+symx::Scalar symx::operator<(const Scalar& a, const Scalar& b)
+{
+	return b - a;
+}
 symx::Scalar symx::branch(const Scalar& cond, const Scalar& a, const Scalar& b)
 {
 	return a.make_branch(cond, a, b);
 }
-
 symx::Scalar symx::min(const Scalar& a, const Scalar& b)
 {
-	return branch(b - a, a, b);
+	return branch(a > b, b, a);
 }
-
 symx::Scalar symx::max(const Scalar& a, const Scalar& b)
 {
-	return branch(a - b, a, b);
+	return branch(a > b, a, b);
 }
-
 symx::Scalar symx::abs(const Scalar& a)
 {
-	return branch(a, a, -a);
+	return branch(a > 0.0, a, -a);
 }
-
 symx::Scalar symx::sign(const Scalar& a)
 {
-	return branch(a, a.get_one(), -a.get_one());
+	return branch(a > 0.0, 1.0, -1.0);
 }
 
+symx::Scalar symx::branch(const Scalar& cond, const Scalar& positive_branch, const double negative_branch)
+{
+	return branch(cond, positive_branch, double_to_scalar(cond, negative_branch));
+}
+symx::Scalar symx::branch(const Scalar& cond, const double positive_branch, const Scalar& negative_branch)
+{
+	return branch(cond, double_to_scalar(cond, positive_branch), negative_branch);
+}
+symx::Scalar symx::branch(const Scalar& cond, const double positive_branch, const double negative_branch)
+{
+	return branch(cond, double_to_scalar(cond, positive_branch), double_to_scalar(cond, negative_branch));
+}
+symx::Scalar symx::operator>(const double& a, const Scalar& b)
+{
+	return double_to_scalar(b, a) > b;
+}
+symx::Scalar symx::operator>(const Scalar& a, const double& b)
+{
+	return a > double_to_scalar(a, b);
+}
+symx::Scalar symx::operator<(const double& a, const Scalar& b)
+{
+	return double_to_scalar(b, a) < b;
+}
+symx::Scalar symx::operator<(const Scalar& a, const double& b)
+{
+	return a < double_to_scalar(a, b);
+}

@@ -358,7 +358,7 @@ void cloth_wrap()
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
-	const int n = 200;
+	const int n = 20;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n }, true);

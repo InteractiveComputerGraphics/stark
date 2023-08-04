@@ -84,6 +84,7 @@ namespace symx
 		std::string get_name() const;
 	};
 
+	// Operations
 	Scalar operator+(double val, Scalar scalar);
 	Scalar operator-(double val, Scalar scalar);
 	Scalar operator*(double val, Scalar scalar);
@@ -98,9 +99,21 @@ namespace symx
 	Scalar cos(const Scalar& scalar);
 	Scalar tan(const Scalar& scalar);
 
+	// Conditionals
 	Scalar branch(const Scalar& cond, const Scalar& positive_branch, const Scalar& negative_branch);
+	Scalar operator>(const Scalar& a, const Scalar& b);
+	Scalar operator<(const Scalar& a, const Scalar& b);
 	Scalar min(const Scalar& a, const Scalar& b);
 	Scalar max(const Scalar& a, const Scalar& b);
 	Scalar abs(const Scalar& a);
 	Scalar sign(const Scalar& a);
+
+	// Convenient conditional alternatives
+	Scalar branch(const Scalar& cond, const double positive_branch, const Scalar& negative_branch);
+	Scalar branch(const Scalar& cond, const Scalar& positive_branch, const double negative_branch);
+	Scalar branch(const Scalar& cond, const double positive_branch, const double negative_branch);
+	Scalar operator>(const double& a, const Scalar& b);
+	Scalar operator>(const Scalar& a, const double& b);
+	Scalar operator<(const double& a, const Scalar& b);
+	Scalar operator<(const Scalar& a, const double& b);
 }

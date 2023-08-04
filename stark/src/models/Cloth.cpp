@@ -125,7 +125,7 @@ void stark::models::Cloth::init(Stark& sim)
 			symx::Vector s = F.singular_values_2x2();
 			symx::Scalar C = s[0] - strain_limiting_start;
 			symx::Scalar E = area * strain_limiting_stiffness * C.powN(3);
-			energy.set_with_condition(E, C);
+			energy.set_with_condition(E, C > 0.0);
 			energy.activate(this->is_strain_limiting_active);
 		}
 	);
@@ -247,8 +247,7 @@ void stark::models::Cloth::init(Stark& sim)
 			// IPC
 			symx::Scalar x_div_eps_x = x / eps_x;
 			symx::Scalar f = (-x_div_eps_x + 2.0) * x_div_eps_x;
-			symx::Scalar mollifier = symx::branch(x - eps_x, x.get_one(), f);
-
+			symx::Scalar mollifier = symx::branch(x > eps_x, 1.0, f);
 			return mollifier;
 		};
 		auto compute_eps_x = [&](const std::vector<symx::Vector>& EA, const std::vector<symx::Vector>& EB)
