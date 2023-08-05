@@ -4,42 +4,21 @@ stark repo TODO
 		I would maybe need a new middle level of abstraction: app -> stark (simulator put together) -> stark_sim (core simulator)
 		I don't think this is really necessary. In splishsplash you just modify it directly
 		
-	* Push changes to vtkio
-	* Off the shelf logger/output
-		* Decide where to put it: stark or start::utils.
-		* It doesn't need to be a singleton, although that might be the best
-	* Support use whole element in global energy
 	* Consider moving all geometry utils to its own namespace
+	* Do we put simulation in stark::models ?
 	* Interpolate frames
 	* Newton's method needs a lot of work in understanding, convergence, when to repeat a time step...
-	* Trace and debug info
+		* NewtonsMethod is a mess
+			callbacks and evaluation should go together
+			does it make sense that it is it's own class? Maybe a function is better?
+			Timings don't add up to "total" because of aborted time steps
 	* Remove dependency to JanBenderUtilities. We just need mkdirs.
 	* Check for NaNs in symx as an option in Stark::Settings
-	* Frame interpolation
-	* Console doesn´t work until simulation.setup()
-	* Do we put simulation in stark::models ?
 	* Naming of NewtonsMethod is confusing because it is technically the time step.
 	* It needs to be revisited as building something completely from zero ala hello world.
 		There are a lot of error catches we should put in place (like no dofs, no energies, empty stuff...)
 	* Timings per energy
-	* NewtonsMethod is a mess
-		callbacks and evaluation should go together
-		does it make sense that it is it's own class? Maybe a function is better?
-		Timings don't add up to "total" because of aborted time steps
-		
-	* Parallel edge-edge case gives a lot of convergence problems. I need a solution for this...
-		- I **really** have to understand everything that happens in the edge-edge. Sometimes I think I understand it and then it goes into another branch where I have no clue what happens.
-		- Stop reporting perfectly parallel edges
-		- I need to come up with the logic for discarding/accepting parallel edges configurations
-		
-	-> Can I come up with a better edge-edge distance function?
-		Just some distance related function from 4 points. 
-		Maybe the point-point distance that is magnetized to the center as they get parallel?
-		
 	* Explain IPC edge-edge
-	* Randomized meshes for cloth.
-	* Take rest edge length for IPC eps_x!!
-	* Always write all the output to the console file, just dont show it to the screen.
 	* Time step in large simulations is dictated by line search not descend... can we just take the negative?
 	* Magnetic simulations
 	

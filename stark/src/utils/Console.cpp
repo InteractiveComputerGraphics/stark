@@ -25,23 +25,22 @@ void stark::utils::Console::set_verbosity(const Verbosity verbosity)
 void stark::utils::Console::set_output_target(const OutputTo output_to)
 {
 }
-void stark::utils::Console::print(const std::string str)
+void stark::utils::Console::print(const std::string& msg, const Verbosity verbosity)
 {
 	this->_exit_if_no_path();
 
 	std::lock_guard<std::mutex> guard(this->g_pages_mutex);
 
+	// Write to file all verbosity levels
 	if (this->output_to == OutputTo::FileOnly || this->output_to == OutputTo::FileAndConsole) {
-		(*this->ofstream_ptr) << str << std::flush;
+		(*this->ofstream_ptr) << msg << std::flush;
 	}
+
+	// Write to console only if correct verbosity
 	if (this->output_to == OutputTo::ConsoleOnly || this->output_to == OutputTo::FileAndConsole) {
-		std::cout << str << std::flush;
-	}
-}
-void stark::utils::Console::print(const std::string& msg, const Verbosity verbosity)
-{
-	if (static_cast<int>(verbosity) <= static_cast<int>(this->verbosity)) {
-		this->print(msg);
+		if (static_cast<int>(verbosity) <= static_cast<int>(this->verbosity)) {
+			std::cout << msg << std::flush;
+		}
 	}
 }
 

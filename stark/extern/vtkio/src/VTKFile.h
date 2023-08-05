@@ -24,7 +24,7 @@ namespace vtkio
 
 	class VTKFile
 	{
-	/* Fields */
+		/* Fields */
 	public:
 		// These data is stored as it is writen/read in the VTK file format
 		// The user can directly modify these buffers to operate VTKFile without using the provided interface methods
@@ -35,19 +35,18 @@ namespace vtkio
 		std::unordered_map<std::string, VTKData> cell_data;
 		std::string comments;
 
-	/* Methods */
+		/* Methods */
 	public:
 		VTKFile() {};
 		~VTKFile() {};
 
 		// Setters -----------------------------------------------------------------------
 		template<class T>
-		void set_points_raw(const std::vector<T> &points_3d_flat);
+		void set_points_raw(const std::vector<T>& points_3d_flat);
 		template<class TwiceIndexable>
 		void set_points_from_twice_indexable(const TwiceIndexable& twice_indexable);
 		template<class TwiceIndexable>
 		void set_points_from_twice_indexable(const TwiceIndexable& twice_indexable, const size_t begin, const size_t end);
-
 
 		void set_cells_raw(const std::vector<int>& cell_array_flat);
 		void set_cell_types_raw(const std::vector<int>& cell_type_array_flat);
@@ -61,20 +60,20 @@ namespace vtkio
 		template<class T>
 		void set_point_data_raw(const std::string label, const std::vector<T>& data_flat, const vtkio::AttributeType attr_type);
 		template<class Indexable>
-		void set_point_data_from_indexable(const std::string label, const Indexable &indexable, const vtkio::AttributeType attr_type);
+		void set_point_data_from_indexable(const std::string label, const Indexable& indexable, const vtkio::AttributeType attr_type);
 		template<class Indexable>
-		void set_point_data_from_indexable(const std::string label, const Indexable &indexable, const size_t begin, const size_t end, const vtkio::AttributeType attr_type);
+		void set_point_data_from_indexable(const std::string label, const Indexable& indexable, const size_t begin, const size_t end, const vtkio::AttributeType attr_type);
 		template<class TwiceIndexable>
 		void set_point_data_from_twice_indexable(const std::string label, const TwiceIndexable& twice_indexable, const vtkio::AttributeType attr_type);
 		template<class TwiceIndexable>
 		void set_point_data_from_twice_indexable(const std::string label, const TwiceIndexable& twice_indexable, const size_t begin, const size_t end, const vtkio::AttributeType attr_type);
-		
+
 		template<class T>
 		void set_cell_data_raw(const std::string label, const std::vector<T>& data_flat, const vtkio::AttributeType attr_type);
 		template<class Indexable>
-		void set_cell_data_from_indexable(const std::string label, const Indexable &indexable, const vtkio::AttributeType attr_type);
+		void set_cell_data_from_indexable(const std::string label, const Indexable& indexable, const vtkio::AttributeType attr_type);
 		template<class Indexable>
-		void set_cell_data_from_indexable(const std::string label, const Indexable &indexable, const size_t begin, const size_t end, const vtkio::AttributeType attr_type);
+		void set_cell_data_from_indexable(const std::string label, const Indexable& indexable, const size_t begin, const size_t end, const vtkio::AttributeType attr_type);
 		template<class TwiceIndexable>
 		void set_cell_data_from_twice_indexable(const std::string label, const TwiceIndexable& twice_indexable, const vtkio::AttributeType attr_type);
 		template<class TwiceIndexable>
@@ -92,7 +91,7 @@ namespace vtkio
 		std::string get_comments();
 
 		template<class T>
-		void get_points_raw(std::vector<T> &points);
+		void get_points_raw(std::vector<T>& points);
 		template<class TwiceIndexable>
 		void get_points_to_twice_indexable(TwiceIndexable& twice_indexable);
 		template<class TwiceIndexable>
@@ -108,7 +107,7 @@ namespace vtkio
 		vtkio::CellType get_cells_to_twice_indexable(TwiceIndexable& twice_indexable, const size_t begin, const size_t end);
 
 		template<class T>
-		vtkio::AttributeType get_point_data_raw(const std::string label, std::vector<T> &data);
+		vtkio::AttributeType get_point_data_raw(const std::string label, std::vector<T>& data);
 		template<class Indexable>
 		vtkio::AttributeType get_point_data_to_indexable(const std::string label, Indexable& indexable);
 		template<class Indexable>
@@ -133,11 +132,14 @@ namespace vtkio
 		void write(const std::string path, const bool binary = true);
 		void read(const std::string path, const bool swap_to_local_endianness = true);
 		static void write_empty(const std::string path);
-		
+
 		// Other functions -----------------------------------------------------------------------
 		void check();
 		void clear();
 		void swap_bytes(const ByteOrder byte_order = ByteOrder::Native);
+
+		template<class T>
+		static VTKFile regular_grid(const std::array<T, 3>& bottom, const std::array<T, 3>& top, const std::array<int, 3>& n_cells_per_dimension);
 
 
 	private:
@@ -147,7 +149,7 @@ namespace vtkio
 		template<bool IS_TWICE_INDEXABLE, class Indexable>
 		void _setData(const bool point_data, const std::string label, const Indexable& indexable, const size_t begin, const size_t end, const vtkio::AttributeType attr_type);
 		template<bool IS_TWICE_INDEXABLE, class Indexable>
-		void _getData(const bool point_data, const std::string label, Indexable& indexable, vtkio::AttributeType &attr_type, const size_t begin, const size_t end);
+		void _getData(const bool point_data, const std::string label, Indexable& indexable, vtkio::AttributeType& attr_type, const size_t begin, const size_t end);
 	};
 
 
@@ -159,10 +161,10 @@ namespace vtkio
 
 		// Points
 		if (this->get_number_of_points() == 0) { std::cout << "vtkio error: " << "Point array is empty." << std::endl; exit(-1); }
-		if (!(this->points.isType<float>() || this->points.isType<double>())) { 
-			std::cout << "vtkio error: " << "Points must be float or double. Consider using VTKFile.points.castInPlace<double>();" << std::endl; exit(-1); 
+		if (!(this->points.isType<float>() || this->points.isType<double>())) {
+			std::cout << "vtkio error: " << "Points must be float or double. Consider using VTKFile.points.castInPlace<double>();" << std::endl; exit(-1);
 		};
-		
+
 		// Cells
 		if (this->get_number_of_cells() == 0) { std::cout << "vtkio error: " << "Cells array is empty." << std::endl; exit(-1); }
 		if (!this->cells.isType<int32_t>()) {
@@ -179,7 +181,7 @@ namespace vtkio
 				const size_t n_data = byte_buffer.getNumberOfItems();
 				const size_t dim = n_data / n_entities;
 				if (n_data == 0) { std::cout << "vtkio error: " << label + " data array is empty." << std::endl; exit(-1); }
-				if (dim*n_entities != n_data) { std::cout << "vtkio error: " << label + " data array dimension mismatchs." << std::endl; exit(-1); }
+				if (dim * n_entities != n_data) { std::cout << "vtkio error: " << label + " data array dimension mismatchs." << std::endl; exit(-1); }
 
 				const vtkio::AttributeType attr_type = vtk_data.attr_type;
 				const vtkio::tables::AttributeTypeInfo attr_info = vtkio::tables::getVTKAttributeTypeInfo(attr_type);
@@ -273,7 +275,7 @@ namespace vtkio
 	{
 		// Input checking
 		this->check();
-		
+
 		//// TODO: Check that path is correct and has correct extension. Create folders is necessary.
 		//// NOTE: The iteration number is responsibility of the user or another method wrapper
 		const std::string dst = path;
@@ -286,7 +288,7 @@ namespace vtkio
 
 		// Header
 		outfile << "# vtk DataFile Version 4.2\n";
-		outfile << this->comments << '\n'; 
+		outfile << this->comments << '\n';
 		outfile << ((binary) ? "BINARY\n" : "ASCII\n");
 		outfile << "DATASET UNSTRUCTURED_GRID\n";
 
@@ -464,7 +466,7 @@ namespace vtkio
 				}
 				else if (line_buffer.substr(0, 5) == "CELLS") {
 					read_cells = true;
-					
+
 					// Cells header
 					std::istringstream line_stream(line_buffer);
 					std::string cells_word, n_cells_str, total_n_items_str;
@@ -892,6 +894,70 @@ namespace vtkio
 		this->cell_types.setFromIndexable(cell_types);
 		this->cells.setFromIndexable(cells);
 	}
+	template<class T>
+	inline VTKFile VTKFile::regular_grid(const std::array<T, 3>& bottom, const std::array<T, 3>& top, const std::array<int, 3>& n_cells_per_dimension)
+	{
+		// Grid
+		const int cx = n_cells_per_dimension[0];
+		const int cy = n_cells_per_dimension[1];
+		const int cz = n_cells_per_dimension[2];
+		const int nx = cx + 1;
+		const int ny = cy + 1;
+		const int nz = cz + 1;
+		const int n_points = nx * ny * nz;
+		const int n_cells = cx * cy * cz;
+		const T dx = (top[0] - bottom[0]) / (T)cx;
+		const T dy = (top[1] - bottom[1]) / (T)cy;
+		const T dz = (top[2] - bottom[2]) / (T)cz;
+
+		// Points
+		/* Correspond to a hexahedron following the pattern:
+				0 -> [[0, 0, 0],
+				1 ->  [0, 0, 1],
+				2 ->  [0, 1, 0],
+				3 ->  [0, 1, 1],
+				4 ->  [1, 0, 0],
+				5 ->  [1, 0, 1],
+				6 ->  [1, 1, 0],
+				7 ->  [1, 1, 1]]
+
+			move z -> move y -> move x
+		*/
+		std::vector<std::array<T, 3>> vertices(n_points);
+		for (int i = 0; i < nx; i++) {
+			for (int j = 0; j < ny; j++) {
+				for (int k = 0; k < nz; k++) {
+					vertices[nz * ny * i + nz * j + k] = { bottom[0] + i * dx, bottom[1] + j * dy, bottom[2] + k * dz };
+				}
+			}
+		}
+
+		// Connectivity
+		std::vector<std::array<int, 8>> hexas(n_cells);
+		int c = 0;
+		for (int i = 0; i < cx; i++) {
+			for (int j = 0; j < cy; j++) {
+				for (int k = 0; k < cz; k++) {
+					std::array<int, 8> nodes = { nz * ny * (i + 0) + nz * (j + 0) + (k + 0),
+												 nz * ny * (i + 0) + nz * (j + 0) + (k + 1),
+												 nz * ny * (i + 0) + nz * (j + 1) + (k + 0),
+												 nz * ny * (i + 0) + nz * (j + 1) + (k + 1),
+												 nz * ny * (i + 1) + nz * (j + 0) + (k + 0),
+												 nz * ny * (i + 1) + nz * (j + 0) + (k + 1),
+												 nz * ny * (i + 1) + nz * (j + 1) + (k + 0),
+												 nz * ny * (i + 1) + nz * (j + 1) + (k + 1) };
+					hexas[c] = { nodes[0], nodes[4], nodes[6], nodes[2], nodes[1], nodes[5], nodes[7], nodes[3] };
+					c++;
+				}
+			}
+		}
+
+		// VTKFile
+		VTKFile vtk_file;
+		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.set_cells_from_twice_indexable(hexas, vtkio::CellType::Hexahedron);
+		return vtk_file;
+	}
 	template<bool IS_TWICE_INDEXABLE, class Indexable>
 	inline void VTKFile::_setData(const bool point_data, const std::string label, const Indexable& indexable, const size_t begin, const size_t end, const vtkio::AttributeType attr_type)
 	{
@@ -914,7 +980,7 @@ namespace vtkio
 		}
 	}
 	template<bool IS_TWICE_INDEXABLE, class Indexable>
-	inline void VTKFile::_getData(const bool point_data, const std::string label, Indexable& indexable, vtkio::AttributeType &attr_type, const size_t begin, const size_t end)
+	inline void VTKFile::_getData(const bool point_data, const std::string label, Indexable& indexable, vtkio::AttributeType& attr_type, const size_t begin, const size_t end)
 	{
 		VTKData& vtk_data = this->_getVTKData(point_data, label);
 

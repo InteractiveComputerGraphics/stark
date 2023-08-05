@@ -34,18 +34,9 @@ namespace stark::utils
 		std::string get_path() const;
 		void set_verbosity(const Verbosity verbosity);
 		void set_output_target(const OutputTo output_to);
-		void print(const std::string str);
 		void print(const std::string& msg, const Verbosity verbosity);
 
 	private:
 		void _exit_if_no_path();
-		//void assert_with_exit(const bool condition, const std::string& msg)
-		//{
-		//	if (!condition) {
-		//		std::string msg_ = "Error: " + msg + " Exiting.\n";
-		//		(*this) << msg;
-		//		exit(-1);
-		//	}
-		//}
 	};
 }
