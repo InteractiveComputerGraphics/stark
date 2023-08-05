@@ -27,20 +27,26 @@ namespace tmcd
 		Edge edge;
 		Point point;
 	};
-
+	template<typename T1, typename T2>
+	struct ProximityPair
+	{
+		double distance;
+		T1 first;
+		T2 second;
+	};
 	struct ProximityResults
 	{
 		struct PointTriangle
 		{
-			std::vector<std::pair<Point, TrianglePoint>> point_point;
-			std::vector<std::pair<Point, TriangleEdge>> point_edge;
-			std::vector<std::pair<Point, Triangle>> point_triangle;
+			std::vector<ProximityPair<Point, TrianglePoint>> point_point;
+			std::vector<ProximityPair<Point, TriangleEdge>> point_edge;
+			std::vector<ProximityPair<Point, Triangle>> point_triangle;
 		};
 		struct EdgeEdge
 		{
-			std::vector<std::pair<EdgePoint, EdgePoint>> point_point;
-			std::vector<std::pair<EdgePoint, Edge>> point_edge;
-			std::vector<std::pair<Edge, Edge>> edge_edge;
+			std::vector<ProximityPair<EdgePoint, EdgePoint>> point_point;
+			std::vector<ProximityPair<EdgePoint, Edge>> point_edge;
+			std::vector<ProximityPair<Edge, Edge>> edge_edge;
 		};
 		PointTriangle point_triangle;
 		EdgeEdge edge_edge;

@@ -21,6 +21,10 @@ stark repo TODO
 	* Explain IPC edge-edge
 	* Time step in large simulations is dictated by line search not descend... can we just take the negative?
 	* Magnetic simulations
+	* Penalty as a class so I can swap and easily change the gradient for the friction
+	
+	* Do I have to mollify the edge-edge friction forces??
+	* Confirm projection matrices and barycentric coordinates
 	
 	
 	

@@ -9,6 +9,7 @@
 #include "../utils/MeshWithDynamics.h"
 #include "../utils/unordered_array_set_and_map.h"
 #include "TriangleMeshContacts.h"
+#include "TriangleMeshFriction.h"
 
 
 namespace stark::models
@@ -20,6 +21,7 @@ namespace stark::models
 
 		/* Fields */
 		utils::MeshWithDynamics<3> model;
+		symx::DoF dof;
 		bool changed_discretization = true;
 		bool write_VTK = true;
 
@@ -59,10 +61,13 @@ namespace stark::models
 
 		// Contacts
 		std::vector<std::array<int32_t, 2>> edges;
-		std::vector<Eigen::Vector3d> collision_x;
 		tmcd::IntersectionDetection id;
 		tmcd::ProximityDetection pd;
 		TriangleMeshContacts contacts;
+
+		// Friction
+		std::vector<double> vertex_mu;  // TODO!!
+		TriangleMeshFriction friction;
 
 		/* Methods */
 		// Physical System Interface
@@ -100,16 +105,23 @@ namespace stark::models
 		const utils::TriangleMultiMesh& get_mesh() const;
 
 	private:
+		// Helpers
+		void _exit_if_cloth_not_declared(const int cloth_id);
+		void _init_simulation_structures(const int n_threads);
+		std::vector<Eigen::Vector3d> _compute_collision_x1(Stark& sim);
+		const tmcd::ProximityResults& _run_proximity_detection(const std::vector<Eigen::Vector3d>& x, Stark& sim);
+		void _update_contacts(Stark& sim);
+		
 		// Stark callbacks
 		void _before_time_step(Stark& sim);
 		void _after_time_step(Stark& sim);
 		bool _is_valid_configuration(Stark& sim);
 		void _write_frame(Stark& sim);
 
-		// Helpers
-		void _exit_if_cloth_not_declared(const int cloth_id);
-		void _init_simulation_structures(const int n_threads);
-		void _update_collision_x(Stark& sim);
-		void _update_contacts(Stark& sim);
+
+		// Energy groups
+		void _energies_mechanical(Stark& sim);
+		void _energies_contact(Stark& sim);
+		void _energies_friction(Stark& sim);
 	};
 }

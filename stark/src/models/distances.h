@@ -1,7 +1,4 @@
 #pragma once
-#include <math.h>
-#include <functional>
-
 #include <symx>
 
 namespace stark::models
