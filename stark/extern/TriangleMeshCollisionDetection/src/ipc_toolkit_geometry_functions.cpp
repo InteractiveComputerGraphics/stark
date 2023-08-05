@@ -306,7 +306,7 @@ double tmcd::point_triangle_sq_distance(PointTriangleDistanceType& nearest_entit
         return 0.0;  // Supresses warning. This case can't happen.
     }
 }
-double tmcd::point_triangle_sq_unsigned_jan(PointTriangleDistanceType& nearest_entity, const Vec3d& point, const Vec3d& v0, const Vec3d& v1, const Vec3d& v2)
+double tmcd::point_triangle_sq_unsigned_jan_bender(PointTriangleDistanceType& nearest_entity, const Vec3d& point, const Vec3d& v0, const Vec3d& v1, const Vec3d& v2)
 {
 	Vec3d diff = v0 - point;
 	Vec3d edge0 = v1 - v0;

@@ -31,8 +31,7 @@ namespace stark
 		{
 			AdaptiveParameter adaptive_contact_stiffness;
 			double dhat = 1e-3;
-			double edge_edge_cross_norm_sq_cutoff = 1e-20;
-			double edge_edge_cross_norm_sq_threshold = 1e-10;
+			double edge_edge_cross_norm_sq_cutoff = 1e-30;
 			bool enable_intersection_test = true;
 			bool collisions_enabled = true;
 			bool triangle_point_enabled = true;

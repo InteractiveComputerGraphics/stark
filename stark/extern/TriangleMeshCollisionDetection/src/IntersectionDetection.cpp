@@ -77,7 +77,7 @@ const IntersectionResults& tmcd::IntersectionDetection::run(const BroadPhaseStra
 		// Narrow phase
 		if (is_edge_intersecting_triangle(e0, e1, t0, t1, t2)) {
 			const int thread_id = omp_get_thread_num();
-			this->thread_results[thread_id].edge_triangle.push_back({ {edge.set, e[0], e[1]}, {triangle.set, t[0], t[1], t[2]} });
+			this->thread_results[thread_id].edge_triangle.push_back({ {edge.set, edge.idx, {e[0], e[1]}}, {triangle.set, triangle.idx, {t[0], t[1], t[2]}} });
 		}
 	}
 	double t1 = omp_get_wtime();

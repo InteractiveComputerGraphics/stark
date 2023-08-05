@@ -15,6 +15,7 @@ namespace stark::utils
 	public:
 		/* Fields */
 		// Dynamics
+		std::vector<Eigen::Vector3d> X;  // Node positions at rest
 		std::vector<Eigen::Vector3d> x0;  // Node positions at time n
 		std::vector<Eigen::Vector3d> x1;  // Node positions at time n+1
 		std::vector<Eigen::Vector3d> v0;  // Node velocities at time n
@@ -47,6 +48,7 @@ namespace stark::utils
 		this->mesh.add_mesh(vertices, connectivity);
 		const int n = (int)this->mesh.vertices.size();
 
+		this->X = this->mesh.vertices;
 		this->x0 = this->mesh.vertices;
 		this->x1 = this->mesh.vertices;
 
@@ -98,6 +100,7 @@ namespace stark::utils
 	inline void MeshWithDynamics<N_NODES_PER_ELEM>::clear()
 	{
 		this->mesh.clear();
+		this->X.clear();
 		this->x0.clear();
 		this->x1.clear();
 		this->v0.clear();

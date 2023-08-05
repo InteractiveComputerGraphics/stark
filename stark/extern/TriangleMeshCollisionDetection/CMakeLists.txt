@@ -35,8 +35,10 @@ set(SOURCE_FILES
 	src/BroadPhasePTEE.cpp
 	src/BroadPhasePTEECCD.h
 	src/BroadPhasePTEECCD.cpp
+	src/IntersectionResults.h
 	src/IntersectionDetection.h
 	src/IntersectionDetection.cpp
+	src/ProximityResults.h
 	src/ProximityDetection.h
 	src/ProximityDetection.cpp
 	#src/TriangleMeshCollisionDetection.h

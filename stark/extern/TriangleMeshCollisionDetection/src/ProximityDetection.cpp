@@ -51,22 +51,17 @@ void tmcd::ProximityDetection::add_blacklist_range_edge_edge(const int32_t mesh_
 {
 	this->bp.add_blacklist_range_edge_edge(mesh_id_0, interval_0, mesh_id_1, interval_1);
 }
-void tmcd::ProximityDetection::disable_point_triangle(const bool disable)
+void tmcd::ProximityDetection::activate_point_triangle(const bool activate)
 {
-	this->is_point_triangle_disabled = disable;
+	this->is_point_triangle_enabled = activate;
 }
-void tmcd::ProximityDetection::disable_edge_edge(const bool disable)
+void tmcd::ProximityDetection::activate_edge_edge(const bool activate)
 {
-	this->is_edge_edge_disabled = disable;
+	this->is_edge_edge_enabled = activate;
 }
 
 const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, const BroadPhaseStrategy strat)
 {
-	//if (this->edge_edge_parallel_cross_norm_sq_threshold < 0.0) {
-	//	std::cout << "tmcd::ProximityDetection::run() error: edge-edge parallel threshold not set. Use ProximityDetection.set_edge_edge_parallel_threshold()." << std::endl;
-	//	exit(-1);
-	//}
-
 	const double total_t0 = omp_get_wtime();
 
 	// Run broad phase
@@ -85,7 +80,7 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 	//// Point - Triangle
 	double t0 = omp_get_wtime();
 	const std::vector<std::pair<SetIndex, SetIndex>>& pt_pairs = this->bp.get_results().point_triangle;
-	if (!this->is_point_triangle_disabled) {
+	if (this->is_point_triangle_enabled) {
 		#pragma omp parallel for schedule(static) num_threads(n_threads)
 		for (int32_t pair_i = 0; pair_i < (int32_t)pt_pairs.size(); pair_i++) {
 			const SetIndex& point = pt_pairs[pair_i].first;
@@ -100,38 +95,22 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 			// Narrow phase
 			PointTriangleDistanceType nearest_entity;
 			const double dist_sq = point_triangle_sq_distance(nearest_entity, p, a, b, c);
-			//const double dist_sq = point_triangle_sq_unsigned_jan(nearest_entity, p, a, b, c);  // Much faster but doesn't correctly detect cornercases
+			//const double dist_sq = point_triangle_sq_unsigned_jan_bender(nearest_entity, p, a, b, c);  // Much faster but doesn't correctly detect cornercases
 			if (dist_sq < enlargement_sq) {
 
+				const Triangle T = { triangle.set, triangle.idx, t };
+				const Point P = { point.set, point.idx };
+
 				const int thread_id = omp_get_thread_num();
+				auto& thread_results = this->thread_results[thread_id].point_triangle;
 				switch (nearest_entity) {
-				case PointTriangleDistanceType::P_T0:
-					this->thread_results[thread_id].point_point.push_back({ {point.set, point.idx}, {triangle.set, t[0]} });
-					break;
-
-				case PointTriangleDistanceType::P_T1:
-					this->thread_results[thread_id].point_point.push_back({ {point.set, point.idx}, {triangle.set, t[1]} });
-					break;
-
-				case PointTriangleDistanceType::P_T2:
-					this->thread_results[thread_id].point_point.push_back({ {point.set, point.idx}, {triangle.set, t[2]} });
-					break;
-
-				case PointTriangleDistanceType::P_E0:
-					this->thread_results[thread_id].point_edge.push_back({ {point.set, point.idx}, {triangle.set, t[0], t[1]} });
-					break;
-
-				case PointTriangleDistanceType::P_E1:
-					this->thread_results[thread_id].point_edge.push_back({ {point.set, point.idx}, {triangle.set, t[1], t[2]} });
-					break;
-
-				case PointTriangleDistanceType::P_E2:
-					this->thread_results[thread_id].point_edge.push_back({ {point.set, point.idx}, {triangle.set, t[2], t[0]} });
-					break;
-
-				case PointTriangleDistanceType::P_T:
-					this->thread_results[thread_id].point_triangle.push_back({ {point.set, point.idx}, {triangle.set, {t[0], t[1], t[2]}} });
-					break;
+				case PointTriangleDistanceType::P_T0: thread_results.point_point.push_back({ P, { T, {triangle.set, t[0]} } }); break;
+				case PointTriangleDistanceType::P_T1: thread_results.point_point.push_back({ P, { T, {triangle.set, t[1]} } }); break;
+				case PointTriangleDistanceType::P_T2: thread_results.point_point.push_back({ P, { T, {triangle.set, t[2]} } }); break;
+				case PointTriangleDistanceType::P_E0: thread_results.point_edge.push_back({ P, {T, {triangle.set, {t[0], t[1]}}} }); break;
+				case PointTriangleDistanceType::P_E1: thread_results.point_edge.push_back({ P, {T, {triangle.set, {t[1], t[2]}}} }); break;
+				case PointTriangleDistanceType::P_E2: thread_results.point_edge.push_back({ P, {T, {triangle.set, {t[2], t[0]}}} }); break;
+				case PointTriangleDistanceType::P_T:  thread_results.point_triangle.push_back({ P, T }); break;
 				}
 			}
 		}
@@ -142,7 +121,7 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 	//// Edge - Edge
 	t0 = omp_get_wtime();
 	const std::vector<std::pair<SetIndex, SetIndex>>& ee_pairs = this->bp.get_results().edge_edge;
-	if (!this->is_edge_edge_disabled) {
+	if (this->is_edge_edge_enabled) {
 		#pragma omp parallel for schedule(static) num_threads(n_threads)
 		for (int32_t pair_i = 0; pair_i < (int32_t)ee_pairs.size(); pair_i++) {
 			const SetIndex& edge_a = ee_pairs[pair_i].first;
@@ -159,36 +138,31 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 			EdgeEdgeDistanceType nearest_entity;
 			const double dist_sq = edge_edge_sq_distance(nearest_entity, a, b, p, q, this->edge_edge_parallel_cross_norm_sq_cutoff);
 			if (dist_sq < enlargement_sq) {
-				const int thread_id = omp_get_thread_num();
 
-				// All cases (not only edge-edge) that are almost parallel are classified to edge-edge
 				const double cross_norm_sq = (b - a).cross(q - p).squaredNorm();
 				if (cross_norm_sq <= this->edge_edge_parallel_cross_norm_sq_cutoff) {
 					continue;
 				}
-				//const bool almost_parallel = cross_norm_sq < this->edge_edge_parallel_cross_norm_sq_threshold;
 
-				// TODO: I have to mollify all cases, not just EA_EB
+				const Edge EA = { edge_a.set, edge_a.idx, { ea[0], ea[1] } };
+				const Edge EB = { edge_b.set, edge_b.idx, { eb[0], eb[1] } };
+				const EdgePoint EA0 = { EA, { edge_a.set, ea[0] } };
+				const EdgePoint EA1 = { EA, { edge_a.set, ea[1] } };
+				const EdgePoint EB0 = { EB, { edge_b.set, eb[0] } };
+				const EdgePoint EB1 = { EB, { edge_b.set, eb[1] } };
 
-				const Edge EA = { edge_a.set, { ea[0], ea[1] } };
-				const Edge EB = { edge_b.set, { eb[0], eb[1] } };
-				const Point EA0 = { edge_a.set, ea[0] };
-				const Point EA1 = { edge_a.set, ea[1] };
-				const Point EB0 = { edge_b.set, eb[0] };
-				const Point EB1 = { edge_b.set, eb[1] };
-
+				const int thread_id = omp_get_thread_num();
+				auto& thread_results = this->thread_results[thread_id].edge_edge;
 				switch (nearest_entity) {
-				case EdgeEdgeDistanceType::EA0_EB0: this->thread_results[thread_id].ee_point_point.push_back({ {EA, EA0}, {EB, EB0} }); break;
-				case EdgeEdgeDistanceType::EA0_EB1: this->thread_results[thread_id].ee_point_point.push_back({ {EA, EA0}, {EB, EB1} }); break;
-				case EdgeEdgeDistanceType::EA1_EB0: this->thread_results[thread_id].ee_point_point.push_back({ {EA, EA1}, {EB, EB0} }); break;
-				case EdgeEdgeDistanceType::EA1_EB1: this->thread_results[thread_id].ee_point_point.push_back({ {EA, EA1}, {EB, EB1} }); break;
-
-				case EdgeEdgeDistanceType::EA_EB0: this->thread_results[thread_id].ee_point_edge.push_back({ {EB, EB0}, EA }); break;
-				case EdgeEdgeDistanceType::EA_EB1: this->thread_results[thread_id].ee_point_edge.push_back({ {EB, EB1}, EA }); break;
-				case EdgeEdgeDistanceType::EA0_EB: this->thread_results[thread_id].ee_point_edge.push_back({ {EA, EA0}, EB }); break;
-				case EdgeEdgeDistanceType::EA1_EB: this->thread_results[thread_id].ee_point_edge.push_back({ {EA, EA1}, EB }); break;
-
-				case EdgeEdgeDistanceType::EA_EB: this->thread_results[thread_id].ee_edge_edge.push_back({ EA, EB }); break;
+				case EdgeEdgeDistanceType::EA0_EB0: thread_results.point_point.push_back({ EA0, EB0 }); break;
+				case EdgeEdgeDistanceType::EA0_EB1: thread_results.point_point.push_back({ EA0, EB1 }); break;
+				case EdgeEdgeDistanceType::EA1_EB0: thread_results.point_point.push_back({ EA1, EB0 }); break;
+				case EdgeEdgeDistanceType::EA1_EB1: thread_results.point_point.push_back({ EA1, EB1 }); break;
+				case EdgeEdgeDistanceType::EA_EB0:  thread_results.point_edge.push_back({ EB0, EA }); break;
+				case EdgeEdgeDistanceType::EA_EB1:  thread_results.point_edge.push_back({ EB1, EA }); break;
+				case EdgeEdgeDistanceType::EA0_EB:  thread_results.point_edge.push_back({ EA0, EB }); break;
+				case EdgeEdgeDistanceType::EA1_EB:  thread_results.point_edge.push_back({ EA1, EB }); break;
+				case EdgeEdgeDistanceType::EA_EB:   thread_results.edge_edge.push_back({ EA, EB }); break;
 				}
 			}
 		}
@@ -198,37 +172,30 @@ const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, 
 
 	// Merge thread results
 	t0 = omp_get_wtime();
-	std::vector<std::vector<std::pair<Point, Point>>*> thread_point_point(n_threads);
-	std::vector<std::vector<std::pair<Point, Edge>>*> thread_point_edge(n_threads);
-	std::vector<std::vector<std::pair<Point, Triangle>>*> thread_point_triangle(n_threads);
-	std::vector<std::vector<std::pair<Edge, Edge>>*> thread_edge_edge(n_threads);
+	std::vector<std::vector<std::pair<Point, TrianglePoint>>*> thread_pt_point_point(n_threads);
+	std::vector<std::vector<std::pair<Point, TriangleEdge>>*> thread_pt_point_edge(n_threads);
+	std::vector<std::vector<std::pair<Point, Triangle>>*> thread_pt_point_triangle(n_threads);
 
-	// DEBUG
 	std::vector<std::vector<std::pair<EdgePoint, EdgePoint>>*> thread_ee_point_point(n_threads);
 	std::vector<std::vector<std::pair<EdgePoint, Edge>>*> thread_ee_point_edge(n_threads);
 	std::vector<std::vector<std::pair<Edge, Edge>>*> thread_ee_edge_edge(n_threads);
 
 	for (int thread_id = 0; thread_id < n_threads; thread_id++) {
-		thread_point_point[thread_id] = &this->thread_results[thread_id].point_point;
-		thread_point_edge[thread_id] = &this->thread_results[thread_id].point_edge;
-		thread_point_triangle[thread_id] = &this->thread_results[thread_id].point_triangle;
-		//thread_edge_edge[thread_id] = &this->thread_results[thread_id].edge_edge;
+		thread_pt_point_point[thread_id] = &this->thread_results[thread_id].point_triangle.point_point;
+		thread_pt_point_edge[thread_id] = &this->thread_results[thread_id].point_triangle.point_edge;
+		thread_pt_point_triangle[thread_id] = &this->thread_results[thread_id].point_triangle.point_triangle;
 
-		// DEBUG
-		thread_ee_point_point[thread_id] = &this->thread_results[thread_id].ee_point_point;
-		thread_ee_point_edge[thread_id] = &this->thread_results[thread_id].ee_point_edge;
-		thread_ee_edge_edge[thread_id] = &this->thread_results[thread_id].ee_edge_edge;
+		thread_ee_point_point[thread_id] = &this->thread_results[thread_id].edge_edge.point_point;
+		thread_ee_point_edge[thread_id] = &this->thread_results[thread_id].edge_edge.point_edge;
+		thread_ee_edge_edge[thread_id] = &this->thread_results[thread_id].edge_edge.edge_edge;
 	}
-	parallel_concat(this->results.point_point, thread_point_point);
-	parallel_concat(this->results.point_edge, thread_point_edge);
-	parallel_concat(this->results.point_triangle, thread_point_triangle);
-	//parallel_concat(this->results.edge_edge, thread_edge_edge);
+	parallel_concat(this->results.point_triangle.point_point, thread_pt_point_point);
+	parallel_concat(this->results.point_triangle.point_edge, thread_pt_point_edge);
+	parallel_concat(this->results.point_triangle.point_triangle, thread_pt_point_triangle);
 
-	// DEBUG
-	parallel_concat(this->results.ee_point_point, thread_ee_point_point);
-	parallel_concat(this->results.ee_point_edge, thread_ee_point_edge);
-	parallel_concat(this->results.ee_edge_edge, thread_ee_edge_edge);
-
+	parallel_concat(this->results.edge_edge.point_point, thread_ee_point_point);
+	parallel_concat(this->results.edge_edge.point_edge, thread_ee_point_edge);
+	parallel_concat(this->results.edge_edge.edge_edge, thread_ee_edge_edge);
 
 	t1 = omp_get_wtime();
 	this->runtime_merge = t1 - t0;
@@ -251,10 +218,12 @@ const info::ProximityDetection tmcd::ProximityDetection::get_info() const
 {
 	info::ProximityDetection info;
 	info.broad_phase = this->bp.get_info();
-	info.n_proximal_point_point = (int32_t)this->results.point_point.size();
-	info.n_proximal_point_edge = (int32_t)this->results.point_edge.size();
-	info.n_proximal_point_triangle = (int32_t)this->results.point_triangle.size();
-	//info.n_proximal_edge_edge = (int32_t)this->results.edge_edge.size();
+	info.n_proximal_pt_point_point = (int32_t)this->results.point_triangle.point_point.size();
+	info.n_proximal_pt_point_edge = (int32_t)this->results.point_triangle.point_edge.size();
+	info.n_proximal_pt_point_triangle = (int32_t)this->results.point_triangle.point_triangle.size();
+	info.n_proximal_ee_point_point = (int32_t)this->results.edge_edge.point_point.size();
+	info.n_proximal_ee_point_edge = (int32_t)this->results.edge_edge.point_edge.size();
+	info.n_proximal_ee_edge_edge = (int32_t)this->results.edge_edge.edge_edge.size();
 	info.n_threads = this->bp.get_n_threads();
 	info.runtime_compute_aabbs = info.broad_phase.runtime_compute_aabbs;
 	info.runtime_octree = info.broad_phase.runtime_octree;

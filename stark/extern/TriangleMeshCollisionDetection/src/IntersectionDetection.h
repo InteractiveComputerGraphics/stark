@@ -3,6 +3,7 @@
 #include <array>
 
 #include "BroadPhaseET.h"
+#include "IntersectionResults.h"
 
 namespace tmcd
 {

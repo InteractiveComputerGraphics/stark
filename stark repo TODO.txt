@@ -38,7 +38,7 @@ stark repo TODO
 		
 	* Explain IPC edge-edge
 	* Randomized meshes for cloth.
-	
+	* Take rest edge length for IPC eps_x!!
 	* Always write all the output to the console file, just dont show it to the screen.
 	* Time step in large simulations is dictated by line search not descend... can we just take the negative?
 	* Magnetic simulations

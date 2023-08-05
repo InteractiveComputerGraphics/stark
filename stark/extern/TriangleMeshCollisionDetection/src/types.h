@@ -18,21 +18,6 @@ namespace tmcd
 		int32_t set;
 		int32_t idx;
 	};
-	struct Point
-	{
-		int32_t set;
-		int32_t idx;
-	};
-	struct Edge
-	{
-		int32_t set;
-		std::array<int32_t, 2> vertices;
-	};
-	struct Triangle
-	{
-		int32_t set;
-		std::array<int32_t, 3> vertices;
-	};
 	struct BroadPhasePTEEResults
 	{
 		std::vector<std::pair<SetIndex, SetIndex>> point_triangle;
@@ -43,37 +28,6 @@ namespace tmcd
 			this->edge_edge.clear();
 		};
 	};
-	// DEBUG
-	struct EdgePoint
-	{
-		Edge edge;
-		Point point;
-	};
-	struct ProximityResults
-	{
-		std::vector<std::pair<Point, Point>> point_point;
-		std::vector<std::pair<Point, Edge>> point_edge;
-		std::vector<std::pair<Point, Triangle>> point_triangle;
-		//std::vector<std::pair<Edge, Edge>> edge_edge;
-
-		// DEBUG
-		std::vector<std::pair<EdgePoint, EdgePoint>> ee_point_point;
-		std::vector<std::pair<EdgePoint, Edge>> ee_point_edge;
-		std::vector<std::pair<Edge, Edge>> ee_edge_edge;
-
-		void clear()
-		{
-			this->point_point.clear();
-			this->point_edge.clear();
-			this->point_triangle.clear();
-			//this->edge_edge.clear();
-
-			// DEBUG
-			this->ee_point_point.clear();
-			this->ee_point_edge.clear();
-			this->ee_edge_edge.clear();
-		};
-	};
 	struct BroadPhaseETResults
 	{
 		std::vector<std::pair<SetIndex, SetIndex>> edge_triangle;
@@ -82,13 +36,22 @@ namespace tmcd
 			this->edge_triangle.clear();
 		};
 	};
-	struct IntersectionResults
+	struct Point
 	{
-		std::vector<std::pair<Edge, Triangle>> edge_triangle;
-		void clear()
-		{
-			this->edge_triangle.clear();
-		};
+		int32_t set;
+		int32_t idx;
+	};
+	struct Edge
+	{
+		int32_t set;
+		int32_t idx;
+		std::array<int32_t, 2> vertices;
+	};
+	struct Triangle
+	{
+		int32_t set;
+		int32_t idx;
+		std::array<int32_t, 3> vertices;
 	};
 	struct OctreeNode
 	{

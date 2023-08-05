@@ -150,10 +150,12 @@ namespace tmcd
 		struct ProximityDetection
 		{
 			BroadPhasePTEE broad_phase;
-			int32_t n_proximal_point_point;
-			int32_t n_proximal_point_edge;
-			int32_t n_proximal_point_triangle;
-			int32_t n_proximal_edge_edge;
+			int32_t n_proximal_pt_point_point;
+			int32_t n_proximal_pt_point_edge;
+			int32_t n_proximal_pt_point_triangle;
+			int32_t n_proximal_ee_point_point;
+			int32_t n_proximal_ee_point_edge;
+			int32_t n_proximal_ee_edge_edge;
 			double runtime_compute_aabbs;
 			double runtime_octree;
 			double runtime_broad_phase_solve;
@@ -170,10 +172,12 @@ namespace tmcd
 					std::cout << " =============== ProximityDetection ===============" << std::endl;
 					this->broad_phase.print();
 					std::cout << " ~~~~~~~~~~~~~~~ ProximityDetection ~~~~~~~~~~~~~~~" << std::endl;
-					std::cout << "# proximal point-point: " << n_proximal_point_point << "\n";
-					std::cout << "# proximal point-edge: " << n_proximal_point_edge << "\n";
-					std::cout << "# proximal point-triangle: " << n_proximal_point_triangle << "\n";
-					std::cout << "# proximal edge-edge: " << n_proximal_edge_edge << "\n";
+					std::cout << "# proximal point-triangle point-point: " << n_proximal_pt_point_point << "\n";
+					std::cout << "# proximal point-triangle point-edge: " << n_proximal_pt_point_edge << "\n";
+					std::cout << "# proximal point-triangle point-triangle: " << n_proximal_pt_point_triangle << "\n";
+					std::cout << "# proximal edge-edge point-point: " << n_proximal_ee_point_point << "\n";
+					std::cout << "# proximal edge-edge point-edge: " << n_proximal_ee_point_edge << "\n";
+					std::cout << "# proximal edge-edge edge-edge: " << n_proximal_ee_edge_edge << "\n";
 					std::cout << "# threads: " << n_threads << "\n";
 				}
 				std::cout << "runtime compute AABBs: " << 1000.0 * runtime_compute_aabbs << "ms\n";

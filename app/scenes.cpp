@@ -92,8 +92,6 @@ void collision_cloth_edge_edge_tests()
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.1;
-	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-6;
-	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-20;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
@@ -145,8 +143,6 @@ void collision_cloth_parallel_edge_test_rotation()
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.1;
-	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-30;
-	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-8;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
@@ -206,8 +202,6 @@ void collision_cloth_parallel_edge_test_shear()
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.1;
-	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-3;
-	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-32;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
@@ -267,8 +261,6 @@ void collision_cloth_parallel_edge_test_slide()
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.1;
-	settings.contact.edge_edge_cross_norm_sq_threshold = 1e-3;
-	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-32;
 	stark::models::Simulation simulation(settings);
 
 	const bool shear = true;
@@ -353,8 +345,6 @@ void cloth_wrap()
 	settings.contact.triangle_point_enabled = true;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.001;
-	settings.contact.edge_edge_cross_norm_sq_cutoff = 1e-30;
-	settings.contact.edge_edge_cross_norm_sq_threshold = 0.0;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth

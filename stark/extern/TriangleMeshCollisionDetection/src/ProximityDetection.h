@@ -3,6 +3,7 @@
 #include <array>
 
 #include "BroadPhasePTEE.h"
+#include "ProximityResults.h"
 
 namespace tmcd
 {
@@ -23,8 +24,8 @@ namespace tmcd
 		int32_t add_mesh(const double* xm, const int32_t n_vertices, const int32_t* triangles, const int32_t n_triangles, const int32_t* edges, const int32_t n_edges);
 		void add_blacklist_range_point_triangle(const int32_t point_mesh_id, const std::array<int32_t, 2>& point_interval, const int32_t triangle_mesh_id, const std::array<int32_t, 2>& triangle_interval);
 		void add_blacklist_range_edge_edge(const int32_t mesh_id_0, const std::array<int32_t, 2>& interval_0, const int32_t mesh_id_1, const std::array<int32_t, 2>& interval_1);
-		void disable_point_triangle(const bool disable);
-		void disable_edge_edge(const bool disable);
+		void activate_point_triangle(const bool activate);
+		void activate_edge_edge(const bool activate);
 
 		const ProximityResults& run(const double enlargement, const BroadPhaseStrategy strat = BroadPhaseStrategy::OctreeSIMD);
 		const BroadPhasePTEEResults& get_broad_phase_results() const;
@@ -37,8 +38,8 @@ namespace tmcd
 		BroadPhasePTEE bp;
 		internals::Meshes meshes;
 		double edge_edge_parallel_cross_norm_sq_cutoff = 1e-30;
-		bool is_point_triangle_disabled = false;
-		bool is_edge_edge_disabled = false;
+		bool is_point_triangle_enabled = true;
+		bool is_edge_edge_enabled = true;
 
 		// Results
 		ProximityResults results;

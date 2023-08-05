@@ -40,7 +40,7 @@ namespace tmcd
     };
     PointTriangleDistanceType point_triangle_distance_type(const Vec3d& p, const Vec3d& t0, const Vec3d& t1, const Vec3d& t2);
     double point_triangle_sq_distance(PointTriangleDistanceType& nearest_entity, const Vec3d& p, const Vec3d& t0, const Vec3d& t1, const Vec3d& t2);
-    double point_triangle_sq_unsigned_jan(PointTriangleDistanceType& nearest_entity, const Vec3d& point, const Vec3d& v0, const Vec3d& v1, const Vec3d& v2);
+    double point_triangle_sq_unsigned_jan_bender(PointTriangleDistanceType& nearest_entity, const Vec3d& point, const Vec3d& v0, const Vec3d& v1, const Vec3d& v2);
     bool is_edge_intersecting_triangle(const Vec3d& e0, const Vec3d& e1, const Vec3d& t0, const Vec3d& t1, const Vec3d& t2);
 }
 

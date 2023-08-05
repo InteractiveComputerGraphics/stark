@@ -8,6 +8,7 @@
 #include "../solver/Stark.h"
 #include "../utils/MeshWithDynamics.h"
 #include "../utils/unordered_array_set_and_map.h"
+#include "TriangleMeshContacts.h"
 
 
 namespace stark::models
@@ -16,14 +17,6 @@ namespace stark::models
 	{
 	public:
 		enum class MaterialPreset { Cotton, Wool, Silk, RubberShell };
-		struct ClothSelfContacts
-		{
-			std::vector<std::array<int32_t, 2>> point_point;
-			std::vector<std::array<int32_t, 3>> point_edge;
-			std::vector<std::array<int32_t, 4>> point_triangle;
-			//std::vector<std::array<int32_t, 4>> edge_edge;
-		};
-
 
 		/* Fields */
 		utils::MeshWithDynamics<3> model;
@@ -64,15 +57,12 @@ namespace stark::models
 		std::vector<std::array<int32_t, 2>> conn_attached_nodes;
 		bool changed_attachments = true;
 
-		// Collisions
+		// Contacts
 		std::vector<std::array<int32_t, 2>> edges;
 		std::vector<Eigen::Vector3d> collision_x;
 		tmcd::IntersectionDetection id;
 		tmcd::ProximityDetection pd;
-		ClothSelfContacts contacts;
-		std::vector<std::array<int32_t, 6>> ee_point_point;
-		std::vector<std::array<int32_t, 5>> ee_point_edge;
-		std::vector<std::array<int32_t, 4>> ee_edge_edge;
+		TriangleMeshContacts contacts;
 
 		/* Methods */
 		// Physical System Interface
