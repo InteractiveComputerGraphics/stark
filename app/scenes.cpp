@@ -10,6 +10,7 @@ void hanging_cloth()
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.execution.end_simulation_time = 10.0;
 	settings.contact.collisions_enabled = false;
+	settings.contact.friction_enabled = false;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
@@ -47,6 +48,7 @@ void collision_cloth_test()
 	settings.newton.project_to_PD = false;
 	
 	settings.contact.collisions_enabled = true;
+	settings.contact.friction_enabled = false;
 	settings.contact.edge_edge_enabled = true;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.dhat = 0.001;
@@ -88,6 +90,7 @@ void collision_cloth_edge_edge_tests()
 	settings.newton.project_to_PD = false;
 
 	settings.contact.collisions_enabled = true;
+	settings.contact.friction_enabled = false;
 	settings.contact.edge_edge_enabled = true;
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
@@ -139,6 +142,7 @@ void collision_cloth_parallel_edge_test_rotation()
 	settings.newton.project_to_PD = false;
 
 	settings.contact.collisions_enabled = true;
+	settings.contact.friction_enabled = false;
 	settings.contact.edge_edge_enabled = true;
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
@@ -198,6 +202,7 @@ void collision_cloth_parallel_edge_test_shear()
 	settings.newton.project_to_PD = false;
 
 	settings.contact.collisions_enabled = true;
+	settings.contact.friction_enabled = false;
 	settings.contact.edge_edge_enabled = true;
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
@@ -257,6 +262,7 @@ void collision_cloth_parallel_edge_test_slide()
 	settings.newton.project_to_PD = false;
 
 	settings.contact.collisions_enabled = true;
+	settings.contact.friction_enabled = false;
 	settings.contact.edge_edge_enabled = true;
 	settings.contact.triangle_point_enabled = false;
 	settings.contact.enable_intersection_test = true;
@@ -324,6 +330,50 @@ void collision_cloth_parallel_edge_test_slide()
 		}
 	);
 }
+void cloth_friction_slope_test()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "cloth_friction_slope_test";
+	settings.output.output_directory = "../output/" + settings.output.simulation_name;
+	settings.output.codegen_directory = "../output/codegen";
+	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
+	settings.execution.end_simulation_time = 10.0;
+	settings.execution.n_threads = 1;
+
+	settings.newton.debug_line_search_output = true;
+	settings.newton.use_direct_linear_solve = false;
+	settings.newton.project_to_PD = false;
+
+	settings.contact.collisions_enabled = true;
+	settings.contact.triangle_point_enabled = true;
+	settings.contact.edge_edge_enabled = false;
+	settings.contact.friction_enabled = false;
+	settings.contact.friction_stick_slide_threshold = 0.1;
+	settings.contact.dhat = 0.1;
+	stark::models::Simulation simulation(settings);
+
+	// Cloth
+	const int n = 1;
+	std::vector<Eigen::Vector3d> vertices;
+	std::vector<std::array<int, 3>> triangles;
+	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n });
+	stark::utils::rotate_deg(vertices, 10.0, Eigen::Vector3d::UnitX());
+	const int large_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
+	for (int i = 0; i < (int)vertices.size(); i++) {
+		simulation.cloth.set_vertex_target_position_as_initial(large_id, i);
+	}
+
+	stark::utils::scale(vertices, { 0.5, 0.5, 0.5 });
+	stark::utils::move(vertices, { 0.01, 0.02, 0.3 });
+	const int small_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
+
+	const double mu = 0.1;
+	simulation.cloth.set_friction(large_id, mu);
+	simulation.cloth.set_friction(small_id, mu);
+
+	// Run
+	simulation.stark.run();
+}
 void cloth_wrap()
 {
 	// Simulation
@@ -341,6 +391,7 @@ void cloth_wrap()
 	settings.newton.project_to_PD = false;
 
 	settings.contact.collisions_enabled = true;
+	settings.contact.friction_enabled = false;
 	settings.contact.edge_edge_enabled = true;
 	settings.contact.triangle_point_enabled = true;
 	settings.contact.enable_intersection_test = true;
@@ -348,7 +399,7 @@ void cloth_wrap()
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
-	const int n = 20;
+	const int n = 10;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n }, true);

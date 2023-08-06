@@ -123,6 +123,9 @@ int stark::models::Cloth::add(const std::vector<Eigen::Vector3d>& vertices, cons
 	//// Bending
 	this->bending_stiffness.push_back(-1.0);
 
+	//// Friction
+	this->mu.push_back(-1.0);
+
 	// Set preset material
 	this->set_material_preset(cloth_id, material);
 	this->changed_discretization = true;
@@ -142,6 +145,7 @@ void stark::models::Cloth::set_material_preset(const int cloth_id, const Materia
 		this->set_density(cloth_id, 0.2);
 		this->set_strain_parameters(cloth_id, 30.0, 0.3, 1.1);
 		this->set_bending_stiffness(cloth_id, 1e-5);
+		this->set_friction(cloth_id, 0.1);
 		break;
 	default:
 		std::cout << "stark::models::Cloth::set_material_preset() error: cloth material preset not defined." << std::endl;
@@ -167,6 +171,12 @@ void stark::models::Cloth::set_bending_stiffness(const int cloth_id, const doubl
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->bending_stiffness[cloth_id] = bending_stiffness;
+}
+void stark::models::Cloth::set_friction(const int cloth_id, const double coulombs_mu)
+{
+	this->_exit_if_cloth_not_declared(cloth_id);
+	this->mu[cloth_id] = coulombs_mu;
+	this->changed_discretization = true;
 }
 bool stark::models::Cloth::is_cloth_declared(const int cloth_id) const
 {
@@ -321,6 +331,17 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 		utils::find_edges(this->edges, mesh_rest.connectivity, mesh_rest.get_n_vertices());
 	}
 
+	// Friction
+	if (this->changed_discretization) {
+		this->vertex_mu.resize(this->model.mesh.get_n_vertices());
+		for (int cloth_id = 0; cloth_id < this->model.mesh.get_n_meshes(); cloth_id++) {
+			const std::array<int, 2> range = this->model.mesh.get_vertices_range(cloth_id);
+			for (int i = range[0]; i < range[1]; i++) {
+				this->vertex_mu[i] = this->mu[cloth_id];
+			}
+		}
+	}
+
 	// Prescribed nodes
 	if (this->changed_prescribed_vertices) {
 		this->conn_enumerated_prescribed_positions.clear();
@@ -388,13 +409,16 @@ void stark::models::Cloth::_before_time_step(Stark& sim)
 
 	// Currect contacts for friction
 	if (!sim.settings.contact.collisions_enabled) { return; }
+	if (!sim.settings.contact.friction_enabled) { return; }
 
 	//// Proximity detection
 	const std::vector<Eigen::Vector3d>& x = this->model.x0;
 	const tmcd::ProximityResults& proximity = this->_run_proximity_detection(x, sim);
 
 	//// Fill friction data
-	auto force = [&](double d) { return sim.settings.contact.adaptive_contact_stiffness.value * 3.0*d*d; };
+	const double k = sim.settings.contact.adaptive_contact_stiffness.value;
+	const double dhat = sim.settings.contact.dhat;
+	auto force = [&](double d) { return k * 3.0*std::pow(dhat - d, 2); };
 	this->friction.clear();
 	
 	// Point - Triangle

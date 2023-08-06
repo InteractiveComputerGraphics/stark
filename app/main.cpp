@@ -10,5 +10,7 @@ int main()
 	//collision_cloth_parallel_edge_test_rotation();
 	//collision_cloth_parallel_edge_test_shear();
 	//collision_cloth_parallel_edge_test_slide();
-	cloth_wrap();
+	//cloth_wrap();
+
+	cloth_friction_slope_test();
 }
