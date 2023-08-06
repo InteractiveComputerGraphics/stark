@@ -343,6 +343,7 @@ void cloth_friction_slope_test()
 	settings.newton.debug_line_search_output = false;
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
+	settings.newton.max_newton_iterations = 200;
 
 	settings.contact.collisions_enabled = true;
 	settings.contact.triangle_point_enabled = true;

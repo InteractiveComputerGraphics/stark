@@ -888,6 +888,18 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 	{
 		return energy.make_dof_vectors(this->dof, this->model.v1, conn);
 	};
+	//auto friction_mollifier = [&](const symx::Scalar& u, const symx::Scalar& uh)
+	//{
+	//	auto f = [](const symx::Scalar& u, const symx::Scalar& uh)
+	//	{
+	//		return -u*u*u/(3.0*uh*uh) + u*u/uh + uh/3.0;
+	//	};
+
+	//	const double SINGULARITY_TOL = 1e-14;
+	//	symx::Scalar mollifier = symx::branch(u > uh, u, f(u, uh));
+	//	symx::Scalar mollifier_no_singularity = symx::branch(u > SINGULARITY_TOL, mollifier, uh/3.0);
+	//	return mollifier_no_singularity;
+	//};
 	auto friction_mollifier = [&](const symx::Scalar& u, const symx::Scalar& uh)
 	{
 		auto f = [](const symx::Scalar& u, const symx::Scalar& uh)
@@ -901,19 +913,6 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 		symx::Scalar mollifier_no_singularity = symx::branch(u > SINGULARITY_TOL, mollifier, f(u_, uh));  // Not smooth, but continuous and no singularities
 		return mollifier_no_singularity;
 	};
-	//auto friction_mollifier = [&](const symx::Scalar& u, const symx::Scalar& uh)
-	//{
-	//	auto f = [](const symx::Scalar& u, const symx::Scalar& uh)
-	//	{
-	//		return -u*u*u/(3.0*uh*uh) + u*u/uh + uh/3.0;
-	//	};
-
-	//	const double SINGULARITY_TOL = 1e-14;
-	//	symx::Scalar mollifier = symx::branch(u > uh, u, f(u, uh));
-	//	const symx::Scalar u_ = u.get_one()*SINGULARITY_TOL;
-	//	symx::Scalar mollifier_no_singularity = symx::branch(u > SINGULARITY_TOL, mollifier, f(u_, uh));  // Not smooth, but continuous and no singularities
-	//	return mollifier_no_singularity;
-	//};
 	auto set_friction_energy = [&](const symx::Vector& u, const symx::Index& contact_idx, const TriangleMeshFriction::Contact& contact, symx::Energy& energy)
 	{
 		symx::Matrix T  = energy.make_matrix(contact.T, { 2, 3 }, contact_idx);
