@@ -64,6 +64,7 @@ namespace stark::models
 		tmcd::IntersectionDetection id;
 		tmcd::ProximityDetection pd;
 		TriangleMeshContacts contacts;
+		std::vector<Eigen::Vector3d> collision_x1;
 
 		// Friction
 		std::vector<double> mu;  // per mesh
@@ -110,9 +111,10 @@ namespace stark::models
 		// Helpers
 		void _exit_if_cloth_not_declared(const int cloth_id);
 		void _init_simulation_structures(const int n_threads);
-		std::vector<Eigen::Vector3d> _compute_collision_x1(Stark& sim);
+		void _update_collision_x1(Stark& sim);
 		const tmcd::ProximityResults& _run_proximity_detection(const std::vector<Eigen::Vector3d>& x, Stark& sim);
 		void _update_contacts(Stark& sim);
+		void _update_friction_contacts(Stark& sim);
 		
 		// Stark callbacks
 		void _before_time_step(Stark& sim);

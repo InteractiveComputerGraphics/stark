@@ -374,14 +374,13 @@ void stark::models::Cloth::_exit_if_cloth_not_declared(const int cloth_id)
 		exit(-1);
 	}
 }
-std::vector<Eigen::Vector3d> stark::models::Cloth::_compute_collision_x1(Stark& sim)
+void stark::models::Cloth::_update_collision_x1(Stark& sim)
 {
 	const double dt = sim.settings.simulation.adaptive_time_step.value;
-	std::vector<Eigen::Vector3d> collision_x1(this->model.x0.size());
+	this->collision_x1.resize(this->model.x0.size());
 	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
-		collision_x1[i] = this->model.x0[i] + dt * this->model.v1[i];
+		this->collision_x1[i] = this->model.x0[i] + dt * this->model.v1[i];
 	}
-	return collision_x1;
 }
 const tmcd::ProximityResults& stark::models::Cloth::_run_proximity_detection(const std::vector<Eigen::Vector3d>& x, Stark& sim)
 {
@@ -407,6 +406,70 @@ void stark::models::Cloth::_before_time_step(Stark& sim)
 	// Reset simulation structures if anything changed
 	this->_init_simulation_structures(sim.settings.execution.n_threads);
 
+	// Active friction points at x0 for this time step
+	this->_update_friction_contacts(sim);
+}
+void stark::models::Cloth::_after_time_step(Stark& sim)
+{
+	// Set final positions
+	const double dt = sim.settings.simulation.adaptive_time_step.value;
+	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
+		this->model.x1[i] = this->model.x0[i] + dt * this->model.v1[i];
+	}
+}
+void stark::models::Cloth::_write_frame(Stark& sim)
+{
+	if (this->write_VTK) {
+		utils::write_VTK(sim.get_vtk_path("cloth"), this->model.x1, this->model.mesh.connectivity);
+	}
+}
+void stark::models::Cloth::_update_contacts(Stark& sim)
+{
+	if (!sim.settings.contact.collisions_enabled) { return; }
+
+	// Proximity detection
+	this->_update_collision_x1(sim);
+	const tmcd::ProximityResults& proximity = this->_run_proximity_detection(this->collision_x1, sim);
+
+	// Fill connectivities
+	this->contacts.clear();
+
+	//// Point - Triangle
+	for (const auto& pair : proximity.point_triangle.point_point) {
+		const tmcd::Point& p = pair.first;
+		const tmcd::TrianglePoint& tp = pair.second;
+		const tmcd::Point& q = tp.point;
+		this->contacts.point_triangle.point_point.push_back({ p.idx, q.idx });
+	}
+	for (const auto& pair : proximity.point_triangle.point_edge) {
+		const tmcd::Point& point = pair.first;
+		const tmcd::TriangleEdge& te = pair.second;
+		const tmcd::TriangleEdge::Edge& edge = te.edge;
+		this->contacts.point_triangle.point_edge.push_back({ point.idx, edge.vertices[0], edge.vertices[1] });
+	}
+	for (const auto& pair : proximity.point_triangle.point_triangle) {
+		const tmcd::Point& point = pair.first;
+		const tmcd::Triangle& triangle = pair.second;
+		this->contacts.point_triangle.point_triangle.push_back({ point.idx, triangle.vertices[0], triangle.vertices[1], triangle.vertices[2] });
+	}
+
+	//// Edge - Edge
+	for (const auto& pair : proximity.edge_edge.point_point) {
+		const tmcd::EdgePoint& ep_a = pair.first;
+		const tmcd::EdgePoint& ep_b = pair.second;
+		this->contacts.edge_edge.point_point.push_back({ ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx, ep_b.edge.vertices[0], ep_b.edge.vertices[1], ep_b.point.idx });
+	}
+	for (const auto& pair : proximity.edge_edge.point_edge) {
+		const tmcd::EdgePoint& ep_a = pair.first;
+		const tmcd::Edge& e_b = pair.second;
+		this->contacts.edge_edge.point_edge.push_back({ ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx, e_b.vertices[0], e_b.vertices[1] });
+	}
+	for (const auto& pair : proximity.edge_edge.edge_edge) {
+		this->contacts.edge_edge.edge_edge.push_back({ pair.first.vertices[0], pair.first.vertices[1], pair.second.vertices[0], pair.second.vertices[1] });
+	}
+}
+void stark::models::Cloth::_update_friction_contacts(Stark& sim)
+{
 	// Currect contacts for friction
 	if (!sim.settings.contact.collisions_enabled) { return; }
 	if (!sim.settings.contact.friction_enabled) { return; }
@@ -495,73 +558,14 @@ void stark::models::Cloth::_before_time_step(Stark& sim)
 		this->friction.edge_edge.contact.fn.push_back(force(pair.distance));
 	}
 }
-void stark::models::Cloth::_after_time_step(Stark& sim)
-{
-	// Set final positions
-	const double dt = sim.settings.simulation.adaptive_time_step.value;
-	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
-		this->model.x1[i] = this->model.x0[i] + dt * this->model.v1[i];
-	}
-}
-void stark::models::Cloth::_write_frame(Stark& sim)
-{
-	if (this->write_VTK) {
-		utils::write_VTK(sim.get_vtk_path("cloth"), this->model.x1, this->model.mesh.connectivity);
-	}
-}
-void stark::models::Cloth::_update_contacts(Stark& sim)
-{
-	if (!sim.settings.contact.collisions_enabled) { return; }
-
-	// Proximity detection
-	const std::vector<Eigen::Vector3d> x = this->_compute_collision_x1(sim);
-	const tmcd::ProximityResults& proximity = this->_run_proximity_detection(x, sim);
-
-	// Fill connectivities
-	this->contacts.clear();
-
-	//// Point - Triangle
-	for (const auto& pair : proximity.point_triangle.point_point) {
-		const tmcd::Point& p = pair.first;
-		const tmcd::TrianglePoint& tp = pair.second;
-		const tmcd::Point& q = tp.point;
-		this->contacts.point_triangle.point_point.push_back({ p.idx, q.idx });
-	}
-	for (const auto& pair : proximity.point_triangle.point_edge) {
-		const tmcd::Point& point = pair.first;
-		const tmcd::TriangleEdge& te = pair.second;
-		const tmcd::TriangleEdge::Edge& edge = te.edge;
-		this->contacts.point_triangle.point_edge.push_back({ point.idx, edge.vertices[0], edge.vertices[1] });
-	}
-	for (const auto& pair : proximity.point_triangle.point_triangle) {
-		const tmcd::Point& point = pair.first;
-		const tmcd::Triangle& triangle = pair.second;
-		this->contacts.point_triangle.point_triangle.push_back({ point.idx, triangle.vertices[0], triangle.vertices[1], triangle.vertices[2] });
-	}
-
-	//// Edge - Edge
-	for (const auto& pair : proximity.edge_edge.point_point) {
-		const tmcd::EdgePoint& ep_a = pair.first;
-		const tmcd::EdgePoint& ep_b = pair.second;
-		this->contacts.edge_edge.point_point.push_back({ ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx, ep_b.edge.vertices[0], ep_b.edge.vertices[1], ep_b.point.idx });
-	}
-	for (const auto& pair : proximity.edge_edge.point_edge) {
-		const tmcd::EdgePoint& ep_a = pair.first;
-		const tmcd::Edge& e_b = pair.second;
-		this->contacts.edge_edge.point_edge.push_back({ ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx, e_b.vertices[0], e_b.vertices[1] });
-	}
-	for (const auto& pair : proximity.edge_edge.edge_edge) {
-		this->contacts.edge_edge.edge_edge.push_back({ pair.first.vertices[0], pair.first.vertices[1], pair.second.vertices[0], pair.second.vertices[1] });
-	}
-}
 bool stark::models::Cloth::_is_valid_configuration(Stark& sim)
 {
 	if (!sim.settings.contact.collisions_enabled) { return true; }
 	if (!sim.settings.contact.enable_intersection_test) { return true; }
-	const std::vector<Eigen::Vector3d> x = this->_compute_collision_x1(sim);
+	this->_update_collision_x1(sim);
 	this->id.clear();
 	this->id.set_n_threads(sim.settings.execution.n_threads);
-	this->id.add_mesh(&x[0][0], (int)x.size(), &this->model.mesh.connectivity[0][0], this->model.mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
+	this->id.add_mesh(&this->collision_x1[0][0], (int)this->collision_x1.size(), &this->model.mesh.connectivity[0][0], this->model.mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
 	const tmcd::IntersectionResults& intersections = this->id.run();
 	return intersections.edge_triangle.size() == 0;
 }

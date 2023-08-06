@@ -346,9 +346,9 @@ void cloth_friction_slope_test()
 
 	settings.contact.collisions_enabled = true;
 	settings.contact.triangle_point_enabled = true;
-	settings.contact.edge_edge_enabled = false;
-	settings.contact.friction_enabled = false;
+	settings.contact.edge_edge_enabled = true;
 	settings.contact.enable_intersection_test = true;
+	settings.contact.friction_enabled = false;
 	settings.contact.friction_stick_slide_threshold = 0.1;
 	settings.contact.dhat = 0.15;
 	stark::models::Simulation simulation(settings);
