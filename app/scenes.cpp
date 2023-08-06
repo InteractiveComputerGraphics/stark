@@ -348,8 +348,9 @@ void cloth_friction_slope_test()
 	settings.contact.triangle_point_enabled = true;
 	settings.contact.edge_edge_enabled = false;
 	settings.contact.friction_enabled = false;
+	settings.contact.enable_intersection_test = true;
 	settings.contact.friction_stick_slide_threshold = 0.1;
-	settings.contact.dhat = 0.1;
+	settings.contact.dhat = 0.15;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
@@ -366,6 +367,7 @@ void cloth_friction_slope_test()
 	stark::utils::scale(vertices, { 0.5, 0.5, 0.5 });
 	stark::utils::move(vertices, { 0.01, 0.02, 0.3 });
 	const int small_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
+	simulation.cloth.set_vertex_target_position_as_initial(small_id, 0);
 
 	const double mu = 0.1;
 	simulation.cloth.set_friction(large_id, mu);
