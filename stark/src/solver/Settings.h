@@ -35,6 +35,7 @@ namespace stark
 			double edge_edge_cross_norm_sq_cutoff = 1e-30;
 			bool enable_intersection_test = true;
 			bool collisions_enabled = true;
+			bool friction_enabled = true;
 			bool triangle_point_enabled = true;
 			bool edge_edge_enabled = true;
 		};

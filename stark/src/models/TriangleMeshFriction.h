@@ -7,7 +7,7 @@ namespace stark::models
 {
 	struct TriangleMeshFriction
 	{
-		struct Base
+		struct Contact
 		{
 			std::vector<std::array<double, 6>> T;
 			std::vector<double> mu;
@@ -19,22 +19,26 @@ namespace stark::models
 				this->mu.clear();
 			}
 		};
-		struct PointPoint : Base
+		struct PointPoint
 		{
+			Contact contact;
 			std::vector<std::array<int32_t, 3>> conn;  // [contact_idx, point_idx, other_point_idx]
 		};
-		struct PointEdge : Base
+		struct PointEdge
 		{
+			Contact contact;
 			std::vector<std::array<int32_t, 4>> conn;  // [contact_idx, point_idx, edge_vertices]
 			std::vector<std::array<double, 2>> bary;
 		};
-		struct PointTriangle : Base
+		struct PointTriangle
 		{
+			Contact contact;
 			std::vector<std::array<int32_t, 5>> conn;  // [contact_idx, point_idx, triangle_vertices]
 			std::vector<std::array<double, 3>> bary;
 		};
-		struct EdgeEdge : Base
+		struct EdgeEdge
 		{
+			Contact contact;
 			std::vector<std::array<int32_t, 5>> conn;  // [contact_idx, edge_vertices, other_edge_vertices]
 			std::vector<std::array<double, 2>> bary;
 		};
@@ -46,18 +50,18 @@ namespace stark::models
 
 		void clear()
 		{
-			this->point_point.clear();
+			this->point_point.contact.clear();
 			this->point_point.conn.clear();
 
-			this->point_edge.clear();
+			this->point_edge.contact.clear();
 			this->point_edge.conn.clear();
 			this->point_edge.bary.clear();
 
-			this->point_triangle.clear();
+			this->point_triangle.contact.clear();
 			this->point_triangle.conn.clear();
 			this->point_triangle.bary.clear();
 
-			this->edge_edge.clear();
+			this->edge_edge.contact.clear();
 			this->edge_edge.conn.clear();
 			this->edge_edge.bary.clear();
 		}

@@ -405,9 +405,9 @@ void stark::models::Cloth::_before_time_step(Stark& sim)
 		const tmcd::Point& q = tp.point;
 
 		this->friction.point_point.conn.push_back({ (int)this->friction.point_point.conn.size(), p.idx, q.idx});
-		this->friction.point_point.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
-		this->friction.point_point.mu.push_back(min(this->vertex_mu, p.idx, q.idx));
-		this->friction.point_point.fn.push_back(force(pair.distance));
+		this->friction.point_point.contact.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
+		this->friction.point_point.contact.mu.push_back(min(this->vertex_mu, p.idx, q.idx));
+		this->friction.point_point.contact.fn.push_back(force(pair.distance));
 	}
 	//// Point - Edge
 	for (const auto& pair : proximity.point_triangle.point_edge) {
@@ -417,9 +417,9 @@ void stark::models::Cloth::_before_time_step(Stark& sim)
 
 		this->friction.point_edge.conn.push_back({ (int)this->friction.point_edge.conn.size(), p.idx, edge.vertices[0], edge.vertices[1] });
 		this->friction.point_edge.bary.push_back(barycentric_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
-		this->friction.point_edge.T.push_back(projection_matrix_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
-		this->friction.point_edge.mu.push_back(min(this->vertex_mu, p.idx, edge.vertices[0], edge.vertices[1]));
-		this->friction.point_edge.fn.push_back(force(pair.distance));
+		this->friction.point_edge.contact.T.push_back(projection_matrix_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
+		this->friction.point_edge.contact.mu.push_back(min(this->vertex_mu, p.idx, edge.vertices[0], edge.vertices[1]));
+		this->friction.point_edge.contact.fn.push_back(force(pair.distance));
 	}
 	//// Point - Triangle
 	for (const auto& pair : proximity.point_triangle.point_triangle) {
@@ -428,9 +428,9 @@ void stark::models::Cloth::_before_time_step(Stark& sim)
 
 		this->friction.point_triangle.conn.push_back({ (int)this->friction.point_triangle.conn.size(), p.idx, t.vertices[0], t.vertices[1], t.vertices[2] });
 		this->friction.point_triangle.bary.push_back(barycentric_point_triangle(x[p.idx], x[t.vertices[0]], x[t.vertices[1]], x[t.vertices[2]]));
-		this->friction.point_triangle.T.push_back(projection_matrix_triangle(x[t.vertices[0]], x[t.vertices[1]], x[t.vertices[2]]));
-		this->friction.point_triangle.mu.push_back(min(this->vertex_mu, t.vertices[0], t.vertices[1], t.vertices[2]));
-		this->friction.point_triangle.fn.push_back(force(pair.distance));
+		this->friction.point_triangle.contact.T.push_back(projection_matrix_triangle(x[t.vertices[0]], x[t.vertices[1]], x[t.vertices[2]]));
+		this->friction.point_triangle.contact.mu.push_back(min(this->vertex_mu, t.vertices[0], t.vertices[1], t.vertices[2]));
+		this->friction.point_triangle.contact.fn.push_back(force(pair.distance));
 	}
 
 
@@ -443,9 +443,9 @@ void stark::models::Cloth::_before_time_step(Stark& sim)
 		const tmcd::Point& q = ep_b.point;
 
 		this->friction.point_point.conn.push_back({ (int)this->friction.point_point.conn.size(), p.idx, q.idx});
-		this->friction.point_point.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
-		this->friction.point_point.mu.push_back(min(this->vertex_mu, p.idx, q.idx));
-		this->friction.point_point.fn.push_back(force(pair.distance));
+		this->friction.point_point.contact.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
+		this->friction.point_point.contact.mu.push_back(min(this->vertex_mu, p.idx, q.idx));
+		this->friction.point_point.contact.fn.push_back(force(pair.distance));
 	}
 	//// Point - Edge
 	for (const auto& pair : proximity.edge_edge.point_edge) {
@@ -455,9 +455,9 @@ void stark::models::Cloth::_before_time_step(Stark& sim)
 
 		this->friction.point_edge.conn.push_back({ (int)this->friction.point_edge.conn.size(), p.idx, edge.vertices[0], edge.vertices[1] });
 		this->friction.point_edge.bary.push_back(barycentric_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
-		this->friction.point_edge.T.push_back(projection_matrix_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
-		this->friction.point_edge.mu.push_back(min(this->vertex_mu, p.idx, edge.vertices[0], edge.vertices[1]));
-		this->friction.point_edge.fn.push_back(force(pair.distance));
+		this->friction.point_edge.contact.T.push_back(projection_matrix_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
+		this->friction.point_edge.contact.mu.push_back(min(this->vertex_mu, p.idx, edge.vertices[0], edge.vertices[1]));
+		this->friction.point_edge.contact.fn.push_back(force(pair.distance));
 	}
 	//// Edge - Edge
 	for (const auto& pair : proximity.edge_edge.edge_edge) {
@@ -466,9 +466,9 @@ void stark::models::Cloth::_before_time_step(Stark& sim)
 
 		this->friction.edge_edge.conn.push_back({ (int)this->friction.edge_edge.conn.size(), ea.vertices[0], ea.vertices[1], eb.vertices[0], eb.vertices[1] });
 		this->friction.edge_edge.bary.push_back(barycentric_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
-		this->friction.edge_edge.T.push_back(projection_matrix_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
-		this->friction.edge_edge.mu.push_back(min(this->vertex_mu, ea.vertices[0], ea.vertices[1], eb.vertices[0], eb.vertices[1]));
-		this->friction.edge_edge.fn.push_back(force(pair.distance));
+		this->friction.edge_edge.contact.T.push_back(projection_matrix_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
+		this->friction.edge_edge.contact.mu.push_back(min(this->vertex_mu, ea.vertices[0], ea.vertices[1], eb.vertices[0], eb.vertices[1]));
+		this->friction.edge_edge.contact.fn.push_back(force(pair.distance));
 	}
 }
 void stark::models::Cloth::_after_time_step(Stark& sim)
@@ -874,13 +874,17 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 		symx::Scalar mollifier_no_singularity = symx::branch(u > SINGULARITY_TOL, mollifier, f(u_, uh));  // Not smooth, but continuous and no singularities
 		return mollifier_no_singularity;
 	};
-	auto set_friction_energy = [&](const symx::Vector& u, const symx::Scalar& fn, const symx::Scalar& mu, const symx::Matrix& T, symx::Energy& energy)
+	auto set_friction_energy = [&](const symx::Vector& u, const symx::Index& contact_idx, const TriangleMeshFriction::Contact& contact, symx::Energy& energy)
 	{
+		symx::Matrix T  = energy.make_matrix(contact.T, { 2, 3 }, contact_idx);
+		symx::Scalar mu = energy.make_scalar(contact.mu, contact_idx);
+		symx::Scalar fn = energy.make_scalar(contact.fn, contact_idx);
 		symx::Scalar uh = energy.make_scalar(sim.settings.contact.friction_stick_slide_threshold);
+
 		symx::Vector ut = T * u;
 		symx::Scalar E = mu * fn * friction_mollifier(ut.norm(), uh);
 		energy.set(E);
-		energy.activate(sim.settings.contact.collisions_enabled);
+		energy.activate(sim.settings.contact.collisions_enabled && sim.settings.contact.friction_enabled);
 	};
 	// ----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -891,12 +895,9 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 		{
 			std::vector<symx::Vector> VP = get_v1({ conn[1] }, energy);
 			std::vector<symx::Vector> VQ = get_v1({ conn[2] }, energy);
-			symx::Matrix T = energy.make_matrix(this->friction.point_point.T, { 2, 3 }, conn[0]);
-			symx::Scalar mu = energy.make_scalar(this->friction.point_point.mu, conn[0]);
-			symx::Scalar fn = energy.make_scalar(this->friction.point_point.fn, conn[0]);
 
 			symx::Vector u = VQ[0] - VP[0];
-			set_friction_energy(u, fn, mu, T, energy);
+			set_friction_energy(u, conn[0], this->friction.point_point.contact, energy);
 		}
 	);
 	// Point - Edge
@@ -904,16 +905,13 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Vector> VP = get_v1({ conn[1] }, energy);
-			std::vector<symx::Vector> VE = get_v1({ conn[2], conn[3]  }, energy);
+			std::vector<symx::Vector> VE = get_v1({ conn[2], conn[3] }, energy);
 			symx::Vector bary = energy.make_vector(this->friction.point_edge.bary, conn[0]);
-			symx::Matrix T = energy.make_matrix(this->friction.point_edge.T, { 2, 3 }, conn[0]);
-			symx::Scalar mu = energy.make_scalar(this->friction.point_edge.mu, conn[0]);
-			symx::Scalar fn = energy.make_scalar(this->friction.point_edge.fn, conn[0]);
 
 			symx::Vector vp = VP[0];
 			symx::Vector vq = bary[0]*VE[0] + bary[1]*VE[1];
 			symx::Vector u = vq - vp;
-			set_friction_energy(u, fn, mu, T, energy);
+			set_friction_energy(u, conn[0], this->friction.point_edge.contact, energy);
 		}
 	);
 	// Point - Triangle
@@ -921,16 +919,13 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Vector> VP = get_v1({ conn[1] }, energy);
-			std::vector<symx::Vector> VE = get_v1({ conn[2], conn[3], conn[4]  }, energy);
+			std::vector<symx::Vector> VE = get_v1({ conn[2], conn[3], conn[4] }, energy);
 			symx::Vector bary = energy.make_vector(this->friction.point_triangle.bary, conn[0]);
-			symx::Matrix T = energy.make_matrix(this->friction.point_triangle.T, { 2, 3 }, conn[0]);
-			symx::Scalar mu = energy.make_scalar(this->friction.point_triangle.mu, conn[0]);
-			symx::Scalar fn = energy.make_scalar(this->friction.point_triangle.fn, conn[0]);
 
 			symx::Vector vp = VP[0];
 			symx::Vector vq = bary[0]*VE[0] + bary[1]*VE[1] + bary[2]*VE[2];
 			symx::Vector u = vq - vp;
-			set_friction_energy(u, fn, mu, T, energy);
+			set_friction_energy(u, conn[0], this->friction.point_triangle.contact, energy);
 		}
 	);
 	// Edge - Edge
@@ -938,16 +933,13 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Vector> VEA = get_v1({ conn[1], conn[2] }, energy);
-			std::vector<symx::Vector> VEB = get_v1({ conn[3], conn[4]  }, energy);
+			std::vector<symx::Vector> VEB = get_v1({ conn[3], conn[4] }, energy);
 			symx::Vector bary = energy.make_vector(this->friction.edge_edge.bary, conn[0]);
-			symx::Matrix T = energy.make_matrix(this->friction.edge_edge.T, { 2, 3 }, conn[0]);
-			symx::Scalar mu = energy.make_scalar(this->friction.edge_edge.mu, conn[0]);
-			symx::Scalar fn = energy.make_scalar(this->friction.edge_edge.fn, conn[0]);
 
 			symx::Vector vp = VEA[0] + bary[0]*(VEA[1] - VEA[0]);
-			symx::Vector vq = VEB[0] + bary[0]*(VEB[1] - VEB[0]);
+			symx::Vector vq = VEB[0] + bary[1]*(VEB[1] - VEB[0]);
 			symx::Vector u = vq - vp;
-			set_friction_energy(u, fn, mu, T, energy);
+			set_friction_energy(u, conn[0], this->friction.edge_edge.contact, energy);
 		}
 	);
 }
