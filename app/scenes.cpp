@@ -338,9 +338,9 @@ void cloth_friction_slope_test()
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 10.0;
-	settings.execution.n_threads = 1;
+	//settings.execution.n_threads = 1;
 
-	settings.newton.debug_line_search_output = true;
+	settings.newton.debug_line_search_output = false;
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 
@@ -348,9 +348,9 @@ void cloth_friction_slope_test()
 	settings.contact.triangle_point_enabled = true;
 	settings.contact.edge_edge_enabled = true;
 	settings.contact.enable_intersection_test = true;
-	settings.contact.friction_enabled = false;
-	settings.contact.friction_stick_slide_threshold = 0.1;
-	settings.contact.dhat = 0.15;
+	settings.contact.friction_enabled = true;
+	settings.contact.friction_stick_slide_threshold = 0.001;
+	settings.contact.dhat = 0.01;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
@@ -364,12 +364,13 @@ void cloth_friction_slope_test()
 		simulation.cloth.set_vertex_target_position_as_initial(large_id, i);
 	}
 
-	stark::utils::scale(vertices, { 0.5, 0.5, 0.5 });
+	stark::utils::scale(vertices, { 0.5, 0.5, 0.4 });
 	stark::utils::move(vertices, { 0.01, 0.02, 0.3 });
+	stark::utils::rotate_deg(vertices, 30.0, Eigen::Vector3d::UnitZ());
 	const int small_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
-	simulation.cloth.set_vertex_target_position_as_initial(small_id, 0);
+	//simulation.cloth.set_vertex_target_position_as_initial(small_id, 0);
 
-	const double mu = 0.1;
+	const double mu = 0.001;
 	simulation.cloth.set_friction(large_id, mu);
 	simulation.cloth.set_friction(small_id, mu);
 

@@ -50,17 +50,8 @@ std::array<double, 2> stark::models::barycentric_edge_edge(const Eigen::Vector3d
 		std::cout << "error stark::models::barycentric_edge_edge(): parallel edge found." << std::endl;
 		exit(-1);
 	}
-	double s = clamp01((b * f - c * e) / denom);  // arc of the closest point on L1 to L2
-	double t = (b * s + f) / e;  // arc of the closest point on L2 to L1
-	if (t < 0.0) {
-		t = 0.0;
-		s = clamp01(-c / a);
-	}
-	else if (t > 1.0) {
-		t = 1.0;
-		s = clamp01((b - c) / a);
-	}
-
+	const double s = (b * f - c * e) / denom;  // arc of the closest point on L1 to L2
+	const double t = (b * s + f) / e;  // arc of the closest point on L2 to L1
 	return {s, t};
 }
 

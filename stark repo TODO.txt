@@ -24,9 +24,14 @@ stark repo TODO
 	* Magnetic simulations
 	* Penalty as a class so I can swap and easily change the gradient for the friction
 	
-	* Do I have to mollify the edge-edge friction forces??
 	* Friction correct singularity removal by using a cubic function that smoothly cuts off at TOL. However, 4th order energy.	
 		-> I can do a mollifier with u.squared_norm()
+	* Pen and paper tests. Box on a plane:
+		- Contact forces. Total and per point.
+		- Friction forces.
+	* Do I have to mollify the edge-edge friction forces??
+		- Definitely getting weird forces when parallel edges
+		- Maybe just mollify fn?
 	
 	
 	

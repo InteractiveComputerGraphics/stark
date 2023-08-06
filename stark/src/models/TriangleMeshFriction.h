@@ -15,8 +15,8 @@ namespace stark::models
 			void clear()
 			{
 				this->T.clear();
-				this->fn.clear();
 				this->mu.clear();
+				this->fn.clear();
 			}
 		};
 		struct PointPoint
