@@ -17,6 +17,7 @@ stark repo TODO
 	* Naming of NewtonsMethod is confusing because it is technically the time step.
 	* It needs to be revisited as building something completely from zero ala hello world.
 		There are a lot of error catches we should put in place (like no dofs, no energies, empty stuff...)
+	* We a tutorial for a simple sim. Otherwise it can be intimidating if jumped directly into the stark code.
 	* Timings per energy
 	* Explain IPC edge-edge
 	* Time step in large simulations is dictated by line search not descend... can we just take the negative?
@@ -24,7 +25,8 @@ stark repo TODO
 	* Penalty as a class so I can swap and easily change the gradient for the friction
 	
 	* Do I have to mollify the edge-edge friction forces??
-	* Confirm projection matrices and barycentric coordinates
+	* Friction correct singularity removal by using a cubic function that smoothly cuts off at TOL. However, 4th order energy.
+	
 	
 	
 	

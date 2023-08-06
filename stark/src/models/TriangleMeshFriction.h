@@ -50,16 +50,16 @@ namespace stark::models
 			this->point_point.conn.clear();
 
 			this->point_edge.clear();
-			this->point_edge.bary.clear();
 			this->point_edge.conn.clear();
+			this->point_edge.bary.clear();
 
 			this->point_triangle.clear();
-			this->point_triangle.bary.clear();
 			this->point_triangle.conn.clear();
+			this->point_triangle.bary.clear();
 
 			this->edge_edge.clear();
-			this->edge_edge.bary.clear();
 			this->edge_edge.conn.clear();
+			this->edge_edge.bary.clear();
 		}
 	};
 }

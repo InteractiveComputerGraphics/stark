@@ -34,8 +34,8 @@ set(SOLVER_FILES
 set(MODELS_FILES
 	src/models/distances.h
 	src/models/distances.cpp
-	src/models/friction.h
-	src/models/friction.cpp
+	src/models/friction_geometry.h
+	src/models/friction_geometry.cpp
 	src/models/time_integration.h
 	src/models/time_integration.cpp
 	src/models/TriangleMeshContacts.h
