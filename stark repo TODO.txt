@@ -33,12 +33,13 @@ stark repo TODO
 		- Definitely getting weird forces when parallel edges
 		- Maybe just mollify fn?
 	
+	* There are things wrong with the friction. Sometimes the edge-edge case seems to generate jumps. (non deterministic)
 	* Improve adaptive time step strategy
 		- When friction is enabled, it just needs *a lot* of short steps to navigate the line search.
 			I don't necessarily think it needs shorter dt
 		- This can actually change the behavior of the simulation. It worked great now without Newton iteration limits
 	
-	
+	* Super sensitive mu. 0.002 already sticks. two thousands of the contact force makes it stick?
 	
 	
 
