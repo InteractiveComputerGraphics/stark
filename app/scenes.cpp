@@ -345,17 +345,18 @@ void cloth_friction_slope_test()
 	settings.newton.project_to_PD = false;
 	settings.newton.max_newton_iterations = 200;
 
-	settings.contact.collisions_enabled = true;
-	settings.contact.triangle_point_enabled = true;
-	settings.contact.edge_edge_enabled = true;
-	settings.contact.enable_intersection_test = true;
 	settings.contact.friction_enabled = true;
+
+	settings.contact.collisions_enabled = true;
+	settings.contact.triangle_point_enabled = false;
+	settings.contact.edge_edge_enabled = true;
+	settings.contact.enable_intersection_test = false;
 	settings.contact.friction_stick_slide_threshold = 1.0;
-	settings.contact.dhat = 0.01;
+	settings.contact.dhat = 0.02;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
-	const int n = 2;
+	const int n = 10;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n });
