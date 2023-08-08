@@ -5,6 +5,8 @@ stark repo TODO
 		I don't think this is really necessary. In splishsplash you just modify it directly
 		
 	* Consider moving all geometry utils to its own namespace
+	* Header only stuff from bsm and cg are forcing simd compiler flags in stark that should not be necessary as it is not it concern.
+		- It leaks all the way up to `app`. I have to fix this.
 	* Do we put simulation in stark::models ?
 	* Interpolate frames
 	* Newton's method needs a lot of work in understanding, convergence, when to repeat a time step...
