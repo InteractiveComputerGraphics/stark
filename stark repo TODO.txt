@@ -1,21 +1,10 @@
 stark repo TODO
 ===============
-
-DEBUG ON
---------
-	* Check for NaN
-	* Friction proximity detection
-
-
-TODO
-----
 	* How is Stark supposed to be used? From the app or from the lib? This influences the reach of libraries such as SymX
 		I would maybe need a new middle level of abstraction: app -> stark (simulator put together) -> stark_sim (core simulator)
 		I don't think this is really necessary. In splishsplash you just modify it directly
 		
 	* Consider moving all geometry utils to its own namespace
-	* Header only stuff from bsm and cg are forcing simd compiler flags in stark that should not be necessary as it is not it concern.
-		- It leaks all the way up to `app`. I have to fix this.
 	* Do we put simulation in stark::models ?
 	* Interpolate frames
 	* Newton's method needs a lot of work in understanding, convergence, when to repeat a time step...
@@ -34,14 +23,6 @@ TODO
 	* Time step in large simulations is dictated by line search not descend... can we just take the negative?
 	* Magnetic simulations
 	* Penalty as a class so I can swap and easily change the gradient for the friction
-	* Too bouncy sims: bouncing damping energy to control this.
-	* Friction should be very carefully studied as it introduces really particular characteristics to the minimization:
-		- Leads to a situation where line search *always* takes half step. But the energy seems quite nice and quadratic...
-		- Need more Newton iterations and then its fine. Can't run max_it = 10. Is it pseudonewton?
-	* Should we have a rotating random friction perturbation instead of a fixed one?
-	
-	* There are some persistent ghost forces somewhere due to friction. I need to find this!
-	
 	
 	* Friction correct singularity removal by using a cubic function that smoothly cuts off at TOL. However, 4th order energy.	
 		-> I can do a mollifier with u.squared_norm()
@@ -53,16 +34,23 @@ TODO
 		- Maybe just mollify fn?
 	
 	* There are things wrong with the friction. Sometimes the edge-edge case seems to generate jumps. (non deterministic)
+		- Problems with fn when I change the adaptive stiffness
+		- Problems with adaptive time step?
 	* Improve adaptive time step strategy
 		- When friction is enabled, it just needs *a lot* of short steps to navigate the line search.
 			I don't necessarily think it needs shorter dt
 		- This can actually change the behavior of the simulation. It worked great now without Newton iteration limits
-	
 	* Super sensitive mu. 0.002 already sticks. two thousands of the contact force makes it stick?
 	
-Future Work
------------
-	* Smoother IPC contact forces: https://arxiv.org/abs/2308.01696
+	* Just copy all the functions used in IPC and also how they use T and bary.
+	* Just try with a mollifier that doesn't need u.norm() = 0
+	
+	* I cannot restart time steps in a nested manner. I am destroying v0!!
+		Maybe I have similar errors that are not friction related but triggered but how hard is to handle it.
+		How the fuck do I test the whole simulator? :(
+		
+	* We need a default friction, otherwise we are using -1.0. Better 0.0.
+	
 
 Documentation
 -------------
