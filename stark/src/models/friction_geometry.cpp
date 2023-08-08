@@ -1,12 +1,5 @@
 #include "friction_geometry.h"
 
-double clamp01(double v)
-{
-	if (v < 0.0) { return 0.0; }
-	if (v > 1.0) { return 1.0; }
-	return v;
-}
-
 // Ericson05
 std::array<double, 3> stark::models::barycentric_point_triangle(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c)
 {
@@ -60,20 +53,20 @@ std::array<double, 6> stark::models::projection_matrix_triangle(const Eigen::Vec
 	const Eigen::Vector3d v01 = a - c;
 	const Eigen::Vector3d v02 = b - c;
 
-	const Eigen::Vector3d px = v01.normalized();
-	const Eigen::Vector3d normal = v01.cross(v02).normalized();
-	const Eigen::Vector3d py = normal.cross(px);
+	const Eigen::Vector3d u = v01.normalized();
+	const Eigen::Vector3d normal = v01.cross(v02);
+	const Eigen::Vector3d v = normal.cross(u).normalized();
 
 	Eigen::Matrix<double, 2, 3> P;
-	P.row(0) = px;
-	P.row(1) = py;
+	P.row(0) = u;
+	P.row(1) = v;
 	return { P(0, 0), P(0, 1), P(0, 2), P(1, 0), P(1, 1), P(1, 2) };
 }
 std::array<double, 6> stark::models::projection_matrix_edge_edge(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& p, const Eigen::Vector3d& q)
 {
 	const Eigen::Vector3d u = (b - a).normalized();
-	const Eigen::Vector3d n = u.cross(q - p).normalized();
-	const Eigen::Vector3d v = u.cross(n);
+	const Eigen::Vector3d n = u.cross(q - p);
+	const Eigen::Vector3d v = u.cross(n).normalized();
 
 	Eigen::Matrix<double, 2, 3> P;
 	P.row(0) = u;
@@ -84,14 +77,14 @@ std::array<double, 6> stark::models::projection_matrix_point_point(const Eigen::
 {
 	const Eigen::Vector3d n = (p - a).normalized();
 	Eigen::Vector3d e;
-	if (n.z() < 0.999) {
+	if (n.z() < 0.99) {
 		e = Eigen::Vector3d::UnitZ();
 	}
 	else {
 		e = Eigen::Vector3d::UnitX();
 	}
 	const Eigen::Vector3d u = e.cross(n).normalized();
-	const Eigen::Vector3d v = u.cross(n);
+	const Eigen::Vector3d v = u.cross(n).normalized();
 	Eigen::Matrix<double, 2, 3> P;
 	P.row(0) = u;
 	P.row(1) = v;
@@ -100,8 +93,8 @@ std::array<double, 6> stark::models::projection_matrix_point_point(const Eigen::
 std::array<double, 6> stark::models::projection_matrix_point_edge(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b)
 {
 	const Eigen::Vector3d u = (b - a).normalized();
-	const Eigen::Vector3d t = (p - a).normalized();
-	const Eigen::Vector3d v = u.cross(t);
+	const Eigen::Vector3d t = (p - a);
+	const Eigen::Vector3d v = u.cross(t).normalized();
 
 	Eigen::Matrix<double, 2, 3> P;
 	P.row(0) = u;

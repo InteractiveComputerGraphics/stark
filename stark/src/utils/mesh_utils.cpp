@@ -15,10 +15,10 @@ double deg2rad(const double deg)
 	static constexpr double PI = 3.14159265358979323846;
 	return 2.0 * PI * (deg / 360.0);
 }
-double generate_random_double(double l) {
+double generate_random_double(double l, int seed) {
 	// Create a random number generator
 	std::random_device rd;
-	std::mt19937 gen(rd());
+	std::mt19937 gen(seed);
 	std::uniform_real_distribution<double> dist(-l, l);
 
 	// Generate a random number between zero and l
@@ -147,11 +147,12 @@ void stark::utils::generate_triangular_grid(std::vector<Eigen::Vector3d>& out_ve
 	out_vertices.resize(n_points);
 	for (int i = 0; i < nx; i++) {
 		for (int j = 0; j < ny; j++) {
-			out_vertices[ny * i + j] = { bottom[0] + i * dx, bottom[1] + j * dy, z };
+			const int idx = ny * i + j;
+			out_vertices[idx] = { bottom[0] + i * dx, bottom[1] + j * dy, z };
 
 			if (randomize && i != 0 && i != (nx - 1) && j != 0 && j != (ny - 1)) {
-				out_vertices[ny * i + j][0] += generate_random_double(dx*0.2);
-				out_vertices[ny * i + j][1] += generate_random_double(dy*0.2);
+				out_vertices[idx][0] += generate_random_double(dx*0.2, idx);
+				out_vertices[idx][1] += generate_random_double(dy*0.2, idx);
 			}
 		}
 	}

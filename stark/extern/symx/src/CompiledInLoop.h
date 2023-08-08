@@ -28,7 +28,7 @@ namespace symx
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT = INPUT_FLOAT, typename OUTPUT_FLOAT = INPUT_FLOAT>
 	class CompiledInLoop
 	{
-		constexpr static bool CHECK_FOR_NAN = false;
+		constexpr static bool CHECK_FOR_NAN = true;  // DEBUG
 
 	private:
 		struct SymbolArrayMap

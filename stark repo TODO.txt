@@ -1,5 +1,14 @@
 stark repo TODO
 ===============
+
+DEBUG ON
+--------
+	* Check for NaN
+	* Friction proximity detection
+
+
+TODO
+----
 	* How is Stark supposed to be used? From the app or from the lib? This influences the reach of libraries such as SymX
 		I would maybe need a new middle level of abstraction: app -> stark (simulator put together) -> stark_sim (core simulator)
 		I don't think this is really necessary. In splishsplash you just modify it directly
@@ -25,6 +34,10 @@ stark repo TODO
 	* Time step in large simulations is dictated by line search not descend... can we just take the negative?
 	* Magnetic simulations
 	* Penalty as a class so I can swap and easily change the gradient for the friction
+	* Too bouncy sims: bouncing damping energy to control this.
+	* Friction should be very carefully studied as it introduces really particular characteristics to the minimization:
+		- Leads to a situation where line search *always* takes half step. But the energy seems quite nice and quadratic...
+		- Need more Newton iterations and then its fine. Can't run max_it = 10. Is it pseudonewton?
 	
 	* Friction correct singularity removal by using a cubic function that smoothly cuts off at TOL. However, 4th order energy.	
 		-> I can do a mollifier with u.squared_norm()
