@@ -44,7 +44,9 @@ stark repo TODO
 	* Magnetic simulations
 	
 	
-	
+Future Work
+-----------
+	* Smoother IPC contact forces: https://arxiv.org/abs/2308.01696
 
 Documentation
 -------------

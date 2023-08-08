@@ -25,7 +25,7 @@ namespace symx
 		/* Fields */
 		//std::function<int32_t()> n_elements;
 		int32_t n_items_per_element = -1;
-		CompiledDerivativesLoop<double, double, double> compiled_derivatives;
+		CompiledDerivativesLoop<double, SIMD4d, double> compiled_derivatives;
 		CompiledDerivativesLoop<double, double, double> compiled_derivatives_d;  // For energies with branches
 		std::vector<DoFBlockGlobalIndex> dof_block_global_index;
 		std::vector<int> dof_dof_array_idx;  // which dof_array is assigned to each dof

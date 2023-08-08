@@ -336,11 +336,11 @@ void cloth_wrap()
 {
 	// Simulation
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "wrap";
+	settings.output.simulation_name = "wrap_simd";
 	settings.output.output_directory = "../output/" + settings.output.simulation_name;
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
-	settings.execution.end_simulation_time = 25.0;
+	settings.execution.end_simulation_time = 4.0;
 	//settings.execution.n_threads = 1;
 	settings.simulation.gravity = { 0, 0, 0 };
 
@@ -358,7 +358,7 @@ void cloth_wrap()
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
-	const int n = 20;
+	const int n = 50;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n }, true);
