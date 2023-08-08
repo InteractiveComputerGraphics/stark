@@ -214,7 +214,7 @@ namespace symx
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::update_connectivity(const std::vector<int32_t>& arr)
 	{
-		this->update_connectivity(l2data_int(arr), l2n_elements_int(arr));
+		this->update_connectivity(l2data_int(arr), l2n_elements_int(arr, this->connectivity_stride));
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	template<std::size_t N>
