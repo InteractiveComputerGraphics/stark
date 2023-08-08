@@ -240,6 +240,10 @@ void stark::utils::scale(std::vector<Eigen::Vector3d>& points, const Eigen::Vect
 		point = scale.cwiseProduct(point);
 	}
 }
+void stark::utils::scale(std::vector<Eigen::Vector3d>& points, const double s)
+{
+	scale(points, { s, s, s });
+}
 
 void stark::utils::mirror(std::vector<Eigen::Vector3d>& points, const int dim, const double pivot)
 {
