@@ -396,10 +396,6 @@ const tmcd::ProximityResults& stark::models::Cloth::_run_proximity_detection(con
 
 void stark::models::Cloth::_before_time_step(Stark& sim)
 {
-	// x0 <- x1
-	this->model.x0 = this->model.x1;
-	this->model.v0 = this->model.v1;
-
 	// Set next time velocities estimation to zero to avoid invalid state outside of the minimzer
 	std::fill(this->model.v1.begin(), this->model.v1.end(), Eigen::Vector3d::Zero());
 
@@ -411,11 +407,15 @@ void stark::models::Cloth::_before_time_step(Stark& sim)
 }
 void stark::models::Cloth::_after_time_step(Stark& sim)
 {
-	// Set final positions
+	// Set final positions with solved velocities
 	const double dt = sim.settings.simulation.adaptive_time_step.value;
 	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
 		this->model.x1[i] = this->model.x0[i] + dt * this->model.v1[i];
 	}
+
+	// x0 <- x1
+	this->model.x0 = this->model.x1;
+	this->model.v0 = this->model.v1;
 }
 void stark::models::Cloth::_write_frame(Stark& sim)
 {
