@@ -31,5 +31,6 @@ namespace stark::utils
 	void rotate_deg(std::vector<Eigen::Vector3d>& points, const double angle, const Eigen::Vector3d& axis);
 	void rotate_deg(std::vector<Eigen::Vector3d>& points, const double angle, const Eigen::Vector3d& axis, const Eigen::Vector3d& pivot);
 	void scale(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& scale);
+	void scale(std::vector<Eigen::Vector3d>& points, const double scale);
 	void mirror(std::vector<Eigen::Vector3d>& points, const int dim, const double pivot = 0.0);
 }
