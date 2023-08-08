@@ -7,7 +7,7 @@ plt.style.use("seaborn-v0_8")
 path = "D:/builds/stark/output/cloth_friction_slope_test/line_search.txt"
 # path = "D:/builds/stark/output/wrap/line_search.txt"
 
-start = 20
+start = 0
 n = 20
 r = [start, start + n]
 

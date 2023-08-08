@@ -38,6 +38,10 @@ TODO
 	* Friction should be very carefully studied as it introduces really particular characteristics to the minimization:
 		- Leads to a situation where line search *always* takes half step. But the energy seems quite nice and quadratic...
 		- Need more Newton iterations and then its fine. Can't run max_it = 10. Is it pseudonewton?
+	* Should we have a rotating random friction perturbation instead of a fixed one?
+	
+	* There are some persistent ghost forces somewhere due to friction. I need to find this!
+	
 	
 	* Friction correct singularity removal by using a cubic function that smoothly cuts off at TOL. However, 4th order energy.	
 		-> I can do a mollifier with u.squared_norm()

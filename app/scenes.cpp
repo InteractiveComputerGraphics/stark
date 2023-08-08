@@ -340,7 +340,7 @@ void cloth_friction_slope_test()
 	settings.execution.end_simulation_time = 2.5;
 	//settings.execution.n_threads = 1;
 
-	settings.newton.debug_line_search_output = true;
+	settings.newton.debug_line_search_output = false;
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 	settings.newton.max_newton_iterations = 200;
@@ -356,7 +356,7 @@ void cloth_friction_slope_test()
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
-	const int n = 5;
+	const int n = 20;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n }, false);
@@ -372,7 +372,7 @@ void cloth_friction_slope_test()
 	const int small_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
 	//simulation.cloth.set_vertex_target_position_as_initial(small_id, 0);
 
-	const double mu = 0.3;
+	const double mu = 1.0;
 	simulation.cloth.set_friction(large_id, mu);
 	simulation.cloth.set_friction(small_id, mu);
 

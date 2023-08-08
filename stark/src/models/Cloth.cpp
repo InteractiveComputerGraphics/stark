@@ -534,41 +534,41 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 
 
 	// Edge - Edge
-	////// Point - Point
-	//for (const auto& pair : proximity.edge_edge.point_point) {
-	//	const tmcd::EdgePoint& ep_a = pair.first;
-	//	const tmcd::EdgePoint& ep_b = pair.second;
-	//	const tmcd::Point& p = ep_a.point;
-	//	const tmcd::Point& q = ep_b.point;
+	//// Point - Point
+	for (const auto& pair : proximity.edge_edge.point_point) {
+		const tmcd::EdgePoint& ep_a = pair.first;
+		const tmcd::EdgePoint& ep_b = pair.second;
+		const tmcd::Point& p = ep_a.point;
+		const tmcd::Point& q = ep_b.point;
 
-	//	this->friction.point_point.conn.push_back({ (int)this->friction.point_point.conn.size(), p.idx, q.idx});
-	//	this->friction.point_point.contact.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
-	//	this->friction.point_point.contact.mu.push_back(min(this->vertex_mu, p.idx, q.idx));
-	//	this->friction.point_point.contact.fn.push_back(force(pair.distance));
-	//}
-	////// Point - Edge
-	//for (const auto& pair : proximity.edge_edge.point_edge) {
-	//	const tmcd::EdgePoint& ep = pair.first;
-	//	const tmcd::Point& p = ep.point;
-	//	const tmcd::Edge& edge = pair.second;
+		this->friction.point_point.conn.push_back({ (int)this->friction.point_point.conn.size(), p.idx, q.idx});
+		this->friction.point_point.contact.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
+		this->friction.point_point.contact.mu.push_back(min(this->vertex_mu, p.idx, q.idx));
+		this->friction.point_point.contact.fn.push_back(force(pair.distance));
+	}
+	//// Point - Edge
+	for (const auto& pair : proximity.edge_edge.point_edge) {
+		const tmcd::EdgePoint& ep = pair.first;
+		const tmcd::Point& p = ep.point;
+		const tmcd::Edge& edge = pair.second;
 
-	//	this->friction.point_edge.conn.push_back({ (int)this->friction.point_edge.conn.size(), p.idx, edge.vertices[0], edge.vertices[1] });
-	//	this->friction.point_edge.bary.push_back(barycentric_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
-	//	this->friction.point_edge.contact.T.push_back(projection_matrix_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
-	//	this->friction.point_edge.contact.mu.push_back(min(this->vertex_mu, p.idx, edge.vertices[0], edge.vertices[1]));
-	//	this->friction.point_edge.contact.fn.push_back(force(pair.distance));
-	//}
-	////// Edge - Edge
-	//for (const auto& pair : proximity.edge_edge.edge_edge) {
-	//	const tmcd::Edge& ea = pair.first;
-	//	const tmcd::Edge& eb = pair.second;
+		this->friction.point_edge.conn.push_back({ (int)this->friction.point_edge.conn.size(), p.idx, edge.vertices[0], edge.vertices[1] });
+		this->friction.point_edge.bary.push_back(barycentric_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
+		this->friction.point_edge.contact.T.push_back(projection_matrix_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
+		this->friction.point_edge.contact.mu.push_back(min(this->vertex_mu, p.idx, edge.vertices[0], edge.vertices[1]));
+		this->friction.point_edge.contact.fn.push_back(force(pair.distance));
+	}
+	//// Edge - Edge
+	for (const auto& pair : proximity.edge_edge.edge_edge) {
+		const tmcd::Edge& ea = pair.first;
+		const tmcd::Edge& eb = pair.second;
 
-	//	this->friction.edge_edge.conn.push_back({ (int)this->friction.edge_edge.conn.size(), ea.vertices[0], ea.vertices[1], eb.vertices[0], eb.vertices[1] });
-	//	this->friction.edge_edge.bary.push_back(barycentric_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
-	//	this->friction.edge_edge.contact.T.push_back(projection_matrix_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
-	//	this->friction.edge_edge.contact.mu.push_back(min(this->vertex_mu, ea.vertices[0], ea.vertices[1], eb.vertices[0], eb.vertices[1]));
-	//	this->friction.edge_edge.contact.fn.push_back(force(pair.distance));
-	//}
+		this->friction.edge_edge.conn.push_back({ (int)this->friction.edge_edge.conn.size(), ea.vertices[0], ea.vertices[1], eb.vertices[0], eb.vertices[1] });
+		this->friction.edge_edge.bary.push_back(barycentric_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
+		this->friction.edge_edge.contact.T.push_back(projection_matrix_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
+		this->friction.edge_edge.contact.mu.push_back(min(this->vertex_mu, ea.vertices[0], ea.vertices[1], eb.vertices[0], eb.vertices[1]));
+		this->friction.edge_edge.contact.fn.push_back(force(pair.distance));
+	}
 }
 
 void stark::models::Cloth::_energies_mechanical(Stark& sim)
@@ -895,11 +895,11 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 			return -u*u*u/(3.0*u_eps*u_eps) + u*u/u_eps + u_eps/3.0;
 		};
 
-		const double SINGULARITY_TOL = 1e-14;
+		//const double SINGULARITY_TOL = 1e-14;
 		symx::Scalar mollifier = symx::branch(u > u_eps, u, f(u, u_eps));
-		symx::Scalar mollifier_no_singularity = symx::branch(u > SINGULARITY_TOL, mollifier, u_eps/3.0);
-		return mollifier_no_singularity;
-		//return mollifier;
+		//symx::Scalar mollifier_no_singularity = symx::branch(u > SINGULARITY_TOL, mollifier, u_eps/3.0);
+		//return mollifier_no_singularity;
+		return mollifier;
 	};
 	//auto friction_mollifier = [&](const symx::Scalar& u, const symx::Scalar& uh)
 	//{
@@ -910,7 +910,6 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 
 	//	const double SINGULARITY_TOL = 1e-14;
 	//	symx::Scalar mollifier = symx::branch(u > uh, u, f(u, uh));
-	//	const symx::Scalar u_ = u.get_one()*SINGULARITY_TOL;
 	//	symx::Scalar mollifier_no_singularity = symx::branch(u > SINGULARITY_TOL, mollifier, f(u_, uh));  // Not smooth, but continuous and no singularities
 	//	return mollifier_no_singularity;
 	//};
@@ -924,6 +923,11 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 
 		symx::Vector vt = T*v;
 		symx::Vector ut = vt*dt;
+
+		// DEBUG
+		ut[0] += 1.13e-6;
+		ut[1] -= 1.07e-6;
+
 		symx::Scalar u_eps = dt*epsv;
 		symx::Scalar E = mu*fn*friction_mollifier(ut.norm(), u_eps);
 		energy.set(E);
