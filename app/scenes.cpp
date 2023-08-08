@@ -357,28 +357,74 @@ void cloth_friction_slope_test()
 
 	// Cloth
 	const int N = 10;
-	const int n = 10;
+	const int n = 20;
 	const double scale = 0.5;
 	const double rot_deg = 10.0;
 	std::vector<Eigen::Vector3d> vertices_large;
 	std::vector<Eigen::Vector3d> vertices_small;
-	std::vector<std::array<int, 3>> triangles;
-	stark::utils::generate_triangular_grid(vertices_large, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n }, false);
-	vertices_small = vertices_large;
+	std::vector<std::array<int, 3>> triangles_large;
+	std::vector<std::array<int, 3>> triangles_small;
+	stark::utils::generate_triangular_grid(vertices_large, triangles_large, { -0.5, -0.5 }, { 0.5, 0.5 }, { N, N }, false);
+	stark::utils::generate_triangular_grid(vertices_small, triangles_small, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n }, false);
 	stark::utils::scale(vertices_small, scale);
 	stark::utils::move(vertices_small, { 0.01, 0.07, 1.1*settings.contact.dhat });
 	stark::utils::rotate_deg(vertices_large, rot_deg, Eigen::Vector3d::UnitX());
 	stark::utils::rotate_deg(vertices_small, rot_deg, Eigen::Vector3d::UnitX());
 	
-	const int large_id = simulation.cloth.add(vertices_large, triangles, stark::models::Cloth::MaterialPreset::Cotton);
+	const int large_id = simulation.cloth.add(vertices_large, triangles_large, stark::models::Cloth::MaterialPreset::Cotton);
 	for (int i = 0; i < (int)vertices_large.size(); i++) {
 		simulation.cloth.set_vertex_target_position_as_initial(large_id, i);
 	}
-	const int small_id = simulation.cloth.add(vertices_small, triangles, stark::models::Cloth::MaterialPreset::Cotton);
+	const int small_id = simulation.cloth.add(vertices_small, triangles_small, stark::models::Cloth::MaterialPreset::Cotton);
 
-	const double mu = 0.2*0.01;  // DEBUG
+	const double mu = 0.5;
 	simulation.cloth.set_friction(large_id, mu);
 	simulation.cloth.set_friction(small_id, mu);
+
+	// Run
+	simulation.stark.run();
+}
+void cloth_friction_corner()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "cloth_friction_corner_2";
+	settings.output.output_directory = "../output/cloth_friction_corner";
+	settings.output.codegen_directory = "../output/codegen";
+	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
+	settings.execution.end_simulation_time = 5.0;
+
+	settings.newton.max_newton_iterations = 200;
+
+	settings.contact.friction_enabled = true;
+	settings.contact.friction_stick_slide_threshold = 0.01;
+	settings.contact.dhat = 0.002;
+	stark::models::Simulation simulation(settings);
+
+	// Cloth
+	const int n = 50;
+	const double scale = 0.5;
+	const double rot_deg = 10.0;
+	std::vector<Eigen::Vector3d> vertices_large;
+	std::vector<std::array<int, 3>> triangles_large;
+	std::vector<std::array<int, 3>> triangles_small;
+	stark::utils::generate_triangular_grid(vertices_large, triangles_large, { -0.5, -0.5 }, { 0.5, 0.5 }, { 1, 1 }, false);
+	stark::utils::rotate_deg(vertices_large, rot_deg, Eigen::Vector3d::UnitX());
+
+	std::vector<Eigen::Vector3d> vertices_small;
+	stark::utils::generate_triangular_grid(vertices_small, triangles_small, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n }, false);
+	stark::utils::scale(vertices_small, scale);
+	stark::utils::move(vertices_small, { -0.5, 0.5, 0.2 });
+
+	const int large_id = simulation.cloth.add(vertices_large, triangles_large, stark::models::Cloth::MaterialPreset::Cotton);
+	for (int i = 0; i < (int)vertices_large.size(); i++) {
+		simulation.cloth.set_vertex_target_position_as_initial(large_id, i);
+	}
+	const int small_id = simulation.cloth.add(vertices_small, triangles_small, stark::models::Cloth::MaterialPreset::Cotton);
+
+	const double mu = 0.9;
+	simulation.cloth.set_friction(large_id, mu);
+	simulation.cloth.set_friction(small_id, mu);
+	simulation.cloth.set_damping(1.0);
 
 	// Run
 	simulation.stark.run();

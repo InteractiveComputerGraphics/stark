@@ -12,5 +12,6 @@ int main()
 	//collision_cloth_parallel_edge_test_slide();
 	//cloth_wrap();
 
-	cloth_friction_slope_test();
+	//cloth_friction_slope_test();
+	cloth_friction_corner();
 }

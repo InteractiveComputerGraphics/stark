@@ -3,7 +3,7 @@
 // Ericson05
 std::array<double, 3> stark::models::barycentric_point_triangle(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c)
 {
-	// IPCToolkit
+	// DEBUG: IPCToolkit
 	Eigen::Matrix<double, 2, 3> basis;
 	basis.row(0) = b - a; // edge 0
 	basis.row(1) = c - a; // edge 1
@@ -12,7 +12,7 @@ std::array<double, 3> stark::models::barycentric_point_triangle(const Eigen::Vec
 	const Eigen::Vector2d x = A.ldlt().solve(bb);
 	return { x[0], x[1], 1.0 - x[0] - x[1] };
 
-
+	
 	//const Eigen::Vector3d v0 = b - a;
 	//const Eigen::Vector3d v1 = c - a;
 	//const Eigen::Vector3d v2 = p - a;
