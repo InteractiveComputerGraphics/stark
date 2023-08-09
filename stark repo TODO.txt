@@ -92,6 +92,8 @@ Jose Friction
 		
 		To be honest, this might even be more accurate overall.
 		I am very sure this will have a convergence behavior much closer to frictionless simulation than what we have now.
+		This fits the same paper incredibly well as it is literally the same formulation, just solved in two modes: variable and constant.
+		
 	
 		Note: maybe we need a area based contact force.
 		Note2: We can do this with the history based contact points as well to avoid drifting.
