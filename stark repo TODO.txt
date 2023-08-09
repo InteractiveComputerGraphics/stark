@@ -5,6 +5,7 @@ stark repo TODO
 		I don't think this is really necessary. In splishsplash you just modify it directly
 		
 	* Consider moving all geometry utils to its own namespace
+	* Eigen warnings
 	* Do we put simulation in stark::models ?
 	* Interpolate frames
 	* Newton's method needs a lot of work in understanding, convergence, when to repeat a time step...
@@ -33,24 +34,36 @@ stark repo TODO
 		- Definitely getting weird forces when parallel edges
 		- Maybe just mollify fn?
 	
-	* There are things wrong with the friction. Sometimes the edge-edge case seems to generate jumps. (non deterministic)
-		- Problems with fn when I change the adaptive stiffness
-		- Problems with adaptive time step?
-	* Improve adaptive time step strategy
-		- When friction is enabled, it just needs *a lot* of short steps to navigate the line search.
-			I don't necessarily think it needs shorter dt
-		- This can actually change the behavior of the simulation. It worked great now without Newton iteration limits
-	* Super sensitive mu. 0.002 already sticks. two thousands of the contact force makes it stick?
-	
-	* Just copy all the functions used in IPC and also how they use T and bary.
-	* Just try with a mollifier that doesn't need u.norm() = 0
-	
-	* I cannot restart time steps in a nested manner. I am destroying v0!!
-		Maybe I have similar errors that are not friction related but triggered but how hard is to handle it.
-		How the fuck do I test the whole simulator? :(
-		
 	* We need a default friction, otherwise we are using -1.0. Better 0.0.
-	* Friction should be not always the min(mu0, mu1).
+	* Average time step size at the end
+	
+	* Add intersection step at the end of the line search to be able to accept the step
+		Maybe directly in the line search
+		
+	* v1 as initial guess with intersection test might significantly help convergence
+	* No-slip constraint to replace the stick branch of the friction
+		In some simulations we just want to have "perfect" sticking friction (friction corner, some instances of vehicle wheels...)
+		Then we can just have a tangential distance_sq constraint to the contact point for the two primitives
+		The problem is then how to model the transition from the sticking to the (well working) IPC sliding friction
+		
+		Can we statically switch between modes at the beginning of the time step based on constraint stress?
+			- From a sticking constraint, if the force exceeds a yield point, the traction is lost and the constraint removed. It will be a sliding constraint next.
+			- From a sliding constraint, we just based this on relative velocity under a threshold to become a sticking constraint.
+			In general, they are not continuous forces between them, but we could fit the transition to be continuous. Which makes this method even more accurate.
+			
+			A problem with this is that there are multiple primitives involved per contact point and the stresses must be aggregated.
+			
+			https://www.google.com/url?sa=i&url=https%3A%2F%2Flink.springer.com%2F10.1007%252F978-3-642-22647-2_490&psig=AOvVaw0Oj7HuHa5hWuE7rww-ZHE6&ust=1691666951305000&source=images&cd=vfe&opi=89978449&ved=0CBEQjRxqFwoTCICluc-8z4ADFQAAAAAdAAAAABAE
+			Egor Friction: https://dl.acm.org/doi/pdf/10.1145/3446663
+		
+		What happens in general when velocities are separating the contact?
+		
+		
+Convergence improvements
+------------------------
+	- Higher order mollifiers!
+	- Better and less stringent CG tolerance
+	- Better descend methods (NewtonCG?)
 	
 
 Documentation

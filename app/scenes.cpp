@@ -387,16 +387,17 @@ void cloth_friction_slope_test()
 void cloth_friction_corner()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "cloth_friction_corner_2";
+	settings.output.simulation_name = "cloth_friction_corner_eps0001_PD";
 	settings.output.output_directory = "../output/cloth_friction_corner";
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
 
 	settings.newton.max_newton_iterations = 200;
+	settings.newton.project_to_PD = true;
 
 	settings.contact.friction_enabled = true;
-	settings.contact.friction_stick_slide_threshold = 0.01;
+	settings.contact.friction_stick_slide_threshold = 0.001;
 	settings.contact.dhat = 0.002;
 	stark::models::Simulation simulation(settings);
 
@@ -433,10 +434,10 @@ void cloth_wrap()
 	// Simulation
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "wrap";
-	settings.output.output_directory = "../output/" + settings.output.simulation_name;
+	settings.output.output_directory = "../output/wrap";
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
-	settings.execution.end_simulation_time = 25.0;
+	settings.execution.end_simulation_time = 5.0;
 	//settings.execution.n_threads = 1;
 	settings.simulation.gravity = { 0, 0, 0 };
 
@@ -444,8 +445,11 @@ void cloth_wrap()
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 
-	settings.contact.collisions_enabled = true;
 	settings.contact.friction_enabled = false;
+	settings.contact.friction_stick_slide_threshold = 0.001;
+	settings.newton.max_newton_iterations = 200;
+
+	settings.contact.collisions_enabled = true;
 	settings.contact.edge_edge_enabled = true;
 	settings.contact.triangle_point_enabled = true;
 	settings.contact.enable_intersection_test = true;
@@ -453,13 +457,14 @@ void cloth_wrap()
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
-	const int n = 10;
+	const int n = 50;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n }, true);
 	const int cloth_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
 	simulation.cloth.is_strain_limiting_active = false;
 	simulation.cloth.set_damping(1.0);
+	simulation.cloth.set_friction(cloth_id, 1.0);
 
 	// Run
 	simulation.stark.run(

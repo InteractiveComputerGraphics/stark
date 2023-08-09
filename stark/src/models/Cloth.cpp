@@ -529,6 +529,13 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 
 
 	// Edge - Edge
+	auto mollifier = [&](const tmcd::Edge& edge_a, const tmcd::Edge& edge_b) 
+	{
+		const std::vector<Eigen::Vector3d>& X = this->model.X;
+		return edge_edge_mollifier(x[edge_a.vertices[0]], x[edge_a.vertices[1]], x[edge_b.vertices[0]], x[edge_b.vertices[1]],
+								   X[edge_a.vertices[0]], X[edge_a.vertices[1]], X[edge_b.vertices[0]], X[edge_b.vertices[1]]);
+	};
+
 	//// Point - Point
 	for (const auto& pair : proximity.edge_edge.point_point) {
 		const tmcd::EdgePoint& ep_a = pair.first;
@@ -541,7 +548,7 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 			this->friction.point_point.conn.push_back({ (int)this->friction.point_point.conn.size(), p.idx, q.idx });
 			this->friction.point_point.contact.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
 			this->friction.point_point.contact.mu.push_back(mu);
-			this->friction.point_point.contact.fn.push_back(force(pair.distance));
+			this->friction.point_point.contact.fn.push_back(mollifier(ep_a.edge, ep_b.edge)*force(pair.distance));
 		}
 	}
 	//// Point - Edge
@@ -556,7 +563,7 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 			this->friction.point_edge.bary.push_back(barycentric_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
 			this->friction.point_edge.contact.T.push_back(projection_matrix_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
 			this->friction.point_edge.contact.mu.push_back(mu);
-			this->friction.point_edge.contact.fn.push_back(force(pair.distance));
+			this->friction.point_edge.contact.fn.push_back(mollifier(ep.edge, edge) * force(pair.distance));
 		}
 	}
 	//// Edge - Edge
@@ -570,7 +577,7 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 			this->friction.edge_edge.bary.push_back(barycentric_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
 			this->friction.edge_edge.contact.T.push_back(projection_matrix_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
 			this->friction.edge_edge.contact.mu.push_back(mu);
-			this->friction.edge_edge.contact.fn.push_back(force(pair.distance));
+			this->friction.edge_edge.contact.fn.push_back(mollifier(ea, eb) * force(pair.distance));
 		}
 	}
 }

@@ -101,3 +101,17 @@ std::array<double, 6> stark::models::projection_matrix_point_edge(const Eigen::V
 	P.row(1) = v;
 	return { P(0, 0), P(0, 1), P(0, 2), P(1, 0), P(1, 1), P(1, 2) };
 }
+
+double stark::models::edge_edge_mollifier(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& p, const Eigen::Vector3d& q, const Eigen::Vector3d& A, const Eigen::Vector3d& B, const Eigen::Vector3d& P, const Eigen::Vector3d& Q)
+{
+	const double eps_x = 1e-3 * (A - B).squaredNorm() * (P - Q).squaredNorm();
+	const double x = (b - a).cross(q - p).squaredNorm();
+	const double x_div_eps_x = x / eps_x;
+	const double f = (-x_div_eps_x + 2.0) * x_div_eps_x;
+	if (x > eps_x) {
+		return 1.0;
+	}
+	else {
+		return f;
+	}
+}
