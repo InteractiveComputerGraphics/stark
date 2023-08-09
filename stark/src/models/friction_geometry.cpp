@@ -3,29 +3,19 @@
 // Ericson05
 std::array<double, 3> stark::models::barycentric_point_triangle(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c)
 {
-	// DEBUG: IPCToolkit
-	Eigen::Matrix<double, 2, 3> basis;
-	basis.row(0) = b - a; // edge 0
-	basis.row(1) = c - a; // edge 1
-	const Eigen::Matrix2d A = basis * basis.transpose();
-	const Eigen::Vector2d bb = basis * (p - a);
-	const Eigen::Vector2d x = A.ldlt().solve(bb);
-	return { x[0], x[1], 1.0 - x[0] - x[1] };
-
-	
-	//const Eigen::Vector3d v0 = b - a;
-	//const Eigen::Vector3d v1 = c - a;
-	//const Eigen::Vector3d v2 = p - a;
-	//const double d00 = v0.dot(v0);
-	//const double d01 = v0.dot(v1);
-	//const double d11 = v1.dot(v1);
-	//const double d20 = v2.dot(v0);
-	//const double d21 = v2.dot(v1);
-	//const double denom_inv = 1.0 / (d00 * d11 - d01 * d01);
-	//const double v = (d11 * d20 - d01 * d21) * denom_inv;
-	//const double w = (d00 * d21 - d01 * d20) * denom_inv;
-	//const double u = 1.0 - v - w;
-	//return { u, v, w };
+	const Eigen::Vector3d v0 = b - a;
+	const Eigen::Vector3d v1 = c - a;
+	const Eigen::Vector3d v2 = p - a;
+	const double d00 = v0.dot(v0);
+	const double d01 = v0.dot(v1);
+	const double d11 = v1.dot(v1);
+	const double d20 = v2.dot(v0);
+	const double d21 = v2.dot(v1);
+	const double denom_inv = 1.0 / (d00 * d11 - d01 * d01);
+	const double v = (d11 * d20 - d01 * d21) * denom_inv;
+	const double w = (d00 * d21 - d01 * d20) * denom_inv;
+	const double u = 1.0 - v - w;
+	return { u, v, w };
 }
 // Ericson05
 std::array<double, 2> stark::models::barycentric_point_edge(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b)

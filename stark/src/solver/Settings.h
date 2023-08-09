@@ -33,11 +33,12 @@ namespace stark
 			double dhat = 1e-3;
 			double friction_stick_slide_threshold = 0.001;
 			double edge_edge_cross_norm_sq_cutoff = 1e-30;
-			bool enable_intersection_test = true;
+			double friction_displacement_perturbation = 1e-9;
 			bool collisions_enabled = true;
 			bool friction_enabled = true;
 			bool triangle_point_enabled = true;
 			bool edge_edge_enabled = true;
+			bool enable_intersection_test = true;
 		};
 		struct NewtonsMethod
 		{

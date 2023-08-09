@@ -35,9 +35,10 @@ stark::Stark::Stark(const Settings& settings)
 	}
 
 	// Initialize Consoles and Loggers
-	this->console.initialize(settings.output.output_directory + "/console.txt", settings.output.console_verbosity, settings.output.console_output_to);
-	this->logger.set_path(settings.output.output_directory + "/logger.txt");
-	this->newton.line_search_debug_logger.set_path(settings.output.output_directory + "/line_search.txt");
+	const std::string ending = "_" + settings.output.simulation_name + ".txt";
+	this->console.initialize(settings.output.output_directory + "/console" + ending, settings.output.console_verbosity, settings.output.console_output_to);
+	this->logger.set_path(settings.output.output_directory + "/logger" + ending);
+	this->newton.line_search_debug_logger.set_path(settings.output.output_directory + "/line_search" + ending);
 
 	// Print settings
 	this->console.print(this->settings.as_string(), Verbosity::TimeSteps);

@@ -421,9 +421,8 @@ void cloth_friction_corner()
 	}
 	const int small_id = simulation.cloth.add(vertices_small, triangles_small, stark::models::Cloth::MaterialPreset::Cotton);
 
-	const double mu = 0.9;
-	simulation.cloth.set_friction(large_id, mu);
-	simulation.cloth.set_friction(small_id, mu);
+	simulation.cloth.set_friction(large_id, 2.0);
+	simulation.cloth.set_friction(small_id, 0.0);
 	simulation.cloth.set_damping(1.0);
 
 	// Run

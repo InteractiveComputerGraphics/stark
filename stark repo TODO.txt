@@ -50,6 +50,7 @@ stark repo TODO
 		How the fuck do I test the whole simulator? :(
 		
 	* We need a default friction, otherwise we are using -1.0. Better 0.0.
+	* Friction should be not always the min(mu0, mu1).
 	
 
 Documentation

@@ -77,14 +77,6 @@ symx::Sequence::Sequence(const std::vector<Scalar>& expr)
 			this->branch_sequences.emplace_back(expr, branch_combination_map);
 		}
 
-		//// DEBUG
-		//for (auto& a : this->branch_sequences) {
-		//	a.print();
-		//	std::cout << std::endl << std::endl;
-		//}
-		//exit(2);
-		////
-
 		std::vector<int> iota(this->branch_sequences.size());
 		std::iota(iota.begin(), iota.end(), 0);
 		this->_add_ops_until_next_branch(iota, 0);
