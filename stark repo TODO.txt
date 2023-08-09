@@ -59,6 +59,65 @@ stark repo TODO
 		What happens in general when velocities are separating the contact?
 		
 		
+Jose Friction
+-------------
+	* It seems that we have less "line search doesn't descend" errors. This might be the confirmation that the problem is less indefinite.
+		This results in larger time steps.
+	* It might work to the point that it improves convergence in the wrap sim by having less sliding around.
+	* It is more faithful to Coulomb's friction.
+	* We can cover discontinuous stick/slip conditions
+		- We make them continuous with a positive parabolic transition
+	
+	* We can definitely further improve this method (by far) with the same qualitative result by keeping the categorization constant during a time step.
+		The current mode supports arbitrary transitions from stick to slip and viceversa at any time.
+		This is not only unnecesary but very detrimental to convergence.
+		The problem is that the border between stick/slip is *very* close to zero (~1e-6 m)
+		With all the other energies going on in the system, it is possible that Newton suggests something that moves the points more than that.
+		Consequently, a lot of dofs are going to change gradient and hessians, potentially very significantly.
+		But there is no real reason to do this except for specific types of simulations.
+		
+		In the car simulation for instance, the contact points between the tires and the floor either stick or slip, but they don't change all the time.
+		When the car starts driving (without wheel spin) the contact points will have a huge fn, that together with the very large mu, will be a very clear indicator of no-slip condition.
+		As the car drives slowly it will be very clear that we want the points to stick.
+		It is very undersireable to waste time letting Newton bounce between states.
+		
+		When there is a sudden acceleration or turn, the wheels lose traction and the car spins.
+		But this is also very easy to detect: there is a contact force yield point that switches from sticking to sliding friction.
+		This is nothing more than `when friction force norm > threshold  ->  sliding constraint`.
+		A friction force with a fixed static friction stiffness has a corresponding tangential displacement u if we prefer to use that instead.
+		For the opposite, we check the sliding velocity/displacement of a contact point.
+		If it is below a threshold, we treat it as a static friction case again.
+		If displacement/velocity is not good enough, we can inspect the contact force and apply Coulomb's cone.
+		In any case, when the car spinning innebitably slows down due to the strong sliding friction, the contact points will snap back to sticking and traction will be regained.
+		
+		To be honest, this might even be more accurate overall.
+		I am very sure this will have a convergence behavior much closer to frictionless simulation than what we have now.
+	
+		Note: maybe we need a area based contact force.
+		Note2: We can do this with the history based contact points as well to avoid drifting.
+	
+	* Is it possible to make it C2?
+	* Can we make it function of u.squared_norm()?
+	* Does anything change if made made it as velocity constraint?
+	* Can we have a memory system for the barycentric coords?
+		This will massively relax the sticking windows by removing drifting completely.
+		This sounds completely logic: 
+			atm we have to make extremely small windows because we accumulate drifting.
+			We can make global "anchor points" (we just save the constraint as it was, with the same bary).
+			We just need to loop over all friction constraints at the end of the time step, and for those which evaluate "sticking" we keep their bary.
+			At the beginning of the time step we look every new friction point in the existing list.
+			The obvious down side is that when a contact is close to a case change (point-triangle -> point-edge) it loses its global character.
+			
+		
+	Only matter of time before Theodore Kim does this... Do we partner? This could gives a buffer!
+	
+	* Can I also make positive the edge-edge mollifier? I think is the only thing severely problematic
+	
+	Experiments
+		- The friction corner worked well. Twice as fast for almost indistinguishable results.
+		- The cloth wrap was faster, but only by 10% or so
+		
+		
 Convergence improvements
 ------------------------
 	- Higher order mollifiers!

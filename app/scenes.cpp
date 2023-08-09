@@ -340,7 +340,7 @@ void cloth_friction_slope_test()
 	settings.execution.end_simulation_time = 2.5;
 	//settings.execution.n_threads = 1;
 
-	settings.newton.debug_line_search_output = false;
+	settings.newton.debug_line_search_output = true;
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 	settings.newton.max_newton_iterations = 200;
@@ -352,12 +352,13 @@ void cloth_friction_slope_test()
 	settings.contact.edge_edge_enabled = true;
 	settings.contact.enable_intersection_test = true;
 	settings.contact.friction_stick_slide_threshold = 0.001;
+	settings.contact.friction_stick_slide_stiffness = 1e2;
 	settings.contact.dhat = 0.01;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
-	const int N = 10;
-	const int n = 20;
+	const int N = 1;
+	const int n = 10;
 	const double scale = 0.5;
 	const double rot_deg = 10.0;
 	std::vector<Eigen::Vector3d> vertices_large;
@@ -387,17 +388,19 @@ void cloth_friction_slope_test()
 void cloth_friction_corner()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "cloth_friction_corner_eps0001_PD";
+	settings.output.simulation_name = "cloth_friction_corner_jose";
 	settings.output.output_directory = "../output/cloth_friction_corner";
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
 
+	settings.newton.debug_line_search_output = false;
 	settings.newton.max_newton_iterations = 200;
-	settings.newton.project_to_PD = true;
+	settings.newton.project_to_PD = false;
 
 	settings.contact.friction_enabled = true;
-	settings.contact.friction_stick_slide_threshold = 0.001;
+	settings.contact.friction_stick_slide_threshold = 1e-5;
+	//settings.contact.friction_stick_slide_stiffness = 1e3;
 	settings.contact.dhat = 0.002;
 	stark::models::Simulation simulation(settings);
 
@@ -433,7 +436,7 @@ void cloth_wrap()
 {
 	// Simulation
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "wrap";
+	settings.output.simulation_name = "wrap_josefric";
 	settings.output.output_directory = "../output/wrap";
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
@@ -445,8 +448,8 @@ void cloth_wrap()
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 
-	settings.contact.friction_enabled = false;
-	settings.contact.friction_stick_slide_threshold = 0.001;
+	settings.contact.friction_enabled = true;
+	settings.contact.friction_stick_slide_threshold = 1e-6;
 	settings.newton.max_newton_iterations = 200;
 
 	settings.contact.collisions_enabled = true;
