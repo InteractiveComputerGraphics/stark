@@ -39,8 +39,9 @@ stark repo TODO
 	
 	* Add intersection step at the end of the line search to be able to accept the step
 		Maybe directly in the line search
+	* [Important] Flip the du if unon-descend direaction!!!
 		
-	* v1 as initial guess with intersection test might significantly help convergence
+	* [Important] v1 as initial guess with intersection test might significantly help convergence
 	* No-slip constraint to replace the stick branch of the friction
 		In some simulations we just want to have "perfect" sticking friction (friction corner, some instances of vehicle wheels...)
 		Then we can just have a tangential distance_sq constraint to the contact point for the two primitives
@@ -73,7 +74,12 @@ Documentation
 Specific to energies
 --------------------
 	* Stable neohookean for cloth
-	icra24_bosch_rwth
+
+Very future work
+================
+	* Rigid body formulation based on positions (affine bodies?)
+		Then I can formulate everything in positions which opens the door to using different time integration schemes
+	* Sooner or later we are going to need to support the FCM for volumetrics as tet meshes are a pain.
 	
 Architecture
 ------------
