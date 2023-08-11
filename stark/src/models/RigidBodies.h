@@ -18,7 +18,7 @@ namespace stark::models
 		struct AnchorPoints
 		{
 			std::vector<Eigen::Vector3d> loc;
-			std::vector<Eigen::Vector3d> glob;
+			std::vector<Eigen::Vector3d> target;
 			std::vector<std::array<int, 2>> conn; // { "idx", "a" }
 		};
 		struct BallJoints
