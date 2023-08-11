@@ -36,6 +36,7 @@ stark repo TODO
 	
 	* We need a default friction, otherwise we are using -1.0. Better 0.0.
 	* Average time step size at the end
+	* Probably better just to have the edge distance strain limiting as it poses way less convergence problems
 	
 	* Add intersection step at the end of the line search to be able to accept the step
 		Maybe directly in the line search

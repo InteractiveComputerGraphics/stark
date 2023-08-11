@@ -81,7 +81,7 @@ namespace stark::models
 		void set_damping(const double damping);
 		void set_material_preset(const int cloth_id, const MaterialPreset material);
 		void set_density(const int cloth_id, const double density = 0.5);
-		void set_strain_parameters(const int cloth_id, const double young_modulus = 1e3, const double poisson_ratio = 0.3, const double strain_limit = 1.10, const double strain_limit_stiffness = 1e6);
+		void set_strain_parameters(const int cloth_id, const double young_modulus = 1e3, const double poisson_ratio = 0.3, const double strain_limit = 1.10, const double strain_limit_stiffness = 1.0);
 		void set_bending_stiffness(const int cloth_id, const double bending_stiffness = 1e-5);
 		void set_friction(const int cloth_id, const double coulombs_mu = 0.1);
 		//void set_contact_parameters(const bool activate, const double dhat = 0.005, const double stiffness = 1e6);

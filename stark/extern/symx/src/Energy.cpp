@@ -20,7 +20,6 @@ void symx::Energy::set_with_condition(const Scalar& expr, const Scalar& cond)
 	this->cond = std::make_unique<Scalar>(cond);
 	this->compiled_derivatives.update_connectivity(l2data_int(this->connectivity_after_condition), l2n_elements_int(this->connectivity_after_condition, this->n_items_per_element));
 	this->compiled_derivatives_d.update_connectivity(l2data_int(this->connectivity_after_condition), l2n_elements_int(this->connectivity_after_condition, this->n_items_per_element));
-	this->compiled_condition.update_connectivity(l2data_int(this->connectivity_after_condition), l2n_elements_int(this->connectivity_after_condition, this->n_items_per_element));
 	this->has_condition = true;
 }
 void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arrays, const bool suppress_compiler_output)

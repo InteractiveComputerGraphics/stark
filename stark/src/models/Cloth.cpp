@@ -584,7 +584,7 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 
 void stark::models::Cloth::_energies_mechanical(Stark& sim)
 {
-	//// Lumped mass inertia
+	// Lumped mass inertia
 	sim.global_energy.add_energy("cloth_inertia", this->conn_nodes,
 		[&](symx::Energy& energy, symx::Element& node)
 		{
@@ -609,7 +609,7 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 		}
 	);
 
-	//// Strain
+	// Strain
 	sim.global_energy.add_energy("cloth_strain", this->conn_mesh_numbered_triangles,
 		[&](symx::Energy& energy, symx::Element& mesh_idx_triangle)
 		{
@@ -651,7 +651,7 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 		}
 	);
 	
-	//// Strain limiting
+	// Strain limiting
 	sim.global_energy.add_energy("cloth_strain_limiting", this->conn_mesh_numbered_triangles,
 		[&](symx::Energy& energy, symx::Element& mesh_idx_triangle)
 		{
@@ -672,30 +672,23 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			// Time integration
 			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
 
-			// Projection matrix
-			symx::Vector v01 = x1[0] - x1[2];
-			symx::Vector v02 = x1[1] - x1[2];
-			symx::Vector px = v01.normalized();
-			symx::Vector normal = v01.cross3(v02).normalized();
-			symx::Vector py = normal.cross3(px);
-			symx::Matrix P = symx::Matrix(symx::gather({ px, py }), { 2, 3 });
-
-			// Projection and deformation gradient
-			std::vector<symx::Vector> x1_ = { P * x1[0], P * x1[1], P * x1[2] };
+			// Kinematics
 			symx::Matrix Dx = symx::Matrix(symx::gather({
-				x1_[1] - x1_[0],
-				x1_[2] - x1_[0],
-				}), { 2, 2 }).transpose();
-			symx::Matrix F = Dx * DXinv;
-			symx::Vector s = F.singular_values_2x2();
-			symx::Scalar C = s[0] - strain_limiting_start;
-			symx::Scalar E = area * strain_limiting_stiffness * C.powN(3);
-			energy.set_with_condition(E, C > 0.0);
+				x1[1] - x1[0],
+				x1[2] - x1[0],
+				}), { 2, 3 }).transpose();
+			symx::Matrix F_32 = Dx * DXinv;  // 3x2
+			symx::Matrix C = F_32.transpose() * F_32;
+
+			symx::Vector s = C.singular_values_2x2();
+			symx::Scalar constraint = symx::sqrt(s[0]) - strain_limiting_start;
+			symx::Scalar E = area * strain_limiting_stiffness * constraint.powN(3);
+			energy.set_with_condition(E, constraint > 0.0);
 			energy.activate(this->is_strain_limiting_active);
 		}
 	);
 	
-	//// Bergou06 Bending Energy
+	// Bergou06 Bending Energy
 	sim.global_energy.add_energy("cloth_bending", this->conn_numbered_mesh_internal_edges,
 		[&](symx::Energy& energy, symx::Element& mesh_idx_internal_edge)
 		{
@@ -725,7 +718,7 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 		}
 	);
 	
-	//// Prescribed nodes
+	// Prescribed nodes
 	sim.global_energy.add_energy("cloth_prescribed_positions", this->conn_enumerated_prescribed_positions,
 		[&](symx::Energy& energy, symx::Element& node)
 		{
@@ -749,7 +742,7 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 		}
 	);
 
-	//// Attachments
+	// Attachments
 	sim.global_energy.add_energy("cloth_attachments", this->conn_attached_nodes,
 		[&](symx::Energy& energy, symx::Element& node_pair)
 		{
