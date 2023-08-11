@@ -29,7 +29,7 @@ Low priority
 	* Interpolate frames
 	* Timings per energy
 	* Magnetic simulations
-
+    * Support for LBFGS. Probably is worse, but the sooned I confirm this, the better.
 
 		
 Convergence improvements
