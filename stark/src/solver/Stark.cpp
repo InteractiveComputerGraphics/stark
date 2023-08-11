@@ -1,8 +1,10 @@
 #include "Stark.h"
+#include "../utils/timestamp.h"
 
 #include <iostream>
 
 #include <JanBenderUtilities/FileSystem.h>
+
 
 stark::Stark::Stark(const Settings& settings)
 {
@@ -35,7 +37,8 @@ stark::Stark::Stark(const Settings& settings)
 	}
 
 	// Initialize Consoles and Loggers
-	const std::string ending = "_" + settings.output.simulation_name + ".txt";
+	const std::string timestamp = time_stamp();
+	const std::string ending = "_" + settings.output.simulation_name + "_" + timestamp + ".txt";
 	this->console.initialize(settings.output.output_directory + "/console" + ending, settings.output.console_verbosity, settings.output.console_output_to);
 	this->logger.set_path(settings.output.output_directory + "/logger" + ending);
 	this->newton.line_search_debug_logger.set_path(settings.output.output_directory + "/line_search" + ending);

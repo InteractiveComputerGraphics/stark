@@ -5,7 +5,7 @@ set(EIGEN3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/Eigen)
 if( NOT EIGEN3_INCLUDE_DIR )
     message( FATAL_ERROR "Please point the environment variable EIGEN3_INCLUDE_DIR to the include directory of your Eigen3 installation.")
 endif()
-set (CMAKE_CXX_FLAGS "-DEIGEN_MPL2_ONLY")
+add_compile_options("-DEIGEN_MPL2_ONLY")
 
 # Parallel compilation in MSVC
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -68,6 +68,7 @@ set(UTILS_FILES
 	src/utils/MeshWithDynamics.h
 	src/utils/linear_system.cpp
 	src/utils/linear_system.h
+	src/utils/timestamp.h
 	)
 
 # Create lireary

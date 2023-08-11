@@ -7,6 +7,7 @@
 
 #include <fmt/format.h>
 
+
 namespace stark
 {
 	enum class OutputTo { ConsoleOnly, FileOnly, FileAndConsole, NoOutput };

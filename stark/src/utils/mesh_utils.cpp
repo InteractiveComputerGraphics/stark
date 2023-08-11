@@ -41,7 +41,7 @@ double stark::utils::unsigned_tetra_volume(const Eigen::Vector3d& p0, const Eige
 }
 double stark::utils::signed_tetra_volume(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2, const Eigen::Vector3d& p3)
 {
-	return std::abs(signed_tetra_volume(p0, p1, p2, p3));
+	return std::abs(unsigned_tetra_volume(p0, p1, p2, p3));
 }
 
 void stark::utils::find_edges(std::vector<std::array<int, 2>>& out_edges, const std::vector<std::array<int, 3>>& triangles, const int n_nodes)

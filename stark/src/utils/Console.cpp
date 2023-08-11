@@ -1,17 +1,17 @@
 #include "Console.h"
 
+
 void stark::utils::Console::initialize(const std::string path, const Verbosity verbosity, const OutputTo output_to)
 {
 	this->verbosity = verbosity;
 	this->output_to = output_to;
 	this->path = path;
-	this->ofstream_ptr = std::make_unique<std::ofstream>(path);
+	this->ofstream_ptr = std::make_unique<std::ofstream>(this->path);
 	if (!(*this->ofstream_ptr)) {
-		std::cout << "stark::utils::Console error: Cannot open a file " << path << std::endl;
+		std::cout << "stark::utils::Console error: Cannot open a file " << this->path << std::endl;
 		exit(-1);
 	}
 }
-
 void stark::utils::Console::set_path(const std::string path)
 {
 }

@@ -1,5 +1,6 @@
 #include "Logger.h"
 
+
 void stark::utils::Logger::start_timing(const std::string label)
 {
 	this->t0[label] = omp_get_wtime();
