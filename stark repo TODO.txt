@@ -1,89 +1,84 @@
 stark repo TODO
 ===============
-	* How is Stark supposed to be used? From the app or from the lib? This influences the reach of libraries such as SymX
-		I would maybe need a new middle level of abstraction: app -> stark (simulator put together) -> stark_sim (core simulator)
-		I don't think this is really necessary. In splishsplash you just modify it directly
-		
-	* Consider moving all geometry utils to its own namespace
-	* Eigen warnings
-	* Do we put simulation in stark::models ?
-	* Interpolate frames
-	* Newton's method needs a lot of work in understanding, convergence, when to repeat a time step...
-		* NewtonsMethod is a mess
-			callbacks and evaluation should go together
-			does it make sense that it is it's own class? Maybe a function is better?
-			Timings don't add up to "total" because of aborted time steps
-	* Remove dependency to JanBenderUtilities. We just need mkdirs.
-	* Check for NaNs in symx as an option in Stark::Settings
-	* Naming of NewtonsMethod is confusing because it is technically the time step.
-	* It needs to be revisited as building something completely from zero ala hello world.
-		There are a lot of error catches we should put in place (like no dofs, no energies, empty stuff...)
-	* We a tutorial for a simple sim. Otherwise it can be intimidating if jumped directly into the stark code.
-	* Timings per energy
-	* Explain IPC edge-edge
-	* Time step in large simulations is dictated by line search not descend... can we just take the negative?
-	* Magnetic simulations
-	* Penalty as a class so I can swap and easily change the gradient for the friction
+
+High priority
+-------------
+	* Check for NaNs in symx as an option in Stark::Settings. Don't make it a static variable
+	* Python plots for time steps, stiffnesses, line search/CG iterations, number of contacts, etc...
+	* [Important] v1 as initial guess with intersection test might significantly help convergence
+	* We need a default friction, otherwise we are using -1.0. Better 0.0.
+	* Average time step size at the end
+	* Print computational resistance
+	* Add intersection step at the end of the line search to be able to accept the step
+		Maybe directly in the line search
 	
-	* Friction correct singularity removal by using a cubic function that smoothly cuts off at TOL. However, 4th order energy.	
-		-> I can do a mollifier with u.squared_norm()
+
+Mid priority
+------------
+	* Timings don't add up to "total" because of aborted time steps
+	* Penalty as a class so I can swap and easily change the gradient for the friction
 	* Pen and paper tests. Box on a plane:
 		- Contact forces. Total and per point.
 		- Friction forces.
-	* Do I have to mollify the edge-edge friction forces??
-		- Definitely getting weird forces when parallel edges
-		- Maybe just mollify fn?
-	
-	* We need a default friction, otherwise we are using -1.0. Better 0.0.
-	* Average time step size at the end
 	* Probably better just to have the edge distance strain limiting as it poses way less convergence problems
 	
-	* Add intersection step at the end of the line search to be able to accept the step
-		Maybe directly in the line search
-	* [Important] Flip the du if unon-descend direaction!!!
 		
-	* [Important] v1 as initial guess with intersection test might significantly help convergence
-	* No-slip constraint to replace the stick branch of the friction
-		In some simulations we just want to have "perfect" sticking friction (friction corner, some instances of vehicle wheels...)
-		Then we can just have a tangential distance_sq constraint to the contact point for the two primitives
-		The problem is then how to model the transition from the sticking to the (well working) IPC sliding friction
-		
-		Can we statically switch between modes at the beginning of the time step based on constraint stress?
-			- From a sticking constraint, if the force exceeds a yield point, the traction is lost and the constraint removed. It will be a sliding constraint next.
-			- From a sliding constraint, we just based this on relative velocity under a threshold to become a sticking constraint.
-			In general, they are not continuous forces between them, but we could fit the transition to be continuous. Which makes this method even more accurate.
-			
-			A problem with this is that there are multiple primitives involved per contact point and the stresses must be aggregated.
-			
-			https://www.google.com/url?sa=i&url=https%3A%2F%2Flink.springer.com%2F10.1007%252F978-3-642-22647-2_490&psig=AOvVaw0Oj7HuHa5hWuE7rww-ZHE6&ust=1691666951305000&source=images&cd=vfe&opi=89978449&ved=0CBEQjRxqFwoTCICluc-8z4ADFQAAAAAdAAAAABAE
-			Egor Friction: https://dl.acm.org/doi/pdf/10.1145/3446663
-		
-		What happens in general when velocities are separating the contact?
-		
+Low priority
+------------
+	* Naming of NewtonsMethod is confusing because it is technically the time step.
+	* Interpolate frames
+	* Timings per energy
+	* Magnetic simulations
+
+
 		
 Convergence improvements
 ------------------------
-	- Higher order mollifiers!
-	- Better and less stringent CG tolerance
+	- Higher order mollifiers ?
+	- Better and less stringent Newton and CG tolerance
+	- Flip search directions when uphill
+		- This has a direct influence on how the increase in barrier stiffness works as now you get arbitrary directions to handle
+		This really didn't work better at all.
+		I think I am getting bad directions in general. Not just wrong orientation but also too large.
+		Then the is_valid_step() struggles and we end up discarding the step.
+		It might be that it it works for Andreas but it is also slower for him. We just don't know.
+		It is definitely slower for me. It is faster to accept that I don't get a good direction with the current circumstances and I should reduce the time step to get comfy.
+		
 	- Better descend methods (NewtonCG?)
-	
+	- Newton's method needs a lot of work in understanding, convergence, when to repeat a time step...
+		* NewtonsMethod is a mess
+			callbacks and evaluation should go together
+			does it make sense that it is it's own class? Maybe a function is better?
+
 
 Documentation
 -------------
 	* DoFs must be non-empty at initialization time. Otherwise they will not be added to SymX.
+	* It needs to be revisited as building something completely from zero ala hello world.
+		There are a lot of error catches we should put in place (like no dofs, no energies, empty stuff...)
+	* We a tutorial for a simple sim. Otherwise it can be intimidating if jumped directly into the stark code..
+	* Explain IPC edge-edge
 
 Specific to energies
 --------------------
 	* Stable neohookean for cloth
 
 Very future work
-================
+----------------
 	* Rigid body formulation based on positions (affine bodies?)
 		Then I can formulate everything in positions which opens the door to using different time integration schemes
 	* Sooner or later we are going to need to support the FCM for volumetrics as tet meshes are a pain.
 	
 Architecture
 ------------
+	* Remove dependency to JanBenderUtilities. We just need mkdirs.
+	* Consider moving all geometry utils to its own namespace
+	* Eigen and fopen warnings
+	
+	* How is Stark supposed to be used? From the app or from the lib? This influences the reach of libraries such as SymX
+		I would maybe need a new middle level of abstraction: app -> stark (simulator put together) -> stark_sim (core simulator)
+		I don't think this is really necessary. In splishsplash you just modify it directly
+
 	* Connectivity slices? (maybe I can already work with it)
 		At the moment I have to choose one material model. I can't have different cloth models in the same scene.
 		Changing materials would require recompilation.
@@ -98,41 +93,9 @@ Architecture
 			The way things work now, we need contiguous in memory conn and data!
 
 	
-	* Drop the old Energy and PhysicalSystem inheritance-based interface in favor of lambdas. Old problems:
-		- Physical systems with multiple dofs or no dofs
-		- Energies are naturally attached to the data. Unnenecessary complexity and incompatibility when splitting.
-		
-		The new system allows to set lambdas as they are needed without enforcing anything. List of lambdas:
-			.add_callback_before_time_step();
-			.add_callback_before_energy_evaluation();
-			.add_callback_max_allowed_step();
-			.add_callback_is_state_valid();
-			.add_callback_after_energy_evaluation();
-			.add_callback_after_time_step();
-			.add_callback_write_frame();
-			
-	* For the simulator instance itself: Reusability of data accross physical systems is going to bee too hard.
-		For example, for cloth, just have a triangle mesh and all the cloth energies in the same class.
-		Do not split it as it is nearly impossible to reuse. And if so, can be done later on.
-		Simply have booleans to activate/deactivate effects such as inextensibility.
-		It is true that I might repeat a lot of things going from linear tets to quadratic tets, but I am not sure adding more abstraction is the answer.
-		I can always have smaller functions for minor stuff like mesh inertia, prescribed positions...
-		
-		Simulation global variables should go in its own class:
-			- dt, dhat, friction...
-			- output
-		
 	* Mesh deformables as a single set of dofs so I have less combinations in the collision detection?
 		It simplifies some things but complicates others
 		I guess I could concatenate the meshes only in the scope of the collision/friction energy. Not globally.
 		While that sounds good to merge cloth-softbody-rods, we still have a lot of combinations with rigidbody and static.
 		Probably the best option is to do the combinatorial explosion with test and pointers.
 	
-	* Similarly for boundary conditions or inertia.
-		It could all be handled together in a concatenated mesh as they are literally the same.
-		The interface has to be per-system, but there is no way around.
-
-
-
-
-
