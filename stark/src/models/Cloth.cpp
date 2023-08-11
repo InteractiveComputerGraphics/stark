@@ -892,30 +892,6 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 	{
 		return energy.make_dof_vectors(this->dof, this->model.v1, conn);
 	};
-	//auto friction_mollifier = [&](const symx::Scalar& u, const symx::Scalar& u_eps)
-	//{
-	//	auto f = [](const symx::Scalar& u, const symx::Scalar& u_eps)
-	//	{
-	//		return -u*u*u/(3.0*u_eps*u_eps) + u*u/u_eps + u_eps/3.0;
-	//	};
-
-	//	//const double SINGULARITY_TOL = 1e-14;
-	//	symx::Scalar mollifier = symx::branch(u > u_eps, u, f(u, u_eps));
-	//	//symx::Scalar mollifier_no_singularity = symx::branch(u > SINGULARITY_TOL, mollifier, u_eps/3.0);
-	//	//return mollifier_no_singularity;
-	//	return mollifier;
-	//};
-	//auto friction_mollifier = [&](const symx::Scalar& u, const symx::Scalar& uh)
-	//{
-	//	auto f = [](const symx::Scalar& u, const symx::Scalar& uh)
-	//	{
-	//		return -u*u*u/(3.0*uh*uh) + u*u/uh + uh/3.0;
-	//	};
-	//	const double SINGULARITY_TOL = 1e-14;
-	//	symx::Scalar mollifier = symx::branch(u > uh, u, f(u, uh));
-	//	symx::Scalar mollifier_no_singularity = symx::branch(u > SINGULARITY_TOL, mollifier, f(u_, uh));  // Not smooth, but continuous and no singularities
-	//	return mollifier_no_singularity;
-	//};
 	auto set_friction_energy = [&](const symx::Vector& v, const symx::Index& contact_idx, const TriangleMeshFriction::Contact& contact, symx::Energy& energy)
 	{
 		symx::Matrix T  = energy.make_matrix(contact.T, { 2, 3 }, contact_idx);
@@ -924,23 +900,30 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 		symx::Scalar epsv = energy.make_scalar(sim.settings.contact.friction_stick_slide_threshold);
 		symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 		symx::Scalar perturbation = energy.make_scalar(sim.settings.contact.friction_displacement_perturbation);
-		//symx::Scalar k = energy.make_scalar(sim.settings.contact.friction_stick_slide_stiffness);
 
 		symx::Vector vt = T*v;
 		symx::Vector ut = vt*dt;
 		ut[0] += 1.13*perturbation;
 		ut[1] -= 1.07*perturbation;
-
-		symx::Scalar uh = epsv;
-		symx::Scalar k = mu*fn/uh;
-		symx::Scalar eps = mu*fn/(2.0*k);
-		//symx::Scalar uh = mu*fn/k;
-
 		symx::Scalar u = ut.norm();
-		symx::Scalar E_stick = 0.5*k*u.powN(2);
-		symx::Scalar E_slide = mu*fn*(u - eps);
-		symx::Scalar E = symx::branch(u < uh, E_stick, E_slide);
-		energy.set(E);
+
+		symx::Scalar epsu = dt*epsv;
+		if (sim.settings.contact.better_friction_mode) {
+			symx::Scalar k = mu*fn/epsu;
+			symx::Scalar eps = mu*fn/(2.0*k);
+
+			symx::Scalar E_stick = 0.5*k*u.powN(2);
+			symx::Scalar E_slide = mu*fn*(u - eps);
+			symx::Scalar E = symx::branch(u < epsu, E_stick, E_slide);
+			energy.set(E);
+		}
+		else {
+			symx::Scalar E_stick = mu*fn*(-u*u*u/(3.0*epsu.powN(2)) + u*u/epsu + epsu/3.0);
+			symx::Scalar E_slide = mu*fn*u;
+			symx::Scalar E = symx::branch(u < epsu, E_stick, E_slide);
+			energy.set(E);
+		}
+
 		energy.activate(sim.settings.contact.collisions_enabled && sim.settings.contact.friction_enabled);
 	};
 	// ----------------------------------------------------------------------------------------------------------------------------------------------------

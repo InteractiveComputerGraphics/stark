@@ -97,9 +97,9 @@ std::string stark::Settings::as_string() const
 	out += "\n         adaptive_contact_stiffness" + to_string(this->contact.adaptive_contact_stiffness);
 	out += "\n         dhat: " + fmt::format("{:.1e}", this->contact.dhat);
 	out += "\n         friction_stick_slide_threshold: " + fmt::format("{:.1e}", this->contact.friction_stick_slide_threshold);
-	out += "\n         friction_stick_slide_stiffness: " + fmt::format("{:.1e}", this->contact.friction_stick_slide_stiffness);
 	out += "\n         edge_edge_cross_norm_sq_cutoff: " + fmt::format("{:.1e}", this->contact.edge_edge_cross_norm_sq_cutoff);
 	out += "\n         friction_displacement_perturbation: " + fmt::format("{:.1e}", this->contact.friction_displacement_perturbation);
+	out += "\n         better_friction_mode: " + to_string(this->contact.better_friction_mode);
 	out += "\n         collisions_enabled: " + to_string(this->contact.collisions_enabled);
 	out += "\n         friction_enabled: " + to_string(this->contact.friction_enabled);
 	out += "\n         triangle_point_enabled: " + to_string(this->contact.triangle_point_enabled);
