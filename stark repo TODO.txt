@@ -34,6 +34,12 @@ Low priority
 		
 Convergence improvements
 ------------------------
+Notes:
+	The bottleneck is clearly that I have am given many non-descend directions. That determines the time step size 100%.
+	Trying negative direction was slower and caused other problems.
+	I can check if the directions are also too long. Like, bad in general, not just orientation.
+
+Ideas:
 	- Higher order mollifiers ?
 	- Better and less stringent Newton and CG tolerance
 	- Flip search directions when uphill

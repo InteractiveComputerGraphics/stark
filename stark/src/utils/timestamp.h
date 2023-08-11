@@ -20,6 +20,6 @@ inline std::string time_stamp()
 #endif
 
     std::ostringstream oss;
-    oss << std::put_time(&localTime, "%Y-%m-%d_%H-%M-%S");
+    oss << std::put_time(&localTime, "%Y-%m-%d__%H-%M-%S");
     return oss.str();
 }
