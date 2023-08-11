@@ -19,6 +19,7 @@ namespace stark
 			int fps = 30;
 			Verbosity console_verbosity = Verbosity::TimeSteps;
 			OutputTo console_output_to = OutputTo::FileAndConsole;
+			bool calculate_smooth_normals = true;
 			bool suppress_symx_compiler_output = true;
 		};
 		struct Stark

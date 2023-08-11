@@ -9,6 +9,11 @@
 
 namespace stark::utils
 {
+	// General utils
+	static constexpr double PI = 3.14159265358979323846;
+	double deg2rad(const double deg);
+	double rad2deg(const double rad);
+
 	// Primitives
 	Eigen::Vector3d triangle_normal(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2);
 	double triangle_area(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2);

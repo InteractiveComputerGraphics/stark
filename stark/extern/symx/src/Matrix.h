@@ -62,13 +62,16 @@ namespace symx
 		int32_t cols() const;
 		const Scalar& get_value(const int i) const;
 		Scalar& get_value(const int i);
-		const Scalar& operator()(const int32_t& i, const int32_t& j) const;
-		Scalar& operator()(const int32_t& i, const int32_t& j);
 		Matrix get_zero(const std::array<int32_t, 2> shape) const;
 		Matrix get_identity(const int32_t shape) const;
+		const Scalar& operator()(const int32_t& i, const int32_t& j) const;
+		Scalar& operator()(const int32_t& i, const int32_t& j);
 		Scalar* data();
 		Matrix as_symmetric() const;
 		void set_value(const double* val);
+
+		static Matrix zero(const std::array<int32_t, 2> shape, const Scalar& seed);
+		static Matrix identity(const int32_t shape, const Scalar& seed);
 
 	private:
 		bool _is_squared_and_of_size(const int32_t n) const;

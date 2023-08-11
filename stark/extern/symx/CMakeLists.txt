@@ -46,8 +46,6 @@ set(SOURCE_FILES
 	src/Matrix.cpp
 	src/Matrix.h
 	src/project_to_PD.h
-	src/Quaternion.h
-	src/Quaternion.cpp
 	src/Scalar.cpp
 	src/Scalar.h
 	src/Sequence.cpp

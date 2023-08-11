@@ -25,6 +25,9 @@ Mid priority
 		
 Low priority
 ------------
+	* Maybe merge time_integration, rigidbody_transformations...
+	* Function to delete cloth, rb...
+	* More input safety and documentation in the physical systems
 	* Naming of NewtonsMethod is confusing because it is technically the time step.
 	* Interpolate frames
 	* Timings per energy
@@ -64,6 +67,7 @@ Documentation
 		There are a lot of error catches we should put in place (like no dofs, no energies, empty stuff...)
 	* We a tutorial for a simple sim. Otherwise it can be intimidating if jumped directly into the stark code..
 	* Explain IPC edge-edge
+	* Rigid body constraints
 
 Specific to energies
 --------------------

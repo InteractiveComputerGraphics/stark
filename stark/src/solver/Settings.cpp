@@ -86,6 +86,7 @@ std::string stark::Settings::as_string() const
 	out += "\n         fps: " + std::to_string(this->output.fps);
 	out += "\n         console_verbosity: " + to_string(this->output.console_verbosity);
 	out += "\n         console_output_to: " + to_string(this->output.console_output_to);
+	out += "\n         calculate_smooth_normals: " + to_string(this->output.calculate_smooth_normals);
 	out += "\n         suppress_symx_compiler_output: " + to_string(this->output.suppress_symx_compiler_output);
 
 	out += "\n     Simulation";

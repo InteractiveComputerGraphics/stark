@@ -27,6 +27,16 @@ double generate_random_double(double l, int seed) {
 
 // ========================================================================================================
 
+double stark::utils::deg2rad(const double deg)
+{
+	return 2.0 * PI * (deg / 360.0);
+}
+
+double stark::utils::rad2deg(const double rad)
+{
+	return rad * 180.0 / PI;
+}
+
 Eigen::Vector3d stark::utils::triangle_normal(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2)
 {
 	return (p0 - p2).cross(p1 - p2).normalized();

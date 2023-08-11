@@ -42,18 +42,22 @@ set(SOLVER_FILES
 	)
 
 set(MODELS_FILES
+	src/models/Simulation.h
+	src/models/Simulation.cpp
 	src/models/distances.h
 	src/models/distances.cpp
 	src/models/friction_geometry.h
 	src/models/friction_geometry.cpp
 	src/models/time_integration.h
 	src/models/time_integration.cpp
+	src/models/rigidbody_transformations.h
+	src/models/rigidbody_transformations.cpp
 	src/models/TriangleMeshContacts.h
 	src/models/TriangleMeshFriction.h
 	src/models/Cloth.h
 	src/models/Cloth.cpp
-	src/models/Simulation.h
-	src/models/Simulation.cpp
+	src/models/RigidBodies.h
+	src/models/RigidBodies.cpp
 	)
 
 set(UTILS_FILES

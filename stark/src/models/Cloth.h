@@ -1,9 +1,10 @@
 #pragma once
-#include <unordered_map>
+#include <vector>
+#include <array>
 
+#include <Eigen/Dense>
 #include <symx>
 #include <TriangleMeshCollisionDetection>
-#include <vtkio>
 
 #include "../solver/Stark.h"
 #include "../utils/MeshWithDynamics.h"
@@ -72,7 +73,6 @@ namespace stark::models
 		TriangleMeshFriction friction;
 
 		/* Methods */
-		// Physical System Interface
 		void init(Stark& sim);
 
 		// Cloth interface
@@ -121,7 +121,6 @@ namespace stark::models
 		void _after_time_step(Stark& sim);
 		bool _is_valid_configuration(Stark& sim);
 		void _write_frame(Stark& sim);
-
 
 		// Energy groups
 		void _energies_mechanical(Stark& sim);

@@ -5,6 +5,9 @@
 #include "distances.h"
 #include "friction_geometry.h"
 
+#include <symx>
+#include <vtkio>
+
 
 void stark::models::Cloth::init(Stark& sim)
 {
@@ -356,7 +359,7 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 void stark::models::Cloth::_exit_if_cloth_not_declared(const int cloth_id)
 {
 	if (!this->is_cloth_declared(cloth_id)) {
-		std::cout << "There is no cloth with id " + std::to_string(cloth_id) + " declared." << std::endl;
+		std::cout << "Stark error: There is no cloth with id " + std::to_string(cloth_id) + " declared." << std::endl;
 		exit(-1);
 	}
 }
@@ -406,7 +409,7 @@ void stark::models::Cloth::_after_time_step(Stark& sim)
 void stark::models::Cloth::_write_frame(Stark& sim)
 {
 	if (this->write_VTK) {
-		utils::write_VTK(sim.get_vtk_path("cloth"), this->model.x1, this->model.mesh.connectivity);
+		utils::write_VTK(sim.get_vtk_path("cloth"), this->model.x1, this->model.mesh.connectivity, sim.settings.output.calculate_smooth_normals);
 	}
 }
 bool stark::models::Cloth::_is_valid_configuration(Stark& sim)

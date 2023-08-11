@@ -46,28 +46,12 @@ symx::Scalar& symx::Matrix::operator()(const int32_t& i, const int32_t& j)
 
 symx::Matrix symx::Matrix::get_zero(const std::array<int32_t, 2> shape) const
 {
-	std::vector<Scalar> vals;
-	for (int32_t i = 0; i < shape[0]; i++) {
-		for (int32_t j = 0; j < shape[1]; j++)	{
-			vals.push_back(this->vals[0].get_zero());
-		}
-	}
-	return Matrix(vals, shape);
+	return Matrix::zero(shape, this->vals[0]);
 }
 
 symx::Matrix symx::Matrix::get_identity(const int32_t shape) const
 {
-	std::vector<Scalar> vals;
-	for (int32_t i = 0; i < shape; i++) {
-		for (int32_t j = 0; j < shape; j++) {
-			vals.push_back(this->vals[0].get_zero());
-		}
-	}
-	Matrix m(vals, { shape, shape });
-	for (int32_t i = 0; i < shape; i++) {
-		m(i, i) += 1.0;
-	}
-	return m;
+	return Matrix::identity(shape, this->vals[0]);
 }
 
 symx::Scalar* symx::Matrix::data()
@@ -96,6 +80,31 @@ void symx::Matrix::set_value(const double* val)
 	for (int i = 0; i < this->vals.size(); i++) {
 		this->vals[i].set_value(val[i]);
 	}
+}
+symx::Matrix symx::Matrix::zero(const std::array<int32_t, 2> shape, const Scalar& seed)
+{
+	std::vector<Scalar> vals;
+	for (int32_t i = 0; i < shape[0]; i++) {
+		for (int32_t j = 0; j < shape[1]; j++) {
+			vals.push_back(seed.get_zero());
+		}
+	}
+	return Matrix(vals, shape);
+}
+symx::Matrix symx::Matrix::identity(const int32_t shape, const Scalar& seed)
+{
+	std::vector<Scalar> vals;
+	for (int32_t i = 0; i < shape; i++) {
+		for (int32_t j = 0; j < shape; j++) {
+			if (i == j) {
+				vals.push_back(seed.get_one());
+			}
+			else {
+				vals.push_back(seed.get_zero());
+			}
+		}
+	}
+	return Matrix(vals, {shape, shape});
 }
 bool symx::Matrix::_is_squared_and_of_size(const int32_t n) const
 {
