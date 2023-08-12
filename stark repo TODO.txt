@@ -71,6 +71,7 @@ Documentation
 	* Explain IPC edge-edge
 	* Rigid body constraints
 	* CANNOT BE USED WITH TYPE FLOAT. make_vector uses sizeof()
+	* Rigid bodies must be created on the center and *then* moved later.
 
 Debug
 -----

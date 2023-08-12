@@ -20,6 +20,7 @@ int main()
 
 
 	// ------------------------- RIGID BODIES -------------------------
-	rb_ball_joint();
+	//rb_ball_joint();
+	rb_slider();
 
 }

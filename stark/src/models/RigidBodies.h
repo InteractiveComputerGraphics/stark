@@ -38,7 +38,6 @@ namespace stark::models
 			std::vector<Eigen::Vector3d> loc_a;
 			std::vector<Eigen::Vector3d> loc_b;
 			std::vector<Eigen::Vector3d> loc_da;
-			std::vector<Eigen::Vector3d> loc_db;
 			std::vector<double> rest_length;
 			std::vector<double> spring_stiffness;
 			std::vector<double> spring_damping;

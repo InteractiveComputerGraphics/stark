@@ -5,6 +5,7 @@
 #include <JanBenderUtilities/VolumeProperties.h>
 
 #include "../utils/mesh_utils.h"
+#include "distances.h"
 #include "time_integration.h"
 #include "rigidbody_transformations.h"
 
@@ -80,7 +81,6 @@ void stark::models::RigidBodies::add_constraint_slider(const int body_0, const i
 	this->constraints.sliders.loc_a.push_back(global_to_local_point(p0_global, this->R1[body_0], this->t1[body_0]));
 	this->constraints.sliders.loc_b.push_back(global_to_local_point(p1_global, this->R1[body_1], this->t1[body_1]));
 	this->constraints.sliders.loc_da.push_back(global_to_local_direction(d, this->R1[body_0]));
-	this->constraints.sliders.loc_db.push_back(global_to_local_direction(d, this->R1[body_1]));
 	this->constraints.sliders.rest_length.push_back((p1_global - p0_global).norm());
 	this->constraints.sliders.spring_stiffness.push_back(spring_stiffness);
 	this->constraints.sliders.spring_damping.push_back(spring_damping);
@@ -325,6 +325,17 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 		symx::Vector d1 = integrate_loc_direction(d_loc, q0, w1, dt);
 		return std::make_tuple(x0, x1, d1);
 	};
+	auto global_x0_x1 = [&](const symx::Vector& x_loc, const symx::Index& rb_idx, const symx::Scalar& dt, symx::Energy& energy)
+	{
+		symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
+		symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
+		symx::Vector t0 = energy.make_vector(this->t0, rb_idx);
+		symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
+
+		symx::Vector x0 = local_to_global_point(x_loc, t0, q0);
+		symx::Vector x1 = integrate_loc_point(x_loc, t0, q0, v1, w1, dt);
+		return std::make_tuple(x0, x1);
+	};
 	// --------------------------------------------------------------------------
 
 
@@ -431,7 +442,6 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 			symx::Vector a_loc = energy.make_vector(this->constraints.sliders.loc_a, conn["idx"]);
 			symx::Vector b_loc = energy.make_vector(this->constraints.sliders.loc_b, conn["idx"]);
 			symx::Vector da_loc = energy.make_vector(this->constraints.sliders.loc_da, conn["idx"]);
-			symx::Vector db_loc = energy.make_vector(this->constraints.sliders.loc_db, conn["idx"]);
 			symx::Scalar l_rest = energy.make_scalar(this->constraints.sliders.rest_length, conn["idx"]);
 			symx::Scalar spring_stiffness = energy.make_scalar(this->constraints.sliders.spring_stiffness, conn["idx"]);
 			symx::Scalar spring_damping = energy.make_scalar(this->constraints.sliders.spring_damping, conn["idx"]);
@@ -440,7 +450,7 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 
 			// Transformations
 			auto [a0, a1, da1] = global_x0_x1_d1(a_loc, da_loc, conn["a"], dt, energy);
-			auto [b0, b1, db1] = global_x0_x1_d1(b_loc, db_loc, conn["b"], dt, energy);
+			auto [b0, b1] = global_x0_x1(b_loc, conn["b"], dt, energy);
 
 			// Constraint
 			symx::Vector r1 = b1 - a1;
@@ -448,10 +458,11 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 			symx::Scalar l1 = r1.norm();
 			symx::Scalar l0 = r0.norm();
 
-			symx::Scalar E_alignment = 0.5 * k * (da1 - db1).squared_norm();
+			symx::Scalar E_slider = 0.5 * k * sq_distance_point_line(b1, a1, a1 + da1);
 			symx::Scalar E_spring = 0.5 * spring_stiffness * (l1/l_rest - 1.0).powN(2);
 			symx::Scalar E_damper = 0.5 * spring_damping * ((l1 - l0)/dt).powN(2);
-			symx::Scalar E = E_alignment + E_spring + E_damper;
+			symx::Scalar E = E_spring;
+			//symx::Scalar E = E_slider + E_spring + E_damper;  // DEBUG
 			energy.set(E);
 		}
 	);
