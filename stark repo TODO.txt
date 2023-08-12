@@ -11,6 +11,7 @@ High priority
 	* Print computational resistance
 	* Add intersection step at the end of the line search to be able to accept the step
 		Maybe directly in the line search
+	* Consistency of forces. Forces are a derivative of E wrt positions, but we solve the problem wrt velocities.
 	
 
 Mid priority
@@ -33,6 +34,7 @@ Low priority
 	* Timings per energy
 	* Magnetic simulations
     * Support for LBFGS. Probably is worse, but the sooned I confirm this, the better.
+	* Ask Jan how he wants to sort his code
 
 		
 Convergence improvements
@@ -69,9 +71,22 @@ Documentation
 	* Explain IPC edge-edge
 	* Rigid body constraints
 
+Debug
+-----
+	* Can I get the same dof multiple times? Eg calling this twice:
+		symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
+	* Can I create the dof above and not use it? Eg. RelativeDirectionLock
+
+
 Specific to energies
 --------------------
-	* Stable neohookean for cloth
+	Cloth
+		* Stable neohookean for cloth
+	
+	Rigid Bodies
+		* Reusable symx functions to return primitive constraint energies.
+			Then I can compose complex constraints from the basic ones and still have CSE across.
+			The slider is a good example: RelativeDirectionLock, Spring, Damper
 
 Very future work
 ----------------

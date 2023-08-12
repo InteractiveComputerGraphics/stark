@@ -1,10 +1,11 @@
 #include "RigidBodies.h"
 
-#include "../utils/mesh_utils.h"
-#include "time_integration.h"
 #include <symx>
 #include <vtkio>
+#include <JanBenderUtilities/VolumeProperties.h>
 
+#include "../utils/mesh_utils.h"
+#include "time_integration.h"
 #include "rigidbody_transformations.h"
 
 void stark::models::RigidBodies::init(Stark& sim)
@@ -47,10 +48,10 @@ int stark::models::RigidBodies::add(const Eigen::Vector3d& position, const Eigen
 }
 int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& mesh_vertices, const std::vector<std::array<int, 3>>& mesh_triangles, const double density)
 {
-	const auto volume_properties = stb::mesh::triangle::compute_volume_properties(mesh_vertices, mesh_triangles, density);
+	const auto volume_properties = JanBenderUtilities::compute_volume_properties(mesh_vertices, mesh_triangles, density);
 	std::vector<Eigen::Vector3d> vertices_copy = mesh_vertices;
-	stb::geo::transformations::move(vertices_copy, -volume_properties.center_of_mass);
-	return this->add(volume_properties.center_of_mass, Eigen::Quaterniond::Identity(), volume_properties.mass, volume_properties.inertia_tensor, friction, vertices_copy, mesh_triangles, mesh_path);
+	utils::move(vertices_copy, -volume_properties.center_of_mass);
+	return this->add(volume_properties.center_of_mass, Eigen::Quaterniond::Identity(), volume_properties.mass, volume_properties.inertia_tensor, vertices_copy, mesh_triangles);
 }
 void stark::models::RigidBodies::add_constraint_anchor_point(const int body_id, const Eigen::Vector3d& p_glob)
 {
@@ -73,22 +74,23 @@ void stark::models::RigidBodies::add_constraint_hinge_joint(const int body_0, co
 }
 void stark::models::RigidBodies::add_constraint_slider(const int body_0, const int body_1, const Eigen::Vector3d& p0_global, const Eigen::Vector3d& p1_global, const double spring_stiffness, const double spring_damping)
 {
-	const Eigen::Vector3d d0 = (p1_global - p0_global).normalized();
+	const Eigen::Vector3d d = (p1_global - p0_global).normalized();
 	const int constraint_id = (int)this->constraints.sliders.loc_a.size();
 	this->constraints.sliders.conn.push_back({ constraint_id, body_0, body_1 });
 	this->constraints.sliders.loc_a.push_back(global_to_local_point(p0_global, this->R1[body_0], this->t1[body_0]));
 	this->constraints.sliders.loc_b.push_back(global_to_local_point(p1_global, this->R1[body_1], this->t1[body_1]));
-	this->constraints.sliders.loc_da.push_back(global_to_local_direction(d0, this->R1[body_0]));
+	this->constraints.sliders.loc_da.push_back(global_to_local_direction(d, this->R1[body_0]));
+	this->constraints.sliders.loc_db.push_back(global_to_local_direction(d, this->R1[body_1]));
 	this->constraints.sliders.rest_length.push_back((p1_global - p0_global).norm());
 	this->constraints.sliders.spring_stiffness.push_back(spring_stiffness);
 	this->constraints.sliders.spring_damping.push_back(spring_damping);
 }
 void stark::models::RigidBodies::add_constraint_relative_direction_lock(const int body_0, const int body_1, const Eigen::Vector3d& d_global)
 {
-	const int constraint_id = (int)this->constraints.lock_relative_direction.loc_da.size();
-	this->constraints.lock_relative_direction.conn.push_back({ constraint_id, body_0, body_1 });
-	this->constraints.lock_relative_direction.loc_da.push_back(global_to_local_direction(d_global, this->R1[body_0]));
-	this->constraints.lock_relative_direction.loc_db.push_back(global_to_local_direction(d_global, this->R1[body_1]));
+	const int constraint_id = (int)this->constraints.relative_direction_lock.loc_da.size();
+	this->constraints.relative_direction_lock.conn.push_back({ constraint_id, body_0, body_1 });
+	this->constraints.relative_direction_lock.loc_da.push_back(global_to_local_direction(d_global, this->R1[body_0]));
+	this->constraints.relative_direction_lock.loc_db.push_back(global_to_local_direction(d_global, this->R1[body_1]));
 }
 void stark::models::RigidBodies::add_constraint_freeze(const int body_id)
 {
@@ -274,17 +276,51 @@ void stark::models::RigidBodies::_write_frame(Stark& sim)
 
 void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 {
-	// Inertia
-	/*
-		E = 0.5 * (v1 - vhat) ^ T * M * (v1 - vhat) + 0.5 * v1 ^ T * damping * dt * M * v1
-		vhat = v0 + dt*a
-		what = w0 + dt*ang_acc
-		M = [[I3*m, 0], [0, J_GLOB]]
-	*/
+	// Common symbol creation and manipulation functions ------------------------
+	auto global_x1 = [&](const symx::Vector& x_loc, const symx::Index& rb_idx, const symx::Scalar& dt, symx::Energy& energy)
+	{
+		symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
+		symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
+		symx::Vector t0 = energy.make_vector(this->t0, rb_idx);
+		symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
+		return integrate_loc_point(x_loc, t0, q0, v1, w1, dt);
+	};
+	auto global_d1 = [&](const symx::Vector& d_loc, const symx::Index& rb_idx, const symx::Scalar& dt, symx::Energy& energy)
+	{
+		symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
+		symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
+		return integrate_loc_direction(d_loc, q0, w1, dt);
+	};
+	auto global_x1_d1 = [&](const symx::Vector& x_loc, const symx::Vector& d_loc, const symx::Index& rb_idx, const symx::Scalar& dt, symx::Energy& energy)
+	{
+		symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
+		symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
+		symx::Vector t0 = energy.make_vector(this->t0, rb_idx);
+		symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
+
+		symx::Vector x1 = integrate_loc_point(x_loc, t0, q0, v1, w1, dt);
+		symx::Vector d1 = integrate_loc_direction(d_loc, q0, w1, dt);
+		return std::make_pair(x1, d1);
+	};
+	auto global_x0_x1_d1 = [&](const symx::Vector& x_loc, const symx::Vector& d_loc, const symx::Index& rb_idx, const symx::Scalar& dt, symx::Energy& energy)
+	{
+		symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
+		symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
+		symx::Vector t0 = energy.make_vector(this->t0, rb_idx);
+		symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
+
+		symx::Vector x0 = local_to_global_point(x_loc, t0, q0);
+		symx::Vector x1 = integrate_loc_point(x_loc, t0, q0, v1, w1, dt);
+		symx::Vector d1 = integrate_loc_direction(d_loc, q0, w1, dt);
+		return std::make_tuple(x0, x1, d1);
+	};
+	// --------------------------------------------------------------------------
+
+
+	// Linear inertia
 	sim.global_energy.add_energy("rb_linear_inertia", this->conn_inertia,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			// E = 0.5 * (v1 - vhat)^T * M * (v1 - vhat)
 			symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, conn[0]);
 			symx::Vector v0 = energy.make_vector(this->v0, conn[0]);
 			symx::Vector a = energy.make_vector(this->a, conn[0]);
@@ -301,6 +337,7 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 		}
 	);
 
+	// Angular inertia
 	sim.global_energy.add_energy("rb_angular_inertia", this->conn_inertia,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
@@ -324,130 +361,87 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 	sim.global_energy.add_energy("rb_constraint_anchor_point", this->constraints.anchor_points.conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, conn[1]);
-			symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, conn[1]);
-			symx::Vector t0 = energy.make_vector(this->t0, conn[1]);
-			symx::Vector q0 = energy.make_vector(this->q0_, conn[1]);
-			symx::Vector loc = energy.make_vector(this->constraints.anchor_points.loc, conn[0]);
-			symx::Vector target = energy.make_vector(this->constraints.anchor_points.target, conn[0]);
+			conn.set_labels({ "idx", "a" });
 
+			symx::Vector loc = energy.make_vector(this->constraints.anchor_points.loc, conn["idx"]);
+			symx::Vector target = energy.make_vector(this->constraints.anchor_points.target, conn["idx"]);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 			symx::Scalar k = energy.make_scalar(this->constraint_stiffness);
 
-			// Time integration
-			symx::Vector glob = integrate_loc_point(loc, t0, q0, v1, w1, dt);
-
-			// Constraint
+			symx::Vector glob = global_x1(loc, conn["a"], dt, energy);
 			symx::Scalar E = 0.5 * k * (target - glob).squared_norm();
 			energy.set(E);
 		}
 	);
 
 	// Ball joint
-	{
-		symx::Array* A_LOC = simws.make_array("rb_ball_joint_loc_a", 3, this->constraints->ball_joints.loc_a);
-		symx::Array* B_LOC = simws.make_array("rb_ball_joint_loc_b", 3, this->constraints->ball_joints.loc_b);
-		symx::ConnectivityArray& conn = *simws.make_connectivity_array("rb_ball_joint_conn", this->constraints->ball_joints.conn, { "id", "a", "b" });
-		symx::Energy& energy = *simws.make_energy("rb_ball_joints", &conn);
+	sim.global_energy.add_energy("rb_constraint_ball_joints", this->constraints.ball_joints.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			conn.set_labels({ "idx", "a", "b" });
 
-		symx::Vector v1a = energy.make_dof_vector(this->dof_v, this->v1, conn["a"]);
-		symx::Vector w1a = energy.make_dof_vector(this->dof_w, this->w1, conn["a"]);
-		symx::Vector t0a = energy.make_vector(this->t0, conn["a"]);
-		symx::Vector q0a = energy.make_vector(this->q0_, conn["a"]);
+			symx::Vector a_loc = energy.make_vector(this->constraints.ball_joints.loc_a, conn["idx"]);
+			symx::Vector b_loc = energy.make_vector(this->constraints.ball_joints.loc_b, conn["idx"]);
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			symx::Scalar k = energy.make_scalar(this->constraint_stiffness);
 
-		symx::Vector v1b = energy.make_dof_vector(this->dof_v, this->v1, conn["b"]);
-		symx::Vector w1b = energy.make_dof_vector(this->dof_w, this->w1, conn["b"]);
-		symx::Vector t0b = energy.make_vector(this->t0, conn["b"]);
-		symx::Vector q0b = energy.make_vector(this->q0_, conn["b"]);
+			symx::Vector a = global_x1(a_loc, conn["a"], dt, energy);
+			symx::Vector b = global_x1(b_loc, conn["b"], dt, energy);
+			symx::Scalar E = 0.5 * k * (a - b).squared_norm();
+			energy.set(E);
+		}
+	);
 
-		symx::Vector a_loc = energy.make_vector(*A_LOC, conn["id"]);
-		symx::Vector b_loc = energy.make_vector(*B_LOC, conn["id"]);
+	// Lock Relative Direction
+	sim.global_energy.add_energy("rb_constraint_lock_relative_direction", this->constraints.relative_direction_lock.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			conn.set_labels({ "idx", "a", "b" });
 
-		symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
-		symx::Scalar k = energy.make_scalar(this->constraint_stiffness);
+			symx::Vector da_loc = energy.make_vector(this->constraints.relative_direction_lock.loc_da, conn["idx"]);
+			symx::Vector db_loc = energy.make_vector(this->constraints.relative_direction_lock.loc_db, conn["idx"]);
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			symx::Scalar k = energy.make_scalar(this->constraint_stiffness);
 
-		symx::Vector a = symx::integrate_loc_point(a_loc, t0a, q0a, v1a, w1a, dt, energy.sws);
-		symx::Vector b = symx::integrate_loc_point(b_loc, t0b, q0b, v1b, w1b, dt, energy.sws);
-
-		// Constraint
-		symx::Vector d = a - b;
-		symx::Scalar E = 0.5 * k * (d[0].powN(2) + d[1].powN(2) + d[2].powN(2));
-		energy.set(E);
-	}
-
-	// LockRelativeDirection
-	{
-		symx::Array* DA_LOC = simws.make_array("rb_lock_relative_direction_loc_da", 3, this->constraints_lock_relative_direction.loc_da);
-		symx::Array* DB_LOC = simws.make_array("rb_lock_relative_direction_loc_db", 3, this->constraints_lock_relative_direction.loc_db);
-		symx::ConnectivityArray& conn = *simws.make_connectivity_array("rb_lock_relative_direction_conn", this->constraints_lock_relative_direction.conn, { "id", "a", "b" });
-		symx::Energy& energy = *simws.make_energy("rb_lock_relative_direction", &conn);
-
-		symx::Vector w1a = energy.make_dof_vector(this->dof_w, this->w1, conn["a"]);
-		symx::Vector q0a = energy.make_vector(this->q0_, conn["a"]);
-
-		symx::Vector w1b = energy.make_dof_vector(this->dof_w, this->w1, conn["b"]);
-		symx::Vector q0b = energy.make_vector(this->q0_, conn["b"]);
-
-		symx::Vector da_loc = energy.make_vector(*DA_LOC, conn["id"]);
-		symx::Vector db_loc = energy.make_vector(*DB_LOC, conn["id"]);
-
-		symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
-		symx::Scalar k = energy.make_scalar(this->constraint_stiffness);
-
-		symx::Vector da = symx::integrate_loc_direction(da_loc, q0a, w1a, dt, energy.sws);
-		symx::Vector db = symx::integrate_loc_direction(db_loc, q0b, w1b, dt, energy.sws);
-
-		// Constraint
-		symx::Scalar E = 0.5*k*(da - db).squared_norm();
-		energy.set(E);
-	}
+			symx::Vector da = global_d1(da_loc, conn["a"], dt, energy);
+			symx::Vector db = global_d1(db_loc, conn["b"], dt, energy);
+			symx::Scalar E = 0.5 * k * (da - db).squared_norm();
+			energy.set(E);
+		}
+	);
 
 	// Slider
-	{
-		symx::Array* A_LOC = simws.make_array("rb_slider_loc_a", 3, this->constraints_sliders.loc_a);
-		symx::Array* B_LOC = simws.make_array("rb_slider_loc_b", 3, this->constraints_sliders.loc_b);
-		symx::Array* DA_LOC = simws.make_array("rb_slider_loc_da", 3, this->constraints_sliders.loc_da);
-		symx::Variable* SPRING_STIFFNESS = simws.make_variable("rb_slider_spring_stiffness", this->constraints_sliders.spring_stiffness);
-		symx::Variable* SPRING_DAMPING = simws.make_variable("rb_slider_spring_damping", this->constraints_sliders.spring_damping);
-		symx::Variable* L_rest = simws.make_variable("rb_slider_rest_length", this->constraints_sliders.rest_length);
-		symx::ConnectivityArray& conn = *simws.make_connectivity_array("rb_slider_conn", this->constraints_sliders.conn, { "id", "a", "b" });
-		symx::Energy& energy = *simws.make_energy("rb_slider", &conn);
+	sim.global_energy.add_energy("rb_constraint_sliders", this->constraints.sliders.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			conn.set_labels({ "idx", "a", "b" });
 
-		symx::Vector v1a = energy.make_dof_vector(this->dof_v, this->v1, conn["a"]);
-		symx::Vector w1a = energy.make_dof_vector(this->dof_w, this->w1, conn["a"]);
-		symx::Vector t0a = energy.make_vector(this->t0, conn["a"]);
-		symx::Vector q0a = energy.make_vector(this->q0_, conn["a"]);
+			// Inputs
+			symx::Vector a_loc = energy.make_vector(this->constraints.sliders.loc_a, conn["idx"]);
+			symx::Vector b_loc = energy.make_vector(this->constraints.sliders.loc_b, conn["idx"]);
+			symx::Vector da_loc = energy.make_vector(this->constraints.sliders.loc_da, conn["idx"]);
+			symx::Vector db_loc = energy.make_vector(this->constraints.sliders.loc_db, conn["idx"]);
+			symx::Scalar l_rest = energy.make_scalar(this->constraints.sliders.rest_length, conn["idx"]);
+			symx::Scalar spring_stiffness = energy.make_scalar(this->constraints.sliders.spring_stiffness, conn["idx"]);
+			symx::Scalar spring_damping = energy.make_scalar(this->constraints.sliders.spring_damping, conn["idx"]);
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			symx::Scalar k = energy.make_scalar(this->constraint_stiffness);
 
-		symx::Vector v1b = energy.make_dof_vector(this->dof_v, this->v1, conn["b"]);
-		symx::Vector w1b = energy.make_dof_vector(this->dof_w, this->w1, conn["b"]);
-		symx::Vector t0b = energy.make_vector(this->t0, conn["b"]);
-		symx::Vector q0b = energy.make_vector(this->q0_, conn["b"]);
+			// Transformations
+			auto [a0, a1, da1] = global_x0_x1_d1(a_loc, da_loc, conn["a"], dt, energy);
+			auto [b0, b1, db1] = global_x0_x1_d1(b_loc, db_loc, conn["b"], dt, energy);
 
-		symx::Vector a_loc = energy.make_vector(*A_LOC, conn["id"]);
-		symx::Vector b_loc = energy.make_vector(*B_LOC, conn["id"]);
-		symx::Vector da_loc = energy.make_vector(*DA_LOC, conn["id"]);
+			// Constraint
+			symx::Vector r1 = b1 - a1;
+			symx::Vector r0 = b0 - a0;
+			symx::Scalar l1 = r1.norm();
+			symx::Scalar l0 = r0.norm();
 
-		symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
-		symx::Scalar k = energy.make_scalar(this->constraint_stiffness);
-		symx::Scalar spring_stiffness = energy.make_scalar(*SPRING_STIFFNESS);
-		symx::Scalar spring_damping = energy.make_scalar(*SPRING_DAMPING);
-		symx::Scalar l_rest = energy.make_scalar(*L_rest);
-
-		symx::Vector a = symx::integrate_loc_point(a_loc, t0a, q0a, v1a, w1a, dt, energy.sws);
-		symx::Vector b = symx::integrate_loc_point(b_loc, t0b, q0b, v1b, w1b, dt, energy.sws);
-		symx::Vector da = symx::integrate_loc_direction(da_loc, q0a, w1a, dt, energy.sws);
-
-		symx::Vector a0 = symx::loc_to_glob_point(a_loc, t0a, q0a, energy.sws);
-		symx::Vector b0 = symx::loc_to_glob_point(b_loc, t0b, q0b, energy.sws);
-		symx::Scalar l0 = (a0 - b0).norm();
-		
-		symx::Scalar l = (a - b).norm();
-
-		// Constraint
-		symx::Vector r = b - a;
-		symx::Vector ra = da.dot(r) * da;
-		symx::Vector C = r - ra;
-		symx::Scalar E = 0.5 * k * C.squared_norm() + 0.5 * spring_stiffness * (l / l_rest - 1.0).powN(2) + 0.5 * spring_damping * (l - l0).powN(2) / dt;
-		energy.set(E);
-	}
+			symx::Scalar E_alignment = 0.5 * k * (da1 - db1).squared_norm();
+			symx::Scalar E_spring = 0.5 * spring_stiffness * (l1/l_rest - 1.0).powN(2);
+			symx::Scalar E_damper = 0.5 * spring_damping * ((l1 - l0)/dt).powN(2);
+			symx::Scalar E = E_alignment + E_spring + E_damper;
+			energy.set(E);
+		}
+	);
 }

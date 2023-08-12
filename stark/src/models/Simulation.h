@@ -2,6 +2,7 @@
 
 #include "../solver/Stark.h"
 #include "Cloth.h"
+#include "RigidBodies.h"
 
 namespace stark::models
 {
@@ -10,6 +11,7 @@ namespace stark::models
 	public:
 		Stark stark;
 		Cloth cloth;
+		RigidBodies rigid_bodies;
 
 		Simulation(const Settings& settings);
 	};

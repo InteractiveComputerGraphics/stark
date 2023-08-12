@@ -27,7 +27,7 @@ namespace stark::models
 			std::vector<Eigen::Vector3d> loc_b;
 			std::vector<std::array<int, 3>> conn; // { "idx", "a", "b" }
 		};
-		struct LockRelativeDirection
+		struct RelativeDirectionLock
 		{
 			std::vector<Eigen::Vector3d> loc_da;
 			std::vector<Eigen::Vector3d> loc_db;
@@ -38,6 +38,7 @@ namespace stark::models
 			std::vector<Eigen::Vector3d> loc_a;
 			std::vector<Eigen::Vector3d> loc_b;
 			std::vector<Eigen::Vector3d> loc_da;
+			std::vector<Eigen::Vector3d> loc_db;
 			std::vector<double> rest_length;
 			std::vector<double> spring_stiffness;
 			std::vector<double> spring_damping;
@@ -47,7 +48,7 @@ namespace stark::models
 		{
 			AnchorPoints anchor_points;
 			BallJoints ball_joints;
-			LockRelativeDirection lock_relative_direction;
+			RelativeDirectionLock relative_direction_lock;
 			Sliders sliders;
 		};
 

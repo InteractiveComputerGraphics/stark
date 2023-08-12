@@ -115,9 +115,17 @@ symx::Vector stark::models::local_to_global_point(const symx::Vector& p_loc, con
 {
 	return t + R*p_loc;
 }
+symx::Vector stark::models::local_to_global_point(const symx::Vector& p_loc, const symx::Vector& t, const symx::Vector& q)
+{
+	return local_to_global_point(p_loc, t, quat_to_rotation(q));
+}
 symx::Vector stark::models::local_to_global_direction(const symx::Vector& d_loc, const symx::Matrix& R)
 {
 	return R*d_loc;
+}
+symx::Vector stark::models::local_to_global_direction(const symx::Vector& d_loc, const symx::Vector& q)
+{
+	return local_to_global_direction(d_loc, quat_to_rotation(q));
 }
 symx::Vector stark::models::integrate_loc_point(const symx::Vector& p_loc, const symx::Vector& t0, const symx::Vector& q0, const symx::Vector& v1, const symx::Vector& w1, const symx::Scalar& dt)
 {
