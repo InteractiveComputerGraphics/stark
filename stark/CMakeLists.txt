@@ -67,6 +67,8 @@ set(UTILS_FILES
 	src/utils/Console.h
 	src/utils/mesh_utils.h
 	src/utils/mesh_utils.cpp
+	src/utils/mesh_generators.cpp
+	src/utils/mesh_generators.h
 	src/utils/unordered_array_set_and_map.h
 	src/utils/MultiMesh.h
 	src/utils/MeshWithDynamics.h
@@ -108,6 +110,9 @@ target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/JanBe
 
 ## Eigen
 target_include_directories(stark PUBLIC ${EIGEN3_INCLUDE_DIR})
+
+## par_shapes
+target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/par_shapes/include)
 
 # Group files
 source_group("solver" FILES ${SOLVER_FILES})

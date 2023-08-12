@@ -133,6 +133,7 @@ namespace stark::models
 		Eigen::Vector3d get_point_in_global_coordinates(const int body_id, const Eigen::Vector3d& p);
 		Eigen::Vector3d get_point_in_global_coordinates(const int body_id, const int mesh_vertex_i);
 		int get_n_bodies() const;
+		bool is_empty() const;
 		bool is_body_declared(const int body_id) const;
 
 	private:

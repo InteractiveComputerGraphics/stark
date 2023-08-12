@@ -199,6 +199,10 @@ int stark::models::RigidBodies::get_n_bodies() const
 {
 	return (int)this->t0.size();
 }
+bool stark::models::RigidBodies::is_empty() const
+{
+	return this->get_n_bodies() == 0;
+}
 bool stark::models::RigidBodies::is_body_declared(const int body_id) const
 {
 	return body_id < this->get_n_bodies();
@@ -206,6 +210,8 @@ bool stark::models::RigidBodies::is_body_declared(const int body_id) const
 
 void stark::models::RigidBodies::_before_time_step(Stark& sim)
 {
+	if (this->is_empty()) { return; }
+
 	// Set next time velocities estimation to zero to avoid invalid state outside of the minimzer
 	std::fill(this->v1.begin(), this->v1.end(), Eigen::Vector3d::Zero());
 	std::fill(this->w1.begin(), this->w1.end(), Eigen::Vector3d::Zero());
@@ -214,6 +220,7 @@ void stark::models::RigidBodies::_before_time_step(Stark& sim)
 	const int n = this->get_n_bodies();
 	this->conn_inertia.resize(n);
 	this->J0_glob.resize(n);
+	this->J0_inv_glob.resize(n);
 	for (int i = 0; i < n; i++) {
 		this->conn_inertia[i] = { i };
 		const Eigen::Matrix3d J = local_to_global_matrix(this->J_loc[i], this->R1[i]);
@@ -239,6 +246,8 @@ void stark::models::RigidBodies::_before_time_step(Stark& sim)
 }
 void stark::models::RigidBodies::_after_time_step(Stark& sim)
 {
+	if (this->is_empty()) { return; }
+
 	const double dt = sim.settings.simulation.adaptive_time_step.value;
 
 	// Set final positions with solved velocities
@@ -257,6 +266,8 @@ void stark::models::RigidBodies::_after_time_step(Stark& sim)
 }
 void stark::models::RigidBodies::_write_frame(Stark& sim)
 {
+	if (this->is_empty()) { return; }
+
 	std::vector<Eigen::Vector3d> glob_vertices(this->mesh.get_n_vertices());
 	for (int rb_i = 0; rb_i < this->mesh.get_n_meshes(); rb_i++) {
 		const Eigen::Matrix3d& R = this->R1[rb_i];

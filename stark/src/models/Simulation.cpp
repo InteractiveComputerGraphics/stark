@@ -4,4 +4,5 @@ stark::models::Simulation::Simulation(const Settings& settings)
 	: stark(settings)
 {
 	this->cloth.init(this->stark);
+	this->rigid_bodies.init(this->stark);
 }

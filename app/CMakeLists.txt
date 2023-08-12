@@ -15,8 +15,10 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif()
 
 set(SOURCE_FILES
-    scenes.cpp
-    scenes.h
+    scenes_cloth.cpp
+    scenes_cloth.h
+    scenes_rigidbodies.cpp
+    scenes_rigidbodies.h
     main.cpp
 	)
 

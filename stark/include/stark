@@ -2,3 +2,4 @@
 #include "../src/solver/Stark.h"
 #include "../src/models/Simulation.h"
 #include "../src/utils/mesh_utils.h"
+#include "../src/utils/mesh_generators.h"

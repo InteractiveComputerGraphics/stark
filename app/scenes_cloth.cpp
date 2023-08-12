@@ -1,5 +1,7 @@
-#include "scenes.h"
+#include "scenes_cloth.h"
 
+#include <Eigen/Dense>
+#include <stark>
 
 void hanging_cloth()
 {

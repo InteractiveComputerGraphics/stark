@@ -175,6 +175,10 @@ int stark::models::Cloth::get_n_cloths() const
 {
 	return this->model.mesh.get_n_meshes();
 }
+bool stark::models::Cloth::is_empty() const
+{
+	return this->get_n_cloths() == 0;
+}
 Eigen::Vector3d stark::models::Cloth::get_vertex(const int cloth_id, const int vertex_idx) const
 {
 	return this->model.x1[this->model.mesh.get_global_vertex_idx(cloth_id, vertex_idx)];
@@ -385,6 +389,8 @@ const tmcd::ProximityResults& stark::models::Cloth::_run_proximity_detection(con
 
 void stark::models::Cloth::_before_time_step(Stark& sim)
 {
+	if (this->is_empty()) { return; }
+
 	// Set next time velocities estimation to zero to avoid invalid state outside of the minimzer
 	std::fill(this->model.v1.begin(), this->model.v1.end(), Eigen::Vector3d::Zero());
 
@@ -396,6 +402,8 @@ void stark::models::Cloth::_before_time_step(Stark& sim)
 }
 void stark::models::Cloth::_after_time_step(Stark& sim)
 {
+	if (this->is_empty()) { return; }
+
 	// Set final positions with solved velocities
 	const double dt = sim.settings.simulation.adaptive_time_step.value;
 	for (int i = 0; i < this->model.mesh.get_n_vertices(); i++) {
@@ -408,14 +416,18 @@ void stark::models::Cloth::_after_time_step(Stark& sim)
 }
 void stark::models::Cloth::_write_frame(Stark& sim)
 {
+	if (this->is_empty()) { return; }
+
 	if (this->write_VTK) {
 		utils::write_VTK(sim.get_vtk_path("cloth"), this->model.x1, this->model.mesh.connectivity, sim.settings.output.calculate_smooth_normals);
 	}
 }
 bool stark::models::Cloth::_is_valid_configuration(Stark& sim)
 {
+	if (this->is_empty()) { return true; }
 	if (!sim.settings.contact.collisions_enabled) { return true; }
 	if (!sim.settings.contact.enable_intersection_test) { return true; }
+
 	this->_update_collision_x1(sim);
 	this->id.clear();
 	this->id.set_n_threads(sim.settings.execution.n_threads);
@@ -425,6 +437,7 @@ bool stark::models::Cloth::_is_valid_configuration(Stark& sim)
 }
 void stark::models::Cloth::_update_contacts(Stark& sim)
 {
+	if (this->is_empty()) { return; }
 	if (!sim.settings.contact.collisions_enabled) { return; }
 
 	// Proximity detection

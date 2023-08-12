@@ -103,6 +103,7 @@ namespace stark::models
 		//// Getters
 		bool is_cloth_declared(const int cloth_id) const;
 		int	get_n_cloths() const;
+		bool is_empty() const;
 		Eigen::Vector3d get_vertex(const int cloth_id, const int vertex_idx) const;
 		Eigen::Vector3d get_velocity(const int cloth_id, const int vertex_idx) const;
 		const utils::TriangleMultiMesh& get_mesh() const;

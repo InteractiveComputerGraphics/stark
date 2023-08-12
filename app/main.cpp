@@ -1,9 +1,12 @@
 #include <iostream>
 
-#include "scenes.h"
+#include "scenes_cloth.h"
+#include "scenes_rigidbodies.h"
 
 int main()
 {
+	// ------------------------- CLOTH -------------------------
+	
 	//hanging_cloth();
 	//collision_cloth_test();
 	//collision_cloth_edge_edge_tests();
@@ -13,5 +16,10 @@ int main()
 	//cloth_wrap();
 
 	//cloth_friction_slope_test();
-	cloth_friction_corner();
+	//cloth_friction_corner();
+
+
+	// ------------------------- RIGID BODIES -------------------------
+	rb_ball_joint();
+
 }
