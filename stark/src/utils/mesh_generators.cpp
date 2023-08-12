@@ -62,13 +62,13 @@ stark::utils::Mesh stark::utils::make_cylinder(const double radius, const double
 }
 stark::utils::Mesh stark::utils::make_torus(const double outer_radius, const double inner_radius, const int slices, const int stacks)
 {
-	Mesh m = as_mesh(par_shapes_create_torus(inner_radius/outer_radius, slices, stacks));
+	Mesh m = as_mesh(par_shapes_create_torus(slices, stacks, (float)(inner_radius/outer_radius)));
 	scale(m.vertices, outer_radius);
 	return m;
 }
 stark::utils::Mesh stark::utils::make_knot(const double scale_, const double inner_radius, const int slices, const int stacks)
 {
-	Mesh m = as_mesh(par_shapes_create_trefoil_knot(inner_radius/scale_, slices, stacks));
+	Mesh m = as_mesh(par_shapes_create_trefoil_knot(slices, stacks, (float)(inner_radius/scale_)));
 	scale(m.vertices, scale_);
 	return m;
 }

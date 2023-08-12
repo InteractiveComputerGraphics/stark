@@ -43,7 +43,7 @@ Eigen::Matrix3d stark::utils::inertia_tensor_box(double mass, const Eigen::Vecto
         0, 0, Iz;
     return inertia_tensor;
 }
-Eigen::Matrix3d stark::utils::intertia_tensor_torus(double mass, double b, double a)
+Eigen::Matrix3d stark::utils::inertia_tensor_torus(double mass, double b, double a)
 {
     double a2 = a*a;
     double b2 = b*b;

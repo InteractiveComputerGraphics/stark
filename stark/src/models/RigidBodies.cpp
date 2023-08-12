@@ -45,6 +45,57 @@ int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& vertices
 	this->mesh.add_mesh(vertices, triangles);
 	return this->get_n_bodies() - 1;
 }
+int stark::models::RigidBodies::add_and_transform(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const double mass, const Eigen::Matrix3d& inertia_loc, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis)
+{
+	const int id = this->add(vertices, triangles, mass, inertia_loc);
+	this->add_rotation(id, rotate_deg, rotation_axis);
+	this->add_displacement(id, displacement);
+	return id;
+}
+int stark::models::RigidBodies::add_sphere(const double mass, const double radius, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis, const int subdivisions)
+{
+	const utils::Mesh m = utils::make_sphere(radius, subdivisions);
+	const Eigen::Matrix3d inertia_local = utils::inertia_tensor_sphere(mass, radius);
+	return this->add_and_transform(m.vertices, m.triangles, mass, inertia_local, displacement, rotate_deg, rotation_axis);
+}
+int stark::models::RigidBodies::add_box(const double mass, const Eigen::Vector3d& size, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis)
+{
+	const utils::Mesh m = utils::make_box(size);
+	const Eigen::Matrix3d inertia_local = utils::inertia_tensor_box(mass, size);
+	return this->add_and_transform(m.vertices, m.triangles, mass, inertia_local, displacement, rotate_deg, rotation_axis);
+}
+int stark::models::RigidBodies::add_cylinder(const double mass, const double radius, const double full_height, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis, const int slices, const int stacks)
+{
+	const utils::Mesh m = utils::make_cylinder(radius, full_height, slices, stacks);
+	const Eigen::Matrix3d inertia_local = utils::inertia_tensor_cylinder(mass, radius, full_height);
+	return this->add_and_transform(m.vertices, m.triangles, mass, inertia_local, displacement, rotate_deg, rotation_axis);
+}
+int stark::models::RigidBodies::add_torus(const double mass, const double outer_radius, const double inner_radius, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis, const int slices, const int stacks)
+{
+	const utils::Mesh m = utils::make_torus(outer_radius, inner_radius, slices, stacks);
+	const Eigen::Matrix3d inertia_local = utils::inertia_tensor_torus(mass, outer_radius, inner_radius);
+	return this->add_and_transform(m.vertices, m.triangles, mass, inertia_local, displacement, rotate_deg, rotation_axis);
+}
+int stark::models::RigidBodies::add_sphere(const double mass, const double radius, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis)
+{
+	const Eigen::Matrix3d inertia_local = utils::inertia_tensor_sphere(mass, radius);
+	return this->add_and_transform(vertices, triangles, mass, inertia_local, displacement, rotate_deg, rotation_axis);
+}
+int stark::models::RigidBodies::add_box(const double mass, const Eigen::Vector3d& size, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis)
+{
+	const Eigen::Matrix3d inertia_local = utils::inertia_tensor_box(mass, size);
+	return this->add_and_transform(vertices, triangles, mass, inertia_local, displacement, rotate_deg, rotation_axis);
+}
+int stark::models::RigidBodies::add_cylinder(const double mass, const double radius, const double full_height, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis)
+{
+	const Eigen::Matrix3d inertia_local = utils::inertia_tensor_cylinder(mass, radius, full_height);
+	return this->add_and_transform(vertices, triangles, mass, inertia_local, displacement, rotate_deg, rotation_axis);
+}
+int stark::models::RigidBodies::add_torus(const double mass, const double outer_radius, const double inner_radius, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis)
+{
+	const Eigen::Matrix3d inertia_local = utils::inertia_tensor_torus(mass, outer_radius, inner_radius);
+	return this->add_and_transform(vertices, triangles, mass, inertia_local, displacement, rotate_deg, rotation_axis);
+}
 void stark::models::RigidBodies::add_constraint_anchor_point(const int body_id, const Eigen::Vector3d& p_glob)
 {
 	const int constraint_id = (int)this->constraints.anchor_points.loc.size();
