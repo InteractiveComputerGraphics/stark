@@ -56,7 +56,7 @@ int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& mesh_ver
 void stark::models::RigidBodies::add_constraint_anchor_point(const int body_id, const Eigen::Vector3d& p_glob)
 {
 	const int constraint_id = (int)this->constraints.anchor_points.loc.size();
-	this->constraints.anchor_points.conn.push_back({body_id, constraint_id});
+	this->constraints.anchor_points.conn.push_back({ constraint_id, body_id });
 	this->constraints.anchor_points.target.push_back(p_glob);
 	this->constraints.anchor_points.loc.push_back(global_to_local_point(p_glob, this->R1[body_id], this->t1[body_id]));
 }

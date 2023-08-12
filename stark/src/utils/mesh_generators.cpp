@@ -2,6 +2,8 @@
 
 #include <par_shapes/par_shapes.h>
 
+#include "mesh_utils.h"
+
 
 stark::utils::Mesh as_mesh(par_shapes_mesh* pm)
 {
@@ -22,7 +24,51 @@ stark::utils::Mesh as_mesh(par_shapes_mesh* pm)
 }
 
 
-stark::utils::Mesh stark::utils::make_sphere(const int subdivisions)
+stark::utils::Mesh stark::utils::make_sphere(const double radius, const int subdivisions)
 {
-	return as_mesh(par_shapes_create_subdivided_sphere(subdivisions));
+	Mesh m = as_mesh(par_shapes_create_subdivided_sphere(subdivisions));
+	scale(m.vertices, radius);
+	return m;
+}
+
+stark::utils::Mesh stark::utils::make_box(const Eigen::Vector3d& size)
+{
+	Mesh m = as_mesh(par_shapes_create_cube());
+	scale(m.vertices, size);
+	return m;
+}
+
+stark::utils::Mesh stark::utils::make_box(const double size)
+{
+	Mesh m = as_mesh(par_shapes_create_cube());
+	scale(m.vertices, size);
+	return m;
+}
+
+stark::utils::Mesh stark::utils::make_cylinder(const double radius, const double height, const int slices, const int stacks)
+{
+	Mesh m = as_mesh(par_shapes_create_cylinder(slices, stacks));
+	scale(m.vertices, {radius, radius, height});
+	return m;
+}
+
+stark::utils::Mesh stark::utils::make_cone(const double radius, const double height, const int slices, const int stacks)
+{
+	Mesh m = as_mesh(par_shapes_create_cone(slices, stacks));
+	scale(m.vertices, {radius, radius, height});
+	return m;
+}
+
+stark::utils::Mesh stark::utils::make_torus(const double outer_radius, const double inner_radius, const int slices, const int stacks)
+{
+	Mesh m = as_mesh(par_shapes_create_torus(inner_radius/outer_radius, slices, stacks));
+	scale(m.vertices, outer_radius);
+	return m;
+}
+
+stark::utils::Mesh stark::utils::make_knot(const double scale_, const double inner_radius, const int slices, const int stacks)
+{
+	Mesh m = as_mesh(par_shapes_create_trefoil_knot(inner_radius/scale_, slices, stacks));
+	scale(m.vertices, scale_);
+	return m;
 }

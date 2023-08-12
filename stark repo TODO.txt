@@ -70,6 +70,7 @@ Documentation
 	* We a tutorial for a simple sim. Otherwise it can be intimidating if jumped directly into the stark code..
 	* Explain IPC edge-edge
 	* Rigid body constraints
+	* CANNOT BE USED WITH TYPE FLOAT. make_vector uses sizeof()
 
 Debug
 -----

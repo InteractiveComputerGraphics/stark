@@ -175,11 +175,13 @@ void symx::GlobalEnergy::get_dofs(double* u) const
 	const std::vector<int32_t> offsets = this->get_dofs_offsets();
 
 	for (int set = 0; set < n_sets; set++) {
-		const double* data = this->dof_data[set]();
 		const int32_t begin = offsets[set];
 		const int32_t end = offsets[set + 1];
 		const int32_t length = end - begin;
-		memcpy(u + begin, data, length*sizeof(double));
+		if (length > 0) {
+			const double* data = this->dof_data[set]();
+			memcpy(u + begin, data, length * sizeof(double));
+		}
 	}
 }
 void symx::GlobalEnergy::apply_dof_increment(const double* du)
@@ -188,13 +190,15 @@ void symx::GlobalEnergy::apply_dof_increment(const double* du)
 	const std::vector<int32_t> offsets = this->get_dofs_offsets();
 
 	for (int set = 0; set < n_sets; set++) {
-		double* data = this->dof_data[set]();
 		const int32_t begin = offsets[set];
 		const int32_t end = offsets[set + 1];
 		const int32_t length = end - begin;
-
-		for (int32_t i = 0; i < length; i++) {
-			data[i] += du[begin + i];
+		
+		if (length > 0) {
+			double* data = this->dof_data[set]();
+			for (int32_t i = 0; i < length; i++) {
+				data[i] += du[begin + i];
+			}
 		}
 	}
 }
@@ -204,11 +208,14 @@ void symx::GlobalEnergy::set_dofs(const double* u)
 	const std::vector<int32_t> offsets = this->get_dofs_offsets();
 
 	for (int set = 0; set < n_sets; set++) {
-		double* data = this->dof_data[set]();
 		const int32_t begin = offsets[set];
 		const int32_t end = offsets[set + 1];
 		const int32_t length = end - begin;
-		memcpy(data, u + begin, length * sizeof(double));
+
+		if (length > 0) {
+			double* data = this->dof_data[set]();
+			memcpy(data, u + begin, length * sizeof(double));
+		}
 	}
 }
 void symx::GlobalEnergy::set_project_to_PD(const bool activate)

@@ -12,6 +12,7 @@ void rb_ball_joint()
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 10.0;
+	settings.execution.n_threads = 1;
 	stark::models::Simulation sim(settings);
 
 	// Rigid bodies
@@ -22,6 +23,10 @@ void rb_ball_joint()
 
 	stark::utils::move(sphere.vertices, {0.2, 0.0, 0.0});
 	const int s2 = sim.rigid_bodies.add(sphere.vertices, sphere.triangles, density);
+
+	// Constraints
+	sim.rigid_bodies.add_constraint_ball_joint(s1, s2, {0, 0, 0});
+	sim.rigid_bodies.add_constraint_freeze(s1);
 
 	// Run
 	sim.stark.run();
