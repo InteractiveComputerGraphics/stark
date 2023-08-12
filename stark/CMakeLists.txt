@@ -69,6 +69,8 @@ set(UTILS_FILES
 	src/utils/mesh_utils.cpp
 	src/utils/mesh_generators.cpp
 	src/utils/mesh_generators.h
+	src/utils/inertia_tensors.cpp
+	src/utils/inertia_tensors.h
 	src/utils/unordered_array_set_and_map.h
 	src/utils/MultiMesh.h
 	src/utils/MeshWithDynamics.h

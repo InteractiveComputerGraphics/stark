@@ -22,6 +22,7 @@ Mid priority
 		- Contact forces. Total and per point.
 		- Friction forces.
 	* Probably better just to have the edge distance strain limiting as it poses way less convergence problems
+	* Support arbitrary inertia tensors
 	
 		
 Low priority

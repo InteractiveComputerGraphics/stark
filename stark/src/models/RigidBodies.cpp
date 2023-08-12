@@ -2,7 +2,6 @@
 
 #include <symx>
 #include <vtkio>
-#include <JanBenderUtilities/VolumeProperties.h>
 
 #include "../utils/mesh_utils.h"
 #include "distances.h"
@@ -24,14 +23,14 @@ void stark::models::RigidBodies::init(Stark& sim)
 	this->_energies_mechanical(sim);
 }
 
-int stark::models::RigidBodies::add(const Eigen::Vector3d& position, const Eigen::Quaterniond& quaternion, const double mass, const Eigen::Matrix3d& inertia_loc, const std::vector<Eigen::Vector3d>& mesh_vertices, const std::vector<std::array<int, 3>>& mesh_triangles)
+int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const double mass, const Eigen::Matrix3d& inertia_loc)
 {
-	this->t0.push_back(position);
-	this->t1.push_back(position);
-	this->q0.push_back(quaternion.normalized());
-	this->q1.push_back(quaternion.normalized());
-	this->R0.push_back(quaternion.toRotationMatrix());
-	this->R1.push_back(quaternion.toRotationMatrix());
+	this->t0.push_back(Eigen::Vector3d::Zero());
+	this->t1.push_back(Eigen::Vector3d::Zero());
+	this->q0.push_back(Eigen::Quaterniond::Identity());
+	this->q1.push_back(Eigen::Quaterniond::Identity());
+	this->R0.push_back(Eigen::Matrix3d::Identity());
+	this->R1.push_back(Eigen::Matrix3d::Identity());
 	this->v0.push_back(Eigen::Vector3d::Zero());
 	this->v1.push_back(Eigen::Vector3d::Zero());
 	this->w0.push_back(Eigen::Vector3d::Zero());
@@ -43,16 +42,8 @@ int stark::models::RigidBodies::add(const Eigen::Vector3d& position, const Eigen
 	this->J_loc.push_back(inertia_loc);
 	this->mass.push_back(mass);
 
-	this->mesh.add_mesh(mesh_vertices, mesh_triangles);
-
+	this->mesh.add_mesh(vertices, triangles);
 	return this->get_n_bodies() - 1;
-}
-int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& mesh_vertices, const std::vector<std::array<int, 3>>& mesh_triangles, const double density)
-{
-	const auto volume_properties = JanBenderUtilities::compute_volume_properties(mesh_vertices, mesh_triangles, density);
-	std::vector<Eigen::Vector3d> vertices_copy = mesh_vertices;
-	utils::move(vertices_copy, -volume_properties.center_of_mass);
-	return this->add(volume_properties.center_of_mass, Eigen::Quaterniond::Identity(), volume_properties.mass, volume_properties.inertia_tensor, vertices_copy, mesh_triangles);
 }
 void stark::models::RigidBodies::add_constraint_anchor_point(const int body_id, const Eigen::Vector3d& p_glob)
 {
@@ -127,7 +118,11 @@ void stark::models::RigidBodies::set_rotation(const int body_id, const double& a
 }
 void stark::models::RigidBodies::add_rotation(const int body_id, const Eigen::Quaterniond& q)
 {
-	this->set_rotation(body_id, this->q0[body_id]*q.normalized());
+	const Eigen::Quaterniond q_ = q.normalized();
+	const Eigen::Matrix3d R = q_.toRotationMatrix();
+	this->t0[body_id] = R*this->t0[body_id];
+	this->t1[body_id] = R*this->t1[body_id];
+	this->set_rotation(body_id, this->q0[body_id]*q_);
 }
 void stark::models::RigidBodies::add_rotation(const int body_id, const double& angle_deg, const Eigen::Vector3d& axis)
 {
@@ -461,8 +456,7 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 			symx::Scalar E_slider = 0.5 * k * sq_distance_point_line(b1, a1, a1 + da1);
 			symx::Scalar E_spring = 0.5 * spring_stiffness * (l1/l_rest - 1.0).powN(2);
 			symx::Scalar E_damper = 0.5 * spring_damping * ((l1 - l0)/dt).powN(2);
-			symx::Scalar E = E_spring;
-			//symx::Scalar E = E_slider + E_spring + E_damper;  // DEBUG
+			symx::Scalar E = E_slider + E_spring + E_damper;
 			energy.set(E);
 		}
 	);

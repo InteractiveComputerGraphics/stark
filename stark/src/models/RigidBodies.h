@@ -90,18 +90,7 @@ namespace stark::models
 
 		/* Methods */
 		void init(Stark& sim);
-
-		int add(
-			const Eigen::Vector3d& position,
-			const Eigen::Quaterniond& quaternion,
-			const double mass,
-			const Eigen::Matrix3d& inertia_loc,
-			const std::vector<Eigen::Vector3d>& mesh_vertices,
-			const std::vector<std::array<int, 3>>& mesh_triangles);
-		int add(
-			const std::vector<Eigen::Vector3d>& mesh_vertices,
-			const std::vector<std::array<int, 3>>& mesh_triangles,
-			const double density);
+		int add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const double mass, const Eigen::Matrix3d& inertia_loc);
 		void add_constraint_anchor_point(const int body_id, const Eigen::Vector3d& p_glob);
 		void add_constraint_ball_joint(const int body_0, const int body_1, const Eigen::Vector3d& p_glob);
 		void add_constraint_hinge_joint(const int body_0, const int body_1, const Eigen::Vector3d& c_global, const Eigen::Vector3d& d_global);
