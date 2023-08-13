@@ -644,7 +644,7 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
+			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
 
 			// Kinematics
 			symx::Matrix Dx = symx::Matrix(symx::gather({
@@ -686,7 +686,7 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
+			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
 
 			// Kinematics
 			symx::Matrix Dx = symx::Matrix(symx::gather({
@@ -721,7 +721,7 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
+			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
 
 			// Energy
 			symx::Scalar E = dt.get_zero();
@@ -750,7 +750,7 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 
 			// Time integration
-			symx::Vector x1 = euler_integration(x0, v1, dt);
+			symx::Vector x1 = time_integration(x0, v1, dt);
 
 			// Energy
 			symx::Scalar E = 0.5 * k * (x1 - x1_prescribed).squared_norm();
@@ -769,7 +769,7 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = euler_integration(x0, v1, dt);
+			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
 
 			// Energy
 			symx::Scalar E = 0.5 * k * (x1[0] - x1[1]).squared_norm();
@@ -785,7 +785,7 @@ void stark::models::Cloth::_energies_contact(Stark& sim)
 		std::vector<symx::Vector> v1 = energy.make_dof_vectors(dof, this->model.v1, conn);
 		std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, conn);
 		symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
-		return euler_integration(x0, v1, dt);
+		return time_integration(x0, v1, dt);
 	};
 	auto get_X = [&](const std::vector<symx::Index>& conn, symx::Energy& energy)
 	{

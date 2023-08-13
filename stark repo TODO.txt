@@ -23,6 +23,7 @@ Mid priority
 		- Friction forces.
 	* Probably better just to have the edge distance strain limiting as it poses way less convergence problems
 	* Support arbitrary inertia tensors
+	* Change all explicit uses of time integration by the euler_integration function so I can better change it to other schemes later.
 	
 		
 Low priority
@@ -36,6 +37,7 @@ Low priority
 	* Magnetic simulations
     * Support for LBFGS. Probably is worse, but the sooned I confirm this, the better.
 	* Ask Jan how he wants to sort his code
+	* Better support for AMR. explicit .update(mesh_id) functions so I can track when to recompute stuff.
 
 		
 Convergence improvements
@@ -73,6 +75,7 @@ Documentation
 	* Rigid body constraints
 	* CANNOT BE USED WITH TYPE FLOAT. make_vector uses sizeof()
 	* Rigid bodies must be created on the center and *then* moved later.
+
 
 Debug
 -----
