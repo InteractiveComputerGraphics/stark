@@ -18,9 +18,12 @@ void stark::models::RigidBodies::init(Stark& sim)
 	sim.callbacks.before_time_step.push_back([&]() { this->_before_time_step(sim); });
 	sim.callbacks.after_time_step.push_back([&]() { this->_after_time_step(sim); });
 	sim.callbacks.write_frame.push_back([&]() { this->_write_frame(sim); });
+	sim.callbacks.before_energy_evaluation.push_back([&]() { this->_update_contacts(sim); });
+	sim.callbacks.is_state_valid.push_back([&]() { return this->_is_valid_configuration(sim); });
 
 	// Energy declarations
 	this->_energies_mechanical(sim);
+	this->_energies_contact(sim);
 }
 
 int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const double mass, const Eigen::Matrix3d& inertia_loc)
@@ -43,6 +46,10 @@ int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& vertices
 	this->mass.push_back(mass);
 
 	this->mesh.add_mesh(vertices, triangles);
+
+	this->edges.clear();
+	utils::find_edges(this->edges, this->mesh.connectivity, this->mesh.get_n_vertices());
+
 	return this->get_n_bodies() - 1;
 }
 int stark::models::RigidBodies::add_and_transform(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const double mass, const Eigen::Matrix3d& inertia_loc, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis)
@@ -254,6 +261,23 @@ bool stark::models::RigidBodies::is_body_declared(const int body_id) const
 	return body_id < this->get_n_bodies();
 }
 
+void stark::models::RigidBodies::_update_collision_x1(Stark& sim)
+{
+	const double dt = sim.settings.simulation.adaptive_time_step.value;
+	this->collision_x1.resize(this->mesh.vertices.size());
+	for (int rb_i = 0; rb_i < this->mesh.get_n_meshes(); rb_i++) {
+		const Eigen::Vector3d t1 = time_integration(this->t0[rb_i], this->v1[rb_i], dt);
+		const Eigen::Quaterniond q1 = quat_time_integration(this->q0[rb_i], this->w1[rb_i], dt);
+		const Eigen::Matrix3d R1 = q1.toRotationMatrix();
+
+		const std::array<int, 2> range = this->mesh.get_vertices_range(rb_i);
+		for (int vertex_i = range[0]; vertex_i < range[1]; vertex_i++) {
+			const Eigen::Vector3d p = local_to_global_point(this->mesh.vertices[vertex_i], R1, t1);
+			this->collision_x1[vertex_i] = p;
+		}
+	}
+}
+
 void stark::models::RigidBodies::_before_time_step(Stark& sim)
 {
 	if (this->is_empty()) { return; }
@@ -309,6 +333,19 @@ void stark::models::RigidBodies::_after_time_step(Stark& sim)
 	this->R0 = this->R1;
 	this->v0 = this->v1;
 	this->w0 = this->w1;
+}
+bool stark::models::RigidBodies::_is_valid_configuration(Stark& sim)
+{
+	if (this->is_empty()) { return true; }
+	if (!sim.settings.contact.collisions_enabled) { return true; }
+	if (!sim.settings.contact.enable_intersection_test) { return true; }
+
+	this->_update_collision_x1(sim);
+	this->id.clear();
+	this->id.set_n_threads(sim.settings.execution.n_threads);
+	this->id.add_mesh(&this->collision_x1[0][0], (int)this->collision_x1.size(), &this->mesh.connectivity[0][0], this->mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
+	const tmcd::IntersectionResults& intersections = this->id.run();
+	return intersections.edge_triangle.size() == 0;
 }
 void stark::models::RigidBodies::_write_frame(Stark& sim)
 {
@@ -511,4 +548,8 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 			energy.set(E);
 		}
 	);
+}
+void stark::models::RigidBodies::_energies_contact(Stark& sim)
+{
+
 }

@@ -86,8 +86,15 @@ namespace stark::models
 		Constraints constraints;
 		double constraint_stiffness = 1e6;
 
+		// Contacts
+		std::vector<std::array<int32_t, 2>> edges;
+		tmcd::IntersectionDetection id;
+		tmcd::ProximityDetection pd;
+		//TriangleMeshContacts contacts;
+		std::vector<Eigen::Vector3d> collision_x1;
+
 		// Output
-		utils::MultiMesh<3> mesh;
+		utils::MultiMesh<3> mesh;  // Always stays at rest positions
 
 
 		/* Methods */
@@ -139,12 +146,20 @@ namespace stark::models
 		bool is_body_declared(const int body_id) const;
 
 	private:
+		// Helpers
+		void _update_collision_x1(Stark& sim);
+		const tmcd::ProximityResults& _run_proximity_detection(const std::vector<Eigen::Vector3d>& x, Stark& sim);
+		void _update_contacts(Stark& sim);
+		void _update_friction_contacts(Stark& sim);
+
 		// Stark callbacks
 		void _before_time_step(Stark& sim);
 		void _after_time_step(Stark& sim);
+		bool _is_valid_configuration(Stark& sim);
 		void _write_frame(Stark& sim);
 
 		// Energy groups
 		void _energies_mechanical(Stark& sim);
+		void _energies_contact(Stark& sim);
 	};
 }
