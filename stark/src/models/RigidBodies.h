@@ -10,6 +10,7 @@
 #include "../utils/MultiMesh.h"
 #include "../utils/mesh_generators.h"
 #include "../utils/inertia_tensors.h"
+#include "RigidBodyContacts.h"
 
 
 namespace stark::models
@@ -90,7 +91,7 @@ namespace stark::models
 		std::vector<std::array<int32_t, 2>> edges;
 		tmcd::IntersectionDetection id;
 		tmcd::ProximityDetection pd;
-		//TriangleMeshContacts contacts;
+		RigidBodyContacts contacts;
 		std::vector<Eigen::Vector3d> collision_x1;
 
 		// Output

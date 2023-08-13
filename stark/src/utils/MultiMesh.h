@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <array>
+#include <algorithm>
 #include <cassert>
 
 #include <Eigen/Dense>
@@ -138,13 +139,14 @@ namespace stark::utils
 	template<std::size_t N>
 	inline int MultiMesh<N>::get_mesh_containing_vertex(const int vertex_i) const
 	{
-		for (int i = 1; i < (int)this->vertices_offsets.size(); i++) {
-			if (vertex_i < this->vertices_offsets[i]) {
-				return i - 1;
-			}
+		const auto it = std::binary_search(this->vertices_offsets.begin(), this->vertices_offsets.end(), vertex_i);
+		if (it == this->vertices_offsets.end()) {
+			std::cout << "stb error: MultiMesh.get_mesh_containing_vertex() out of bounds." << std::endl;
+			exit(-1);
 		}
-		std::cout << "stb error: MultiMesh.get_mesh_containing_vertex() out of bounds." << std::endl;
-		exit(-1);
+		else {
+			return (int)std::distance(this->vertices_offsets.begin(), it);
+		}
 	}
 	template<std::size_t N>
 	inline int MultiMesh<N>::get_mesh_containing_element(const int element_i) const

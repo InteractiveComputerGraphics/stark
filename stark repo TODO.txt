@@ -1,6 +1,10 @@
 stark repo TODO
 ===============
 
+FIX
+---
+	* Rigid bodies blacklist themselves
+
 High priority
 -------------
 	* Check for NaNs in symx as an option in Stark::Settings. Don't make it a static variable

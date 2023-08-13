@@ -793,7 +793,6 @@ void stark::models::Cloth::_energies_contact(Stark& sim)
 	};
 	auto barrier_energy = [&](const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k)
 	{
-		//symx::Scalar E = k * symx::log_barrier(d, dhat);
 		return k * (dhat - d).powN(3);
 	};
 	auto set_barrier_energy = [&](const symx::Scalar& d, symx::Energy& energy)

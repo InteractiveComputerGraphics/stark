@@ -58,6 +58,7 @@ set(MODELS_FILES
 	src/models/Cloth.cpp
 	src/models/RigidBodies.h
 	src/models/RigidBodies.cpp
+	src/models/RigidBodyContacts.h
 	)
 
 set(UTILS_FILES
