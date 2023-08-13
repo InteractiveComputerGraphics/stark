@@ -28,11 +28,6 @@ If a barrier changes very significantly, it will overshoot. I cannot just start 
 
 High priority
 -------------
-	* Revise consistent force, energy, dx or dv ... formulation
-		Should I try J0_glob -> J1_glob  ?
-	* Rotation dofs are messing up with newton readings of du and potentially dE
-		What are even the RB entries in the global dE?
-	
 	* Check for NaNs in symx as an option in Stark::Settings. Don't make it a static variable
 	* Same for an out of bounds connectitivity index as it's the second most frequent error.
 		This should be triggered dynamically from settings.debug
