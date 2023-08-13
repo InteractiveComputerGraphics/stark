@@ -8,6 +8,10 @@ FIX
 High priority
 -------------
 	* Check for NaNs in symx as an option in Stark::Settings. Don't make it a static variable
+	* Same for an out of bounds connectitivity index as it's the second most frequent error.
+		This should be triggered dynamically from settings.debug
+		Should return the name of the energy, connectivity...
+	
 	* Python plots for time steps, stiffnesses, line search/CG iterations, number of contacts, etc...
 	* [Important] v1 as initial guess with intersection test might significantly help convergence
 	* We need a default friction, otherwise we are using -1.0. Better 0.0.

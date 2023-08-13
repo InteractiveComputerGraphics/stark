@@ -139,13 +139,13 @@ namespace stark::utils
 	template<std::size_t N>
 	inline int MultiMesh<N>::get_mesh_containing_vertex(const int vertex_i) const
 	{
-		const auto it = std::binary_search(this->vertices_offsets.begin(), this->vertices_offsets.end(), vertex_i);
+		const auto it = std::upper_bound(this->vertices_offsets.begin(), this->vertices_offsets.end(), vertex_i);
 		if (it == this->vertices_offsets.end()) {
 			std::cout << "stb error: MultiMesh.get_mesh_containing_vertex() out of bounds." << std::endl;
 			exit(-1);
 		}
 		else {
-			return (int)std::distance(this->vertices_offsets.begin(), it);
+			return (int)std::distance(this->vertices_offsets.begin(), it) - 1;
 		}
 	}
 	template<std::size_t N>

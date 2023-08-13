@@ -26,7 +26,6 @@ void rb_ball_joint()
 	// Run
 	sim.stark.run();
 }
-
 void rb_slider()
 {
 	stark::Settings settings = stark::Settings();
@@ -35,7 +34,7 @@ void rb_slider()
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	
-	settings.execution.end_simulation_time = 10.0;
+	settings.execution.end_simulation_time = 5.0;
 	stark::models::Simulation sim(settings);
 
 	// Rigid bodies
@@ -48,6 +47,31 @@ void rb_slider()
 	// Constraints
 	sim.rigid_bodies.add_constraint_freeze(o1);
 	sim.rigid_bodies.add_constraint_slider(o1, o2, sim.rigid_bodies.t1[o1], sim.rigid_bodies.t1[o2], 2.0, 0.0);
+
+	// Run
+	sim.stark.run();
+}
+void rb_contacts_floor_test()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "contacts_floor_test";
+	settings.output.output_directory = "../output/rigid_body_contacts";
+	settings.output.codegen_directory = "../output/codegen";
+	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
+
+	settings.execution.end_simulation_time = 5.0;
+
+	//settings.contact.dhat = 0.1;
+	stark::models::Simulation sim(settings);
+
+	// Rigid bodies
+	const double mass = 0.5;
+	const double scale = 0.1;
+	const int o1 = sim.rigid_bodies.add_box(mass, { 1.0, 1.0, scale });
+	const int o2 = sim.rigid_bodies.add_box(mass, {scale, scale, scale}, { 0.1, 0.2, 0.2 }, 45.0, { 0, 1, 0 });
+
+	// Constraints
+	sim.rigid_bodies.add_constraint_freeze(o1);
 
 	// Run
 	sim.stark.run();
