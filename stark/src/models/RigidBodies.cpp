@@ -285,7 +285,7 @@ const tmcd::ProximityResults& stark::models::RigidBodies::_run_proximity_detecti
 	this->pd.add_mesh(&x[0][0], (int)x.size(), &this->mesh.connectivity[0][0], this->mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
 	this->pd.activate_point_triangle(sim.settings.contact.triangle_point_enabled);
 	this->pd.activate_edge_edge(sim.settings.contact.edge_edge_enabled);
-	const tmcd::ProximityResults& proximity = this->pd.run(sim.settings.contact.dhat);
+	const tmcd::ProximityResults& proximity = this->pd.run(sim.settings.contact.dhat, tmcd::BroadPhaseStrategy::OctreeSIMD);  // DEBUG
 	return proximity;
 }
 
@@ -438,10 +438,6 @@ void stark::models::RigidBodies::_update_contacts(Stark& sim)
 			this->contacts.point_triangle.point_triangle.loc_b_t1.push_back(this->mesh.vertices[triangle.vertices[1]]);
 			this->contacts.point_triangle.point_triangle.loc_b_t2.push_back(this->mesh.vertices[triangle.vertices[2]]);
 		}
-	}
-
-	if (contacts.point_triangle.point_triangle.conn.size() > 0) {
-		std::cout << "a";
 	}
 }
 

@@ -37,6 +37,7 @@ High priority
 	* Same for an out of bounds connectitivity index as it's the second most frequent error.
 		This should be triggered dynamically from settings.debug
 		Should return the name of the energy, connectivity...
+	* Collision detection for rigid bodies is broken for SIMD ???
 	
 	* Compute contact forces and show them somehow
 	* Python plots for time steps, stiffnesses, line search/CG iterations, number of contacts, etc...
@@ -51,6 +52,7 @@ High priority
 
 Mid priority
 ------------
+	* BroadPhase take into account is_active_edge_edge/triangle_point (bottleneck in RB sims)
 	* Exit simulation when adaptive time step reaches the minimum or the contact the maximum
 	* Timings don't add up to "total" because of aborted time steps
 	* Penalty as a class so I can swap and easily change the gradient for the friction

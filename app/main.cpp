@@ -22,5 +22,6 @@ int main()
 	// ------------------------- RIGID BODIES -------------------------
 	//rb_ball_joint();
 	//rb_slider();
-	rb_contacts_floor_test();
+	//rb_contacts_floor_test();
+	laundry();
 }
