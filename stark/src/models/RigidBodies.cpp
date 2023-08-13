@@ -304,13 +304,13 @@ void stark::models::RigidBodies::_before_time_step(Stark& sim)
 	this->J0_inv_glob.resize(n);
 	for (int i = 0; i < n; i++) {
 		this->conn_inertia[i] = { i };
-		const Eigen::Matrix3d J = local_to_global_matrix(this->J_loc[i], this->R1[i]);
-		const Eigen::Matrix3d J_inv = J.inverse();
+		const Eigen::Matrix3d J = local_to_global_matrix(this->J_loc[i], this->R0[i]);
 		this->J0_glob[i] = {
 			J(0, 0), J(0, 1), J(0, 2),
 			J(1, 0), J(1, 1), J(1, 2),
 			J(2, 0), J(2, 1), J(2, 2),
 		};
+		const Eigen::Matrix3d J_inv = J.inverse();
 		this->J0_inv_glob[i] = {
 			J_inv(0, 0), J_inv(0, 1), J_inv(0, 2),
 			J_inv(1, 0), J_inv(1, 1), J_inv(1, 2),
@@ -333,7 +333,7 @@ void stark::models::RigidBodies::_after_time_step(Stark& sim)
 
 	// Set final positions with solved velocities
 	for (int i = 0; i < this->get_n_bodies(); i++) {
-		this->t1[i] = this->t0[i] + dt * this->v1[i];
+		this->t1[i] = time_integration(this->t0[i], this->v1[i], dt);
 		this->q1[i] = quat_time_integration(this->q0[i], this->w1[i], dt);
 		this->R1[i] = this->q1[i].toRotationMatrix();
 	}
@@ -439,6 +439,10 @@ void stark::models::RigidBodies::_update_contacts(Stark& sim)
 			this->contacts.point_triangle.point_triangle.loc_b_t2.push_back(this->mesh.vertices[triangle.vertices[2]]);
 		}
 	}
+
+	if (contacts.point_triangle.point_triangle.conn.size() > 0) {
+		std::cout << "a";
+	}
 }
 
 void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
@@ -510,7 +514,8 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 
 			symx::Vector vhat = v0 + dt*(a + gravity + f/m);
 			symx::Vector dev = v1 - vhat;
-			symx::Scalar E = 0.5*m*(dev.dot(dev) + v1.dot(v1)*damping*dt);
+			symx::Scalar E = 0.5*m*dev.dot(dev) + 0.5*m*v1.dot(v1)*damping*dt;
+			// Actual force: f = -dE/dx = -1/dt*(v1 - vhat)*m
 			energy.set(E);
 		}
 	);
@@ -633,13 +638,12 @@ void stark::models::RigidBodies::_energies_contact(Stark& sim)
 		symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
 
 		symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
-		symx::Vector t1 = t0 + dt * v1;
+		symx::Vector t1 = time_integration(t0, v1, dt);
 
 		std::vector<symx::Vector> x1;
 		for (const symx::Vector& x_loc_a : x_loc) {
 			x1.push_back(local_to_global_point(x_loc_a, t1, R1));
 		}
-
 		return x1;
 	};
 	auto barrier_energy = [&](const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k)

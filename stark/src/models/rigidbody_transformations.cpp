@@ -31,8 +31,7 @@ Eigen::Quaterniond stark::models::quat_time_integration(const Eigen::Quaterniond
 	Eigen::Quaterniond w_ = Eigen::Quaterniond(0, w_glob.x(), w_glob.y(), w_glob.z());
 	Eigen::Quaterniond q_end = q_start;
 	q_end.coeffs() += 0.5 * dt * (w_ * q_start).coeffs();
-	q_end.normalize();
-	return q_end;
+	return q_end.normalized();
 }
 
 // SymX

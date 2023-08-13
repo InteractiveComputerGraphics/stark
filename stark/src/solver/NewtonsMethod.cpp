@@ -78,7 +78,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		while (true) {
 
 			if (step < 0.01) {
-				console.print("\n\t\t -> Valid step too small (less than 1%).\n", Verbosity::TimeSteps);
+				console.print("\n\t\t -> Valid step too small (less than 0.1%).\n", Verbosity::TimeSteps);
 				return NewtonError::InvalidConfiguration;
 			}
 

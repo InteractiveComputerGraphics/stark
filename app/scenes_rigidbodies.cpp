@@ -59,16 +59,18 @@ void rb_contacts_floor_test()
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 
-	settings.execution.end_simulation_time = 5.0;
+	settings.execution.end_simulation_time = 1.0;
+	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
 
-	//settings.contact.dhat = 0.1;
+	settings.contact.adaptive_contact_stiffness.value = 1e8;
+	settings.contact.dhat = 0.001;
 	stark::models::Simulation sim(settings);
 
 	// Rigid bodies
-	const double mass = 0.5;
+	const double mass = 1.0;
 	const double scale = 0.1;
 	const int o1 = sim.rigid_bodies.add_box(mass, { 1.0, 1.0, scale });
-	const int o2 = sim.rigid_bodies.add_box(mass, {scale, scale, scale}, { 0.1, 0.2, 0.2 }, 45.0, { 0, 1, 0 });
+	const int o2 = sim.rigid_bodies.add_box(mass, {scale, scale, scale}, { 0.1, 0.2, 0.2 }, 0.0, { 0, 1, 0 });
 
 	// Constraints
 	sim.rigid_bodies.add_constraint_freeze(o1);

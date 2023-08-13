@@ -13,6 +13,7 @@ namespace stark
 		double failure_multiplier = 0.5;
 		int n_successful_iterations_to_increase = 5;
 
+		void set(double min, double value, double max);
 		void successful_iteration();
 		void failed_iteration();
 		

@@ -5,13 +5,40 @@ FIX
 ---
 	* Rigid bodies blacklist themselves
 
+
+Rigid body stiffness situation
+------------------------------
+I need to understand rigid body dynamics much better, specially their relation with force.
+
+With cloth I could use very low barrier stiffnesses because it is very light and the impact gets partially absorved by the elasticity/damping.
+For a 1kg box falling 20cm to a fix plane, I need a very high force to stop it on its tracks within one time step.
+Look at the equation for the inertia:
+	E = 0.5*m*(v1 - vhat).dot(v1 - vhat)  ->  f = -dE/dx = -(v1 - vhat)*m/dt
+Stopping a 1kg box coming at 1m/s in 1ms requires 1000N of force (100kg).
+Using a 1mm barrier thickness, one would need 3.3e8.
+
+Another problem is reducing the time step.
+Everytime this happens, the inertia forces become stronger.
+I don't reduce the time step anymore when invalid configuration, but still is annoying.
+If a barrier changes very significantly, it will overshoot. I cannot just start with 1e3 and let it build to 1e10.
+
+
+
+
+
 High priority
 -------------
+	* Revise consistent force, energy, dx or dv ... formulation
+		Should I try J0_glob -> J1_glob  ?
+	* Rotation dofs are messing up with newton readings of du and potentially dE
+		What are even the RB entries in the global dE?
+	
 	* Check for NaNs in symx as an option in Stark::Settings. Don't make it a static variable
 	* Same for an out of bounds connectitivity index as it's the second most frequent error.
 		This should be triggered dynamically from settings.debug
 		Should return the name of the energy, connectivity...
 	
+	* Compute contact forces and show them somehow
 	* Python plots for time steps, stiffnesses, line search/CG iterations, number of contacts, etc...
 	* [Important] v1 as initial guess with intersection test might significantly help convergence
 	* We need a default friction, otherwise we are using -1.0. Better 0.0.
@@ -24,6 +51,7 @@ High priority
 
 Mid priority
 ------------
+	* Exit simulation when adaptive time step reaches the minimum or the contact the maximum
 	* Timings don't add up to "total" because of aborted time steps
 	* Penalty as a class so I can swap and easily change the gradient for the friction
 	* Pen and paper tests. Box on a plane:
@@ -72,7 +100,16 @@ Ideas:
 			callbacks and evaluation should go together
 			does it make sense that it is it's own class? Maybe a function is better?
 
-
+	* The criteria to increase the stiffness is not sound. It is seriously overestimating it and has many
+		unnecessary time step repeats.
+		Actually I am not sure about this. See next point.
+	* Rigid bodies are much harder on the collisions because they cannot store potential energy.
+		Soft bodies will deform so the collision energy only takes part of the impact.
+		Maybe a solution is affine bodies or to model damping forces when rigid bodies collide.
+		Also smaller time steps might make things worse as they divide the inertia force:
+			to completely stop a rigid object in one ms, one needs a huge force.
+				f = -1/dt*(v1 - vhat)*m
+		
 Documentation
 -------------
 	* DoFs must be non-empty at initialization time. Otherwise they will not be added to SymX.

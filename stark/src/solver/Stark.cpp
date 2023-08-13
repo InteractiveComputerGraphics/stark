@@ -111,11 +111,13 @@ bool stark::Stark::run_one_step()
 			if (err == NewtonError::InvalidConfiguration) {
 				this->settings.contact.adaptive_contact_stiffness.failed_iteration();
 			}
-			this->settings.simulation.adaptive_time_step.failed_iteration();
-			if (this->settings.simulation.adaptive_time_step.value < this->settings.simulation.adaptive_time_step.min) {
-				this->console.print(fmt::format("Min time step size reached ({:.e}). Exiting simulation.\n", this->settings.simulation.adaptive_time_step.min), Verbosity::Frames);
-				this->logger.save_to_disk();
-				return false;
+			else {
+				this->settings.simulation.adaptive_time_step.failed_iteration();
+				if (this->settings.simulation.adaptive_time_step.value < this->settings.simulation.adaptive_time_step.min) {
+					this->console.print(fmt::format("Min time step size reached ({:.e}). Exiting simulation.\n", this->settings.simulation.adaptive_time_step.min), Verbosity::Frames);
+					this->logger.save_to_disk();
+					return false;
+				}
 			}
 			return this->run_one_step();
 		}
