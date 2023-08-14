@@ -22,8 +22,8 @@ Everytime this happens, the inertia forces become stronger.
 I don't reduce the time step anymore when invalid configuration, but still is annoying.
 If a barrier changes very significantly, it will overshoot. I cannot just start with 1e3 and let it build to 1e10.
 
-
-
+	-> Read the technical supplemental IPC because they might talk about this to tune 
+	-> Also check the affine bodies
 
 
 High priority

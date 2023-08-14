@@ -61,13 +61,13 @@ void rb_contacts_floor_test()
 	settings.output.fps = 120;
 
 	settings.execution.end_simulation_time = 1.0;
-	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
+	settings.simulation.adaptive_time_step.set(0.0, 0.0001, 0.0001);
 
 	settings.contact.friction_enabled = false;
 	settings.contact.adaptive_contact_stiffness.value = 1e8;
-	settings.contact.dhat = 0.002;
+	settings.contact.dhat = 0.005;
 	stark::models::Simulation sim(settings);
-
+ 
 	// Rigid bodies
 	const double mass = 1.0;
 	const double scale = 0.1;
