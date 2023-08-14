@@ -77,6 +77,7 @@ Low priority
     * Support for LBFGS. Probably is worse, but the sooned I confirm this, the better.
 	* Ask Jan how he wants to sort his code
 	* Better support for AMR. explicit .update(mesh_id) functions so I can track when to recompute stuff.
+	* Rigid bodies should output standar format poses for easy integration in other softwares.
 
 		
 Convergence improvements
@@ -122,7 +123,9 @@ Documentation
 	* Explain IPC edge-edge
 	* Rigid body constraints
 	* CANNOT BE USED WITH TYPE FLOAT. make_vector uses sizeof()
-	* Rigid bodies must be created on the center and *then* moved later.
+	* Very careful with rigid body declaration an placement:
+		- You are extremely engouraged to use primitive inetial tensor that approximate the shape of your objects.
+		- Rigid bodies must be created on the center and *then* moved later.
 	* Rigid bodies need much stiffer collision stiffness than soft bodies and cloth
 
 

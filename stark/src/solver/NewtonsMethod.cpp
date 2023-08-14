@@ -46,7 +46,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		else {
 			logger.start_timing("CG");
 			this->du.setZero();
-			const int max_iterations = std::max(100, (int)(settings.newton.cg_max_iterations_multiplier * ndofs)); // Very small sims will need to exceed ndofs iterations
+			const int max_iterations = std::max(1000, (int)(settings.newton.cg_max_iterations_multiplier * ndofs)); // Very small sims will need to exceed ndofs iterations
 			const int iterations = utils::solve_linear_system_with_CG(this->du, *assembled.hess, rhs, max_iterations, settings.newton.cg_tol, settings.execution.n_threads);
 			total_CG_it += iterations;
 			logger.stop_timing_add("CG");

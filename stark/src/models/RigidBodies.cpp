@@ -25,6 +25,7 @@ void stark::models::RigidBodies::init(Stark& sim)
 	// Energy declarations
 	this->_energies_mechanical(sim);
 	this->_energies_contact(sim);
+	this->_energies_friction(sim);
 }
 
 int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const double mass, const Eigen::Matrix3d& inertia_loc)
@@ -329,6 +330,9 @@ void stark::models::RigidBodies::_before_time_step(Stark& sim)
 		Eigen::Quaterniond& q = this->q0[i];
 		this->q0_[i] = { q.w(), q.x(), q.y(), q.z() };
 	}
+
+	// Active friction points at x0 for this time step
+	this->_update_friction_contacts(sim);
 }
 void stark::models::RigidBodies::_after_time_step(Stark& sim)
 {
@@ -828,7 +832,7 @@ void stark::models::RigidBodies::_energies_friction(Stark& sim)
 
 
 	// Point - Point
-	sim.global_energy.add_energy("collision_rb_rb_friction_point_point", this->friction.point_point.conn,
+	sim.global_energy.add_energy("friction_rb_rb_point_point", this->friction.point_point.conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			conn.set_labels({ "idx", "a", "b", "a_p", "b_q" });
@@ -842,7 +846,7 @@ void stark::models::RigidBodies::_energies_friction(Stark& sim)
 		}
 	);
 	// Point - Edge
-	sim.global_energy.add_energy("collision_rb_rb_friction_point_edge", this->friction.point_edge.conn,
+	sim.global_energy.add_energy("friction_rb_rb_point_edge", this->friction.point_edge.conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			conn.set_labels({ "idx", "a", "b", "a_p", "b_e0", "b_e1" });
@@ -859,7 +863,7 @@ void stark::models::RigidBodies::_energies_friction(Stark& sim)
 		}
 	);
 	// Point - Triangle
-	sim.global_energy.add_energy("collision_rb_rb_friction_point_triangle", this->friction.point_triangle.conn,
+	sim.global_energy.add_energy("friction_rb_rb_point_triangle", this->friction.point_triangle.conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			conn.set_labels({ "idx", "a", "b", "a_p", "b_t0", "b_t1", "b_t2" });

@@ -21,6 +21,8 @@ namespace tmcd
 			void clear();
 			void add_blacklist_range_point_triangle(const int32_t point_mesh_id, const std::array<int32_t, 2>& point_interval, const int32_t triangle_mesh_id, const std::array<int32_t, 2>& triangle_interval);
 			void add_blacklist_range_edge_edge(const int32_t mesh_id_0, const std::array<int32_t, 2>& interval_0, const int32_t mesh_id_1, const std::array<int32_t, 2>& interval_1);
+			void activate_point_triangle(const bool activate);
+			void activate_edge_edge(const bool activate);
 
 			const BroadPhasePTEEResults& get_results() const;
 			info::BroadPhasePTEE get_info() const;
@@ -34,6 +36,9 @@ namespace tmcd
 			void _run_octree_leaf_simd(const OctreeNode& leaf);
 
 			/* Fields */
+			bool is_point_triangle_active = true;
+			bool is_edge_edge_active = true;
+
 			// Blacklists
 			std::vector<internals::BlacklistInterval> blacklist_triangle_point;
 			std::vector<uint8_t> has_blacklist_triangle_point;

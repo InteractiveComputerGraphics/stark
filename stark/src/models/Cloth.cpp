@@ -945,7 +945,7 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 
 
 	// Point - Point
-	sim.global_energy.add_energy("collision_cloth_cloth_friction_point_point", this->friction.point_point.conn,
+	sim.global_energy.add_energy("friction_cloth_cloth_point_point", this->friction.point_point.conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Vector> VP = get_v1({ conn[1] }, energy);
@@ -956,7 +956,7 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 		}
 	);
 	// Point - Edge
-	sim.global_energy.add_energy("collision_cloth_cloth_friction_point_edge", this->friction.point_edge.conn,
+	sim.global_energy.add_energy("friction_cloth_cloth_point_edge", this->friction.point_edge.conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Vector> VP = get_v1({ conn[1] }, energy);
@@ -970,7 +970,7 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 		}
 	);
 	// Point - Triangle
-	sim.global_energy.add_energy("collision_cloth_cloth_friction_point_triangle", this->friction.point_triangle.conn,
+	sim.global_energy.add_energy("friction_cloth_cloth_point_triangle", this->friction.point_triangle.conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Vector> VP = get_v1({ conn[1] }, energy);
@@ -984,7 +984,7 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 		}
 	);
 	// Edge - Edge
-	sim.global_energy.add_energy("collision_cloth_cloth_friction_edge_edge", this->friction.edge_edge.conn,
+	sim.global_energy.add_energy("friction_cloth_cloth_edge_edge", this->friction.edge_edge.conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Vector> VEA = get_v1({ conn[1], conn[2] }, energy);

@@ -54,10 +54,12 @@ void tmcd::ProximityDetection::add_blacklist_range_edge_edge(const int32_t mesh_
 void tmcd::ProximityDetection::activate_point_triangle(const bool activate)
 {
 	this->is_point_triangle_enabled = activate;
+	this->bp.activate_point_triangle(activate);
 }
 void tmcd::ProximityDetection::activate_edge_edge(const bool activate)
 {
 	this->is_edge_edge_enabled = activate;
+	this->bp.activate_edge_edge(activate);
 }
 
 const ProximityResults& tmcd::ProximityDetection::run(const double enlargement, const BroadPhaseStrategy strat)
