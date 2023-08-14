@@ -52,7 +52,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			logger.stop_timing_add("CG");
 
 			if (iterations == max_iterations) {  // TODO: Check
-				console.print("\n\t\t -> CG didn't converged.\n", Verbosity::TimeSteps);
+				console.print("\n\t\t -> CG didn't converge.\n", Verbosity::TimeSteps);
 				return NewtonError::TooManyCGIterations;
 			}
 		}

@@ -31,6 +31,10 @@ High priority
 	* Controller for target (angular-)velocity:
 		Smoothed implicit controller?
 			Target_w but with max torque available...
+			The one we have now doesn't take into account that the wheels are being slowed down.
+				It just adds the torque required to turn the object in isolation...
+				This will look like it works (as it keeps pushing down the gap), but will severely underestimate the required torque
+				Maybe we should get torque directly and bypass w_correction? how?
 
 	* Check for NaNs in symx as an option in Stark::Settings. Don't make it a static variable
 	* Same for an out of bounds connectitivity index as it's the second most frequent error.
@@ -114,6 +118,11 @@ Ideas:
 		Also smaller time steps might make things worse as they divide the inertia force:
 			to completely stop a rigid object in one ms, one needs a huge force.
 				f = -1/dt*(v1 - vhat)*m
+		
+	* For rigid bodies, collision detection runtime becomes massively relevant
+		Slowest part is the line search as I need to run CD every evaluation.
+		Consider that for the paper about it.
+		
 		
 Documentation
 -------------

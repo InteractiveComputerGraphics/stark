@@ -92,7 +92,7 @@ bool stark::Stark::run_one_step()
 	}
 
 	this->logger.start_timing("total");
-	this->console.print(fmt::format("\t dt: {:.6f} ms | log10(k): {:.1e} | ", 1000.0 * this->settings.simulation.adaptive_time_step.value, this->settings.contact.adaptive_contact_stiffness.value), Verbosity::TimeSteps);
+	this->console.print(fmt::format("\t dt: {:.6f} ms | kc: {:.1e} | ", 1000.0 * this->settings.simulation.adaptive_time_step.value, this->settings.contact.adaptive_contact_stiffness.value), Verbosity::TimeSteps);
 
 	this->callbacks.run_before_time_step();
 

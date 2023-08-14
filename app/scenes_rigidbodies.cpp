@@ -99,24 +99,25 @@ void laundry()
 	settings.output.fps = 30;
 
 	settings.execution.end_simulation_time = 20.0;
-	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
-	settings.newton.max_newton_iterations = 200;
+	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
+	settings.newton.max_newton_iterations = 50;
+	settings.newton.max_line_search_iterations = 10;
 
-	settings.contact.adaptive_contact_stiffness.value = 1e8;
-	settings.contact.dhat = 0.002;
+	settings.contact.adaptive_contact_stiffness.value = 1e6;
+	settings.contact.dhat = 0.0025;
 	settings.contact.edge_edge_enabled = false;
 	stark::models::Simulation sim(settings);
 
-	sim.rigid_bodies.set_damping(0.25);
+	//sim.rigid_bodies.set_damping(0.25);
 
 	// Wall
-	const int wall = sim.rigid_bodies.add_box(100.0, { 2.0, 0.5, 2.0 }, {0.0, -0.6, 0.0});
+	const int wall = sim.rigid_bodies.add_box(10.0, { 2.0, 0.5, 2.0 }, {0.0, -0.6, 0.0});
 	sim.rigid_bodies.add_constraint_freeze(wall);
 
 	// Drum
-	const double torque = 15.0;
 	const int drum = sim.rigid_bodies.add_cylinder(1.0, 0.75, 0.5, {0, 0, 0}, 90.0, {1, 0, 0}, 64);
-	sim.rigid_bodies.add_constraint_motor(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY(), 50.0, 3.14);
+	//sim.rigid_bodies.add_constraint_motor(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY(), 50.9, 3.14);
+	sim.rigid_bodies.add_constraint_hinge_joint(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY());
 
 	// Objects
 	const double mu = 1.0;
@@ -126,8 +127,9 @@ void laundry()
 	const double d = 1.5*scale;
 	for (double x = -0.4; x < 0.4; x += d) {
 		for (double y = -0.15; y < 0.16; y += d) {
-			for (double z = -0.4; z < -0.3; z += d) {
-				const int idx = sim.rigid_bodies.add_sphere(mass, 0.5 * scale, {x, y, z});
+			for (double z = -0.4; z < 0.4; z += d) {
+				const Eigen::Vector3d p = 0.1*scale*Eigen::Vector3d::Random();
+				const int idx = sim.rigid_bodies.add_sphere(mass, 0.5 * scale, Eigen::Vector3d(x, y, z) + p, 0.0, {1, 0, 0}, 2);
 				sim.rigid_bodies.set_friction(idx, mu);
 			}
 		}
@@ -137,5 +139,14 @@ void laundry()
 	//sim.rigid_bodies.set_friction(idx, mu);
 
 	// Run
-	sim.stark.run();
+	sim.stark.run([&]()
+		{
+			const double time = sim.stark.current_time;
+			const double w = std::min(time, stark::utils::PI);
+			sim.rigid_bodies.set_angular_velocity(drum, 2*Eigen::Vector3d::UnitY());
+
+			// TODO: Implicit controller with angular acceleration limits??
+
+		}
+	);
 }

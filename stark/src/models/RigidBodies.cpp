@@ -226,18 +226,22 @@ void stark::models::RigidBodies::add_torque(const int body_id, const Eigen::Vect
 }
 void stark::models::RigidBodies::set_velocity(const int body_id, const Eigen::Vector3d& vel_glob_coords)
 {
+	this->v0[body_id] = vel_glob_coords;
 	this->v1[body_id] = vel_glob_coords;
 }
 void stark::models::RigidBodies::add_velocity(const int body_id, const Eigen::Vector3d& vel_glob_coords)
 {
+	this->v0[body_id] += vel_glob_coords;
 	this->v1[body_id] += vel_glob_coords;
 }
 void stark::models::RigidBodies::set_angular_velocity(const int body_id, const Eigen::Vector3d& angular_vel_glob_coords)
 {
+	this->w0[body_id] = angular_vel_glob_coords;
 	this->w1[body_id] = angular_vel_glob_coords;
 }
 void stark::models::RigidBodies::add_angular_velocity(const int body_id, const Eigen::Vector3d& angular_vel_glob_coords)
 {
+	this->w0[body_id] += angular_vel_glob_coords;
 	this->w1[body_id] += angular_vel_glob_coords;
 }
 void stark::models::RigidBodies::set_acceleration(const int body_id, const Eigen::Vector3d& acc_glob_coords)
@@ -532,11 +536,16 @@ void stark::models::RigidBodies::_update_motors(Stark& sim)
 	std::fill(this->motor_torque.begin(), this->motor_torque.end(), Eigen::Vector3d::Zero());
 	const double dt = sim.settings.simulation.adaptive_time_step.value;
 	for (MotorController& motor : this->motors) {
+		if (motor.target_w < 0.0) {
+			sim.console.print("stark::models::RigidBodies error: motor.target_w cannot be negative. Flip the motor direction vector.\n", Verbosity::Frames);
+			exit(-1);
+		}
+
 		const Eigen::Vector3d d = local_to_global_direction(motor.loc_da, this->R1[motor.rb_a_idx]);
 
 		const Eigen::Vector3d& wa = this->w1[motor.rb_a_idx];
 		const Eigen::Vector3d& wb = this->w1[motor.rb_b_idx];
-		const double current_w_aligned = d.transpose()*(wb - wa);
+		const double current_w_aligned = std::abs(d.transpose()*(wb - wa));
 
 		const double correction = motor.pid(motor.target_w, current_w_aligned, dt);
 		const double corrected_w_aligned = current_w_aligned + correction;
@@ -546,8 +555,8 @@ void stark::models::RigidBodies::_update_motors(Stark& sim)
 		const Eigen::Vector3d tb = local_to_global_matrix(this->J_loc[motor.rb_b_idx], this->R1[motor.rb_b_idx])*(d*(corrected_w_aligned - current_w_aligned))/dt;
 		
 		const Eigen::Vector3d t = d*std::min(std::min(ta.norm(), tb.norm()), motor.max_torque);  // Smaller expected torque to get to solution: We want to know the torque to rotate the wheel, not the car
-		this->motor_torque[motor.rb_a_idx] += t;
-		this->motor_torque[motor.rb_b_idx] -= t;
+		this->motor_torque[motor.rb_a_idx] -= t;
+		this->motor_torque[motor.rb_b_idx] += t;
 	}
 }
 
