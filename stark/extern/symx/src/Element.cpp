@@ -45,5 +45,13 @@ std::vector<symx::Index> symx::Element::all() const
 
 void symx::Element::set_labels(const std::vector<std::string>& labels)
 {
+	if (labels.size() != this->size) {
+		std::cout << "symx Element::set_labels() error: Number of labels doesn't match the element size: {";
+		for (int i = 0; i < (int)labels.size() - 1; i++) {
+			std::cout << labels[i] << ", ";
+		}
+		std::cout << labels.back() << "}" << std::endl;
+		exit(-1);
+	}
 	this->labels = labels;
 }

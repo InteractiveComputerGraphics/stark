@@ -58,12 +58,14 @@ void rb_contacts_floor_test()
 	settings.output.output_directory = "../output/rigid_body_contacts";
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
+	settings.output.fps = 120;
 
 	settings.execution.end_simulation_time = 1.0;
 	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
 
+	settings.contact.friction_enabled = false;
 	settings.contact.adaptive_contact_stiffness.value = 1e8;
-	settings.contact.dhat = 0.001;
+	settings.contact.dhat = 0.002;
 	stark::models::Simulation sim(settings);
 
 	// Rigid bodies
@@ -98,7 +100,7 @@ void laundry()
 
 	// Drum
 	const int drum = sim.rigid_bodies.add_cylinder(1.0, 0.75, 0.5, {0, 0, 0}, 90.0, {1, 0, 0}, 8);
-	sim.rigid_bodies.set_torque(drum, { 0, 20.0, 0 });
+	sim.rigid_bodies.set_torque(drum, { 0, 10.0, 0 });
 	sim.rigid_bodies.add_constraint_anchor_point(drum, {0, 1, 0});
 	sim.rigid_bodies.add_constraint_anchor_point(drum, {0, -1, 0});
 
@@ -106,17 +108,18 @@ void laundry()
 	const double mass = 0.1;
 	const double scale = 0.1;
 
-	int c = 0;
-	const double d = 1.5*scale;
-	for (double x = -0.4; x < 0.4; x += d) {
-		for (double y = -0.15; y < 0.16; y += d) {
-			for (double z = -0.4; z < 0.6; z += d) {
-				std::cout << c++ << ", ";
-				sim.rigid_bodies.add_sphere(mass, 0.5 * scale, {x, y, z});
-			}
-		}
-	}
-	//sim.rigid_bodies.add_sphere(mass, 0.5 * scale);
+	//int c = 0;
+	//const double d = 1.5*scale;
+	//for (double x = -0.4; x < 0.4; x += d) {
+	//	for (double y = -0.15; y < 0.16; y += d) {
+	//		for (double z = -0.4; z < 0.6; z += d) {
+	//			std::cout << c++ << ", ";
+	//			sim.rigid_bodies.add_sphere(mass, 0.5 * scale, {x, y, z});
+	//
+	//		}
+	//	}
+	//}
+	sim.rigid_bodies.add_box(mass, {scale, scale, scale}, { -0.4, -0.15, -0.4 });
 
 	// Run
 	sim.stark.run();

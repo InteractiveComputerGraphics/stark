@@ -137,3 +137,8 @@ symx::Vector stark::models::integrate_loc_direction(const symx::Vector& d_loc, c
 	symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
 	return local_to_global_direction(d_loc, R1);
 }
+
+symx::Vector stark::models::global_point_velocity_in_rigib_body(const symx::Vector& v_body, const symx::Vector& w_body, const symx::Vector& r_glob)
+{
+	return v_body + w_body.cross3(r_glob);
+}

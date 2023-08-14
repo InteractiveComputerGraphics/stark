@@ -34,6 +34,10 @@ High priority
 		Should return the name of the energy, connectivity...
 	* Collision detection for rigid bodies is broken for SIMD ???
 	
+	* Controller for target (angular-)velocity:
+		Calculate the required torque to achieve the target velocity by the end of the time step.
+		Cap this to a max torque from the motor.
+		
 	* Compute contact forces and show them somehow
 	* Python plots for time steps, stiffnesses, line search/CG iterations, number of contacts, etc...
 	* [Important] v1 as initial guess with intersection test might significantly help convergence
@@ -48,6 +52,8 @@ High priority
 Mid priority
 ------------
 	* BroadPhase take into account is_active_edge_edge/triangle_point (bottleneck in RB sims)
+	* Friction data structures have a lot in common. Refactor.
+	* lambdas for get/set symx data and energies shuold be refactored into a common place to avoid duplicities in logic
 	* Exit simulation when adaptive time step reaches the minimum or the contact the maximum
 	* Timings don't add up to "total" because of aborted time steps
 	* Penalty as a class so I can swap and easily change the gradient for the friction
@@ -117,6 +123,7 @@ Documentation
 	* Rigid body constraints
 	* CANNOT BE USED WITH TYPE FLOAT. make_vector uses sizeof()
 	* Rigid bodies must be created on the center and *then* moved later.
+	* Rigid bodies need much stiffer collision stiffness than soft bodies and cloth
 
 
 Debug

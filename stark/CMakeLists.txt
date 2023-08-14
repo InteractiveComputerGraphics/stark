@@ -59,6 +59,7 @@ set(MODELS_FILES
 	src/models/RigidBodies.h
 	src/models/RigidBodies.cpp
 	src/models/RigidBodyContacts.h
+	src/models/RigidBodyFriction.h
 	)
 
 set(UTILS_FILES

@@ -20,16 +20,18 @@ namespace stark::models
 
 
     // SymX
+    symx::Vector local_to_global_point(const symx::Vector& p_loc, const symx::Vector& t, const symx::Matrix& R);
+    symx::Vector local_to_global_point(const symx::Vector& p_loc, const symx::Vector& t, const symx::Vector& q);
+    symx::Vector local_to_global_direction(const symx::Vector& d_loc, const symx::Matrix& R);
+    symx::Vector local_to_global_direction(const symx::Vector& d_loc, const symx::Vector& q);
+
     symx::Matrix quat_to_rotation(const symx::Vector& q);
     symx::Vector quat_dot_product(const symx::Vector& q1, const symx::Vector& q2);
     symx::Vector quat_conjugated(const symx::Vector& q1);
     symx::Vector quat_time_integration(const symx::Vector& q_start, const symx::Vector& w_glob, const symx::Scalar& dt);
     symx::Matrix quat_time_integration_as_rotation_matrix(const symx::Vector& q_start, const symx::Vector& w_glob, const symx::Scalar& dt);
-
-    symx::Vector local_to_global_point(const symx::Vector& p_loc, const symx::Vector& t, const symx::Matrix& R);
-    symx::Vector local_to_global_point(const symx::Vector& p_loc, const symx::Vector& t, const symx::Vector& q);
-    symx::Vector local_to_global_direction(const symx::Vector& d_loc, const symx::Matrix& R);
-    symx::Vector local_to_global_direction(const symx::Vector& d_loc, const symx::Vector& q);
     symx::Vector integrate_loc_point(const symx::Vector& p_loc, const symx::Vector& t0, const symx::Vector& q0, const symx::Vector& v1, const symx::Vector& w1, const symx::Scalar& dt);
     symx::Vector integrate_loc_direction(const symx::Vector& d_loc, const symx::Vector& q0, const symx::Vector& w1, const symx::Scalar& dt);
+
+    symx::Vector global_point_velocity_in_rigib_body(const symx::Vector& v_body, const symx::Vector& w_body, const symx::Vector& r_glob);
 }

@@ -6,6 +6,7 @@
 #include "../utils/mesh_utils.h"
 #include "distances.h"
 #include "time_integration.h"
+#include "friction_geometry.h"
 #include "rigidbody_transformations.h"
 
 void stark::models::RigidBodies::init(Stark& sim)
@@ -44,6 +45,7 @@ int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& vertices
 	this->torque.push_back(Eigen::Vector3d::Zero());
 	this->J_loc.push_back(inertia_loc);
 	this->mass.push_back(mass);
+	this->mu.push_back(0.0);
 
 	this->mesh.add_mesh(vertices, triangles);
 
@@ -239,6 +241,10 @@ void stark::models::RigidBodies::add_angular_acceleration(const int body_id, con
 {
 	this->aa[body_id] += ang_acc_glob_coords;
 }
+void stark::models::RigidBodies::set_friction(const int body_id, const double coulombs_mu)
+{
+	this->mu[body_id] = coulombs_mu;
+}
 Eigen::Vector3d stark::models::RigidBodies::get_point_in_global_coordinates(const int body_id, const Eigen::Vector3d& p)
 {
 	return local_to_global_point(p, this->R1[body_id], this->t1[body_id]);
@@ -261,9 +267,8 @@ bool stark::models::RigidBodies::is_body_declared(const int body_id) const
 	return body_id < this->get_n_bodies();
 }
 
-void stark::models::RigidBodies::_update_collision_x1(Stark& sim)
+void stark::models::RigidBodies::_update_collision_x1(Stark& sim, const double dt)
 {
-	const double dt = sim.settings.simulation.adaptive_time_step.value;
 	this->collision_x1.resize(this->mesh.vertices.size());
 	for (int rb_i = 0; rb_i < this->mesh.get_n_meshes(); rb_i++) {
 		const Eigen::Vector3d t1 = time_integration(this->t0[rb_i], this->v1[rb_i], dt);
@@ -371,7 +376,7 @@ bool stark::models::RigidBodies::_is_valid_configuration(Stark& sim)
 	if (!sim.settings.contact.collisions_enabled) { return true; }
 	if (!sim.settings.contact.enable_intersection_test) { return true; }
 
-	this->_update_collision_x1(sim);
+	this->_update_collision_x1(sim, sim.settings.simulation.adaptive_time_step.value);
 	this->id.clear();
 	this->id.set_n_threads(sim.settings.execution.n_threads);
 	this->id.add_mesh(&this->collision_x1[0][0], (int)this->collision_x1.size(), &this->mesh.connectivity[0][0], this->mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
@@ -384,27 +389,11 @@ void stark::models::RigidBodies::_update_contacts(Stark& sim)
 	if (!sim.settings.contact.collisions_enabled) { return; }
 
 	// Proximity detection
-	this->_update_collision_x1(sim);
+	this->_update_collision_x1(sim, sim.settings.simulation.adaptive_time_step.value);
 	const tmcd::ProximityResults& proximity = this->_run_proximity_detection(this->collision_x1, sim);
 
 	// Fill connectivities
 	this->contacts.clear();
-
-	//// Helper
-	auto add_to_connectivity_if_diff_objects = [&](std::vector<std::array<int, 3>>& conn, const int vertex_a_idx, const int vertex_b_idx) 
-	{
-		const int contact_idx = (int)conn.size();
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(vertex_a_idx);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(vertex_b_idx);
-
-		if (rb_a_idx == rb_b_idx) {
-			return false;
-		}
-		else {
-			conn.push_back({ contact_idx, rb_a_idx, rb_b_idx });
-			return true;
-		}
-	};
 
 	//// Point - Triangle
 	for (const auto& pair : proximity.point_triangle.point_point) {
@@ -412,9 +401,10 @@ void stark::models::RigidBodies::_update_contacts(Stark& sim)
 		const tmcd::TrianglePoint& tp = pair.second;
 		const tmcd::Point& q = tp.point;
 
-		if (add_to_connectivity_if_diff_objects(this->contacts.point_triangle.point_point.conn, p.idx, q.idx)) {
-			this->contacts.point_triangle.point_point.loc_a_p.push_back(this->mesh.vertices[p.idx]);
-			this->contacts.point_triangle.point_point.loc_b_q.push_back(this->mesh.vertices[q.idx]);
+		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
+		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(q.idx);
+		if (rb_a_idx != rb_b_idx) {
+			this->contacts.point_triangle.point_point.push_back({ rb_a_idx, rb_b_idx, p.idx, q.idx });
 		}
 	}
 	for (const auto& pair : proximity.point_triangle.point_edge) {
@@ -422,21 +412,97 @@ void stark::models::RigidBodies::_update_contacts(Stark& sim)
 		const tmcd::TriangleEdge& te = pair.second;
 		const tmcd::TriangleEdge::Edge& edge = te.edge;
 
-		if (add_to_connectivity_if_diff_objects(this->contacts.point_triangle.point_edge.conn, point.idx, edge.vertices[0])) {
-			this->contacts.point_triangle.point_edge.loc_a_p.push_back(this->mesh.vertices[point.idx]);
-			this->contacts.point_triangle.point_edge.loc_b_e0.push_back(this->mesh.vertices[edge.vertices[0]]);
-			this->contacts.point_triangle.point_edge.loc_b_e1.push_back(this->mesh.vertices[edge.vertices[1]]);
+		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(point.idx);
+		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(edge.vertices[0]);
+		if (rb_a_idx != rb_b_idx) {
+			this->contacts.point_triangle.point_edge.push_back({ rb_a_idx, rb_b_idx, point.idx, edge.vertices[0], edge.vertices[1] });
 		}
 	}
 	for (const auto& pair : proximity.point_triangle.point_triangle) {
 		const tmcd::Point& point = pair.first;
 		const tmcd::Triangle& triangle = pair.second;
 
-		if (add_to_connectivity_if_diff_objects(this->contacts.point_triangle.point_triangle.conn, point.idx, triangle.vertices[0])) {
-			this->contacts.point_triangle.point_triangle.loc_a_p.push_back(this->mesh.vertices[point.idx]);
-			this->contacts.point_triangle.point_triangle.loc_b_t0.push_back(this->mesh.vertices[triangle.vertices[0]]);
-			this->contacts.point_triangle.point_triangle.loc_b_t1.push_back(this->mesh.vertices[triangle.vertices[1]]);
-			this->contacts.point_triangle.point_triangle.loc_b_t2.push_back(this->mesh.vertices[triangle.vertices[2]]);
+		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(point.idx);
+		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(triangle.vertices[0]);
+		if (rb_a_idx != rb_b_idx) {
+			this->contacts.point_triangle.point_triangle.push_back({ rb_a_idx, rb_b_idx, point.idx, triangle.vertices[0], triangle.vertices[1], triangle.vertices[2] });
+		}
+	}
+}
+void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
+{
+	if (!sim.settings.contact.collisions_enabled) { return; }
+	if (!sim.settings.contact.friction_enabled) { return; }
+
+	// Proximity detection
+	this->_update_collision_x1(sim, /* dt = */0.0);
+	const std::vector<Eigen::Vector3d>& x = this->collision_x1;
+	const tmcd::ProximityResults& proximity = this->_run_proximity_detection(x, sim);
+
+	// Friction force
+	const double k = sim.settings.contact.adaptive_contact_stiffness.value;
+	const double dhat = sim.settings.contact.dhat;
+	auto force = [&](double d) { return k * 3.0 * std::pow(dhat - d, 2); };
+
+	// Fill friction data
+	this->friction.clear();
+
+	// Point - Triangle
+	//// Point - Point
+	for (const auto& pair : proximity.point_triangle.point_point) {
+		const tmcd::Point& p = pair.first;
+		const tmcd::TrianglePoint& tp = pair.second;
+		const tmcd::Point& q = tp.point;
+
+		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
+		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(q.idx);
+		if (rb_a_idx != rb_b_idx) {
+			const double mu = 0.5 * (this->mu[rb_a_idx] + this->mu[rb_b_idx]);
+			if (mu > 0.0) {
+				this->friction.point_point.conn.push_back({ (int)this->friction.point_point.conn.size(), rb_a_idx, rb_b_idx, p.idx, q.idx });
+				this->friction.point_point.contact.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
+				this->friction.point_point.contact.mu.push_back(mu);
+				this->friction.point_point.contact.fn.push_back(force(pair.distance));
+			}
+		}
+	}
+	//// Point - Edge
+	for (const auto& pair : proximity.point_triangle.point_edge) {
+		const tmcd::Point& p = pair.first;
+		const tmcd::TriangleEdge& te = pair.second;
+		const tmcd::TriangleEdge::Edge& edge = te.edge;
+
+		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
+		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(edge.vertices[0]);
+
+		if (rb_a_idx != rb_b_idx) {
+			const double mu = 0.5 * (this->mu[rb_a_idx] + this->mu[rb_b_idx]);
+			if (mu > 0.0) {
+				this->friction.point_edge.conn.push_back({ (int)this->friction.point_edge.conn.size(), rb_a_idx, rb_b_idx, p.idx, edge.vertices[0], edge.vertices[1] });
+				this->friction.point_edge.bary.push_back(barycentric_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
+				this->friction.point_edge.contact.T.push_back(projection_matrix_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
+				this->friction.point_edge.contact.mu.push_back(mu);
+				this->friction.point_edge.contact.fn.push_back(force(pair.distance));
+			}
+		}
+	}
+	//// Point - Triangle
+	for (const auto& pair : proximity.point_triangle.point_triangle) {
+		const tmcd::Point& p = pair.first;
+		const tmcd::Triangle& t = pair.second;
+
+		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
+		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(t.vertices[0]);
+
+		if (rb_a_idx != rb_b_idx) {
+			const double mu = 0.5 * (this->mu[rb_a_idx] + this->mu[rb_b_idx]);
+			if (mu > 0.0) {
+				this->friction.point_triangle.conn.push_back({ (int)this->friction.point_triangle.conn.size(), rb_a_idx, rb_b_idx, p.idx, t.vertices[0], t.vertices[1], t.vertices[2] });
+				this->friction.point_triangle.bary.push_back(barycentric_point_triangle(x[p.idx], x[t.vertices[0]], x[t.vertices[1]], x[t.vertices[2]]));
+				this->friction.point_triangle.contact.T.push_back(projection_matrix_triangle(x[t.vertices[0]], x[t.vertices[1]], x[t.vertices[2]]));
+				this->friction.point_triangle.contact.mu.push_back(mu);
+				this->friction.point_triangle.contact.fn.push_back(force(pair.distance));
+			}
 		}
 	}
 }
@@ -626,7 +692,7 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 void stark::models::RigidBodies::_energies_contact(Stark& sim)
 {
 	// Common symbol creation and manipulation functions ------------------------
-	auto get_x1 = [&](const std::vector<symx::Vector>& x_loc, const symx::Index& rb_idx, const symx::Scalar& dt, symx::Energy& energy)
+	auto get_x1 = [&](const std::vector<symx::Index>& indices, const symx::Index& rb_idx, const symx::Scalar& dt, symx::Energy& energy)
 	{
 		symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
 		symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
@@ -635,6 +701,8 @@ void stark::models::RigidBodies::_energies_contact(Stark& sim)
 
 		symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
 		symx::Vector t1 = time_integration(t0, v1, dt);
+
+		std::vector<symx::Vector> x_loc = energy.make_vectors(this->mesh.vertices, indices);
 
 		std::vector<symx::Vector> x1;
 		for (const symx::Vector& x_loc_a : x_loc) {
@@ -658,56 +726,167 @@ void stark::models::RigidBodies::_energies_contact(Stark& sim)
 
 	// Point - Triangle
 	//// Point - Point
-	sim.global_energy.add_energy("collision_rb_rb_pt_point_point", this->contacts.point_triangle.point_point.conn,
+	sim.global_energy.add_energy("collision_rb_rb_pt_point_point", this->contacts.point_triangle.point_point,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			conn.set_labels({ "idx", "a", "b" });
+			conn.set_labels({ "a", "b", "a_p", "b_q" });
 
-			symx::Vector loc_a_p = energy.make_vector(this->contacts.point_triangle.point_point.loc_a_p, conn["idx"]);
-			symx::Vector loc_b_q = energy.make_vector(this->contacts.point_triangle.point_point.loc_b_q, conn["idx"]);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
-
-			std::vector<symx::Vector> P = get_x1({ loc_a_p }, conn["a"], dt, energy);
-			std::vector<symx::Vector> Q = get_x1({ loc_b_q }, conn["b"], dt, energy);
+			std::vector<symx::Vector> P = get_x1({ conn["a_p"] }, conn["a"], dt, energy);
+			std::vector<symx::Vector> Q = get_x1({ conn["b_q"] }, conn["b"], dt, energy);
 			symx::Scalar d = distance_point_point(P[0], Q[0]);
 			set_barrier_energy(d, energy);
 		}
 	);
 
 	//// Point - Edge
-	sim.global_energy.add_energy("collision_rb_rb_pt_point_edge", this->contacts.point_triangle.point_edge.conn,
+	sim.global_energy.add_energy("collision_rb_rb_pt_point_edge", this->contacts.point_triangle.point_edge,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			conn.set_labels({ "idx", "a", "b" });
+			conn.set_labels({ "a", "b", "a_p", "b_e0", "b_e1" });
 
-			symx::Vector loc_a_p = energy.make_vector(this->contacts.point_triangle.point_edge.loc_a_p, conn["idx"]);
-			symx::Vector loc_b_e0 = energy.make_vector(this->contacts.point_triangle.point_edge.loc_b_e0, conn["idx"]);
-			symx::Vector loc_b_e1 = energy.make_vector(this->contacts.point_triangle.point_edge.loc_b_e1, conn["idx"]);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
-
-			std::vector<symx::Vector> P = get_x1({ loc_a_p }, conn["a"], dt, energy);
-			std::vector<symx::Vector> Q = get_x1({ loc_b_e0, loc_b_e1 }, conn["b"], dt, energy);
+			std::vector<symx::Vector> P = get_x1({ conn["a_p"] }, conn["a"], dt, energy);
+			std::vector<symx::Vector> Q = get_x1({ conn["b_e0"], conn["b_e1"] }, conn["b"], dt, energy);
 			symx::Scalar d = distance_point_line(P[0], Q[0], Q[1]);
 			set_barrier_energy(d, energy);
 		}
 	);
 
 	//// Point - Triangle
-	sim.global_energy.add_energy("collision_rb_rb_pt_point_triangle", this->contacts.point_triangle.point_triangle.conn,
+	sim.global_energy.add_energy("collision_rb_rb_pt_point_triangle", this->contacts.point_triangle.point_triangle,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			conn.set_labels({ "idx", "a", "b" });
+			conn.set_labels({ "a", "b", "a_p", "b_t0", "b_t1", "b_t2" });
 
-			symx::Vector loc_a_p = energy.make_vector(this->contacts.point_triangle.point_triangle.loc_a_p, conn["idx"]);
-			symx::Vector loc_b_t0 = energy.make_vector(this->contacts.point_triangle.point_triangle.loc_b_t0, conn["idx"]);
-			symx::Vector loc_b_t1 = energy.make_vector(this->contacts.point_triangle.point_triangle.loc_b_t1, conn["idx"]);
-			symx::Vector loc_b_t2 = energy.make_vector(this->contacts.point_triangle.point_triangle.loc_b_t2, conn["idx"]);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
-
-			std::vector<symx::Vector> P = get_x1({ loc_a_p }, conn["a"], dt, energy);
-			std::vector<symx::Vector> Q = get_x1({ loc_b_t0, loc_b_t1, loc_b_t2 }, conn["b"], dt, energy);
+			std::vector<symx::Vector> P = get_x1({ conn["a_p"] }, conn["a"], dt, energy);
+			std::vector<symx::Vector> Q = get_x1({ conn["b_t0"], conn["b_t1"], conn["b_t2"]}, conn["b"], dt, energy);
 			symx::Scalar d = distance_point_plane(P[0], Q[0], Q[1], Q[2]);
 			set_barrier_energy(d, energy);
 		}
 	);
+}
+void stark::models::RigidBodies::_energies_friction(Stark& sim)
+{
+	// Common symbol creation and manipulation functions --------------------------------------------------------------------------------------------------
+	auto get_v1 = [&](const std::vector<symx::Index>& indices, const symx::Index& rb_idx, const symx::Scalar& dt, symx::Energy& energy)
+	{
+		symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
+		symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
+		symx::Vector t0 = energy.make_vector(this->t0, rb_idx);
+		symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
+
+		symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
+		symx::Vector t1 = time_integration(t0, v1, dt);
+
+		std::vector<symx::Vector> x_loc = energy.make_vectors(this->mesh.vertices, indices);
+
+		std::vector<symx::Vector> v1_glob;
+		for (const symx::Vector& x_loc_a : x_loc) {
+			symx::Vector x1a = local_to_global_point(x_loc_a, t1, R1);
+			symx::Vector r1a = x1a - t1;
+			symx::Vector v1a = global_point_velocity_in_rigib_body(v1, w1, r1a);
+			v1_glob.push_back(v1a);
+		}
+		return v1_glob;
+	};
+	auto set_friction_energy = [&](const symx::Vector& v, const symx::Index& contact_idx, const RigidBodyFriction::Contact& contact, const symx::Scalar& dt, symx::Energy& energy)
+	{
+		symx::Matrix T  = energy.make_matrix(contact.T, { 2, 3 }, contact_idx);
+		symx::Scalar mu = energy.make_scalar(contact.mu, contact_idx);
+		symx::Scalar fn = energy.make_scalar(contact.fn, contact_idx);
+		symx::Scalar epsv = energy.make_scalar(sim.settings.contact.friction_stick_slide_threshold);
+		symx::Scalar perturbation = energy.make_scalar(sim.settings.contact.friction_displacement_perturbation);
+
+		symx::Vector vt = T*v;
+		symx::Vector ut = vt*dt;
+		ut[0] += 1.13*perturbation;
+		ut[1] -= 1.07*perturbation;
+		symx::Scalar u = ut.norm();
+
+		symx::Scalar epsu = dt*epsv;
+		if (sim.settings.contact.better_friction_mode) {
+			symx::Scalar k = mu*fn/epsu;
+			symx::Scalar eps = mu*fn/(2.0*k);
+
+			symx::Scalar E_stick = 0.5*k*u.powN(2);
+			symx::Scalar E_slide = mu*fn*(u - eps);
+			symx::Scalar E = symx::branch(u < epsu, E_stick, E_slide);
+			energy.set(E);
+		}
+		else {
+			symx::Scalar E_stick = mu*fn*(-u*u*u/(3.0*epsu.powN(2)) + u*u/epsu + epsu/3.0);
+			symx::Scalar E_slide = mu*fn*u;
+			symx::Scalar E = symx::branch(u < epsu, E_stick, E_slide);
+			energy.set(E);
+		}
+
+		energy.activate(sim.settings.contact.collisions_enabled && sim.settings.contact.friction_enabled);
+	};
+	// ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+	// Point - Point
+	sim.global_energy.add_energy("collision_rb_rb_friction_point_point", this->friction.point_point.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			conn.set_labels({ "idx", "a", "b", "a_p", "b_q" });
+
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			std::vector<symx::Vector> VP = get_v1({ conn["a_p"] }, conn["a"], dt, energy);
+			std::vector<symx::Vector> VQ = get_v1({ conn["b_q"] }, conn["b"], dt, energy);
+
+			symx::Vector v = VQ[0] - VP[0];
+			set_friction_energy(v, conn["idx"], this->friction.point_point.contact, dt, energy);
+		}
+	);
+	// Point - Edge
+	sim.global_energy.add_energy("collision_rb_rb_friction_point_edge", this->friction.point_edge.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			conn.set_labels({ "idx", "a", "b", "a_p", "b_e0", "b_e1" });
+
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			std::vector<symx::Vector> VP = get_v1({ conn["a_p"] }, conn["a"], dt, energy);
+			std::vector<symx::Vector> VE = get_v1({ conn["b_e0"], conn["b_e1"] }, conn["b"], dt, energy);
+			symx::Vector bary = energy.make_vector(this->friction.point_edge.bary, conn["idx"]);
+
+			symx::Vector vp = VP[0];
+			symx::Vector vq = bary[0]*VE[0] + bary[1]*VE[1];
+			symx::Vector v = vq - vp;
+			set_friction_energy(v, conn["idx"], this->friction.point_edge.contact, dt, energy);
+		}
+	);
+	// Point - Triangle
+	sim.global_energy.add_energy("collision_rb_rb_friction_point_triangle", this->friction.point_triangle.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			conn.set_labels({ "idx", "a", "b", "a_p", "b_t0", "b_t1", "b_t2" });
+
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			std::vector<symx::Vector> VP = get_v1({ conn["a_p"] }, conn["a"], dt, energy);
+			std::vector<symx::Vector> VT = get_v1({ conn["b_t0"], conn["b_t1"], conn["b_t2"] }, conn["b"], dt, energy);
+			symx::Vector bary = energy.make_vector(this->friction.point_triangle.bary, conn["idx"]);
+
+			symx::Vector vp = VP[0];
+			symx::Vector vq = bary[0]*VT[0] + bary[1]*VT[1] + bary[2]*VT[2];  
+			symx::Vector v = vq - vp;
+			set_friction_energy(v, conn["idx"], this->friction.point_triangle.contact, dt, energy);
+		}
+	);
+	//// Edge - Edge
+	//sim.global_energy.add_energy("collision_cloth_cloth_friction_edge_edge", this->friction.edge_edge.conn,
+	//	[&](symx::Energy& energy, symx::Element& conn)
+	//	{
+	//		std::vector<symx::Vector> VEA = get_v1({ conn[1], conn[2] }, energy);
+	//		std::vector<symx::Vector> VEB = get_v1({ conn[3], conn[4] }, energy);
+	//		symx::Vector bary = energy.make_vector(this->friction.edge_edge.bary, conn[0]);
+
+	//		symx::Vector vp = VEA[0] + bary[0]*(VEA[1] - VEA[0]);
+	//		symx::Vector vq = VEB[0] + bary[1]*(VEB[1] - VEB[0]);
+	//		symx::Vector v = vq - vp;
+	//		set_friction_energy(v, conn[0], this->friction.edge_edge.contact, energy);
+	//	}
+	//);
 }

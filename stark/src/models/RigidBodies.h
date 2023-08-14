@@ -11,6 +11,7 @@
 #include "../utils/mesh_generators.h"
 #include "../utils/inertia_tensors.h"
 #include "RigidBodyContacts.h"
+#include "RigidBodyFriction.h"
 
 
 namespace stark::models
@@ -94,6 +95,10 @@ namespace stark::models
 		RigidBodyContacts contacts;
 		std::vector<Eigen::Vector3d> collision_x1;
 
+		// Friction
+		RigidBodyFriction friction;
+		std::vector<double> mu;
+
 		// Output
 		utils::MultiMesh<3> mesh;  // Always stays at rest positions
 
@@ -140,6 +145,7 @@ namespace stark::models
 		void add_acceleration(const int body_id, const Eigen::Vector3d& acc_glob_coords);
 		void set_angular_acceleration(const int body_id, const Eigen::Vector3d& ang_acc_glob_coords);
 		void add_angular_acceleration(const int body_id, const Eigen::Vector3d& ang_acc_glob_coords);
+		void set_friction(const int body_id, const double coulombs_mu);
 		Eigen::Vector3d get_point_in_global_coordinates(const int body_id, const Eigen::Vector3d& p);
 		Eigen::Vector3d get_point_in_global_coordinates(const int body_id, const int mesh_vertex_i);
 		int get_n_bodies() const;
@@ -148,7 +154,7 @@ namespace stark::models
 
 	private:
 		// Helpers
-		void _update_collision_x1(Stark& sim);
+		void _update_collision_x1(Stark& sim, const double dt);
 		const tmcd::ProximityResults& _run_proximity_detection(const std::vector<Eigen::Vector3d>& x, Stark& sim);
 		void _update_contacts(Stark& sim);
 		void _update_friction_contacts(Stark& sim);
@@ -162,5 +168,6 @@ namespace stark::models
 		// Energy groups
 		void _energies_mechanical(Stark& sim);
 		void _energies_contact(Stark& sim);
+		void _energies_friction(Stark& sim);
 	};
 }
