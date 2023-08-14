@@ -47,6 +47,7 @@ int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& vertices
 	this->J_loc.push_back(inertia_loc);
 	this->mass.push_back(mass);
 	this->mu.push_back(0.0);
+	this->motor_torque.push_back(Eigen::Vector3d::Zero());
 
 	this->mesh.add_mesh(vertices, triangles);
 
@@ -150,6 +151,19 @@ void stark::models::RigidBodies::add_constraint_freeze(const int body_id)
 	this->add_constraint_anchor_point(body_id, this->t1[body_id] + Eigen::Vector3d::UnitX());
 	this->add_constraint_anchor_point(body_id, this->t1[body_id] + Eigen::Vector3d::UnitY());
 	this->add_constraint_anchor_point(body_id, this->t1[body_id] + Eigen::Vector3d::UnitZ());
+}
+int stark::models::RigidBodies::add_constraint_motor(const int body_0, const int body_1, const Eigen::Vector3d& c_global, const Eigen::Vector3d& d_global, const double max_torque, const double target_w, const double pid_kp, const double pid_ki, const double pid_kd)
+{
+	this->add_constraint_hinge_joint(body_0, body_1, c_global, d_global);
+	MotorController motor;
+	motor.rb_a_idx = body_0;
+	motor.rb_b_idx = body_1;
+	motor.loc_da = global_to_local_direction(d_global.normalized(), this->R1[body_0]);
+	motor.max_torque = max_torque;
+	motor.target_w = target_w;
+	motor.pid = PIDController(pid_kp, pid_ki, pid_kd);
+	this->motors.push_back(motor);
+	return (int)this->motors.size() - 1;
 }
 
 void stark::models::RigidBodies::set_damping(const double damping)
@@ -353,6 +367,9 @@ void stark::models::RigidBodies::_after_time_step(Stark& sim)
 	this->R0 = this->R1;
 	this->v0 = this->v1;
 	this->w0 = this->w1;
+
+	// Other updates
+	this->_update_motors(sim);
 }
 void stark::models::RigidBodies::_write_frame(Stark& sim)
 {
@@ -510,6 +527,29 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		}
 	}
 }
+void stark::models::RigidBodies::_update_motors(Stark& sim)
+{
+	std::fill(this->motor_torque.begin(), this->motor_torque.end(), Eigen::Vector3d::Zero());
+	const double dt = sim.settings.simulation.adaptive_time_step.value;
+	for (MotorController& motor : this->motors) {
+		const Eigen::Vector3d d = local_to_global_direction(motor.loc_da, this->R1[motor.rb_a_idx]);
+
+		const Eigen::Vector3d& wa = this->w1[motor.rb_a_idx];
+		const Eigen::Vector3d& wb = this->w1[motor.rb_b_idx];
+		const double current_w_aligned = d.transpose()*(wb - wa);
+
+		const double correction = motor.pid(motor.target_w, current_w_aligned, dt);
+		const double corrected_w_aligned = current_w_aligned + correction;
+		
+		// torque = J_glob*(w1 - w0)/dt
+		const Eigen::Vector3d ta = local_to_global_matrix(this->J_loc[motor.rb_a_idx], this->R1[motor.rb_a_idx])*(d*(corrected_w_aligned - current_w_aligned))/dt;
+		const Eigen::Vector3d tb = local_to_global_matrix(this->J_loc[motor.rb_b_idx], this->R1[motor.rb_b_idx])*(d*(corrected_w_aligned - current_w_aligned))/dt;
+		
+		const Eigen::Vector3d t = d*std::min(std::min(ta.norm(), tb.norm()), motor.max_torque);  // Smaller expected torque to get to solution: We want to know the torque to rotate the wheel, not the car
+		this->motor_torque[motor.rb_a_idx] += t;
+		this->motor_torque[motor.rb_b_idx] -= t;
+	}
+}
 
 void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 {
@@ -594,12 +634,13 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 			symx::Vector w0 = energy.make_vector(this->w0, conn[0]);
 			symx::Vector aa = energy.make_vector(this->aa, conn[0]);
 			symx::Vector t = energy.make_vector(this->torque, conn[0]);
+			symx::Vector mt = energy.make_vector(this->motor_torque, conn[0]);
 			symx::Matrix J0_glob = energy.make_matrix(this->J0_glob, { 3, 3 }, conn[0]);
 			symx::Matrix J0_inv_glob = energy.make_matrix(this->J0_inv_glob, { 3, 3 }, conn[0]);
 			symx::Scalar damping = energy.make_scalar(this->damping);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 
-			symx::Vector what = w0 + dt*(aa + J0_inv_glob*t);
+			symx::Vector what = w0 + dt*(aa + J0_inv_glob*(t + mt));
 			symx::Vector dev = w1 - what;
 			symx::Scalar E = 0.5*(dev.transpose()*J0_glob*dev + w1.transpose()*J0_glob*w1*damping*dt);
 			energy.set(E);

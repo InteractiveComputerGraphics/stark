@@ -109,12 +109,14 @@ void laundry()
 
 	sim.rigid_bodies.set_damping(0.25);
 
+	// Wall
+	const int wall = sim.rigid_bodies.add_box(100.0, { 2.0, 0.5, 2.0 }, {0.0, -0.6, 0.0});
+	sim.rigid_bodies.add_constraint_freeze(wall);
+
 	// Drum
 	const double torque = 15.0;
 	const int drum = sim.rigid_bodies.add_cylinder(1.0, 0.75, 0.5, {0, 0, 0}, 90.0, {1, 0, 0}, 64);
-	sim.rigid_bodies.set_torque(drum, { 0, torque, 0 });
-	sim.rigid_bodies.add_constraint_anchor_point(drum, {0, 1, 0});
-	sim.rigid_bodies.add_constraint_anchor_point(drum, {0, -1, 0});
+	sim.rigid_bodies.add_constraint_motor(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY(), 50.0, 3.14);
 
 	// Objects
 	const double mu = 1.0;
@@ -124,12 +126,13 @@ void laundry()
 	const double d = 1.5*scale;
 	for (double x = -0.4; x < 0.4; x += d) {
 		for (double y = -0.15; y < 0.16; y += d) {
-			for (double z = -0.4; z < -0.0; z += d) {
+			for (double z = -0.4; z < -0.3; z += d) {
 				const int idx = sim.rigid_bodies.add_sphere(mass, 0.5 * scale, {x, y, z});
 				sim.rigid_bodies.set_friction(idx, mu);
 			}
 		}
 	}
+	 
 	//const int idx = sim.rigid_bodies.add_sphere(mass, 0.5 * scale, { 0.0, 0.0, -0.6 });
 	//sim.rigid_bodies.set_friction(idx, mu);
 

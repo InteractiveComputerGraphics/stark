@@ -28,15 +28,16 @@ If a barrier changes very significantly, it will overshoot. I cannot just start 
 
 High priority
 -------------
+	* Controller for target (angular-)velocity:
+		Smoothed implicit controller?
+			Target_w but with max torque available...
+
 	* Check for NaNs in symx as an option in Stark::Settings. Don't make it a static variable
 	* Same for an out of bounds connectitivity index as it's the second most frequent error.
 		This should be triggered dynamically from settings.debug
 		Should return the name of the energy, connectivity...
 	* Collision detection for rigid bodies is broken for SIMD ???
 	
-	* Controller for target (angular-)velocity:
-		Calculate the required torque to achieve the target velocity by the end of the time step.
-		Cap this to a max torque from the motor.
 		
 	* Compute contact forces and show them somehow
 	* Python plots for time steps, stiffnesses, line search/CG iterations, number of contacts, etc...
