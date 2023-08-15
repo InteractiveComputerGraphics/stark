@@ -117,7 +117,7 @@ void laundry()
 
 	// Drum
 	const int drum = sim.rigid_bodies.add_cylinder(1.0, 0.75, 0.5, {0, 0, 0}, 90.0, {1, 0, 0}, 64);
-	sim.rigid_bodies.add_constraint_motor(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY(), 10.0, 3.14, /*delay*/0.01);
+	sim.rigid_bodies.add_constraint_motor(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY(), 20.0, 3.14, /*delay*/0.01);
 	//sim.rigid_bodies.add_constraint_hinge_joint(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY());
 	//sim.rigid_bodies.add_torque(drum, 0.2*Eigen::Vector3d::UnitY());
 
