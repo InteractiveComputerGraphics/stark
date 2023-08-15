@@ -152,18 +152,17 @@ void stark::models::RigidBodies::add_constraint_freeze(const int body_id)
 	this->add_constraint_anchor_point(body_id, this->t1[body_id] + Eigen::Vector3d::UnitY());
 	this->add_constraint_anchor_point(body_id, this->t1[body_id] + Eigen::Vector3d::UnitZ());
 }
-int stark::models::RigidBodies::add_constraint_motor(const int body_0, const int body_1, const Eigen::Vector3d& c_global, const Eigen::Vector3d& d_global, const double max_torque, const double target_w, const double pid_kp, const double pid_ki, const double pid_kd)
+void stark::models::RigidBodies::add_constraint_motor(const int body_0, const int body_1, const Eigen::Vector3d& c_global, const Eigen::Vector3d& d_global, const double max_torque, const double target_w, const double correction_stiffness)
 {
 	this->add_constraint_hinge_joint(body_0, body_1, c_global, d_global);
-	MotorController motor;
-	motor.rb_a_idx = body_0;
-	motor.rb_b_idx = body_1;
-	motor.loc_da = global_to_local_direction(d_global.normalized(), this->R1[body_0]);
-	motor.max_torque = max_torque;
-	motor.target_w = target_w;
-	motor.pid = PIDController(pid_kp, pid_ki, pid_kd);
-	this->motors.push_back(motor);
-	return (int)this->motors.size() - 1;
+
+	const Eigen::Vector3d d = d_global.normalized();
+	const int constraint_id = (int)this->constraints.motors.conn.size();
+	this->constraints.motors.conn.push_back({ constraint_id, body_0, body_1 });
+	this->constraints.motors.loc_da.push_back(global_to_local_direction(d, this->R1[body_0]));
+	this->constraints.motors.max_torque.push_back(max_torque);
+	this->constraints.motors.target_w.push_back(target_w);
+	this->constraints.motors.correction_stiffness.push_back(correction_stiffness);
 }
 
 void stark::models::RigidBodies::set_damping(const double damping)
@@ -740,6 +739,42 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 			symx::Scalar E_damper = 0.5 * spring_damping * ((l1 - l0)/dt).powN(2);
 			symx::Scalar E = E_slider + E_spring + E_damper;
 			energy.set(E);
+		}
+	);
+
+	// Motor
+	sim.global_energy.add_energy("rb_constraint_motor", this->constraints.motors.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			conn.set_labels({ "idx", "a", "b" });
+
+			// Inputs
+			symx::Vector da_loc = energy.make_vector(this->constraints.motors.loc_da, conn["idx"]);
+			symx::Scalar max_torque = energy.make_scalar(this->constraints.motors.max_torque, conn["idx"]);
+			symx::Scalar target_w = energy.make_scalar(this->constraints.motors.target_w, conn["idx"]);
+			symx::Scalar correction_stiffness = energy.make_scalar(this->constraints.motors.correction_stiffness, conn["idx"]);
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			symx::Vector w1a = energy.make_dof_vector(this->dof_w, this->w1, conn["a"]);
+			symx::Vector w1b = energy.make_dof_vector(this->dof_w, this->w1, conn["b"]);
+
+			// Transformations
+			symx::Vector q0a = energy.make_vector(this->q0_, conn["a"]);
+			symx::Vector da = integrate_loc_direction(da_loc, q0a, w1a, dt);
+
+			// Constraint
+			symx::Scalar k = correction_stiffness/dt;
+			symx::Scalar dw = target_w - da.dot(w1b - w1a);
+			symx::Scalar E_l = 0.5*k*dw.powN(2);
+			energy.set(E_l);
+
+
+
+
+			//symx::Scalar h = max_torque/k;
+			//symx::Scalar eps = max_torque/(2.0*k);
+			//symx::Scalar E_r = max_torque*(dw - eps);
+			//symx::Scalar E = symx::branch(dw < h, E_l, E_r);
+			//energy.set(E);
 		}
 	);
 }

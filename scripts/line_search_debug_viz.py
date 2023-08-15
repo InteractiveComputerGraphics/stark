@@ -4,9 +4,10 @@ plt.style.use("seaborn-v0_8")
 
 # path = "D:/builds/stark/output/collision_cloth_parallel_edge_test/line_search.txt"
 # path = "D:/builds/stark/output/collision_cloth_edge_edge_tests/line_search.txt"
-path = "D:/builds/stark/output/cloth_friction_slope_test/line_search_cloth_friction_slope_test.txt"
+# path = "D:/builds/stark/output/cloth_friction_slope_test/line_search_cloth_friction_slope_test.txt"
 # path = "D:/builds/stark/output/cloth_friction_corner/line_search_cloth_friction_corner_jose.txt"
 # path = "D:/builds/stark/output/wrap/line_search.txt"
+path = "D:/builds/stark/output/laundry/line_search_laundry__2023-08-15__12-53-24.txt"
 
 start = 0
 n = 20

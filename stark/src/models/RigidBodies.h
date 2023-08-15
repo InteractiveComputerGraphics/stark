@@ -10,7 +10,6 @@
 #include "../utils/MultiMesh.h"
 #include "../utils/mesh_generators.h"
 #include "../utils/inertia_tensors.h"
-#include "MotorController.h"
 #include "RigidBodyContacts.h"
 #include "RigidBodyFriction.h"
 
@@ -48,12 +47,21 @@ namespace stark::models
 			std::vector<double> spring_damping;
 			std::vector<std::array<int, 3>> conn; // { "idx", "a", "b" }
 		};
+		struct Motors
+		{
+			std::vector<Eigen::Vector3d> loc_da;
+			std::vector<double> max_torque;
+			std::vector<double> target_w;
+			std::vector<double> correction_stiffness;
+			std::vector<std::array<int, 3>> conn; // { "idx", "a", "b" }
+		};
 		struct Constraints
 		{
 			AnchorPoints anchor_points;
 			BallJoints ball_joints;
 			RelativeDirectionLock relative_direction_lock;
 			Sliders sliders;
+			Motors motors;
 		};
 
 	public:
@@ -88,7 +96,6 @@ namespace stark::models
 		// Constraints
 		Constraints constraints;
 		double constraint_stiffness = 1e6;
-		std::vector<MotorController> motors;
 		std::vector<Eigen::Vector3d> motor_torque;
 
 		// Contacts
@@ -127,7 +134,7 @@ namespace stark::models
 		void add_constraint_slider(const int body_0, const int body_1, const Eigen::Vector3d& p0_global, const Eigen::Vector3d& p1_global, const double spring_stiffness = 0.0, const double spring_damping = 0.0);
 		void add_constraint_relative_direction_lock(const int body_0, const int body_1, const Eigen::Vector3d& d_global);
 		void add_constraint_freeze(const int body_id);
-		int add_constraint_motor(const int body_0, const int body_1, const Eigen::Vector3d& c_global, const Eigen::Vector3d& d_global, const double max_torque, const double target_w, const double pid_kp = 0.01, const double pid_ki = 0.01, const double pid_kd = 0.0);
+		void add_constraint_motor(const int body_0, const int body_1, const Eigen::Vector3d& c_global, const Eigen::Vector3d& d_global, const double max_torque, const double target_w, const double correction_stiffness);
 
 		void set_damping(const double damping);
 		void set_displacement(const int body_id, const Eigen::Vector3d& displacement);
