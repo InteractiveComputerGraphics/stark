@@ -152,8 +152,12 @@ void stark::models::RigidBodies::add_constraint_freeze(const int body_id)
 	this->add_constraint_anchor_point(body_id, this->t1[body_id] + Eigen::Vector3d::UnitY());
 	this->add_constraint_anchor_point(body_id, this->t1[body_id] + Eigen::Vector3d::UnitZ());
 }
-void stark::models::RigidBodies::add_constraint_motor(const int body_0, const int body_1, const Eigen::Vector3d& c_global, const Eigen::Vector3d& d_global, const double max_torque, const double target_w, const double correction_stiffness)
+void stark::models::RigidBodies::add_constraint_motor(const int body_0, const int body_1, const Eigen::Vector3d& c_global, const Eigen::Vector3d& d_global, const double max_torque, const double target_w, const double delay)
 {
+	// Careful: delay directly determines the transition between torque application and max torque in rad/s.
+	// For smooth operation, set a large value (when very far from target w, apply max_torque)
+	// Small values will have a more aggresive max torque application but make the problem harder to solve.
+
 	this->add_constraint_hinge_joint(body_0, body_1, c_global, d_global);
 
 	const Eigen::Vector3d d = d_global.normalized();
@@ -162,7 +166,7 @@ void stark::models::RigidBodies::add_constraint_motor(const int body_0, const in
 	this->constraints.motors.loc_da.push_back(global_to_local_direction(d, this->R1[body_0]));
 	this->constraints.motors.max_torque.push_back(max_torque);
 	this->constraints.motors.target_w.push_back(target_w);
-	this->constraints.motors.correction_stiffness.push_back(correction_stiffness);
+	this->constraints.motors.delay.push_back(delay);
 }
 
 void stark::models::RigidBodies::set_damping(const double damping)
@@ -721,7 +725,7 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 			symx::Vector da_loc = energy.make_vector(this->constraints.motors.loc_da, conn["idx"]);
 			symx::Scalar max_torque = energy.make_scalar(this->constraints.motors.max_torque, conn["idx"]);
 			symx::Scalar target_w = energy.make_scalar(this->constraints.motors.target_w, conn["idx"]);
-			symx::Scalar correction_stiffness = energy.make_scalar(this->constraints.motors.correction_stiffness, conn["idx"]);
+			symx::Scalar h = energy.make_scalar(this->constraints.motors.delay, conn["idx"]);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 			symx::Vector w1a = energy.make_dof_vector(this->dof_w, this->w1, conn["a"]);
 			symx::Vector w1b = energy.make_dof_vector(this->dof_w, this->w1, conn["b"]);
@@ -730,20 +734,15 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 			symx::Vector q0a = energy.make_vector(this->q0_, conn["a"]);
 			symx::Vector da = integrate_loc_direction(da_loc, q0a, w1a, dt);
 
-			// Constraint
-			symx::Scalar k = correction_stiffness/dt;
+			// Constraint (Analogous to C1 friction)
+			// Important: derivatives wrt "positions", therefore needed chain rule and resulted in added product by dt
+			symx::Scalar k = max_torque/h;
+			symx::Scalar eps = max_torque/(2.0*k);
 			symx::Scalar dw = target_w - da.dot(w1b - w1a);
-			symx::Scalar E_l = 0.5*k*dw.powN(2);
-			energy.set(E_l);
-
-
-
-
-			//symx::Scalar h = max_torque/k;
-			//symx::Scalar eps = max_torque/(2.0*k);
-			//symx::Scalar E_r = max_torque*(dw - eps);
-			//symx::Scalar E = symx::branch(dw < h, E_l, E_r);
-			//energy.set(E);
+			symx::Scalar E_l = 0.5*k*dw.powN(2)*dt;
+			symx::Scalar E_r = max_torque*(dw - eps)*dt;
+			symx::Scalar E = symx::branch(dw < h, E_l, E_r);
+			energy.set(E);
 		}
 	);
 }

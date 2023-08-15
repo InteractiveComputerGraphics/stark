@@ -52,7 +52,7 @@ namespace stark::models
 			std::vector<Eigen::Vector3d> loc_da;
 			std::vector<double> max_torque;
 			std::vector<double> target_w;
-			std::vector<double> correction_stiffness;
+			std::vector<double> delay;
 			std::vector<std::array<int, 3>> conn; // { "idx", "a", "b" }
 		};
 		struct Constraints
@@ -134,7 +134,7 @@ namespace stark::models
 		void add_constraint_slider(const int body_0, const int body_1, const Eigen::Vector3d& p0_global, const Eigen::Vector3d& p1_global, const double spring_stiffness = 0.0, const double spring_damping = 0.0);
 		void add_constraint_relative_direction_lock(const int body_0, const int body_1, const Eigen::Vector3d& d_global);
 		void add_constraint_freeze(const int body_id);
-		void add_constraint_motor(const int body_0, const int body_1, const Eigen::Vector3d& c_global, const Eigen::Vector3d& d_global, const double max_torque, const double target_w, const double correction_stiffness);
+		void add_constraint_motor(const int body_0, const int body_1, const Eigen::Vector3d& c_global, const Eigen::Vector3d& d_global, const double max_torque, const double target_w, const double delay = 0.01);
 
 		void set_damping(const double damping);
 		void set_displacement(const int body_id, const Eigen::Vector3d& displacement);
