@@ -89,6 +89,42 @@ void rb_contacts_floor_test()
 	// Run
 	sim.stark.run();
 }
+void rb_contact_edge_test()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "rb_contact_edge_test";
+	settings.output.output_directory = "../output/rigid_body_contacts";
+	settings.output.codegen_directory = "../output/codegen";
+	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
+	settings.output.fps = 120;
+
+	settings.execution.end_simulation_time = 1.0;
+	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
+
+	settings.contact.friction_enabled = true;
+	settings.contact.adaptive_contact_stiffness.value = 1e8;
+	settings.contact.dhat = 0.001;
+	stark::models::Simulation sim(settings);
+
+	// Slope
+	const double drop_height = 0.01;
+	const double rot_deg = 45.0;
+
+	// Rigid bodies
+	const double mu = 1.0;
+	const double mass = 1.0;
+	const double scale = 0.1;
+	const int o1 = sim.rigid_bodies.add_box(mass, { scale, scale, scale }, { 0, 0, 0 }, 45.0, {1, 0, 0});
+	const int o2 = sim.rigid_bodies.add_box(mass, { scale, scale, scale }, { 0, 0, 0.2 }, 45.0, {0, 1, 0});
+	sim.rigid_bodies.set_friction(o1, mu);
+	sim.rigid_bodies.set_friction(o2, mu);
+
+	// Constraints
+	sim.rigid_bodies.add_constraint_freeze(o1);
+
+	// Run
+	sim.stark.run();
+}
 void laundry()
 {
 	stark::Settings settings = stark::Settings();

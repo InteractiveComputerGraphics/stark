@@ -65,6 +65,7 @@ Mid priority
 		
 Low priority
 ------------
+	* MaterialPresets are not being used
 	* Maybe merge time_integration, rigidbody_transformations...
 	* Function to delete cloth, rb...
 	* More input safety and documentation in the physical systems
