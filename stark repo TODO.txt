@@ -61,6 +61,12 @@ Mid priority
 	* Probably better just to have the edge distance strain limiting as it poses way less convergence problems
 	* Support arbitrary inertia tensors
 	* Change all explicit uses of time integration by the euler_integration function so I can better change it to other schemes later.
+	* More warnings and controlled crashes for the common errors:
+		- Wrong connectivities
+		- Wrong data
+		- Strides don't match. Names don't match...
+		All very common errors that will get you a crashed in the debugger very deep down the evaluation.
+		Maybe some hierarchical 'check()' function that propagates and detects all this stuff.
 	
 		
 Low priority

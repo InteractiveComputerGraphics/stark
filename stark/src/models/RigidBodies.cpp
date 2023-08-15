@@ -559,6 +559,71 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 			}
 		}
 	}
+
+	// Edge - Edge
+	auto mollifier = [&](const tmcd::Edge& edge_a, const tmcd::Edge& edge_b)
+	{
+		const std::vector<Eigen::Vector3d>& X = this->mesh.vertices;
+		return edge_edge_mollifier(x[edge_a.vertices[0]], x[edge_a.vertices[1]], x[edge_b.vertices[0]], x[edge_b.vertices[1]],
+			X[edge_a.vertices[0]], X[edge_a.vertices[1]], X[edge_b.vertices[0]], X[edge_b.vertices[1]]);
+	};
+
+	//// Point - Point
+	for (const auto& pair : proximity.edge_edge.point_point) {
+		const tmcd::EdgePoint& ep_a = pair.first;
+		const tmcd::EdgePoint& ep_b = pair.second;
+		const tmcd::Point& p = ep_a.point;
+		const tmcd::Point& q = ep_b.point;
+
+		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
+		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(q.idx);
+		if (rb_a_idx != rb_b_idx) {
+			const double mu = 0.5 * (this->mu[rb_a_idx] + this->mu[rb_b_idx]);
+			if (mu > 0.0) {
+				this->friction.point_point.conn.push_back({ (int)this->friction.point_point.conn.size(), rb_a_idx, rb_b_idx, p.idx, q.idx });
+				this->friction.point_point.contact.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
+				this->friction.point_point.contact.mu.push_back(mu);
+				this->friction.point_point.contact.fn.push_back(mollifier(ep_a.edge, ep_b.edge) * force(pair.distance));
+			}
+		}
+	}
+	//// Point - Edge
+	for (const auto& pair : proximity.edge_edge.point_edge) {
+		const tmcd::EdgePoint& ep = pair.first;
+		const tmcd::Point& p = ep.point;
+		const tmcd::Edge& edge = pair.second;
+
+		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
+		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(edge.vertices[0]);
+		if (rb_a_idx != rb_b_idx) {
+			const double mu = 0.5 * (this->mu[rb_a_idx] + this->mu[rb_b_idx]);
+			if (mu > 0.0) {
+				this->friction.point_edge.conn.push_back({ (int)this->friction.point_edge.conn.size(), rb_a_idx, rb_b_idx, p.idx, edge.vertices[0], edge.vertices[1] });
+				this->friction.point_edge.bary.push_back(barycentric_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
+				this->friction.point_edge.contact.T.push_back(projection_matrix_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
+				this->friction.point_edge.contact.mu.push_back(mu);
+				this->friction.point_edge.contact.fn.push_back(mollifier(ep.edge, edge) * force(pair.distance));
+			}
+		}
+	}
+	//// Edge - Edge
+	for (const auto& pair : proximity.edge_edge.edge_edge) {
+		const tmcd::Edge& ea = pair.first;
+		const tmcd::Edge& eb = pair.second;
+
+		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(ea.vertices[0]);
+		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(eb.vertices[0]);
+		if (rb_a_idx != rb_b_idx) {
+			const double mu = 0.5 * (this->mu[rb_a_idx] + this->mu[rb_b_idx]);
+			if (mu > 0.0) {
+				this->friction.edge_edge.conn.push_back({ (int)this->friction.edge_edge.conn.size(), rb_a_idx, rb_b_idx, ea.vertices[0], ea.vertices[1], eb.vertices[0], eb.vertices[1] });
+				this->friction.edge_edge.bary.push_back(barycentric_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
+				this->friction.edge_edge.contact.T.push_back(projection_matrix_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
+				this->friction.edge_edge.contact.mu.push_back(mu);
+				this->friction.edge_edge.contact.fn.push_back(mollifier(ea, eb) * force(pair.distance));
+			}
+		}
+	}
 }
 
 void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
@@ -1041,18 +1106,21 @@ void stark::models::RigidBodies::_energies_friction(Stark& sim)
 			set_friction_energy(v, conn["idx"], this->friction.point_triangle.contact, dt, energy);
 		}
 	);
-	//// Edge - Edge
-	//sim.global_energy.add_energy("collision_cloth_cloth_friction_edge_edge", this->friction.edge_edge.conn,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		std::vector<symx::Vector> VEA = get_v1({ conn[1], conn[2] }, energy);
-	//		std::vector<symx::Vector> VEB = get_v1({ conn[3], conn[4] }, energy);
-	//		symx::Vector bary = energy.make_vector(this->friction.edge_edge.bary, conn[0]);
+	// Edge - Edge
+	sim.global_energy.add_energy("friction_rb_rb_edge_edge", this->friction.edge_edge.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			conn.set_labels({ "idx", "a", "b", "a_e0", "a_e1", "b_e0", "b_e1" });
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 
-	//		symx::Vector vp = VEA[0] + bary[0]*(VEA[1] - VEA[0]);
-	//		symx::Vector vq = VEB[0] + bary[1]*(VEB[1] - VEB[0]);
-	//		symx::Vector v = vq - vp;
-	//		set_friction_energy(v, conn[0], this->friction.edge_edge.contact, energy);
-	//	}
-	//);
+			std::vector<symx::Vector> VEA = get_v1({ conn["a_e0"], conn["a_e1"] }, conn["a"], dt, energy);
+			std::vector<symx::Vector> VEB = get_v1({ conn["b_e0"], conn["b_e1"] }, conn["b"], dt, energy);
+			symx::Vector bary = energy.make_vector(this->friction.edge_edge.bary, conn["idx"]);
+
+			symx::Vector vp = VEA[0] + bary[0]*(VEA[1] - VEA[0]);
+			symx::Vector vq = VEB[0] + bary[1]*(VEB[1] - VEB[0]);
+			symx::Vector v = vq - vp;
+			set_friction_energy(v, conn["idx"], this->friction.edge_edge.contact, dt, energy);
+		}
+	);
 }

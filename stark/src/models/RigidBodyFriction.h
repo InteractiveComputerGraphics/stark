@@ -36,17 +36,17 @@ namespace stark::models
 			std::vector<std::array<int32_t, 7>> conn;  // { "idx", "a", "b", "a_p", "b_t0", "b_t1", "b_t2" }
 			std::vector<std::array<double, 3>> bary;
 		};
-		//struct EdgeEdge
-		//{
-		//	Contact contact;
-		//	std::vector<std::array<int32_t, 5>> conn;  // { "idx", "a", "b", "a_p", "b_q" }
-		//	std::vector<std::array<double, 2>> bary;
-		//};
+		struct EdgeEdge
+		{
+			Contact contact;
+			std::vector<std::array<int32_t, 7>> conn;  // { "idx", "a", "b", "a_e0", "a_e1", "b_e0", "b_e1" }
+			std::vector<std::array<double, 2>> bary;
+		};
 
 		PointPoint point_point;
 		PointEdge point_edge;
 		PointTriangle point_triangle;
-		//EdgeEdge edge_edge;
+		EdgeEdge edge_edge;
 
 		void clear()
 		{
@@ -61,9 +61,9 @@ namespace stark::models
 			this->point_triangle.conn.clear();
 			this->point_triangle.bary.clear();
 
-			//this->edge_edge.contact.clear();
-			//this->edge_edge.conn.clear();
-			//this->edge_edge.bary.clear();
+			this->edge_edge.contact.clear();
+			this->edge_edge.conn.clear();
+			this->edge_edge.bary.clear();
 		}
 	};
 }
