@@ -169,7 +169,6 @@ namespace stark::models
 		const tmcd::ProximityResults& _run_proximity_detection(const std::vector<Eigen::Vector3d>& x, Stark& sim);
 		void _update_contacts(Stark& sim);
 		void _update_friction_contacts(Stark& sim);
-		void _update_motors(Stark& sim);
 
 		// Stark callbacks
 		void _before_time_step(Stark& sim);

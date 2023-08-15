@@ -122,7 +122,7 @@ void laundry()
 
 	// Objects
 	const double mu = 1.0;
-	const double mass = 0.1;
+	const double mass = 0.2;
 	const double scale = 0.1;
 
 	const double d = 1.5*scale;
