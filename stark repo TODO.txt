@@ -3,28 +3,13 @@ stark repo TODO
 
 High priority
 -------------
-	* ...compiled!  With fixed spacing
-	* Check for NaNs in symx as an option in Stark::Settings. Don't make it a static variable
-	* Same for an out of bounds connectitivity index as it's the second most frequent error.
-		This should be triggered dynamically from settings.debug
-		Should return the name of the energy, connectivity...
 	
-	* Compute contact forces and show them somehow
-	* Python plots for time steps, stiffnesses, line search/CG iterations, number of contacts, etc...
-	* Average time step size at the end
-	* Print computational resistance
-	* Exit simulation when adaptive time step reaches the minimum or the contact the maximum
-	* Timings don't add up to "total" because of aborted time steps
-	
-	* More warnings and controlled crashes for the common errors:
-		- Wrong connectivities
-		- Wrong data
-		- Strides don't match. Names don't match...
-		All very common errors that will get you a crashed in the debugger very deep down the evaluation.
-		Maybe some hierarchical 'check()' function that propagates and detects all this stuff.
 
 Mid priority
 ------------
+	* Compute contact forces and show them somehow
+	* Python plots for time steps, stiffnesses, line search/CG iterations, number of contacts, etc...
+	* Timings don't add up to "total" because of aborted time steps
 	* Initial intersection error.
 	* Friction data structures have a lot in common. Refactor.
 	* lambdas for get/set symx data and energies shuold be refactored into a common place to avoid duplicities in logic

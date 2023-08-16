@@ -23,31 +23,39 @@ void stark::utils::Logger::stop_timing_add(const std::string label)
 		std::cout << "Error: Label (" << label << ") not found in Timing.t0." << std::endl;
 		exit(-1);
 	}
-	if (this->timers.find(label) == this->timers.end()) {
-		this->timers[label] = 0.0;
+	if (this->doubles.find(label) == this->doubles.end()) {
+		this->doubles[label] = 0.0;
 	}
 	const double t0 = this->t0[label];
-	this->timers[label] += t1 - t0;
+	this->doubles[label] += t1 - t0;
 }
 void stark::utils::Logger::add_to_timer(const std::string label, const double t)
 {
-	if (this->timers.find(label) == this->timers.end()) {
-		this->timers[label] = 0.0;
+	if (this->doubles.find(label) == this->doubles.end()) {
+		this->doubles[label] = 0.0;
 	}
-	this->timers[label] += t;
+	this->doubles[label] += t;
 }
 void stark::utils::Logger::add_to_counter(const std::string label, const int v)
 {
-	if (this->counters.find(label) == this->counters.end()) {
-		this->counters[label] = 0;
+	if (this->ints.find(label) == this->ints.end()) {
+		this->ints[label] = 0;
 	}
-	this->counters[label] += v;
+	this->ints[label] += v;
 }
 void stark::utils::Logger::set_path(const std::string path)
 {
 	this->path = path;
 }
-void stark::utils::Logger::add(const std::string label, const std::string v)
+void stark::utils::Logger::set(const std::string label, const double v)
+{
+	this->doubles[label] = v;
+}
+void stark::utils::Logger::set(const std::string label, const int v)
+{
+	this->ints[label] = v;
+}
+void stark::utils::Logger::append_to_series(const std::string label, const std::string v)
 {
 	this->series[label].push_back(v);
 }
@@ -67,11 +75,11 @@ void stark::utils::Logger::save_to_disk(const std::string path)
 		outfile << std::endl;
 	}
 
-	for (auto& pair : this->timers) {
+	for (auto& pair : this->doubles) {
 		outfile << pair.first << ": " << pair.second << std::endl;
 	}
 
-	for (auto& pair : this->counters) {
+	for (auto& pair : this->ints) {
 		outfile << pair.first << ": " << pair.second << std::endl;
 	}
 

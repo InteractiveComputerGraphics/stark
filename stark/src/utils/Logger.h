@@ -23,18 +23,20 @@ namespace stark::utils
 		void save_to_disk(const std::string path);
 		void save_to_disk();
 		void set_path(const std::string path);
-		void add(const std::string label, const std::string v);
+		void set(const std::string label, const double v);
+		void set(const std::string label, const int v);
+		void append_to_series(const std::string label, const std::string v);
 
 		template<typename T>
-		void add(const std::string label, const T v)
+		void append_to_series(const std::string label, const T v)
 		{
 			this->series[label].push_back(std::to_string(v));
 		};
 
 	//private:
 		std::unordered_map<std::string, std::vector<std::string>> series;
-		std::unordered_map<std::string, double> timers;
-		std::unordered_map<std::string, int> counters;
+		std::unordered_map<std::string, double> doubles;
+		std::unordered_map<std::string, int> ints;
 		std::unordered_map<std::string, double> t0;
 		std::string path;
 	};

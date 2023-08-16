@@ -62,26 +62,28 @@ bool stark::Stark::run(std::function<void()> callback)
 	}
 
 	// Final print
-	//// Iterations
-	this->console.print("\nIterations\n", Verbosity::Frames);
-	this->console.print(fmt::format("\t # time_steps: {:d}\n", this->logger.counters["time_steps"]), Verbosity::Frames);
-	this->console.print(fmt::format("\t # newton/time_steps: {:.1f}\n", (double)this->logger.counters["newton_iterations"]/(double)this->logger.counters["time_steps"]), Verbosity::Frames);
+	//// Info
+	this->console.print("\Info\n", Verbosity::Frames);
+	this->console.print(fmt::format("\t # time_steps: {:d}\n", this->logger.ints["time_steps"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t # newton/time_steps: {:.1f}\n", (double)this->logger.ints["newton_iterations"]/(double)this->logger.ints["time_steps"]), Verbosity::Frames);
 	if (!this->settings.newton.use_direct_linear_solve) {
-		this->console.print(fmt::format("\t # CG_iterations/newton: {:.1f}\n", (double)this->logger.counters["CG_iterations"]/(double)this->logger.counters["newton_iterations"]), Verbosity::Frames);
+		this->console.print(fmt::format("\t # CG_iterations/newton: {:.1f}\n", (double)this->logger.ints["CG_iterations"]/(double)this->logger.ints["newton_iterations"]), Verbosity::Frames);
 	}
-	this->console.print(fmt::format("\t # line_search/newton: {:.1f}\n", (double)this->logger.counters["line_search_iterations"]/(double)this->logger.counters["newton_iterations"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t # line_search/newton: {:.1f}\n", (double)this->logger.ints["line_search_iterations"]/(double)this->logger.ints["newton_iterations"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t avg dt: {:.6f} ms\n", this->logger.doubles["avg dt"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t cr: {:.1f}\n", this->logger.doubles["cr"]), Verbosity::Frames);
 
 	//// Runtime
 	this->console.print("Runtime\n", Verbosity::Frames);
-	this->console.print(fmt::format("\t total: {:.3f} s\n", this->logger.timers["total"]), Verbosity::Frames);
-	this->console.print(fmt::format("\t evaluate_E_grad_hess: {:.3f} s\n", this->logger.timers["evaluate_E_grad_hess"]), Verbosity::Frames);
-	this->console.print(fmt::format("\t evaluate_E_grad: {:.3f} s\n", this->logger.timers["evaluate_E_grad"]), Verbosity::Frames);
-	this->console.print(fmt::format("\t evaluate_E: {:.3f} s\n", this->logger.timers["evaluate_E"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t step: {:.3f} s\n", this->logger.doubles["step"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t evaluate_E_grad_hess: {:.3f} s\n", this->logger.doubles["evaluate_E_grad_hess"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t evaluate_E_grad: {:.3f} s\n", this->logger.doubles["evaluate_E_grad"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t evaluate_E: {:.3f} s\n", this->logger.doubles["evaluate_E"]), Verbosity::Frames);
 	if (!this->settings.newton.use_direct_linear_solve) {
-		this->console.print(fmt::format("\t CG: {:.3f} s\n", this->logger.timers["CG"]), Verbosity::Frames);
+		this->console.print(fmt::format("\t CG: {:.3f} s\n", this->logger.doubles["CG"]), Verbosity::Frames);
 	}
 	else {
-		this->console.print(fmt::format("\t directLU: {:.3f} s\n", this->logger.timers["directLU"]), Verbosity::Frames);
+		this->console.print(fmt::format("\t directLU: {:.3f} s\n", this->logger.doubles["directLU"]), Verbosity::Frames);
 	}
 	return true;
 }
@@ -91,7 +93,7 @@ bool stark::Stark::run_one_step()
 		this->_initialize();
 	}
 
-	this->logger.start_timing("total");
+	//this->logger.start_timing("total");
 	this->console.print(fmt::format("\t dt: {:.6f} ms | kc: {:.1e} | ", 1000.0 * this->settings.simulation.adaptive_time_step.value, this->settings.contact.adaptive_contact_stiffness.value), Verbosity::TimeSteps);
 
 	this->callbacks.run_before_time_step();
@@ -105,7 +107,7 @@ bool stark::Stark::run_one_step()
 		const double t1 = omp_get_wtime();
 
 		if (err == NewtonError::Successful) {
-			this->console.print(fmt::format(" | runtime: {:.0f} ms\n", 1000.0 * (t1 - t0)), Verbosity::TimeSteps);
+			this->console.print(fmt::format(" | runtime: {:.0f} ms | cr: {:1f}\n", 1000.0 * (t1 - t0), (t1 - t0)/this->settings.simulation.adaptive_time_step.value), Verbosity::TimeSteps);
 		}
 		else {
 			if (err == NewtonError::InvalidConfiguration) {
@@ -122,9 +124,11 @@ bool stark::Stark::run_one_step()
 			return this->run_one_step();
 		}
 	}
-	this->logger.add("dt", this->settings.simulation.adaptive_time_step.value);
-	this->logger.add("time", this->current_time);
-	this->logger.add("frame", this->current_frame);
+	this->logger.append_to_series("dt", this->settings.simulation.adaptive_time_step.value);
+	this->logger.append_to_series("time", this->current_time);
+	this->logger.append_to_series("frame", this->current_frame);
+	this->logger.set("avg dt", this->current_time/(double)this->logger.ints["time_steps"]);
+	this->logger.set("cr", this->logger.doubles["step"]/this->current_time);
 
 	this->callbacks.run_after_time_step();
 
@@ -133,7 +137,7 @@ bool stark::Stark::run_one_step()
 	this->settings.simulation.adaptive_time_step.successful_iteration();
 	this->logger.add_to_counter("time_steps", 1);
 	this->current_time += this->settings.simulation.adaptive_time_step.value;
-	this->logger.stop_timing_add("total");
+	//this->logger.stop_timing_add("total");
 	return true;
 }
 std::string stark::Stark::get_vtk_path(std::string name) const

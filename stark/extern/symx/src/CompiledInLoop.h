@@ -405,6 +405,10 @@ namespace symx
 				exit(-1);
 			}
 			map.array_begin = map.data();
+			if (map.connectivity_index >= this->connectivity_stride) {
+				std::cout << "symx error: CompiledInLoop::run() found a connectivity index larger than the connectivity stride for instance with name \"" + this->name + "\"" << std::endl;
+				exit(-1);
+			}
 		}
 
 		if (n_threads < 0) {

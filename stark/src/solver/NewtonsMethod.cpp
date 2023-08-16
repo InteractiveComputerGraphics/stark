@@ -141,12 +141,12 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			if (step_valid_configuration > 0.99 && step < 0.99) {
 				const std::string label = std::to_string(this->debug_output_counter);
 
-				this->line_search_debug_logger.add(label, fmt::format("{:.6e}", base_E));
-				this->line_search_debug_logger.add(label, fmt::format("{:.6e}", 1.0 - suitable_backtracking_energy / base_E));
-				this->line_search_debug_logger.add(label, fmt::format("{:.6e}", this->du.norm()));
+				this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", base_E));
+				this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", 1.0 - suitable_backtracking_energy / base_E));
+				this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", this->du.norm()));
 				for (double fstep = -1.0; fstep < 2.0; fstep += 0.01) {
 					if (this->debug_output_counter == 0) {
-						this->line_search_debug_logger.add("normalized_step_length", fmt::format("{:.6e}", fstep));
+						this->line_search_debug_logger.append_to_series("normalized_step_length", fmt::format("{:.6e}", fstep));
 					}
 
 					this->u1 = this->u0 + fstep * this->du;
@@ -155,7 +155,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 					assembled = global_energy.evaluate_E();
 					callbacks.run_after_energy_evaluation();
 					const double v = (1.0 - (*assembled.E) / base_E);
-					this->line_search_debug_logger.add(label, fmt::format("{:.6e}", v));
+					this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", v));
 				}
 
 				this->line_search_debug_logger.save_to_disk();
