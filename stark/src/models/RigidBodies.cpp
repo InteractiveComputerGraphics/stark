@@ -325,6 +325,13 @@ const tmcd::ProximityResults& stark::models::RigidBodies::_run_proximity_detecti
 	this->pd.activate_point_triangle(sim.settings.contact.triangle_point_enabled);
 	this->pd.activate_edge_edge(sim.settings.contact.edge_edge_enabled);
 
+	// Disable self collisions
+	for (int rb_idx = 0; rb_idx < this->mesh.get_n_meshes(); rb_idx++) {
+		this->pd.add_blacklist_range_point_triangle(0, this->mesh.get_vertices_range(rb_idx), 0, this->mesh.get_elements_range(rb_idx));
+		this->pd.add_blacklist_range_edge_edge(0, this->edges.get_edges_range(rb_idx), 0, this->edges.get_edges_range(rb_idx));
+	}
+
+	// Disable user specified collisions
 	for (const std::array<int, 2>& pair : this->disabled_collisions) {
 		this->pd.add_blacklist_range_point_triangle(0, this->mesh.get_vertices_range(pair[0]), 0, this->mesh.get_elements_range(pair[1]));
 		this->pd.add_blacklist_range_point_triangle(0, this->mesh.get_vertices_range(pair[1]), 0, this->mesh.get_elements_range(pair[0]));
@@ -451,6 +458,12 @@ bool stark::models::RigidBodies::_is_valid_configuration(Stark& sim)
 	this->id.set_n_threads(sim.settings.execution.n_threads);
 	this->id.add_mesh(&this->collision_x1[0][0], (int)this->collision_x1.size(), &this->mesh.connectivity[0][0], this->mesh.get_n_elements(), &this->edges.connectivity[0][0], (int)this->edges.get_n_edges());
 	
+	// Disable self collisions
+	for (int rb_idx = 0; rb_idx < this->mesh.get_n_meshes(); rb_idx++) {
+		this->id.add_blacklist_range_edge_triangle(0, this->edges.get_edges_range(rb_idx), 0, this->mesh.get_elements_range(rb_idx));
+	}
+
+	// Disable user specified collisions
 	for (const std::array<int, 2>&pair : this->disabled_collisions) {
 		this->id.add_blacklist_range_edge_triangle(0, this->edges.get_edges_range(pair[0]), 0, this->mesh.get_elements_range(pair[1]));
 		this->id.add_blacklist_range_edge_triangle(0, this->edges.get_edges_range(pair[1]), 0, this->mesh.get_elements_range(pair[0]));
