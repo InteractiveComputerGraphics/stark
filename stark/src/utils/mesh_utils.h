@@ -14,6 +14,9 @@ namespace stark::utils
 	double deg2rad(const double deg);
 	double rad2deg(const double rad);
 
+	// Load
+	void load_obj(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_triangles, const std::string path);
+
 	// Primitives
 	Eigen::Vector3d triangle_normal(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2);
 	double triangle_area(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2);

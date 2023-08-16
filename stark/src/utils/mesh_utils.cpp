@@ -3,17 +3,14 @@
 #include <algorithm>
 #include <random>
 
+#include <JanBenderUtilities/OBJLoader.h>
+
 // Tools
 void push_back_if_not_present(std::vector<int>& v, const int value)
 {
 	if (std::find(v.begin(), v.end(), value) == v.end()) {
 		v.push_back(value);
 	}
-}
-double deg2rad(const double deg)
-{
-	static constexpr double PI = 3.14159265358979323846;
-	return 2.0 * PI * (deg / 360.0);
 }
 double generate_random_double(double l, int seed) {
 	// Create a random number generator
@@ -35,6 +32,25 @@ double stark::utils::deg2rad(const double deg)
 double stark::utils::rad2deg(const double rad)
 {
 	return rad * 180.0 / PI;
+}
+
+void stark::utils::load_obj(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_triangles, const std::string path)
+{
+	std::vector<std::array<float, 3>> vertices;
+	std::vector<std::array<float, 3>> normals;
+	std::vector<std::array<float, 2>> texture_coordinates;
+	std::vector<JanBenderUtilities::OBJMeshFaceIndices> faces;
+	JanBenderUtilities::OBJLoader::loadObj(path, &vertices, &faces, &normals, &texture_coordinates, { 1.0f, 1.0f, 1.0f });
+
+	out_vertices.reserve(vertices.size());
+	for (const std::array<float, 3> &point : vertices) {
+		out_vertices.push_back({ (double)point[0], (double)point[1], (double)point[2] });
+	}
+
+	out_triangles.reserve(faces.size());
+	for (const auto& face : faces) {
+		out_triangles.push_back({ face.posIndices[0] - 1, face.posIndices[1] - 1, face.posIndices[2] - 1 });
+	}
 }
 
 Eigen::Vector3d stark::utils::triangle_normal(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2)
@@ -228,7 +244,6 @@ void stark::utils::move(std::vector<Eigen::Vector3d>& points, const Eigen::Vecto
 		point += translation;
 	}
 }
-
 void stark::utils::rotate_deg(std::vector<Eigen::Vector3d>& points, const double angle, const Eigen::Vector3d& axis)
 {
 	Eigen::Matrix3d R = Eigen::AngleAxis<double>(deg2rad(angle), axis.normalized()).toRotationMatrix();
@@ -236,14 +251,12 @@ void stark::utils::rotate_deg(std::vector<Eigen::Vector3d>& points, const double
 		point = R * point;
 	}
 }
-
 void stark::utils::rotate_deg(std::vector<Eigen::Vector3d>& points, const double angle, const Eigen::Vector3d& axis, const Eigen::Vector3d& pivot)
 {
 	move(points, -pivot);
 	rotate_deg(points, angle, axis);
 	move(points, pivot);
 }
-
 void stark::utils::scale(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& scale)
 {
 	for (Eigen::Vector3d& point : points) {
@@ -254,7 +267,6 @@ void stark::utils::scale(std::vector<Eigen::Vector3d>& points, const double s)
 {
 	scale(points, { s, s, s });
 }
-
 void stark::utils::mirror(std::vector<Eigen::Vector3d>& points, const int dim, const double pivot)
 {
 	for (Eigen::Vector3d& point : points) {

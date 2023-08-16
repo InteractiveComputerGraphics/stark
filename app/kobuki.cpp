@@ -10,8 +10,10 @@ Kobuki make_kobuki(stark::models::Simulation& sim)
 	auto& rb = sim.rigid_bodies;
 
 	// Body
-	// TODO: more accurate collision mesh. Read VTK (also for towel)
-	const int body = rb.add_cylinder(mass, 0.175, 0.07, { 0, 0, 0.05 }, 0.0, Eigen::Vector3d::UnitY(), 64);
+	std::vector<Eigen::Vector3d> vertices;
+	std::vector<std::array<int, 3>> triangles;
+	stark::utils::load_obj(vertices, triangles, "D:/sciebo/wd/stark/res/kobuki_collision.obj");
+	const int body = rb.add_cylinder(mass, 0.175, 0.07, vertices, triangles, { 0, 0, 0.057 });
 	rb.add_to_output_group("body", body);
 
 	// Wheels
