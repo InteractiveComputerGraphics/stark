@@ -49,7 +49,7 @@ High priority
 
 Mid priority
 ------------
-	* BroadPhase take into account is_active_edge_edge/triangle_point (bottleneck in RB sims)
+	* Initial intersection error.
 	* Friction data structures have a lot in common. Refactor.
 	* lambdas for get/set symx data and energies shuold be refactored into a common place to avoid duplicities in logic
 	* Exit simulation when adaptive time step reaches the minimum or the contact the maximum

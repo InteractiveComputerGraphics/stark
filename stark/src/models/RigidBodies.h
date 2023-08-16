@@ -9,6 +9,7 @@
 
 #include "../solver/Stark.h"
 #include "../utils/MultiMesh.h"
+#include "../utils/MultiMeshEdges.h"
 #include "../utils/mesh_generators.h"
 #include "../utils/inertia_tensors.h"
 #include "RigidBodyContacts.h"
@@ -100,11 +101,12 @@ namespace stark::models
 		std::vector<Eigen::Vector3d> motor_torque;
 
 		// Contacts
-		std::vector<std::array<int32_t, 2>> edges;
+		utils::MultiMeshEdges edges;
 		tmcd::IntersectionDetection id;
 		tmcd::ProximityDetection pd;
 		RigidBodyContacts contacts;
 		std::vector<Eigen::Vector3d> collision_x1;
+		std::vector<std::array<int, 2>> disabled_collisions;
 
 		// Friction
 		RigidBodyFriction friction;
@@ -159,6 +161,8 @@ namespace stark::models
 		void set_angular_acceleration(const int body_id, const Eigen::Vector3d& ang_acc_glob_coords);
 		void add_angular_acceleration(const int body_id, const Eigen::Vector3d& ang_acc_glob_coords);
 		void set_friction(const int body_id, const double coulombs_mu);
+
+		void disable_collisions(const int body_0, const int body_1);
 		Eigen::Vector3d get_point_in_global_coordinates(const int body_id, const Eigen::Vector3d& p);
 		Eigen::Vector3d get_point_in_global_coordinates(const int body_id, const int mesh_vertex_i);
 		int get_n_bodies() const;

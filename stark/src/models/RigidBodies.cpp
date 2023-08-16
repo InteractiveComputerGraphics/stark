@@ -50,9 +50,7 @@ int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& vertices
 	this->motor_torque.push_back(Eigen::Vector3d::Zero());
 
 	this->mesh.add_mesh(vertices, triangles);
-
-	this->edges.clear();
-	utils::find_edges(this->edges, this->mesh.connectivity, this->mesh.get_n_vertices());
+	this->edges = utils::MultiMeshEdges(this->mesh);
 
 	return this->get_n_bodies() - 1;
 }
@@ -267,6 +265,10 @@ void stark::models::RigidBodies::set_friction(const int body_id, const double co
 {
 	this->mu[body_id] = coulombs_mu;
 }
+void stark::models::RigidBodies::disable_collisions(const int body_0, const int body_1)
+{
+	this->disabled_collisions.push_back({body_0, body_1});
+}
 Eigen::Vector3d stark::models::RigidBodies::get_point_in_global_coordinates(const int body_id, const Eigen::Vector3d& p)
 {
 	return local_to_global_point(p, this->R1[body_id], this->t1[body_id]);
@@ -319,11 +321,17 @@ const tmcd::ProximityResults& stark::models::RigidBodies::_run_proximity_detecti
 	this->pd.clear();
 	this->pd.set_n_threads(sim.settings.execution.n_threads);
 	this->pd.set_edge_edge_parallel_cutoff(sim.settings.contact.edge_edge_cross_norm_sq_cutoff);
-	this->pd.add_mesh(&x[0][0], (int)x.size(), &this->mesh.connectivity[0][0], this->mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
+	this->pd.add_mesh(&x[0][0], (int)x.size(), &this->mesh.connectivity[0][0], this->mesh.get_n_elements(), &this->edges.connectivity[0][0], (int)this->edges.get_n_edges());
 	this->pd.activate_point_triangle(sim.settings.contact.triangle_point_enabled);
 	this->pd.activate_edge_edge(sim.settings.contact.edge_edge_enabled);
-	const tmcd::ProximityResults& proximity = this->pd.run(sim.settings.contact.dhat, tmcd::BroadPhaseStrategy::OctreeSIMD);  // DEBUG
-	return proximity;
+
+	for (const std::array<int, 2>& pair : this->disabled_collisions) {
+		this->pd.add_blacklist_range_point_triangle(0, this->mesh.get_vertices_range(pair[0]), 0, this->mesh.get_elements_range(pair[1]));
+		this->pd.add_blacklist_range_point_triangle(0, this->mesh.get_vertices_range(pair[1]), 0, this->mesh.get_elements_range(pair[0]));
+		this->pd.add_blacklist_range_edge_edge(0, this->edges.get_edges_range(std::min(pair[0], pair[1])), 0, this->edges.get_edges_range(std::max(pair[0], pair[1])));
+	}
+
+	return this->pd.run(sim.settings.contact.dhat);
 }
 
 void stark::models::RigidBodies::_before_time_step(Stark& sim)
@@ -441,7 +449,13 @@ bool stark::models::RigidBodies::_is_valid_configuration(Stark& sim)
 	this->_update_collision_x1(sim, sim.settings.simulation.adaptive_time_step.value);
 	this->id.clear();
 	this->id.set_n_threads(sim.settings.execution.n_threads);
-	this->id.add_mesh(&this->collision_x1[0][0], (int)this->collision_x1.size(), &this->mesh.connectivity[0][0], this->mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
+	this->id.add_mesh(&this->collision_x1[0][0], (int)this->collision_x1.size(), &this->mesh.connectivity[0][0], this->mesh.get_n_elements(), &this->edges.connectivity[0][0], (int)this->edges.get_n_edges());
+	
+	for (const std::array<int, 2>&pair : this->disabled_collisions) {
+		this->id.add_blacklist_range_edge_triangle(0, this->edges.get_edges_range(pair[0]), 0, this->mesh.get_elements_range(pair[1]));
+		this->id.add_blacklist_range_edge_triangle(0, this->edges.get_edges_range(pair[1]), 0, this->mesh.get_elements_range(pair[0]));
+	}
+	
 	const tmcd::IntersectionResults& intersections = this->id.run();
 	return intersections.edge_triangle.size() == 0;
 }

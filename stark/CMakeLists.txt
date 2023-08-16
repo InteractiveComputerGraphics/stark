@@ -75,6 +75,8 @@ set(UTILS_FILES
 	src/utils/inertia_tensors.h
 	src/utils/unordered_array_set_and_map.h
 	src/utils/MultiMesh.h
+	src/utils/MultiMeshEdges.h
+	src/utils/MultiMeshEdges.cpp
 	src/utils/MeshWithDynamics.h
 	src/utils/linear_system.cpp
 	src/utils/linear_system.h
