@@ -154,7 +154,7 @@ namespace symx
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	inline CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::CompiledInLoop(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, bool suppress_compiler_output)
 	{
-		this->compile(expr, name, folder, id, suppress_compiler_output, runtime_NaN_check);
+		this->compile(expr, name, folder, id, suppress_compiler_output, check_for_NaNs);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, bool suppress_compiler_output)
@@ -461,7 +461,7 @@ namespace symx
 					const int32_t value_idx = loc_idx * map.stride + map.offset;
 					input_scalar[N_SIMD * symbol_i + i] = static_cast<UNDERLYING_FLOAT>(map.array_begin[value_idx]);
 
-					if (runtime_NaN_check) {
+					if (check_for_NaNs) {
 						if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
 							std::cout << ("symx error: NaN found in CompiledInLoop::run() in the input " + std::to_string(symbol_i)) << std::endl;
 							exit(-1);
@@ -495,7 +495,7 @@ namespace symx
 							SymbolArrayMap& map = this->symbol_array_map[symbol_i];
 							input_scalar[N_SIMD * symbol_i + i] = static_cast<UNDERLYING_FLOAT>(map.array_begin[map.stride * sum_it + map.offset]);
 
-							if (runtime_NaN_check) {
+							if (check_for_NaNs) {
 								if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
 									std::cout << ("symx error: NaN foung in CompiledInLoop::run() in the input " + std::to_string(symbol_i)) << std::endl;
 									exit(-1);
@@ -519,7 +519,7 @@ namespace symx
 
 			// Scatter
 			if constexpr (N_SIMD == 1 && std::is_same_v<UNDERLYING_FLOAT, OUTPUT_FLOAT>) {
-				if (runtime_NaN_check) {
+				if (check_for_NaNs) {
 					for (int32_t i = 0; i < n_outputs; i++) {
 						if (std::isnan(f_output[i])) {
 							std::cout << "symx error: NaN foung in CompiledInLoop::run() in the outputs for instance with name \"" + this->name + "\"" << std::endl;
@@ -543,7 +543,7 @@ namespace symx
 					for (int32_t sol_i = 0; sol_i < n_outputs; sol_i++) {
 						solution_buffer[sol_i] = static_cast<OUTPUT_FLOAT>(output_scalar[N_SIMD * sol_i + i]);
 
-						if (runtime_NaN_check) {
+						if (check_for_NaNs) {
 							if (std::isnan(solution_buffer[sol_i])) {
 								std::cout << "symx error: NaN found in the outputs of CompiledInLoop::run() for instance with name \"" + this->name + "\"" << std::endl;
 								std::cout << "Compile with scalar COMPILED_FLOAT to see the input." << std::endl;

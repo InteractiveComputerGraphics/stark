@@ -1,5 +1,19 @@
 #include "GlobalEnergy.h"
 
+std::string two_columns(const std::string& str1, const std::string& str2, size_t distance) 
+{
+	std::string result = str1;
+
+	if (result.length() < distance) {
+		result.append(distance - result.length(), '.');
+	}
+	else {
+		result.replace(distance, result.length() - distance, result.length() - distance, '.');
+	}
+
+	return result + str2;
+}// -------------------------------------------------------------------
+
 void symx::GlobalEnergy::add_external_contributions(std::function<void(Assembly&)> E, std::function<void(Assembly&)> E_grad, std::function<void(Assembly&)> E_grad_hess)
 {
 	this->external_E.push_back(E);
@@ -107,10 +121,10 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 		this->symbols_bytes += this->energies[i]->n_bytes_symbols;
 
 		if (this->energies[i]->was_cached) {
-			output += "\t " + this->energies[i]->name + "... loaded. (" + std::to_string(t1 - t0) + " s)\n";
+			output += "\t " + two_columns(this->energies[i]->name, "loaded. (" + std::to_string(t1 - t0) + " s)\n", 60);
 		}
 		else {
-			output += "\t " + this->energies[i]->name + "... compiled. (" + std::to_string(t1 - t0) + " s)\n";
+			output += "\t " + two_columns(this->energies[i]->name, "compiled. (" + std::to_string(t1 - t0) + " s)\n", 60);
 		}
 	}
 	std::string slow_compile_note;
