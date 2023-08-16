@@ -3,8 +3,8 @@
 Kobuki make_kobuki(stark::models::Simulation& sim)
 {
 	// Input
-	const double mass = 2.8;
-	const double torque = 1000.0;
+	const double mass = 2.951;
+	const double torque = 0.0666; // (Per-motor) Torque output at stall, that is, at max output due to an obstacle
 	const double max_linear_velocity = 0.26;
 	const double power_wheels_friction = 1.0;
 
