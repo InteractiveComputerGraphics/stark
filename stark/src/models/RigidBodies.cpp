@@ -288,6 +288,16 @@ bool stark::models::RigidBodies::is_body_declared(const int body_id) const
 {
 	return body_id < this->get_n_bodies();
 }
+void stark::models::RigidBodies::add_to_output_group(const std::string label, const int body_id)
+{
+	this->output_labeled_groups[label].push_back(body_id);
+}
+void stark::models::RigidBodies::add_to_output_group(const std::string label, const std::vector<int>& rb_indices)
+{
+	for (int i : rb_indices) {
+		this->add_to_output_group(label, i);
+	}
+}
 
 void stark::models::RigidBodies::_update_collision_x1(Stark& sim, const double dt)
 {
@@ -378,20 +388,47 @@ void stark::models::RigidBodies::_after_time_step(Stark& sim)
 void stark::models::RigidBodies::_write_frame(Stark& sim)
 {
 	if (this->is_empty()) { return; }
+	if (!this->write_VTK) { return; }
 
-	std::vector<Eigen::Vector3d> glob_vertices(this->mesh.get_n_vertices());
-	for (int rb_i = 0; rb_i < this->mesh.get_n_meshes(); rb_i++) {
-		const Eigen::Matrix3d& R = this->R1[rb_i];
-		const Eigen::Vector3d& t = this->t1[rb_i];
+	if (this->output_labeled_groups.size() > 0) {
+		for (const auto& pair : this->output_labeled_groups) {
+			const std::string& label = pair.first;
+			const std::vector<int>& rb_indices = pair.second;
 
-		const std::array<int, 2> range = this->mesh.get_vertices_range(rb_i);
-		for (int vertex_i = range[0]; vertex_i < range[1]; vertex_i++) {
-			const Eigen::Vector3d p = local_to_global_point(this->mesh.vertices[vertex_i], R, t);
-			glob_vertices[vertex_i] = p;
+			std::vector<Eigen::Vector3d> glob_vertices;
+			std::vector<std::array<int, 3>> triangles;
+			for (const int rb_i : rb_indices) {
+				const Eigen::Matrix3d& R = this->R1[rb_i];
+				const Eigen::Vector3d& t = this->t1[rb_i];
+
+				const std::array<int, 2> v_range = this->mesh.get_vertices_range(rb_i);
+				const int idx_offset =  (int)glob_vertices.size() - v_range[0];
+				for (int vertex_i = v_range[0]; vertex_i < v_range[1]; vertex_i++) {
+					const Eigen::Vector3d p = local_to_global_point(this->mesh.vertices[vertex_i], R, t);
+					glob_vertices.push_back(p);
+				}
+			
+				const std::array<int, 2> e_range = this->mesh.get_elements_range(rb_i);
+				for (int tri_i = e_range[0]; tri_i < e_range[1]; tri_i++) {
+					const std::array<int, 3>& tri = this->mesh.connectivity[tri_i];
+					triangles.push_back({ tri[0] + idx_offset, tri[1] + idx_offset, tri[2] + idx_offset });
+				}
+			}
+			utils::write_VTK(sim.get_vtk_path("rb_" + label), glob_vertices, triangles, false);
 		}
 	}
+	else {
+		std::vector<Eigen::Vector3d> glob_vertices(this->mesh.get_n_vertices());
+		for (int rb_i = 0; rb_i < this->mesh.get_n_meshes(); rb_i++) {
+			const Eigen::Matrix3d& R = this->R1[rb_i];
+			const Eigen::Vector3d& t = this->t1[rb_i];
 
-	if (this->write_VTK) {
+			const std::array<int, 2> range = this->mesh.get_vertices_range(rb_i);
+			for (int vertex_i = range[0]; vertex_i < range[1]; vertex_i++) {
+				const Eigen::Vector3d p = local_to_global_point(this->mesh.vertices[vertex_i], R, t);
+				glob_vertices[vertex_i] = p;
+			}
+		}
 		utils::write_VTK(sim.get_vtk_path("rb"), glob_vertices, this->mesh.connectivity, false);
 	}
 }

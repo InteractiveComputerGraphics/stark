@@ -12,12 +12,14 @@ Kobuki make_kobuki(stark::models::Simulation& sim)
 	// Body
 	// TODO: more accurate collision mesh. Read VTK (also for towel)
 	const int body = rb.add_cylinder(mass, 0.175, 0.07, { 0, 0, 0.05 }, 0.0, Eigen::Vector3d::UnitY(), 64);
+	rb.add_to_output_group("body", body);
 
 	// Wheels
 	const int front = rb.add_cylinder(0.1, 0.0135, 0.012, { 0, 0.115, 0.0135 }, 90.0, Eigen::Vector3d::UnitY(), 32, 2);
 	const int back = rb.add_cylinder(0.1, 0.0135, 0.012, { 0, -0.136, 0.0135 }, 90.0, Eigen::Vector3d::UnitY(), 32, 2);
 	const int left = rb.add_cylinder(0.1, 0.035, 0.02, { -0.115, 0, 0.035 }, 90.0, Eigen::Vector3d::UnitY(), 64, 4);
 	const int right = rb.add_cylinder(0.1, 0.035, 0.02, { 0.115, 0, 0.035 }, 90.0, Eigen::Vector3d::UnitY(), 64, 4);
+	rb.add_to_output_group("wheels", { front, back, left, right });
 
 	// Contraints
 	rb.add_constraint_freeze(body);
@@ -35,8 +37,8 @@ void kobuki_test()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "kobuki_test";
-	settings.output.output_directory = "../output/kobuki_test";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.output_directory = "D:/sciebo/wd/stark/kobuki_test";
+	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 120;
 

@@ -8,8 +8,8 @@ void rb_ball_joint()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "ball_joint";
-	settings.output.output_directory = "../output/rigid_body_joints";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.output_directory = "D:/sciebo/wd/stark/rigid_body_joints";
+	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 10.0;
 	stark::models::Simulation sim(settings);
@@ -30,8 +30,8 @@ void rb_slider()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "slider";
-	settings.output.output_directory = "../output/rigid_body_joints";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.output_directory = "D:/sciebo/wd/stark/rigid_body_joints";
+	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	
 	settings.execution.end_simulation_time = 5.0;
@@ -55,8 +55,8 @@ void rb_contacts_floor_test()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "contacts_floor_test";
-	settings.output.output_directory = "../output/rigid_body_contacts";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.output_directory = "D:/sciebo/wd/stark/rigid_body_contacts";
+	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.output.fps = 120;
 
@@ -93,8 +93,8 @@ void rb_contact_edge_test()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "rb_contact_edge_test";
-	settings.output.output_directory = "../output/rigid_body_contacts";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.output_directory = "D:/sciebo/wd/stark/rigid_body_contacts";
+	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.output.fps = 120;
 
@@ -129,8 +129,8 @@ void laundry()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "laundry";
-	settings.output.output_directory = "../output/laundry";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.output_directory = "D:/sciebo/wd/stark/laundry";
+	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
@@ -150,6 +150,7 @@ void laundry()
 	// Wall
 	const int wall = sim.rigid_bodies.add_box(10.0, { 2.0, 0.5, 2.0 }, {0.0, -0.6, 0.0});
 	sim.rigid_bodies.add_constraint_freeze(wall);
+	sim.rigid_bodies.add_to_output_group("wall", wall);
 
 	// Drum
 	const int drum = sim.rigid_bodies.add_cylinder(1.0, 0.75, 0.5, {0, 0, 0}, 90.0, {1, 0, 0}, 64);
@@ -157,6 +158,7 @@ void laundry()
 	sim.rigid_bodies.add_constraint_motor(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY(), 50.0, 3.14, /*delay*/0.01);
 	//sim.rigid_bodies.add_constraint_hinge_joint(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY());
 	//sim.rigid_bodies.add_torque(drum, 0.2*Eigen::Vector3d::UnitY());
+	sim.rigid_bodies.add_to_output_group("drum", drum);
 
 	// Objects
 	const double mu = 0.5;
@@ -171,6 +173,7 @@ void laundry()
 				//const int idx = sim.rigid_bodies.add_sphere(mass, 0.5 * scale, Eigen::Vector3d(x, y, z) + p, 0.0, {1, 0, 0}, 2);
 				const int idx = sim.rigid_bodies.add_box(mass, { scale, scale, scale }, Eigen::Vector3d(x, y, z) + p);
 				sim.rigid_bodies.set_friction(idx, mu);
+				sim.rigid_bodies.add_to_output_group("objs", idx);
 			}
 		}
 	}

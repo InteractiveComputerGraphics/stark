@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <array>
+#include <unordered_map>
 
 #include <Eigen/Dense>
 #include <symx>
@@ -111,6 +112,7 @@ namespace stark::models
 
 		// Output
 		utils::MultiMesh<3> mesh;  // Always stays at rest positions
+		std::unordered_map<std::string, std::vector<int>> output_labeled_groups;
 
 
 		/* Methods */
@@ -162,6 +164,8 @@ namespace stark::models
 		int get_n_bodies() const;
 		bool is_empty() const;
 		bool is_body_declared(const int body_id) const;
+		void add_to_output_group(const std::string label, const int body_id);
+		void add_to_output_group(const std::string label, const std::vector<int>& rb_indices);
 
 	private:
 		// Helpers
