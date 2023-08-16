@@ -55,6 +55,14 @@ void stark::utils::Logger::set(const std::string label, const int v)
 {
 	this->ints[label] = v;
 }
+void stark::utils::Logger::add(const std::string label, const double v)
+{
+	this->doubles[label] += v;
+}
+void stark::utils::Logger::add(const std::string label, const int v)
+{
+	this->ints[label] += v;
+}
 void stark::utils::Logger::append_to_series(const std::string label, const std::string v)
 {
 	this->series[label].push_back(v);

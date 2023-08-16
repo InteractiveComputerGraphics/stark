@@ -15,7 +15,7 @@ namespace stark
 
 		void set(double min, double value, double max);
 		void successful_iteration();
-		void failed_iteration();
+		bool failed_iteration();
 		
 	private:
 		int current_successful_iterations = 0;

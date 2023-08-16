@@ -25,6 +25,8 @@ namespace stark::utils
 		void set_path(const std::string path);
 		void set(const std::string label, const double v);
 		void set(const std::string label, const int v);
+		void add(const std::string label, const double v);
+		void add(const std::string label, const int v);
 		void append_to_series(const std::string label, const std::string v);
 
 		template<typename T>

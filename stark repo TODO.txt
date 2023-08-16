@@ -9,7 +9,6 @@ Mid priority
 ------------
 	* Compute contact forces and show them somehow
 	* Python plots for time steps, stiffnesses, line search/CG iterations, number of contacts, etc...
-	* Timings don't add up to "total" because of aborted time steps
 	* Initial intersection error.
 	* Friction data structures have a lot in common. Refactor.
 	* lambdas for get/set symx data and energies shuold be refactored into a common place to avoid duplicities in logic
@@ -27,6 +26,10 @@ Mid priority
 		
 Low priority
 ------------
+	* Soften adaptive contact stiffness.
+		This is more relevant for rigid bodies as some high velocity impacts at very small time steps might require huge forces.
+		The laundry capped at 3e10.
+		But then we can soften this after resolving the collision as if makes the rest of the problem unnecessarily harder to converge.
 	* MaterialPresets are not being used
 	* Maybe merge time_integration, rigidbody_transformations...
 	* Function to delete cloth, rb...

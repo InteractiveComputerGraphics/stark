@@ -134,7 +134,7 @@ void laundry()
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
-	settings.execution.end_simulation_time = 20.0;
+	settings.execution.end_simulation_time = 1.0;
 	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
 	settings.newton.max_newton_iterations = 50;
 	settings.newton.max_line_search_iterations = 10;

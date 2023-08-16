@@ -63,7 +63,7 @@ bool stark::Stark::run(std::function<void()> callback)
 
 	// Final print
 	//// Info
-	this->console.print("\Info\n", Verbosity::Frames);
+	this->console.print("\nInfo\n", Verbosity::Frames);
 	this->console.print(fmt::format("\t # time_steps: {:d}\n", this->logger.ints["time_steps"]), Verbosity::Frames);
 	this->console.print(fmt::format("\t # newton/time_steps: {:.1f}\n", (double)this->logger.ints["newton_iterations"]/(double)this->logger.ints["time_steps"]), Verbosity::Frames);
 	if (!this->settings.newton.use_direct_linear_solve) {
@@ -85,6 +85,7 @@ bool stark::Stark::run(std::function<void()> callback)
 	else {
 		this->console.print(fmt::format("\t directLU: {:.3f} s\n", this->logger.doubles["directLU"]), Verbosity::Frames);
 	}
+	this->console.print(fmt::format("\t failed steps: {:.3f} s\n", this->logger.doubles["failed_steps"]), Verbosity::Frames);
 	return true;
 }
 bool stark::Stark::run_one_step()
@@ -93,7 +94,6 @@ bool stark::Stark::run_one_step()
 		this->_initialize();
 	}
 
-	//this->logger.start_timing("total");
 	this->console.print(fmt::format("\t dt: {:.6f} ms | kc: {:.1e} | ", 1000.0 * this->settings.simulation.adaptive_time_step.value, this->settings.contact.adaptive_contact_stiffness.value), Verbosity::TimeSteps);
 
 	this->callbacks.run_before_time_step();
@@ -101,44 +101,51 @@ bool stark::Stark::run_one_step()
 	// Time step
 	if (this->global_energy.get_total_n_dofs() > 0) {
 		const double t0 = omp_get_wtime();
-		this->logger.start_timing("step");
 		NewtonError err = this->newton.solve(this->global_energy, this->callbacks, this->settings, this->console, this->logger);
-		this->logger.stop_timing_add("step");
 		const double t1 = omp_get_wtime();
+		const double runtime = t1 - t0;
 
 		if (err == NewtonError::Successful) {
-			this->console.print(fmt::format(" | runtime: {:.0f} ms | cr: {:1f}\n", 1000.0 * (t1 - t0), (t1 - t0)/this->settings.simulation.adaptive_time_step.value), Verbosity::TimeSteps);
+			const double cr = runtime / this->settings.simulation.adaptive_time_step.value;
+
+			this->console.print(fmt::format(" | runtime: {:.0f} ms | cr: {:.1f}\n", 1000.0 * runtime, cr), Verbosity::TimeSteps);
+			this->logger.add("step", runtime);
+			this->logger.append_to_series("step", runtime);
+			this->logger.append_to_series("cr", cr);
+			this->logger.append_to_series("dt", this->settings.simulation.adaptive_time_step.value);
+			this->logger.append_to_series("time", this->current_time);
+			this->logger.append_to_series("frame", this->current_frame);
+			this->logger.set("avg dt", 1000.0*this->current_time / (double)this->logger.ints["time_steps"]);
+			this->logger.set("cr", this->logger.doubles["step"] / this->current_time);
+
+			this->callbacks.run_after_time_step();
+
+			this->_write_frame();
+			this->settings.contact.adaptive_contact_stiffness.successful_iteration();
+			this->settings.simulation.adaptive_time_step.successful_iteration();
+			this->logger.add_to_counter("time_steps", 1);
+			this->current_time += this->settings.simulation.adaptive_time_step.value;
+			return true;
 		}
 		else {
+			this->logger.add("failed_steps", runtime);
 			if (err == NewtonError::InvalidConfiguration) {
-				this->settings.contact.adaptive_contact_stiffness.failed_iteration();
+				const bool out_of_bounds = this->settings.contact.adaptive_contact_stiffness.failed_iteration();
+				if (out_of_bounds) {
+					this->console.print(fmt::format("Adaptive contact stiffness out of bounds ({:.e}). Exiting simulation.\n", this->settings.contact.adaptive_contact_stiffness.value), Verbosity::Frames);
+					return false;
+				}
 			}
 			else {
-				this->settings.simulation.adaptive_time_step.failed_iteration();
-				if (this->settings.simulation.adaptive_time_step.value < this->settings.simulation.adaptive_time_step.min) {
-					this->console.print(fmt::format("Min time step size reached ({:.e}). Exiting simulation.\n", this->settings.simulation.adaptive_time_step.min), Verbosity::Frames);
-					this->logger.save_to_disk();
+				const bool out_of_bounds = this->settings.simulation.adaptive_time_step.failed_iteration();
+				if (out_of_bounds) {
+					this->console.print(fmt::format("Adaptive time step size out of bounds ({:.e}). Exiting simulation.\n", this->settings.simulation.adaptive_time_step.value), Verbosity::Frames);
 					return false;
 				}
 			}
 			return this->run_one_step();
 		}
 	}
-	this->logger.append_to_series("dt", this->settings.simulation.adaptive_time_step.value);
-	this->logger.append_to_series("time", this->current_time);
-	this->logger.append_to_series("frame", this->current_frame);
-	this->logger.set("avg dt", this->current_time/(double)this->logger.ints["time_steps"]);
-	this->logger.set("cr", this->logger.doubles["step"]/this->current_time);
-
-	this->callbacks.run_after_time_step();
-
-	this->_write_frame();
-	this->settings.contact.adaptive_contact_stiffness.successful_iteration();
-	this->settings.simulation.adaptive_time_step.successful_iteration();
-	this->logger.add_to_counter("time_steps", 1);
-	this->current_time += this->settings.simulation.adaptive_time_step.value;
-	//this->logger.stop_timing_add("total");
-	return true;
 }
 std::string stark::Stark::get_vtk_path(std::string name) const
 {
