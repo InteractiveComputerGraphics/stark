@@ -25,9 +25,9 @@ int main()
 	//rb_slider();
 	//rb_contacts_floor_test();
 	//rb_contact_edge_test();
-	//laundry();
+	laundry();
 
 
 	// ------------------------- RIGID BODIES -------------------------
-	kobuki_test();
+	//kobuki_test();
 }

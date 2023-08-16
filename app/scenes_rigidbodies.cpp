@@ -141,7 +141,7 @@ void laundry()
 	settings.newton.debug_line_search_output = false;
 
 	settings.contact.adaptive_contact_stiffness.value = 1e7;
-	settings.contact.dhat = 0.0025;
+	settings.contact.dhat = 0.001;
 	settings.contact.edge_edge_enabled = true;
 	stark::models::Simulation sim(settings);
 
@@ -155,20 +155,20 @@ void laundry()
 	// Drum
 	const int drum = sim.rigid_bodies.add_cylinder(1.0, 0.75, 0.5, {0, 0, 0}, 90.0, {1, 0, 0}, 64);
 	sim.rigid_bodies.set_friction(drum, 1.0);
-	sim.rigid_bodies.add_constraint_motor(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY(), 50.0, 3.14, /*delay*/0.01);
+	sim.rigid_bodies.add_constraint_motor(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY(), 50.0, 0.75*3.14, /*delay*/0.01);
 	//sim.rigid_bodies.add_constraint_hinge_joint(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY());
 	//sim.rigid_bodies.add_torque(drum, 0.2*Eigen::Vector3d::UnitY());
 	sim.rigid_bodies.add_to_output_group("drum", drum);
 
 	// Objects
-	const double mu = 0.5;
-	const double mass = 0.2;
+	const double mu = 0.4;
+	const double mass = 0.1;
 	const double scale = 0.1;
 
 	const double d = 1.5*scale;
 	for (double x = -0.4; x < 0.4; x += d) {
 		for (double y = -0.15; y < 0.16; y += d) {
-			for (double z = -0.4; z < 0.0; z += d) {
+			for (double z = -0.4; z < 0.3; z += d) {
 				const Eigen::Vector3d p = 0.1*scale*Eigen::Vector3d::Random();
 				//const int idx = sim.rigid_bodies.add_sphere(mass, 0.5 * scale, Eigen::Vector3d(x, y, z) + p, 0.0, {1, 0, 0}, 2);
 				const int idx = sim.rigid_bodies.add_box(mass, { scale, scale, scale }, Eigen::Vector3d(x, y, z) + p);

@@ -1,72 +1,42 @@
 stark repo TODO
 ===============
 
-FIX
----
-	* Rigid bodies blacklist themselves
-
-
-Rigid body stiffness situation
-------------------------------
-I need to understand rigid body dynamics much better, specially their relation with force.
-
-With cloth I could use very low barrier stiffnesses because it is very light and the impact gets partially absorved by the elasticity/damping.
-For a 1kg box falling 20cm to a fix plane, I need a very high force to stop it on its tracks within one time step.
-Look at the equation for the inertia:
-	E = 0.5*m*(v1 - vhat).dot(v1 - vhat)  ->  f = -dE/dx = -(v1 - vhat)*m/dt
-Stopping a 1kg box coming at 1m/s in 1ms requires 1000N of force (100kg).
-Using a 1mm barrier thickness, one would need 3.3e8.
-
-Another problem is reducing the time step.
-Everytime this happens, the inertia forces become stronger.
-I don't reduce the time step anymore when invalid configuration, but still is annoying.
-If a barrier changes very significantly, it will overshoot. I cannot just start with 1e3 and let it build to 1e10.
-
-	-> Read the technical supplemental IPC because they might talk about this to tune 
-	-> Also check the affine bodies
-
-
-
 High priority
 -------------
 	* Check for NaNs in symx as an option in Stark::Settings. Don't make it a static variable
 	* Same for an out of bounds connectitivity index as it's the second most frequent error.
 		This should be triggered dynamically from settings.debug
 		Should return the name of the energy, connectivity...
-	* Collision detection for rigid bodies is broken for SIMD ???
 	
-		
 	* Compute contact forces and show them somehow
 	* Python plots for time steps, stiffnesses, line search/CG iterations, number of contacts, etc...
-	* [Important] v1 as initial guess with intersection test might significantly help convergence
-	* We need a default friction, otherwise we are using -1.0. Better 0.0.
 	* Average time step size at the end
 	* Print computational resistance
-	* Add intersection step at the end of the line search to be able to accept the step
-		Maybe directly in the line search
-	* Consistency of forces. Forces are a derivative of E wrt positions, but we solve the problem wrt velocities.
-	
-
-Mid priority
-------------
-	* Initial intersection error.
-	* Friction data structures have a lot in common. Refactor.
-	* lambdas for get/set symx data and energies shuold be refactored into a common place to avoid duplicities in logic
 	* Exit simulation when adaptive time step reaches the minimum or the contact the maximum
 	* Timings don't add up to "total" because of aborted time steps
-	* Penalty as a class so I can swap and easily change the gradient for the friction
-	* Pen and paper tests. Box on a plane:
-		- Contact forces. Total and per point.
-		- Friction forces.
-	* Probably better just to have the edge distance strain limiting as it poses way less convergence problems
-	* Support arbitrary inertia tensors
-	* Change all explicit uses of time integration by the euler_integration function so I can better change it to other schemes later.
+	
 	* More warnings and controlled crashes for the common errors:
 		- Wrong connectivities
 		- Wrong data
 		- Strides don't match. Names don't match...
 		All very common errors that will get you a crashed in the debugger very deep down the evaluation.
 		Maybe some hierarchical 'check()' function that propagates and detects all this stuff.
+
+Mid priority
+------------
+	* Initial intersection error.
+	* Friction data structures have a lot in common. Refactor.
+	* lambdas for get/set symx data and energies shuold be refactored into a common place to avoid duplicities in logic
+	* Penalty as a class so I can swap and easily change the gradient for the friction
+	* Pen and paper tests. Box on a plane:
+		- Contact forces. Total and per point.
+		- Friction forces.
+	* Probably better just to have the edge distance strain limiting as it poses way less convergence problems
+	* Change all explicit uses of time integration by the euler_integration function so I can better change it to other schemes later.
+	* [Important] v1 as initial guess with intersection test might significantly help convergence
+	* Add intersection step at the end of the line search to be able to accept the step
+		Maybe directly in the line search
+		This is because RB have curved trajectories
 	
 		
 Low priority
@@ -192,3 +162,21 @@ Architecture
 		While that sounds good to merge cloth-softbody-rods, we still have a lot of combinations with rigidbody and static.
 		Probably the best option is to do the combinatorial explosion with test and pointers.
 	
+Rigid body stiffness situation
+------------------------------
+I need to understand rigid body dynamics much better, specially their relation with force.
+
+With cloth I could use very low barrier stiffnesses because it is very light and the impact gets partially absorved by the elasticity/damping.
+For a 1kg box falling 20cm to a fix plane, I need a very high force to stop it on its tracks within one time step.
+Look at the equation for the inertia:
+	E = 0.5*m*(v1 - vhat).dot(v1 - vhat)  ->  f = -dE/dx = -(v1 - vhat)*m/dt
+Stopping a 1kg box coming at 1m/s in 1ms requires 1000N of force (100kg).
+Using a 1mm barrier thickness, one would need 3.3e8.
+
+Another problem is reducing the time step.
+Everytime this happens, the inertia forces become stronger.
+I don't reduce the time step anymore when invalid configuration, but still is annoying.
+If a barrier changes very significantly, it will overshoot. I cannot just start with 1e3 and let it build to 1e10.
+
+	-> Read the technical supplemental IPC because they might talk about this to tune 
+	-> Also check the affine bodies
