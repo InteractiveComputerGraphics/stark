@@ -3,6 +3,7 @@ stark repo TODO
 
 High priority
 -------------
+	* ...compiled!  With fixed spacing
 	* Check for NaNs in symx as an option in Stark::Settings. Don't make it a static variable
 	* Same for an out of bounds connectitivity index as it's the second most frequent error.
 		This should be triggered dynamically from settings.debug

@@ -144,7 +144,7 @@ symx::Matrix symx::Energy::make_matrix(std::function<const double* ()> data, con
 	return matrix;
 }
 
-void symx::Energy::evaluate_E(Assembly& assembly)
+void symx::Energy::evaluate_E(Assembly& assembly, const bool runtime_NaN_check)
 {
 	if (!this->is_active) { return; }
 	if (this->has_condition) {
@@ -157,15 +157,15 @@ void symx::Energy::evaluate_E(Assembly& assembly)
 	};
 
 	if (this->has_branches) {
-		this->compiled_derivatives_d.run_E(assembly.n_threads, assembly_f);
+		this->compiled_derivatives_d.run_E(assembly.n_threads, assembly_f, runtime_NaN_check);
 		assembly.compiled_runtime = this->compiled_derivatives_d.E.thread_compiled_timing.end();
 	}
 	else {
-		this->compiled_derivatives.run_E(assembly.n_threads, assembly_f);
+		this->compiled_derivatives.run_E(assembly.n_threads, assembly_f, runtime_NaN_check);
 		assembly.compiled_runtime = this->compiled_derivatives.E.thread_compiled_timing.end();
 	}
 }
-void symx::Energy::evaluate_E_grad(Assembly& assembly)
+void symx::Energy::evaluate_E_grad(Assembly& assembly, const bool runtime_NaN_check)
 {
 	if (!this->is_active) { return; }
 	if (this->has_condition) {
@@ -191,15 +191,15 @@ void symx::Energy::evaluate_E_grad(Assembly& assembly)
 	};
 
 	if (this->has_branches) {
-		this->compiled_derivatives_d.run_E_grad(assembly.n_threads, assembly_f);
+		this->compiled_derivatives_d.run_E_grad(assembly.n_threads, assembly_f, runtime_NaN_check);
 		assembly.compiled_runtime = this->compiled_derivatives_d.dE.thread_compiled_timing.end();
 	}
 	else {
-		this->compiled_derivatives.run_E_grad(assembly.n_threads, assembly_f);
+		this->compiled_derivatives.run_E_grad(assembly.n_threads, assembly_f, runtime_NaN_check);
 		assembly.compiled_runtime = this->compiled_derivatives.dE.thread_compiled_timing.end();
 	}
 }
-void symx::Energy::evaluate_E_grad_hess(Assembly& assembly)
+void symx::Energy::evaluate_E_grad_hess(Assembly& assembly, const bool runtime_NaN_check)
 {
 	if (!this->is_active) { return; }
 	if (this->has_condition) {
@@ -250,11 +250,11 @@ void symx::Energy::evaluate_E_grad_hess(Assembly& assembly)
 	};
 
 	if (this->has_branches) {
-		this->compiled_derivatives_d.run_E_grad_hess(assembly.n_threads, assembly_f);
+		this->compiled_derivatives_d.run_E_grad_hess(assembly.n_threads, assembly_f, runtime_NaN_check);
 		assembly.compiled_runtime += this->compiled_derivatives_d.hE.thread_compiled_timing.end();
 	}
 	else {
-		this->compiled_derivatives.run_E_grad_hess(assembly.n_threads, assembly_f);
+		this->compiled_derivatives.run_E_grad_hess(assembly.n_threads, assembly_f, runtime_NaN_check);
 		assembly.compiled_runtime += this->compiled_derivatives.hE.thread_compiled_timing.end();
 	}
 }

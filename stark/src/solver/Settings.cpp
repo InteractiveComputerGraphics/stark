@@ -87,7 +87,6 @@ std::string stark::Settings::as_string() const
 	out += "\n         console_verbosity: " + to_string(this->output.console_verbosity);
 	out += "\n         console_output_to: " + to_string(this->output.console_output_to);
 	out += "\n         calculate_smooth_normals: " + to_string(this->output.calculate_smooth_normals);
-	out += "\n         suppress_symx_compiler_output: " + to_string(this->output.suppress_symx_compiler_output);
 
 	out += "\n     Simulation";
 	out += "\n         adaptive_time_step" + to_string(this->simulation.adaptive_time_step);
@@ -116,13 +115,17 @@ std::string stark::Settings::as_string() const
 	out += "\n         cg_max_iterations_multiplier: " + fmt::format("{:f}", this->newton.cg_max_iterations_multiplier);
 	out += "\n         use_direct_linear_solve: " + to_string(this->newton.use_direct_linear_solve);
 	out += "\n         project_to_PD: " + to_string(this->newton.project_to_PD);
-	out += "\n         debug_line_search_output: " + to_string(this->newton.debug_line_search_output);
 
 	out += "\n     Execution";
 	out += "\n         allowed_execution_time: " + fmt::format("{:.1e}", this->execution.allowed_execution_time);
 	out += "\n         end_simulation_time: " + fmt::format("{:.1e}", this->execution.end_simulation_time);
 	out += "\n         end_frame: " + fmt::format("{:d}", this->execution.end_frame);
 	out += "\n         n_threads: " + fmt::format("{:d}", this->execution.n_threads);
+
+	out += "\n     Debug";
+	out += "\n         symx_check_for_NaNs: " + to_string(this->debug.symx_check_for_NaNs);
+	out += "\n         symx_suppress_compiler_output: " + to_string(this->debug.symx_suppress_compiler_output);
+	out += "\n         debug_line_search_output: " + to_string(this->debug.line_search_output);
 	out += "\n\n";
 	return out;
 }

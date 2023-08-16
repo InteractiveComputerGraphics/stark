@@ -73,19 +73,19 @@ namespace symx
 			CB -> std::function<void(const int32_t* connectivity, const OUTPUT_FLOAT* solution)>
 		*/
 		template<typename CB>
-		void run_E(const int n_threads, CB callback);
+		void run_E(const int n_threads, CB callback, const bool check_for_NaNs = false);
 
 		/*
 			CB -> std::function<void(const int32_t* connectivity, const OUTPUT_FLOAT* solution)>
 		*/
 		template<typename CB>
-		void run_E_grad(const int n_threads, CB callback);
+		void run_E_grad(const int n_threads, CB callback, const bool check_for_NaNs = false);
 
 		/*
 			CB -> std::function<void(const int32_t* connectivity, const OUTPUT_FLOAT* solution)>
 		*/
 		template<typename CB>
-		void run_E_grad_hess(const int n_threads, CB callback);
+		void run_E_grad_hess(const int n_threads, CB callback, const bool check_for_NaNs = false);
 	};
 
 
@@ -273,20 +273,20 @@ namespace symx
 	
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	template<typename CB>
-	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run_E(const int n_threads, CB callback)
+	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run_E(const int n_threads, CB callback, const bool check_for_NaNs)
 	{
-		this->E.run(n_threads, callback);
+		this->E.run(n_threads, callback, check_for_NaNs);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	template<typename CB>
-	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run_E_grad(const int n_threads, CB callback)
+	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run_E_grad(const int n_threads, CB callback, const bool check_for_NaNs)
 	{
-		this->dE.run(n_threads, callback);
+		this->dE.run(n_threads, callback, check_for_NaNs);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	template<typename CB>
-	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run_E_grad_hess(const int n_threads, CB callback)
+	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run_E_grad_hess(const int n_threads, CB callback, const bool check_for_NaNs)
 	{
-		this->hE.run(n_threads, callback);
+		this->hE.run(n_threads, callback, check_for_NaNs);
 	}
 }

@@ -45,7 +45,7 @@ void collision_cloth_test()
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 2.0;
 	
-	settings.newton.debug_line_search_output = true;
+	settings.debug.line_search_output = true;
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 	
@@ -87,7 +87,7 @@ void collision_cloth_edge_edge_tests()
 	settings.simulation.gravity = { 0, 0, 0 };
 	settings.simulation.boundary_conditions_stiffness = 1e2;
 
-	settings.newton.debug_line_search_output = true;
+	settings.debug.line_search_output = true;
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 
@@ -139,7 +139,7 @@ void collision_cloth_parallel_edge_test_rotation()
 	settings.execution.n_threads = 1;
 	settings.simulation.gravity = {0, 0, 0};
 
-	settings.newton.debug_line_search_output = true;
+	settings.debug.line_search_output = true;
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 
@@ -199,7 +199,7 @@ void collision_cloth_parallel_edge_test_shear()
 	settings.execution.n_threads = 1;
 	settings.simulation.gravity = { 0, 0, 0 };
 
-	settings.newton.debug_line_search_output = true;
+	settings.debug.line_search_output = true;
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 
@@ -259,7 +259,7 @@ void collision_cloth_parallel_edge_test_slide()
 	settings.execution.n_threads = 1;
 	settings.simulation.gravity = { 0, 0, 0 };
 
-	settings.newton.debug_line_search_output = true;
+	settings.debug.line_search_output = true;
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 
@@ -342,7 +342,7 @@ void cloth_friction_slope_test()
 	settings.execution.end_simulation_time = 2.5;
 	//settings.execution.n_threads = 1;
 
-	settings.newton.debug_line_search_output = true;
+	settings.debug.line_search_output = true;
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 	settings.newton.max_newton_iterations = 200;
@@ -395,7 +395,7 @@ void cloth_friction_corner()
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
 
-	settings.newton.debug_line_search_output = false;
+	settings.debug.line_search_output = false;
 	settings.newton.max_newton_iterations = 200;
 	settings.newton.max_line_search_iterations = 50;
 	settings.newton.project_to_PD = false;
@@ -446,7 +446,7 @@ void cloth_wrap()
 	//settings.execution.n_threads = 1;
 	settings.simulation.gravity = { 0, 0, 0 };
 
-	settings.newton.debug_line_search_output = false;
+	settings.debug.line_search_output = false;
 	settings.newton.use_direct_linear_solve = false;
 	settings.newton.project_to_PD = false;
 

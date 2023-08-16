@@ -28,7 +28,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		//// Evaluate and assemble
 		logger.start_timing("evaluate_E_grad_hess");
 		callbacks.run_before_energy_evaluation();
-		symx::Assembled assembled = global_energy.evaluate_E_grad_hess();
+		symx::Assembled assembled = global_energy.evaluate_E_grad_hess(settings.debug.symx_check_for_NaNs);
 		callbacks.run_after_energy_evaluation();
 		logger.stop_timing_add("evaluate_E_grad_hess");
 		logger.add_to_timer("compiled_E_g_h (acc)", assembled.compiled_runtime);
@@ -96,7 +96,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		// Convergence?
 		logger.start_timing("evaluate_E_grad");
 		callbacks.run_before_energy_evaluation();
-		assembled = global_energy.evaluate_E_grad();
+		assembled = global_energy.evaluate_E_grad(settings.debug.symx_check_for_NaNs);
 		callbacks.run_after_energy_evaluation();
 		logger.stop_timing_add("evaluate_E_grad");
 		logger.add_to_timer("compiled_E_g (acc)", assembled.compiled_runtime);
@@ -122,7 +122,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			// Sequence
 			logger.start_timing("evaluate_E");
 			callbacks.run_before_energy_evaluation();
-			assembled = global_energy.evaluate_E();
+			assembled = global_energy.evaluate_E(settings.debug.symx_check_for_NaNs);
 			callbacks.run_after_energy_evaluation();
 			logger.stop_timing_add("evaluate_E");
 			logger.add_to_timer("compiled_E (acc)", assembled.compiled_runtime);
@@ -137,7 +137,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		}
 
 		// Log line search energy profile
-		if (settings.newton.debug_line_search_output) {
+		if (settings.debug.line_search_output) {
 			if (step_valid_configuration > 0.99 && step < 0.99) {
 				const std::string label = std::to_string(this->debug_output_counter);
 

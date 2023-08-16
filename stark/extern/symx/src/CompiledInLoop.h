@@ -28,8 +28,6 @@ namespace symx
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT = INPUT_FLOAT, typename OUTPUT_FLOAT = INPUT_FLOAT>
 	class CompiledInLoop
 	{
-		constexpr static bool CHECK_FOR_NAN = false;
-
 	private:
 		struct SymbolArrayMap
 		{
@@ -64,6 +62,7 @@ namespace symx
 
 		// Misc
 		bsm::ParallelNumber<double> thread_compiled_timing;
+		std::string name = "";
 
 
 		/* Methods */
@@ -120,7 +119,7 @@ namespace symx
 			CB -> std::function<void(const int32_t iteration, const int32_t thread_id, const int32_t* connectivity, const OUTPUT_FLOAT* solution)>
 		*/
 		template<typename CB>
-		void run(const int32_t n_threads, CB callback);
+		void run(const int32_t n_threads, CB callback, const bool check_for_NaNs = false);
 
 	private:
 		void _init();
@@ -155,11 +154,12 @@ namespace symx
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	inline CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::CompiledInLoop(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, bool suppress_compiler_output)
 	{
-		this->compile(expr, name, folder, id, suppress_compiler_output);
+		this->compile(expr, name, folder, id, suppress_compiler_output, runtime_NaN_check);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, bool suppress_compiler_output)
 	{
+		this->name = name;
 		this->compilation.template compile<COMPILED_FLOAT>(expr, name, folder, id, suppress_compiler_output);
 		this->_init();
 	}
@@ -246,7 +246,7 @@ namespace symx
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT*()> data)
 	{
 		if (scalars.size() != indices.size()) {
-			std::cout << "symx error: CompiledInLoop.set_from_array() got mistmatched sized scalars and indices vectors." << std::endl;
+			std::cout << "symx error: CompiledInLoop.set_scalars() got mistmatched sized scalars and indices vectors for instance with name \"" + this->name + "\"" << std::endl;
 			exit(-1);
 		}
 		this->_resize_symbol_array_map(scalars[0]);
@@ -298,7 +298,7 @@ namespace symx
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT*()> data)
 	{
 		if (vectors.size() != indices.size()) {
-			std::cout << "symx error: CompiledInLoop.set_from_array() got mistmatched sized vectors and indices vectors." << std::endl;
+			std::cout << "symx error: CompiledInLoop.set_vectors() got mistmatched sized vectors and indices vectors for instance with name \"" + this->name + "\"" << std::endl;
 			exit(-1);
 		}
 
@@ -331,7 +331,7 @@ namespace symx
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT*()> data)
 	{
 		if (matrices.size() != indices.size()) {
-			std::cout << "symx error: CompiledInLoop.set_from_array() got mistmatched sized vectors and indices vectors." << std::endl;
+			std::cout << "symx error: CompiledInLoop.set_matrices() got mistmatched sized vectors and indices vectors for instance with name \"" + this->name + "\"" << std::endl;
 			exit(-1);
 		}
 
@@ -354,12 +354,12 @@ namespace symx
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_summation_vector(const Vector vector, const std::vector<double>& summation_data, const int summation_stride)
 	{
 		if (this->summation_stride != -1) {
-			std::cout << "symx error: CompiledInLoop.set_summation_vector(): Summation vector already set." << std::endl;
+			std::cout << "symx error: CompiledInLoop.set_summation_vector(): Summation vector already set for instance with name \"" + this->name + "\"" << std::endl;
 			exit(-1);
 		}
 
 		if ((int)vector.size() != summation_stride) {
-			std::cout << "symx error: CompiledInLoop.set_summation_vector() got mistmatched sized vectors and data stride." << std::endl;
+			std::cout << "symx error: CompiledInLoop.set_summation_vector() got mistmatched sized vectors and data stride for instance with name \"" + this->name + "\"" << std::endl;
 			exit(-1);
 		}
 
@@ -368,7 +368,7 @@ namespace symx
 		this->summation_iterations = (int)this->summation_data.size() / this->summation_stride;
 
 		if ((int)this->summation_data.size() != this->summation_iterations*this->summation_stride) {
-			std::cout << "symx error: CompiledInLoop.set_summation_vector() got non consistent sized vectors and data stride." << std::endl;
+			std::cout << "symx error: CompiledInLoop.set_summation_vector() got non consistent sized vectors and data stride for instance with name \"" + this->name + "\"" << std::endl;
 			exit(-1);
 		}
 
@@ -387,7 +387,7 @@ namespace symx
 
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	template<typename CB>
-	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run(const int32_t n_threads, CB callback)
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run(const int32_t n_threads, CB callback, const bool check_for_NaNs)
 	{
 		using UNDERLYING_FLOAT = UNDERLYING_TYPE<COMPILED_FLOAT>;
 		constexpr int N_SIMD = get_n_items_in_simd<COMPILED_FLOAT>();
@@ -401,14 +401,14 @@ namespace symx
 		const int32_t* connectivity_data = this->connectivity_data();
 		for (SymbolArrayMap& map : this->symbol_array_map) {
 			if (map.data == nullptr) {
-				std::cout << "symx error: CompiledInLoop found a symbol that were not set." << std::endl;
+				std::cout << "symx error: CompiledInLoop::run() found a symbol that were not set for instance with name \"" + this->name + "\"" << std::endl;
 				exit(-1);
 			}
 			map.array_begin = map.data();
 		}
 
 		if (n_threads < 0) {
-			std::cout << "symx error: invalid n_threads in CompiledInLoop.run()." << std::endl;
+			std::cout << "symx error: invalid n_threads in CompiledInLoop.run() for instance with name \"" + this->name + "\"" << std::endl;
 			exit(-1);
 		}
 
@@ -461,7 +461,7 @@ namespace symx
 					const int32_t value_idx = loc_idx * map.stride + map.offset;
 					input_scalar[N_SIMD * symbol_i + i] = static_cast<UNDERLYING_FLOAT>(map.array_begin[value_idx]);
 
-					if constexpr (CompiledInLoop::CHECK_FOR_NAN) {
+					if (runtime_NaN_check) {
 						if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
 							std::cout << ("symx error: NaN found in CompiledInLoop::run() in the input " + std::to_string(symbol_i)) << std::endl;
 							exit(-1);
@@ -495,7 +495,7 @@ namespace symx
 							SymbolArrayMap& map = this->symbol_array_map[symbol_i];
 							input_scalar[N_SIMD * symbol_i + i] = static_cast<UNDERLYING_FLOAT>(map.array_begin[map.stride * sum_it + map.offset]);
 
-							if constexpr (CompiledInLoop::CHECK_FOR_NAN) {
+							if (runtime_NaN_check) {
 								if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
 									std::cout << ("symx error: NaN foung in CompiledInLoop::run() in the input " + std::to_string(symbol_i)) << std::endl;
 									exit(-1);
@@ -519,10 +519,10 @@ namespace symx
 
 			// Scatter
 			if constexpr (N_SIMD == 1 && std::is_same_v<UNDERLYING_FLOAT, OUTPUT_FLOAT>) {
-				if constexpr (CompiledInLoop::CHECK_FOR_NAN) {
+				if (runtime_NaN_check) {
 					for (int32_t i = 0; i < n_outputs; i++) {
 						if (std::isnan(f_output[i])) {
-							std::cout << "symx error: NaN foung in CompiledInLoop::run() in the outputs." << std::endl;
+							std::cout << "symx error: NaN foung in CompiledInLoop::run() in the outputs for instance with name \"" + this->name + "\"" << std::endl;
 							std::cout << "Inputs: ";
 							for (int32_t i = 0; i < n_inputs; i++) {
 								std::cout << std::to_string(f_input[i]) << ", ";
@@ -543,9 +543,9 @@ namespace symx
 					for (int32_t sol_i = 0; sol_i < n_outputs; sol_i++) {
 						solution_buffer[sol_i] = static_cast<OUTPUT_FLOAT>(output_scalar[N_SIMD * sol_i + i]);
 
-						if constexpr (CompiledInLoop::CHECK_FOR_NAN) {
+						if (runtime_NaN_check) {
 							if (std::isnan(solution_buffer[sol_i])) {
-								std::cout << "symx error: NaN foung in CompiledInLoop::run() in the outputs." << std::endl;
+								std::cout << "symx error: NaN found in the outputs of CompiledInLoop::run() for instance with name \"" + this->name + "\"" << std::endl;
 								std::cout << "Compile with scalar COMPILED_FLOAT to see the input." << std::endl;
 								exit(-1);
 							}

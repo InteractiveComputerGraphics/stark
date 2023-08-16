@@ -27,7 +27,7 @@ namespace symx
 		std::vector<std::string> dof_labels;
 
 		std::string working_directory = "NO_PATH_SET_IN_SimulationWorkSpace";
-		bool suppress_compiler_output = true;
+		bool runtime_NaN_check = true;
 		int n_threads = -1;
 		bool is_initialized = false;
 
@@ -62,9 +62,9 @@ namespace symx
 		DoF add_dof_array(DYNAMIC_VECTOR& arr, std::string label = "");
 
 		std::string compile(std::string working_directory, const int n_threads = -1, bool suppress_compiler_output = true);
-		Assembled evaluate_E();
-		Assembled evaluate_E_grad();
-		Assembled evaluate_E_grad_hess();
+		Assembled evaluate_E(const bool check_for_NaNs = false);
+		Assembled evaluate_E_grad(const bool check_for_NaNs = false);
+		Assembled evaluate_E_grad_hess(const bool check_for_NaNs = false);
 		void get_dofs(double* u) const;
 		void apply_dof_increment(const double* du);
 		void set_dofs(const double* u);

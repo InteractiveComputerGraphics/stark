@@ -74,12 +74,11 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 	}
 
 	this->working_directory = working_directory;
-	this->suppress_compiler_output = suppress_compiler_output;
 	this->n_threads = n_threads;
 	if (this->n_threads == -1) {
 		this->n_threads = omp_get_max_threads();
 	}
-	this->n_threads = this->suppress_compiler_output ? this->n_threads : 1;
+	this->n_threads = suppress_compiler_output ? this->n_threads : 1;
 
 	this->runtime_differentiation = 0.0;
 	this->runtime_codegen = 0.0;
@@ -92,7 +91,7 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 		this->energies[i]->working_directory = this->working_directory;
 
 		const double t0 = omp_get_wtime();
-		this->energies[i]->deferred_init(this->dof_data, this->suppress_compiler_output);
+		this->energies[i]->deferred_init(this->dof_data, suppress_compiler_output);
 		const double t1 = omp_get_wtime();
 		
 		#pragma omp atomic
@@ -127,12 +126,12 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 	this->is_initialized = true;
 	return output;
 }
-symx::Assembled symx::GlobalEnergy::evaluate_E()
+symx::Assembled symx::GlobalEnergy::evaluate_E(const bool check_for_NaNs)
 {
 	this->_exit_if_not_initialized();
 	this->assembly.reset(this->get_dofs_offsets(), this->n_threads, false, false);
 	for (auto& energy : this->energies) {
-		energy->evaluate_E(this->assembly);
+		energy->evaluate_E(this->assembly, check_for_NaNs);
 	}
 	for (auto& external_E : this->external_E) {
 		external_E(this->assembly);
@@ -140,12 +139,12 @@ symx::Assembled symx::GlobalEnergy::evaluate_E()
 	this->assembly.E.end();
 	return Assembled(this->assembly);
 }
-symx::Assembled symx::GlobalEnergy::evaluate_E_grad()
+symx::Assembled symx::GlobalEnergy::evaluate_E_grad(const bool check_for_NaNs)
 {
 	this->_exit_if_not_initialized();
 	this->assembly.reset(this->get_dofs_offsets(), this->n_threads, false, true);
 	for (auto& energy : this->energies) {
-		energy->evaluate_E_grad(this->assembly);
+		energy->evaluate_E_grad(this->assembly, check_for_NaNs);
 	}
 	for (auto& external_E_grad : this->external_E_grad) {
 		external_E_grad(this->assembly);
@@ -154,12 +153,12 @@ symx::Assembled symx::GlobalEnergy::evaluate_E_grad()
 	this->assembly.grad.end();
 	return Assembled(this->assembly);
 }
-symx::Assembled symx::GlobalEnergy::evaluate_E_grad_hess()
+symx::Assembled symx::GlobalEnergy::evaluate_E_grad_hess(const bool check_for_NaNs)
 {
 	this->_exit_if_not_initialized();
 	this->assembly.reset(this->get_dofs_offsets(), this->n_threads, true, true);
 	for (auto& energy : this->energies) {
-		energy->evaluate_E_grad_hess(this->assembly);
+		energy->evaluate_E_grad_hess(this->assembly, check_for_NaNs);
 	}
 	for (auto& external_E_grad_hess : this->external_E_grad_hess) {
 		external_E_grad_hess(this->assembly);

@@ -20,9 +20,8 @@ namespace stark
 			Verbosity console_verbosity = Verbosity::TimeSteps;
 			OutputTo console_output_to = OutputTo::FileAndConsole;
 			bool calculate_smooth_normals = true;
-			bool suppress_symx_compiler_output = true;
 		};
-		struct Stark
+		struct Simulation
 		{
 			AdaptiveParameter adaptive_time_step;
 			Eigen::Vector3d gravity = { 0.0, 0.0, -9.81 };
@@ -54,7 +53,6 @@ namespace stark
 
 			bool use_direct_linear_solve = false;
 			bool project_to_PD = false;
-			bool debug_line_search_output = false;
 		};
 		struct Execution
 		{
@@ -63,12 +61,19 @@ namespace stark
 			int end_frame = std::numeric_limits<int>::max();
 			int n_threads = -1;
 		};
+		struct Debug
+		{
+			bool symx_check_for_NaNs = false;
+			bool symx_suppress_compiler_output = true;
+			bool line_search_output = false;
+		};
 
 		Output output;
-		Stark simulation;
+		Simulation simulation;
 		NewtonsMethod newton;
 		Contact contact;
 		Execution execution;
+		Debug debug;
 
 		/* Methods */
 		Settings();

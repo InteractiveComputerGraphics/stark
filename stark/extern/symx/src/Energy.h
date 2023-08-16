@@ -23,7 +23,6 @@ namespace symx
 
 	public:
 		/* Fields */
-		//std::function<int32_t()> n_elements;
 		int32_t n_items_per_element = -1;
 		CompiledDerivativesLoop<double, double, double> compiled_derivatives;
 		CompiledDerivativesLoop<double, double, double> compiled_derivatives_d;  // For energies with branches
@@ -128,9 +127,9 @@ namespace symx
 		Vector make_summation_vector(const std::vector<std::array<double, STRIDE>>& iteration_vectors);
 
 		// Evaluations
-		void evaluate_E(Assembly& assembly);
-		void evaluate_E_grad(Assembly& assembly);
-		void evaluate_E_grad_hess(Assembly& assembly);
+		void evaluate_E(Assembly& assembly, const bool runtime_NaN_check = false);
+		void evaluate_E_grad(Assembly& assembly, const bool runtime_NaN_check = false);
+		void evaluate_E_grad_hess(Assembly& assembly, const bool runtime_NaN_check = false);
 
 	private:
 		void _update_connectivity_conditionally(const int n_threads);

@@ -138,7 +138,7 @@ void laundry()
 	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
 	settings.newton.max_newton_iterations = 50;
 	settings.newton.max_line_search_iterations = 10;
-	settings.newton.debug_line_search_output = false;
+	settings.debug.line_search_output = false;
 
 	settings.contact.adaptive_contact_stiffness.value = 1e7;
 	settings.contact.dhat = 0.001;
