@@ -549,11 +549,11 @@ void stark::models::RigidBodies::_update_contacts(Stark& sim)
 }
 void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 {
+	this->_update_collision_x1(sim, /* dt = */0.0);
 	if (!sim.settings.contact.collisions_enabled) { return; }
 	if (!sim.settings.contact.friction_enabled) { return; }
 
 	// Proximity detection
-	this->_update_collision_x1(sim, /* dt = */0.0);
 	const std::vector<Eigen::Vector3d>& x = this->collision_x1;
 	const tmcd::ProximityResults& proximity = this->_run_proximity_detection(x, sim);
 

@@ -33,6 +33,7 @@ int main()
 	//interaction_cloth_rb();
 	interaction_cloth_rb_bowl();
 
+
 	// ------------------------- KOBUKI -------------------------
 	//kobuki_test();
 }

@@ -452,7 +452,7 @@ void cloth_wrap()
 
 	settings.contact.friction_enabled = false;
 	settings.contact.friction_stick_slide_threshold = 1e-6;
-	settings.newton.max_newton_iterations = 200;
+	settings.newton.max_newton_iterations = 50;
 
 	settings.contact.collisions_enabled = true;
 	settings.contact.edge_edge_enabled = true;
@@ -462,7 +462,7 @@ void cloth_wrap()
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
-	const int n = 50;
+	const int n = 400;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n }, true);

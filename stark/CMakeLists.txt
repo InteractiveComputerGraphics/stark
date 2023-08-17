@@ -63,6 +63,7 @@ set(MODELS_FILES
 	src/models/Interactions.h
 	src/models/Interactions.cpp
 	src/models/RB_Deformable_Contacts.h
+	src/models/RB_Deformable_Friction.h
 	)
 
 set(UTILS_FILES

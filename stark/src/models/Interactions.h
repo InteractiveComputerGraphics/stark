@@ -10,6 +10,7 @@
 #include "Cloth.h"
 #include "RigidBodies.h"
 #include "RB_Deformable_Contacts.h"
+#include "RB_Deformable_Friction.h"
 
 
 namespace stark::models
@@ -27,6 +28,7 @@ namespace stark::models
 		tmcd::IntersectionDetection id;
 		tmcd::ProximityDetection pd;
 		RB_Deformable_Contacts contacts;
+		RB_Deformable_Friction friction;
 		
 		/* Methods */
 		void init(Stark& sim, Cloth* cloth, RigidBodies* rigid_bodies);
@@ -36,15 +38,13 @@ namespace stark::models
 		// Helpers
 		const tmcd::ProximityResults& _run_proximity_detection(const std::vector<Eigen::Vector3d>& x_cloth, const std::vector<Eigen::Vector3d>& x_rb, Stark& sim);
 		void _update_contacts(Stark& sim);
-		//void _update_friction_contacts(Stark& sim);
 
 		// Stark callbacks
-		//void _before_time_step(Stark& sim);
-		//void _after_time_step(Stark& sim);
+		void _update_friction_contacts(Stark& sim);
 		bool _is_valid_configuration(Stark& sim);
 
 		// Energy groups
 		void _energies_contact(Stark& sim);
-		//void _energies_friction(Stark& sim);
+		void _energies_friction(Stark& sim);
 	};
 }

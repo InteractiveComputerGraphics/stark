@@ -53,12 +53,12 @@ void interaction_cloth_rb_bowl()
 	settings.output.output_directory = "D:/sciebo/wd/stark/interaction_cloth_rb_bowl";
 	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
-	settings.output.fps = 60;
+	settings.output.fps = 240;
 
 	settings.execution.end_simulation_time = 1.0;
 	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
 
-	settings.contact.friction_enabled = false;
+	settings.contact.friction_enabled = true;
 	settings.contact.adaptive_contact_stiffness.value = 1e6;
 	settings.contact.dhat = 0.001;
 	stark::models::Simulation sim(settings);
@@ -66,7 +66,7 @@ void interaction_cloth_rb_bowl()
 	// Rigid bodies
 	const double mu = 1.0;
 	const double mass = 10.0;
-	const int o1 = sim.rigid_bodies.add_sphere(mass, 1.0, { 0, 0, 0.5 });
+	const int o1 = sim.rigid_bodies.add_sphere(mass, 0.5, { 0, 0, 0.25 });
 	sim.rigid_bodies.add_constraint_freeze(o1);
 
 	// Cloth

@@ -8,6 +8,9 @@ High priority
 
 Mid priority
 ------------
+	* There is a BIG refactor to do in collisions and friction.
+		I should bring all the collisions to a single class and share all the tooling there.
+		In the end it's not going to be too bad (except building connectitivity)
 	* SymX just load .dll, don't checksum. Too slow in debug mode.
 	* Contacts should be global as artificially splitting into physical systems leads to repeated CD, 
 		implicit handling of collision_x1 updates, and in general much less clarity
