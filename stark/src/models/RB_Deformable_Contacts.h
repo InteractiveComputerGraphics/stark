@@ -18,14 +18,15 @@ namespace stark::models
 			symx::LabelledConnectivity<4> rb_d_edge_point{ { "rb", "rb_e0_loc", "rb_e1_loc", "p" } };
 			symx::LabelledConnectivity<5> rb_d_triangle_point{ { "rb", "rb_t0_loc", "rb_t1_loc", "rb_t2_loc", "p" } };
 		};
-		//struct EdgeEdge
-		//{
-		//	std::vector<std::array<int32_t, 6>> point_point;  // [edge_vertices, point_idx, edge_vertices, point_idx]
-		//	std::vector<std::array<int32_t, 5>> point_edge;  // [edge_vertices, point_idx, edge_vertices]
-		//	std::vector<std::array<int32_t, 4>> edge_edge;  // [edge_vertices, edge_vertices]
-		//};
+		struct EdgeEdge
+		{
+			symx::LabelledConnectivity<7> rb_d_point_point{ { "rb", "rb_e0", "rb_e1", "rb_p", "e0", "e1", "q" } };
+			symx::LabelledConnectivity<6> rb_d_point_edge{ { "rb", "rb_e0", "rb_e1", "rb_p", "e0", "e1" } };
+			symx::LabelledConnectivity<5> rb_d_edge_edge{ { "rb", "rb_e0", "rb_e1", "e0", "e1" } };
+			symx::LabelledConnectivity<6> rb_d_edge_point{ { "rb", "rb_e0", "rb_e1", "e0", "e1", "q" } };
+		};
 		PointTriangle point_triangle;
-		//EdgeEdge edge_edge;
+		EdgeEdge edge_edge;
 
 		void clear()
 		{
@@ -35,9 +36,10 @@ namespace stark::models
 			this->point_triangle.rb_d_edge_point.clear();
 			this->point_triangle.rb_d_triangle_point.clear();
 
-			//this->edge_edge.point_point.clear();
-			//this->edge_edge.point_edge.clear();
-			//this->edge_edge.edge_edge.clear();
+			this->edge_edge.rb_d_point_point.clear();
+			this->edge_edge.rb_d_point_edge.clear();
+			this->edge_edge.rb_d_edge_edge.clear();
+			this->edge_edge.rb_d_edge_point.clear();
 		}
 	};
 }

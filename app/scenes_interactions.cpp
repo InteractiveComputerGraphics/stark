@@ -26,14 +26,14 @@ void interaction_cloth_rb()
 
 	// Rigid bodies
 	const double mu = 1.0;
-	const int o1 = sim.rigid_bodies.add_box(10.0, { 2.0, 2.0, 0.1 }, { 0, 0, 0 });
+	const int o1 = sim.rigid_bodies.add_box(10.0, { 0.2, 2.0, 0.1 }, { 0, 0, 0 });
 	sim.rigid_bodies.add_rotation(o1, -rot_deg, Eigen::Vector3d::UnitX());
 	sim.rigid_bodies.set_friction(o1, mu);
 	sim.rigid_bodies.add_constraint_freeze(o1);
 
 	// Cloth
 	const double scale = 1.0;
-	const int n = 30;
+	const int n = 1;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5*scale, -0.5*scale }, { 0.5*scale, 0.5*scale }, { n, n });

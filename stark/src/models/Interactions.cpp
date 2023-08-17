@@ -108,6 +108,53 @@ void stark::models::Interactions::_update_contacts(Stark& sim)
 			exit(9);
 		}
 	}
+
+	//// Edge - Edge
+	for (const auto& pair : proximity.edge_edge.point_point) {
+		const tmcd::EdgePoint& ep_a = pair.first;
+		const tmcd::EdgePoint& ep_b = pair.second;
+
+		if (ep_a.point.set == this->rigid_bodies_id && ep_b.point.set == this->cloth_id) {
+			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(ep_a.point.idx);
+			this->contacts.edge_edge.rb_d_point_point.push_back({ rb_idx, ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx, ep_b.edge.vertices[0], ep_b.edge.vertices[1], ep_b.point.idx });
+		}
+		else if (ep_a.point.set == this->cloth_id && ep_b.point.set == this->rigid_bodies_id) {
+			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(ep_b.point.idx);
+			this->contacts.edge_edge.rb_d_point_point.push_back({ rb_idx, ep_b.edge.vertices[0], ep_b.edge.vertices[1], ep_b.point.idx, ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx });
+		}
+		else {
+			exit(9);
+		}
+	}
+	for (const auto& pair : proximity.edge_edge.point_edge) {
+		const tmcd::EdgePoint& ep_a = pair.first;
+		const tmcd::Edge& e_b = pair.second;
+
+		if (ep_a.point.set == this->rigid_bodies_id && e_b.set == this->cloth_id) {
+			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(ep_a.point.idx);
+			this->contacts.edge_edge.rb_d_point_edge.push_back({ rb_idx, ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx, e_b.vertices[0], e_b.vertices[1] });
+		}
+		else if (ep_a.point.set == this->cloth_id && e_b.set == this->rigid_bodies_id) {
+			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(e_b.vertices[0]);
+			this->contacts.edge_edge.rb_d_edge_point.push_back({ rb_idx, e_b.vertices[0], e_b.vertices[1], ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx });
+		}
+		else {
+			exit(9);
+		}
+	}
+	for (const auto& pair : proximity.edge_edge.edge_edge) {
+		if (pair.first.set == this->rigid_bodies_id && pair.second.set == this->cloth_id) {
+			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(pair.first.vertices[0]);
+			this->contacts.edge_edge.rb_d_edge_edge.push_back({ rb_idx, pair.first.vertices[0], pair.first.vertices[1], pair.second.vertices[0], pair.second.vertices[1] });
+		}
+		else if (pair.first.set == this->cloth_id && pair.second.set == this->rigid_bodies_id) {
+			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(pair.second.vertices[0]);
+			this->contacts.edge_edge.rb_d_edge_edge.push_back({ rb_idx, pair.second.vertices[0], pair.second.vertices[1], pair.first.vertices[0], pair.first.vertices[1] });
+		}
+		else {
+			exit(9);
+		}
+	}
 }
 bool stark::models::Interactions::_is_valid_configuration(Stark& sim)
 {
@@ -155,6 +202,44 @@ void stark::models::Interactions::_energies_contact(Stark& sim)
 		std::vector<symx::Vector> x0 = energy.make_vectors(this->cloth->model.x0, conn);
 		return time_integration(x0, v1, dt);
 	};
+	auto get_rb_X = [&](const std::vector<symx::Index>& indices, symx::Energy& energy)
+	{
+		return energy.make_vectors(this->rigid_bodies->mesh.vertices, indices);
+	};
+	auto get_d_X = [&](const std::vector<symx::Index>& indices, symx::Energy& energy)
+	{
+		return energy.make_vectors(this->cloth->model.mesh.vertices, indices);
+	};
+	auto get_rb_edge_point = [&](const std::vector<symx::Index>& conn, const symx::Index& rb_idx, const symx::Scalar& dt, symx::Energy& energy)
+	{
+		// conn = { conn["a_e0"], conn["a_e1"], conn["a_p"] }
+		std::vector<symx::Vector> A = get_rb_x1(conn, rb_idx, dt, energy);
+		std::vector<symx::Vector> EA = { A[0], A[1] };
+		symx::Vector P = A[2];
+		std::vector<symx::Vector> EA_REST = get_rb_X({ conn[0], conn[1] }, energy);
+		return std::make_tuple(EA_REST, EA, P);
+	};
+	auto get_rb_edge = [&](const std::vector<symx::Index>& conn, const symx::Index& rb_idx, const symx::Scalar& dt, symx::Energy& energy)
+	{
+		// conn = { conn["a_e0"], conn["a_e1"] }
+		std::vector<symx::Vector> EA = get_rb_x1(conn, rb_idx, dt, energy);
+		std::vector<symx::Vector> EA_REST = get_rb_X(conn, energy);
+		return std::make_tuple(EA_REST, EA);
+	};
+	auto get_d_edge_point = [&](const std::vector<symx::Index>& conn, const symx::Scalar& dt, symx::Energy& energy)
+	{
+		std::vector<symx::Vector> A = get_d_x1(conn, dt, energy);
+		std::vector<symx::Vector> EA = { A[0], A[1] };
+		symx::Vector P = A[2];
+		std::vector<symx::Vector> EA_REST = get_d_X({ conn[0], conn[1] }, energy);
+		return std::make_tuple(EA_REST, EA, P);
+	};
+	auto get_d_edge = [&](const std::vector<symx::Index>& conn, const symx::Scalar& dt, symx::Energy& energy)
+	{
+		std::vector<symx::Vector> EA = get_d_x1({ conn[0], conn[1] }, dt, energy);
+		std::vector<symx::Vector> EA_REST = get_d_X({ conn[0], conn[1] }, energy);
+		return std::make_tuple(EA_REST, EA);
+	};
 	auto barrier_energy = [&](const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k)
 	{
 		return k * (dhat - d).powN(3);
@@ -164,6 +249,23 @@ void stark::models::Interactions::_energies_contact(Stark& sim)
 		symx::Scalar k = energy.make_scalar(sim.settings.contact.adaptive_contact_stiffness.value);
 		symx::Scalar dhat = energy.make_scalar(sim.settings.contact.dhat);
 		symx::Scalar E = barrier_energy(d, dhat, k);
+		energy.set(E);
+		energy.activate(sim.settings.contact.collisions_enabled);
+	};
+	auto edge_edge_mollifier = [&](const std::vector<symx::Vector>& EA, const std::vector<symx::Vector>& EB, const std::vector<symx::Vector>& EA_REST, const std::vector<symx::Vector>& EB_REST)
+	{
+		symx::Scalar eps_x = 1e-3 * (EA_REST[0] - EA_REST[1]).squared_norm() * (EB_REST[0] - EB_REST[1]).squared_norm();
+		symx::Scalar x = (EA[1] - EA[0]).cross3(EB[1] - EB[0]).squared_norm();
+		symx::Scalar x_div_eps_x = x / eps_x;
+		symx::Scalar f = (-x_div_eps_x + 2.0) * x_div_eps_x;
+		symx::Scalar mollifier = symx::branch(x > eps_x, 1.0, f);
+		return mollifier;
+	};
+	auto set_edge_dge_mollified_barrier_energy = [&](const std::vector<symx::Vector>& EA, const std::vector<symx::Vector>& EB, const std::vector<symx::Vector>& EA_REST, const std::vector<symx::Vector>& EB_REST, const symx::Scalar& d, symx::Energy& energy)
+	{
+		symx::Scalar k = energy.make_scalar(sim.settings.contact.adaptive_contact_stiffness.value);
+		symx::Scalar dhat = energy.make_scalar(sim.settings.contact.dhat);
+		symx::Scalar E = edge_edge_mollifier(EA, EB, EA_REST, EB_REST) * barrier_energy(d, dhat, k);
 		energy.set(E);
 		energy.activate(sim.settings.contact.collisions_enabled);
 	};
@@ -227,6 +329,55 @@ void stark::models::Interactions::_energies_contact(Stark& sim)
 			std::vector<symx::Vector> Q = get_d_x1({ conn["p"] }, dt, energy);
 			symx::Scalar d = distance_point_plane(Q[0], P[0], P[1], P[2]);
 			set_barrier_energy(d, energy);
+		}
+	);
+
+	// Edge - Edge
+	//// Point - Point
+	sim.global_energy.add_energy("collision_rb_d_ee_point_point", this->contacts.edge_edge.rb_d_point_point,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			auto [EA_REST, EA, P] = get_rb_edge_point({ conn["rb_e0"], conn["rb_e1"], conn["rb_p"] }, conn["rb"], dt, energy);
+			auto [EB_REST, EB, Q] = get_d_edge_point({ conn["e0"], conn["e1"], conn["q"] }, dt, energy);
+			symx::Scalar d = distance_point_point(P, Q);
+			set_edge_dge_mollified_barrier_energy(EA, EB, EA_REST, EB_REST, d, energy);
+		}
+	);
+
+	//// Point - Edge
+	sim.global_energy.add_energy("collision_rb_d_ee_point_edge", this->contacts.edge_edge.rb_d_point_edge,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			auto [EA_REST, EA, P] = get_rb_edge_point({ conn["rb_e0"], conn["rb_e1"], conn["rb_p"] }, conn["rb"], dt, energy);
+			auto [EB_REST, EB] = get_d_edge({ conn["e0"], conn["e1"] }, dt, energy);
+			symx::Scalar d = distance_point_line(P, EB[0], EB[1]);
+			set_edge_dge_mollified_barrier_energy(EA, EB, EA_REST, EB_REST, d, energy);
+		}
+	);
+
+	//// Edge - Edge
+	sim.global_energy.add_energy("collision_rb_d_ee_edge_edge", this->contacts.edge_edge.rb_d_edge_edge,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			auto [EA_REST, EA] = get_rb_edge({ conn["rb_e0"], conn["rb_e1"] }, conn["rb"], dt, energy);
+			auto [EB_REST, EB] = get_d_edge({ conn["e0"], conn["e1"] }, dt, energy);
+			symx::Scalar d = distance_line_line(EA[0], EA[1], EB[0], EB[1]);
+			set_edge_dge_mollified_barrier_energy(EA, EB, EA_REST, EB_REST, d, energy);
+		}
+	);
+
+	//// D -> RB: Point - Edge
+	sim.global_energy.add_energy("collision_rb_d_ee_edge_point", this->contacts.edge_edge.rb_d_edge_point,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			auto [EB_REST, EB, Q] = get_d_edge_point({ conn["e0"], conn["e1"], conn["q"] }, dt, energy);
+			auto [EA_REST, EA] = get_rb_edge({ conn["rb_e0"], conn["rb_e1"] }, conn["rb"], dt, energy);
+			symx::Scalar d = distance_point_line(Q, EA[0], EA[1]);
+			set_edge_dge_mollified_barrier_energy(EA, EB, EA_REST, EB_REST, d, energy);
 		}
 	);
 }

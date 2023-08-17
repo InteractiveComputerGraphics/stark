@@ -30,8 +30,8 @@ int main()
 
 
 	// ------------------------- INTERACTIONS -------------------------
-	interaction_cloth_rb();
-	//interaction_cloth_rb_bowl();
+	//interaction_cloth_rb();
+	interaction_cloth_rb_bowl();
 
 	// ------------------------- KOBUKI -------------------------
 	//kobuki_test();

@@ -4,9 +4,11 @@ stark repo TODO
 High priority
 -------------
 	* Check that all connectivity entries are used in CompiledInLoop
+	* Blacklists in the intersection detection between cloth and rb are generating wrong results
 
 Mid priority
 ------------
+	* SymX just load .dll, don't checksum. Too slow in debug mode.
 	* Contacts should be global as artificially splitting into physical systems leads to repeated CD, 
 		implicit handling of collision_x1 updates, and in general much less clarity
 	* Compute contact forces and show them somehow
