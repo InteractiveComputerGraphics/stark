@@ -30,6 +30,7 @@ Mid priority
 		Maybe directly in the line search
 		This is because RB have curved trajectories
 	* RWTH Cluster to run many kobuki sims asynchronously
+	* Verlet lists for proximity detection might be necessary as CD starts to catch up to CG in terms of performance.
 	
 		
 Low priority
