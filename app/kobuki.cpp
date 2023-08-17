@@ -54,7 +54,7 @@ void kobuki_test()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "kobuki_test";
 	settings.output.output_directory = "D:/sciebo/wd/stark/kobuki_test";
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 60;
 

@@ -8,7 +8,7 @@ void hanging_cloth()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "hanging_cloth";
 	settings.output.output_directory = "D:/sciebo/wd/stark/" + settings.output.simulation_name;
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.execution.end_simulation_time = 10.0;
 	settings.contact.collisions_enabled = false;
@@ -41,7 +41,7 @@ void collision_cloth_test()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "collision_cloth_test";
 	settings.output.output_directory = "D:/sciebo/wd/stark/" + settings.output.simulation_name;
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 2.0;
 	
@@ -80,7 +80,7 @@ void collision_cloth_edge_edge_tests()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "collision_cloth_edge_edge_tests";
 	settings.output.output_directory = "D:/sciebo/wd/stark/" + settings.output.simulation_name;
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 10.0;
 	settings.execution.n_threads = 1;
@@ -133,7 +133,7 @@ void collision_cloth_parallel_edge_test_rotation()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "collision_cloth_parallel_edge_test";
 	settings.output.output_directory = "D:/sciebo/wd/stark/" + settings.output.simulation_name;
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 2.0;
 	settings.execution.n_threads = 1;
@@ -193,7 +193,7 @@ void collision_cloth_parallel_edge_test_shear()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "collision_cloth_parallel_edge_test";
 	settings.output.output_directory = "D:/sciebo/wd/stark/" + settings.output.simulation_name;
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 2.0;
 	settings.execution.n_threads = 1;
@@ -253,7 +253,7 @@ void collision_cloth_parallel_edge_test_slide()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "collision_cloth_parallel_edge_test";
 	settings.output.output_directory = "D:/sciebo/wd/stark/" + settings.output.simulation_name;
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 15.0;
 	settings.execution.n_threads = 1;
@@ -337,7 +337,7 @@ void cloth_friction_slope_test()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "cloth_friction_slope_test";
 	settings.output.output_directory = "D:/sciebo/wd/stark/" + settings.output.simulation_name;
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.execution.end_simulation_time = 2.5;
 	//settings.execution.n_threads = 1;
@@ -391,7 +391,7 @@ void cloth_friction_corner()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "friction_corner_better_0005";
 	settings.output.output_directory = "D:/sciebo/wd/stark/cloth_friction_corner";
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
 
@@ -440,7 +440,7 @@ void cloth_wrap()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "wrap";
 	settings.output.output_directory = "D:/sciebo/wd/stark/wrap";
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
 	//settings.execution.n_threads = 1;

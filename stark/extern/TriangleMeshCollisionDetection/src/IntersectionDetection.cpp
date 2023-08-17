@@ -28,6 +28,7 @@ void IntersectionDetection::clear()
 {
 	this->bp.clear();
 	this->results.clear();
+	this->meshes.clear();
 }
 int32_t IntersectionDetection::get_n_meshes() const
 {

@@ -29,6 +29,7 @@ void ProximityDetection::clear()
 {
 	this->bp.clear();
 	this->results.clear();
+	this->meshes.clear();
 }
 void tmcd::ProximityDetection::set_edge_edge_parallel_cutoff(const double cross_norm_sq)
 {

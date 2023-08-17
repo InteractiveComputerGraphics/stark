@@ -550,78 +550,78 @@ void stark::models::Interactions::_energies_friction(Stark& sim)
 	// ----------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-	//// Point - Point
-	//sim.global_energy.add_energy("friction_rb_d_point_point", this->friction.rb_d_point_point.conn,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
-	//		std::vector<symx::Vector> VP = get_rb_v1({ conn["rb_p"] }, conn["rb"], dt, energy);
-	//		std::vector<symx::Vector> VQ = get_d_v1({ conn["q"] }, energy);
+	// Point - Point
+	sim.global_energy.add_energy("friction_rb_d_point_point", this->friction.rb_d_point_point.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			std::vector<symx::Vector> VP = get_rb_v1({ conn["rb_p"] }, conn["rb"], dt, energy);
+			std::vector<symx::Vector> VQ = get_d_v1({ conn["q"] }, energy);
 
-	//		symx::Vector v = VQ[0] - VP[0];
-	//		set_friction_energy(v, conn["idx"], this->friction.rb_d_point_point.contact, dt, energy);
-	//	}
-	//);
-	//// Point - Edge
-	//sim.global_energy.add_energy("friction_rb_d_point_edge", this->friction.rb_d_point_edge.conn,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
-	//		std::vector<symx::Vector> VP = get_rb_v1({ conn["p"] }, conn["rb"], dt, energy);
-	//		std::vector<symx::Vector> VE = get_d_v1({ conn["e0"], conn["e1"] }, energy);
-	//		symx::Vector bary = energy.make_vector(this->friction.rb_d_point_edge.bary, conn["idx"]);
+			symx::Vector v = VQ[0] - VP[0];
+			set_friction_energy(v, conn["idx"], this->friction.rb_d_point_point.contact, dt, energy);
+		}
+	);
+	// Point - Edge
+	sim.global_energy.add_energy("friction_rb_d_point_edge", this->friction.rb_d_point_edge.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			std::vector<symx::Vector> VP = get_rb_v1({ conn["p"] }, conn["rb"], dt, energy);
+			std::vector<symx::Vector> VE = get_d_v1({ conn["e0"], conn["e1"] }, energy);
+			symx::Vector bary = energy.make_vector(this->friction.rb_d_point_edge.bary, conn["idx"]);
 
-	//		symx::Vector vp = VP[0];
-	//		symx::Vector vq = bary[0] * VE[0] + bary[1] * VE[1];
-	//		symx::Vector v = vq - vp;
-	//		set_friction_energy(v, conn["idx"], this->friction.rb_d_point_edge.contact, dt, energy);
-	//	}
-	//);
-	//// Point - Triangle
-	//sim.global_energy.add_energy("friction_rb_d_point_triangle", this->friction.rb_d_point_triangle.conn,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
-	//		std::vector<symx::Vector> VP = get_rb_v1({ conn["p"] }, conn["rb"], dt, energy);
-	//		std::vector<symx::Vector> VT = get_d_v1({ conn["t0"], conn["t1"], conn["t2"] }, energy);
-	//		symx::Vector bary = energy.make_vector(this->friction.rb_d_point_triangle.bary, conn["idx"]);
+			symx::Vector vp = VP[0];
+			symx::Vector vq = bary[0] * VE[0] + bary[1] * VE[1];
+			symx::Vector v = vq - vp;
+			set_friction_energy(v, conn["idx"], this->friction.rb_d_point_edge.contact, dt, energy);
+		}
+	);
+	// Point - Triangle
+	sim.global_energy.add_energy("friction_rb_d_point_triangle", this->friction.rb_d_point_triangle.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			std::vector<symx::Vector> VP = get_rb_v1({ conn["p"] }, conn["rb"], dt, energy);
+			std::vector<symx::Vector> VT = get_d_v1({ conn["t0"], conn["t1"], conn["t2"] }, energy);
+			symx::Vector bary = energy.make_vector(this->friction.rb_d_point_triangle.bary, conn["idx"]);
 
-	//		symx::Vector vp = VP[0];
-	//		symx::Vector vq = bary[0] * VT[0] + bary[1] * VT[1] + bary[2] * VT[2];
-	//		symx::Vector v = vq - vp;
-	//		set_friction_energy(v, conn["idx"], this->friction.rb_d_point_triangle.contact, dt, energy);
-	//	}
-	//);
-	//// Edge - Edge
-	//sim.global_energy.add_energy("friction_rb_d_edge_edge", this->friction.rb_d_edge_edge.conn,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
-	//		std::vector<symx::Vector> VEA = get_rb_v1({ conn["rb_e0"], conn["rb_e1"] }, conn["rb"], dt, energy);
-	//		std::vector<symx::Vector> VEB = get_d_v1({ conn["e0"], conn["e1"] }, energy);
-	//		symx::Vector bary = energy.make_vector(this->friction.rb_d_edge_edge.bary, conn["idx"]);
+			symx::Vector vp = VP[0];
+			symx::Vector vq = bary[0] * VT[0] + bary[1] * VT[1] + bary[2] * VT[2];
+			symx::Vector v = vq - vp;
+			set_friction_energy(v, conn["idx"], this->friction.rb_d_point_triangle.contact, dt, energy);
+		}
+	);
+	// Edge - Edge
+	sim.global_energy.add_energy("friction_rb_d_edge_edge", this->friction.rb_d_edge_edge.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			std::vector<symx::Vector> VEA = get_rb_v1({ conn["rb_e0"], conn["rb_e1"] }, conn["rb"], dt, energy);
+			std::vector<symx::Vector> VEB = get_d_v1({ conn["e0"], conn["e1"] }, energy);
+			symx::Vector bary = energy.make_vector(this->friction.rb_d_edge_edge.bary, conn["idx"]);
 
-	//		symx::Vector vp = VEA[0] + bary[0] * (VEA[1] - VEA[0]);
-	//		symx::Vector vq = VEB[0] + bary[1] * (VEB[1] - VEB[0]);
-	//		symx::Vector v = vq - vp;
-	//		set_friction_energy(v, conn["idx"], this->friction.rb_d_edge_edge.contact, dt, energy);
-	//	}
-	//);
-	//// D -> RB: Point - Edge
-	//sim.global_energy.add_energy("friction_rb_d_edge_point", this->friction.rb_d_edge_point.conn,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
-	//		std::vector<symx::Vector> VE = get_rb_v1({ conn["e0"], conn["e1"] }, conn["rb"], dt, energy);
-	//		std::vector<symx::Vector> VP = get_d_v1({ conn["p"] }, energy);
-	//		symx::Vector bary = energy.make_vector(this->friction.rb_d_edge_point.bary, conn["idx"]);
+			symx::Vector vp = VEA[0] + bary[0] * (VEA[1] - VEA[0]);
+			symx::Vector vq = VEB[0] + bary[1] * (VEB[1] - VEB[0]);
+			symx::Vector v = vq - vp;
+			set_friction_energy(v, conn["idx"], this->friction.rb_d_edge_edge.contact, dt, energy);
+		}
+	);
+	// D -> RB: Point - Edge
+	sim.global_energy.add_energy("friction_rb_d_edge_point", this->friction.rb_d_edge_point.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			std::vector<symx::Vector> VE = get_rb_v1({ conn["e0"], conn["e1"] }, conn["rb"], dt, energy);
+			std::vector<symx::Vector> VP = get_d_v1({ conn["p"] }, energy);
+			symx::Vector bary = energy.make_vector(this->friction.rb_d_edge_point.bary, conn["idx"]);
 
-	//		symx::Vector vp = VP[0];
-	//		symx::Vector vq = bary[0] * VE[0] + bary[1] * VE[1];
-	//		symx::Vector v = vq - vp;
-	//		set_friction_energy(v, conn["idx"], this->friction.rb_d_edge_point.contact, dt, energy);
-	//	}
-	//);
+			symx::Vector vp = VP[0];
+			symx::Vector vq = bary[0] * VE[0] + bary[1] * VE[1];
+			symx::Vector v = vq - vp;
+			set_friction_energy(v, conn["idx"], this->friction.rb_d_edge_point.contact, dt, energy);
+		}
+	);
 	// D -> RB: Point - Triangle
 	sim.global_energy.add_energy("friction_rb_d_triangle_point", this->friction.rb_d_triangle_point.conn,
 		[&](symx::Energy& energy, symx::Element& conn)

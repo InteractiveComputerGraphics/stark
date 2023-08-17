@@ -9,7 +9,7 @@ void rb_ball_joint()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "ball_joint";
 	settings.output.output_directory = "D:/sciebo/wd/stark/rigid_body_joints";
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 10.0;
 	stark::models::Simulation sim(settings);
@@ -31,7 +31,7 @@ void rb_slider()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "slider";
 	settings.output.output_directory = "D:/sciebo/wd/stark/rigid_body_joints";
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	
 	settings.execution.end_simulation_time = 5.0;
@@ -56,7 +56,7 @@ void rb_contacts_floor_test()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "contacts_floor_test";
 	settings.output.output_directory = "D:/sciebo/wd/stark/rigid_body_contacts";
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.output.fps = 120;
 
@@ -94,7 +94,7 @@ void rb_contact_edge_test()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "rb_contact_edge_test";
 	settings.output.output_directory = "D:/sciebo/wd/stark/rigid_body_contacts";
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.output.fps = 120;
 
@@ -130,7 +130,7 @@ void laundry()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "laundry";
 	settings.output.output_directory = "D:/sciebo/wd/stark/laundry";
-	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
+	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
