@@ -52,7 +52,7 @@ void interaction_cloth_rb_bowl()
 	settings.output.simulation_name = "interaction_cloth_rb_bowl";
 	settings.output.output_directory = "D:/sciebo/wd/stark/interaction_cloth_rb_bowl";
 	settings.output.codegen_directory = "../output/codegen";
-	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
+	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 240;
 
 	settings.execution.end_simulation_time = 1.0;
@@ -76,6 +76,7 @@ void interaction_cloth_rb_bowl()
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.1, -0.1 }, { 0.1, 0.1 }, { n, n });
 	stark::utils::move(vertices, { 0.2, 0.2, 0.0 });
 	const int cloth_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
+	sim.cloth.set_friction(cloth_id, 1.0);
 
 	// Run
 	sim.stark.run();

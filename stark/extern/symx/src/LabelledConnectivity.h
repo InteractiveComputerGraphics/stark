@@ -21,7 +21,7 @@ namespace symx
 			std::array<int32_t, N> v_;
 			v_[0] = (int32_t)this->data.size();
 			for (size_t i = 0; i < N-1; i++) {
-				v_[i + 1] = v[0];
+				v_[i + 1] = v[i];
 			}
 			this->push_back(v_);
 		};
