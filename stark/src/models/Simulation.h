@@ -3,6 +3,7 @@
 #include "../solver/Stark.h"
 #include "Cloth.h"
 #include "RigidBodies.h"
+#include "Interactions.h"
 
 namespace stark::models
 {
@@ -12,6 +13,7 @@ namespace stark::models
 		Stark stark;
 		Cloth cloth;
 		RigidBodies rigid_bodies;
+		Interactions interactions;
 
 		Simulation(const Settings& settings);
 	};

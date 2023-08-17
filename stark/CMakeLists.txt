@@ -60,6 +60,9 @@ set(MODELS_FILES
 	src/models/RigidBodies.cpp
 	src/models/RigidBodyContacts.h
 	src/models/RigidBodyFriction.h
+	src/models/Interactions.h
+	src/models/Interactions.cpp
+	src/models/RB_Deformable_Contacts.h
 	)
 
 set(UTILS_FILES

@@ -27,7 +27,7 @@ symx::DoF symx::GlobalEnergy::add_dof_array(std::function<double* ()> data, std:
 	this->dof_labels.push_back(label);
 	return { (int)this->dof_data.size() - 1 };
 }
-void symx::GlobalEnergy::add_energy(std::string name, std::function<const int32_t* ()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element, std::function<void(Energy&, Element&)> energy)
+void symx::GlobalEnergy::add_energy(std::string name, std::function<const int32_t* ()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element, std::function<void(Energy&, Element&)> energy, const std::vector<std::string>& labels)
 {
 	for (auto& energy : this->energies) {
 		if (energy->name == name) {
@@ -39,6 +39,9 @@ void symx::GlobalEnergy::add_energy(std::string name, std::function<const int32_
 	this->energies.push_back(std::move(energy_ptr));
 	this->energies.back()->working_directory = this->working_directory;
 	Element element(n_items_per_element);
+	if (labels.size() > 0) {
+		element.set_labels(labels);
+	}
 	energy(*this->energies.back(), element);
 
 	if (!this->energies.back()->is_expression_set()) {

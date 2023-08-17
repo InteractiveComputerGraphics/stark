@@ -2,6 +2,7 @@
 
 #include "scenes_cloth.h"
 #include "scenes_rigidbodies.h"
+#include "scenes_interactions.h"
 #include "kobuki.h"
 
 int main()
@@ -25,9 +26,13 @@ int main()
 	//rb_slider();
 	//rb_contacts_floor_test();
 	//rb_contact_edge_test();
-	laundry();
+	//laundry();
 
 
-	// ------------------------- RIGID BODIES -------------------------
+	// ------------------------- INTERACTIONS -------------------------
+	interaction_cloth_rb();
+	//interaction_cloth_rb_bowl();
+
+	// ------------------------- KOBUKI -------------------------
 	//kobuki_test();
 }

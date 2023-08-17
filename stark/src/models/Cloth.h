@@ -8,6 +8,7 @@
 
 #include "../solver/Stark.h"
 #include "../utils/MeshWithDynamics.h"
+#include "../utils/MultiMeshEdges.h"
 #include "../utils/unordered_array_set_and_map.h"
 #include "TriangleMeshContacts.h"
 #include "TriangleMeshFriction.h"
@@ -61,7 +62,7 @@ namespace stark::models
 		bool changed_attachments = true;
 
 		// Contacts
-		std::vector<std::array<int32_t, 2>> edges;
+		utils::MultiMeshEdges edges;
 		tmcd::IntersectionDetection id;
 		tmcd::ProximityDetection pd;
 		TriangleMeshContacts contacts;

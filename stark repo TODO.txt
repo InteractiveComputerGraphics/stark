@@ -3,10 +3,12 @@ stark repo TODO
 
 High priority
 -------------
-	
+	* Check that all connectivity entries are used in CompiledInLoop
 
 Mid priority
 ------------
+	* Contacts should be global as artificially splitting into physical systems leads to repeated CD, 
+		implicit handling of collision_x1 updates, and in general much less clarity
 	* Compute contact forces and show them somehow
 	* Python plots for time steps, stiffnesses, line search/CG iterations, number of contacts, etc...
 	* Initial intersection error.
@@ -22,6 +24,7 @@ Mid priority
 	* Add intersection step at the end of the line search to be able to accept the step
 		Maybe directly in the line search
 		This is because RB have curved trajectories
+	* RWTH Cluster to run many kobuki sims asynchronously
 	
 		
 Low priority
@@ -151,21 +154,3 @@ Architecture
 		While that sounds good to merge cloth-softbody-rods, we still have a lot of combinations with rigidbody and static.
 		Probably the best option is to do the combinatorial explosion with test and pointers.
 	
-Rigid body stiffness situation
-------------------------------
-I need to understand rigid body dynamics much better, specially their relation with force.
-
-With cloth I could use very low barrier stiffnesses because it is very light and the impact gets partially absorved by the elasticity/damping.
-For a 1kg box falling 20cm to a fix plane, I need a very high force to stop it on its tracks within one time step.
-Look at the equation for the inertia:
-	E = 0.5*m*(v1 - vhat).dot(v1 - vhat)  ->  f = -dE/dx = -(v1 - vhat)*m/dt
-Stopping a 1kg box coming at 1m/s in 1ms requires 1000N of force (100kg).
-Using a 1mm barrier thickness, one would need 3.3e8.
-
-Another problem is reducing the time step.
-Everytime this happens, the inertia forces become stronger.
-I don't reduce the time step anymore when invalid configuration, but still is annoying.
-If a barrier changes very significantly, it will overshoot. I cannot just start with 1e3 and let it build to 1e10.
-
-	-> Read the technical supplemental IPC because they might talk about this to tune 
-	-> Also check the affine bodies

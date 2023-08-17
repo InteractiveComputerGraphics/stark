@@ -38,6 +38,19 @@ int32_t tmcd::internals::Meshes::get_n_meshes() const
 	return (int32_t)this->set_triangles.size();
 }
 
+std::array<int32_t, 2> tmcd::internals::Meshes::get_vertices_range(const int32_t set) const
+{
+	return { this->points_offsets[set], this->points_offsets[set + 1] };
+}
+std::array<int32_t, 2> tmcd::internals::Meshes::get_triangles_range(const int32_t set) const
+{
+	return { this->triangles_offsets[set], this->triangles_offsets[set + 1] };
+}
+std::array<int32_t, 2> tmcd::internals::Meshes::get_edges_range(const int32_t set) const
+{
+	return { this->edges_offsets[set], this->edges_offsets[set + 1] };
+}
+
 tmcd::info::Meshes tmcd::internals::Meshes::get_info() const
 {
 	info::Meshes info;

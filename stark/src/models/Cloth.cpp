@@ -321,7 +321,7 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 
 	// Collisions
 	if (this->changed_discretization) {
-		utils::find_edges(this->edges, mesh_rest.connectivity, mesh_rest.get_n_vertices());
+		this->edges = utils::MultiMeshEdges(this->model.mesh);
 	}
 
 	// Friction
@@ -380,7 +380,7 @@ const tmcd::ProximityResults& stark::models::Cloth::_run_proximity_detection(con
 	this->pd.clear();
 	this->pd.set_n_threads(sim.settings.execution.n_threads);
 	this->pd.set_edge_edge_parallel_cutoff(sim.settings.contact.edge_edge_cross_norm_sq_cutoff);
-	this->pd.add_mesh(&x[0][0], (int)x.size(), &this->model.mesh.connectivity[0][0], this->model.mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
+	this->pd.add_mesh(&x[0][0], (int)x.size(), &this->model.mesh.connectivity[0][0], this->model.mesh.get_n_elements(), &this->edges.connectivity[0][0], (int)this->edges.get_n_edges());
 	this->pd.activate_point_triangle(sim.settings.contact.triangle_point_enabled);
 	this->pd.activate_edge_edge(sim.settings.contact.edge_edge_enabled);
 	const tmcd::ProximityResults& proximity = this->pd.run(sim.settings.contact.dhat);
@@ -431,7 +431,7 @@ bool stark::models::Cloth::_is_valid_configuration(Stark& sim)
 	this->_update_collision_x1(sim);
 	this->id.clear();
 	this->id.set_n_threads(sim.settings.execution.n_threads);
-	this->id.add_mesh(&this->collision_x1[0][0], (int)this->collision_x1.size(), &this->model.mesh.connectivity[0][0], this->model.mesh.get_n_elements(), &this->edges[0][0], (int)this->edges.size());
+	this->id.add_mesh(&this->collision_x1[0][0], (int)this->collision_x1.size(), &this->model.mesh.connectivity[0][0], this->model.mesh.get_n_elements(), &this->edges.connectivity[0][0], (int)this->edges.get_n_edges());
 	const tmcd::IntersectionResults& intersections = this->id.run();
 	return intersections.edge_triangle.size() == 0;
 }

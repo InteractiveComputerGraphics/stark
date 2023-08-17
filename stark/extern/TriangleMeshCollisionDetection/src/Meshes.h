@@ -34,6 +34,9 @@ namespace tmcd
 			int32_t get_total_n_edges() const;
 			int32_t get_total_n_triangles() const;
 			int32_t get_n_meshes() const;
+			std::array<int32_t, 2> get_vertices_range(const int32_t set) const;
+			std::array<int32_t, 2> get_triangles_range(const int32_t set) const;
+			std::array<int32_t, 2> get_edges_range(const int32_t set) const;
 			info::Meshes get_info() const;
 			int32_t add_mesh(const double* x0, const double* x1, const double* xm, const int32_t n_vertices, const int32_t* triangles, const int32_t n_triangles, const int32_t* edges, const int32_t n_edges);
 			void clear();

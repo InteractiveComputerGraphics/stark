@@ -11,9 +11,9 @@ namespace stark::models
 	{
 		struct PointTriangle
 		{
-			std::vector<std::array<int, 4>> point_point;    // { "a", "b", "a_p", "b_q" }
-			std::vector<std::array<int, 5>> point_edge;     // { "a", "b", "a_p", "b_e0", "b_e1" }
-			std::vector<std::array<int, 6>> point_triangle; // { "a", "b", "a_p", "b_t0", "b_t1", "b_t2" }
+			std::vector<std::array<int32_t, 4>> point_point;    // { "a", "b", "a_p", "b_q" }
+			std::vector<std::array<int32_t, 5>> point_edge;     // { "a", "b", "a_p", "b_e0", "b_e1" }
+			std::vector<std::array<int32_t, 6>> point_triangle; // { "a", "b", "a_p", "b_t0", "b_t1", "b_t2" }
 		};
 		struct EdgeEdge
 		{

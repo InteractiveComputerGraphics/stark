@@ -19,6 +19,8 @@ set(SOURCE_FILES
     scenes_cloth.h
     scenes_rigidbodies.cpp
     scenes_rigidbodies.h
+    scenes_interactions.cpp
+    scenes_interactions.h
     kobuki.cpp
     kobuki.h
     main.cpp

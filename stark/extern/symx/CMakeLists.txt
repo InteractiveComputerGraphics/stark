@@ -42,6 +42,7 @@ set(SOURCE_FILES
 	src/GlobalEnergy.cpp
 	src/GlobalEnergy.h
 	src/hashing.h
+	src/LabelledConnectivity.h
 	src/lambdas.h
 	src/Matrix.cpp
 	src/Matrix.h

@@ -438,7 +438,7 @@ void cloth_wrap()
 {
 	// Simulation
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "wrap_josefric";
+	settings.output.simulation_name = "wrap";
 	settings.output.output_directory = "D:/sciebo/wd/stark/wrap";
 	settings.output.codegen_directory = "D:/sciebo/wd/stark/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
@@ -447,10 +447,10 @@ void cloth_wrap()
 	settings.simulation.gravity = { 0, 0, 0 };
 
 	settings.debug.line_search_output = false;
-	settings.newton.use_direct_linear_solve = false;
-	settings.newton.project_to_PD = false;
+	settings.newton.use_direct_linear_solve = true;
+	settings.newton.project_to_PD = true;
 
-	settings.contact.friction_enabled = true;
+	settings.contact.friction_enabled = false;
 	settings.contact.friction_stick_slide_threshold = 1e-6;
 	settings.newton.max_newton_iterations = 200;
 

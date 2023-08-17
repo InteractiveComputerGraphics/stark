@@ -146,6 +146,9 @@ bool stark::Stark::run_one_step()
 			return this->run_one_step();
 		}
 	}
+	else {
+		return true;
+	}
 }
 std::string stark::Stark::get_vtk_path(std::string name) const
 {

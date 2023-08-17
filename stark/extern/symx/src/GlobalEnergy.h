@@ -6,6 +6,7 @@
 #include <memory>
 #include <omp.h>
 
+#include "LabelledConnectivity.h"
 #include "Element.h"
 #include "Energy.h"
 #include "Assembly.h"
@@ -49,10 +50,12 @@ namespace symx
 		~GlobalEnergy() = default;
 		GlobalEnergy(const GlobalEnergy&) = delete;
 		
-		void add_energy(std::string name, std::function<const int32_t* ()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element, std::function<void(Energy&, Element&)> energy);
+		void add_energy(std::string name, std::function<const int32_t* ()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element, std::function<void(Energy&, Element&)> energy, const std::vector<std::string>& labels = std::vector<std::string>());
 		void add_energy(std::string name, const std::vector<int32_t>& arr, const int32_t n_items_per_element, std::function<void(Energy&, Element&)> energy);
 		template<std::size_t N>
 		void add_energy(std::string name, const std::vector<std::array<int32_t, N>>& arr, std::function<void(Energy&, Element&)> energy);
+		template<std::size_t N>
+		void add_energy(std::string name, const LabelledConnectivity<N>& conn, std::function<void(Energy&, Element&)> energy);
 		void add_external_contributions(std::function<void(Assembly&)> E, std::function<void(Assembly&)> E_grad, std::function<void(Assembly&)> E_grad_hess);
 
 		DoF add_dof_array(std::function<double*()> data, std::function<int32_t()> ndofs, std::string label = "");
@@ -79,6 +82,15 @@ namespace symx
 	};
 
 
+	template<std::size_t N>
+	inline void GlobalEnergy::add_energy(std::string name, const LabelledConnectivity<N>& conn, std::function<void(Energy&, Element&)> energy)
+	{
+		std::vector<std::string> labels;
+		for (const std::string& s : conn.labels) {
+			labels.push_back(s);
+		}
+		this->add_energy(name, l2data_int(conn.data), l2n_elements_int(conn.data), N, energy, labels);
+	}
 	template<std::size_t N>
 	inline void GlobalEnergy::add_energy(std::string name, const std::vector<std::array<int32_t, N>>& arr, std::function<void(Energy&, Element&)> energy)
 	{

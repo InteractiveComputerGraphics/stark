@@ -38,9 +38,13 @@ int IntersectionDetection::add_mesh(const double* xm, const int32_t n_vertices, 
 	this->meshes.add_mesh(nullptr, nullptr, xm, n_vertices, triangles, n_triangles, edges, n_edges);
 	return this->bp.add_mesh(xm, n_vertices, triangles, n_triangles, edges, n_edges);
 }
-void tmcd::IntersectionDetection::add_blacklist_range_edge_triangle(const int32_t edge_mesh_id, const std::array<int32_t, 2>& edge_interval, const int32_t triangle_mesh_id, const std::array<int32_t, 2>& triangle_interval)
+void tmcd::IntersectionDetection::add_blacklist_range_edge_triangle(const int32_t edge_mesh_id, const std::array<int32_t, 2>& loc_edge_interval, const int32_t triangle_mesh_id, const std::array<int32_t, 2>& loc_triangle_interval)
 {
-	this->bp.add_blacklist_range_edge_triangle(edge_mesh_id, edge_interval, triangle_mesh_id, triangle_interval);
+	this->bp.add_blacklist_range_edge_triangle(edge_mesh_id, loc_edge_interval, triangle_mesh_id, loc_triangle_interval);
+}
+void tmcd::IntersectionDetection::add_blacklist(const int32_t mesh_id_0, const int32_t mesh_id_1)
+{
+	this->add_blacklist_range_edge_triangle(mesh_id_0, { 0, this->meshes.n_edges_in_set[mesh_id_0] }, mesh_id_1, { 0, this->meshes.n_triangles_in_set[mesh_id_1] });
 }
 
 const IntersectionResults& tmcd::IntersectionDetection::run(const BroadPhaseStrategy strat)

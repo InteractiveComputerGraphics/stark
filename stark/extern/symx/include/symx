@@ -13,7 +13,6 @@
 #include "../src/CompiledInLoop.h"
 #include "../src/CompiledDerivativesLoop.h"
 
-
 #include "../src/Energy.h"
 #include "../src/GlobalEnergy.h"
 #include "../src/Assembly.h"
