@@ -97,7 +97,10 @@ void laundry_cloth()
 	settings.newton.max_line_search_iterations = 10;
 	settings.debug.line_search_output = false;
 
-	settings.contact.adaptive_contact_stiffness.value = 1e7;
+	settings.contact.adaptive_contact_stiffness.set(1e6, 1e6, 1e12);
+	settings.contact.adaptive_contact_stiffness.success_multiplier = 0.8;
+	settings.contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = 50;
+	settings.contact.friction_stick_slide_threshold = 0.05;
 	settings.contact.dhat = 0.002;
 	stark::models::Simulation sim(settings);
 
@@ -117,21 +120,23 @@ void laundry_cloth()
 	sim.rigid_bodies.add_to_output_group("drum", drum);
 
 	// Cloth
-	const double friction = 1.0;
+	const double friction = 0.5;
 	const double scale = 1.0;
-	const int n = 40;
+	const int n = 50;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5 * scale, -0.5 * scale }, { 0.5 * scale, 0.5 * scale }, { n, n });
-	stark::utils::rotate_deg(vertices, 90.0, Eigen::Vector3d::UnitX());
+	stark::utils::rotate_deg(vertices, -85.0, Eigen::Vector3d::UnitX());
 	stark::utils::move(vertices, { 0.0, -0.2, 0.0 });
 
 	for (size_t i = 0; i < 8; i++) {
 		const int cloth_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
 		stark::utils::move(vertices, { 0.0, 0.05, 0.0 });
-		sim.cloth.set_bending_stiffness(cloth_id, 5e-4);
+		sim.cloth.set_bending_stiffness(cloth_id, 1.5e-4);
+		sim.cloth.set_density(cloth_id, 0.4);
 		sim.cloth.set_friction(cloth_id, friction);
 	}
+	sim.cloth.set_damping(0.75);
 
 	// Run
 	sim.stark.run();

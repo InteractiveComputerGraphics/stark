@@ -11,6 +11,7 @@ Mid priority
 	* There is a BIG refactor to do in collisions and friction.
 		I should bring all the collisions to a single class and share all the tooling there.
 		In the end it's not going to be too bad (except building connectitivity)
+	* Cloth bending is way too elastic. We need damping and/or plasticity on that.
 	* SymX just load .dll, don't checksum. Too slow in debug mode.
 	* Contacts should be global as artificially splitting into physical systems leads to repeated CD, 
 		implicit handling of collision_x1 updates, and in general much less clarity
@@ -52,6 +53,7 @@ Low priority
 	* Ask Jan how he wants to sort his code
 	* Better support for AMR. explicit .update(mesh_id) functions so I can track when to recompute stuff.
 	* Rigid bodies should output standar format poses for easy integration in other softwares.
+	* Friction makes everything too slow. Implement fixed-branched friction energies.
 
 		
 Convergence improvements
