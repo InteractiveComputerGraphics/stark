@@ -345,16 +345,6 @@ void stark::models::RigidBodies::_before_time_step(Stark& sim)
 {
 	if (this->is_empty()) { return; }
 
-	// Keep inertial velocity subject to penetration-freeness
-	this->v1 = this->v0;
-	this->w1 = this->w0;
-	while (!this->_is_valid_configuration(sim)) {
-		for (int i = 0; i < (int)this->v1.size(); i++) {
-			this->v1[i] *= 0.5;
-			this->w1[i] *= 0.5;
-		}
-	}
-
 	// Inertia
 	const int n = this->get_n_bodies();
 	this->conn_inertia.resize(n);
@@ -385,6 +375,10 @@ void stark::models::RigidBodies::_before_time_step(Stark& sim)
 
 	// Active friction points at x0 for this time step
 	this->_update_friction_contacts(sim);
+
+	// Set next time velocities estimation to zero to avoid invalid state outside of the minimzer
+	std::fill(this->v1.begin(), this->v1.end(), Eigen::Vector3d::Zero());
+	std::fill(this->w1.begin(), this->w1.end(), Eigen::Vector3d::Zero());
 }
 void stark::models::RigidBodies::_after_time_step(Stark& sim)
 {

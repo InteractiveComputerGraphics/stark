@@ -27,6 +27,7 @@ Mid priority
 	* Probably better just to have the edge distance strain limiting as it poses way less convergence problems
 	* Change all explicit uses of time integration by the euler_integration function so I can better change it to other schemes later.
 	* [Important] v1 as initial guess with intersection test might significantly help convergence
+		cross system interactions are non-trivial to sync
 	* Add intersection step at the end of the line search to be able to accept the step
 		Maybe directly in the line search
 		This is because RB have curved trajectories
