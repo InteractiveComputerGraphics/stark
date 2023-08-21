@@ -26,7 +26,7 @@ void interaction_cloth_rb()
 
 	// Rigid bodies
 	const double mu = 1.0;
-	const int o1 = sim.rigid_bodies.add_box(10.0, { 2.0, 2.0, 0.1 }, { 0, 0, 0 });
+	const int o1 = sim.rigid_bodies.add_box(10.0, { 0.2, 2.0, 0.1 }, { 0, 0, 0 });
 	sim.rigid_bodies.add_rotation(o1, -rot_deg, Eigen::Vector3d::UnitX());
 	sim.rigid_bodies.set_friction(o1, mu);
 	sim.rigid_bodies.add_constraint_freeze(o1);
@@ -45,7 +45,6 @@ void interaction_cloth_rb()
 	// Run
 	sim.stark.run();
 }
-
 void interaction_cloth_rb_bowl()
 {
 	stark::Settings settings = stark::Settings();
@@ -81,7 +80,6 @@ void interaction_cloth_rb_bowl()
 	// Run
 	sim.stark.run();
 }
-
 void laundry_cloth()
 {
 	stark::Settings settings = stark::Settings();
