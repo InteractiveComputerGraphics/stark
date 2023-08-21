@@ -115,7 +115,7 @@ bool stark::Stark::run_one_step()
 			this->logger.append_to_series("dt", this->settings.simulation.adaptive_time_step.value);
 			this->logger.append_to_series("time", this->current_time);
 			this->logger.append_to_series("frame", this->current_frame);
-			this->logger.set("avg dt", 1000.0*this->current_time / (double)this->logger.ints["time_steps"]);
+			this->logger.set("avg dt [ms]", 1000.0*this->current_time / (double)this->logger.ints["time_steps"]);
 			this->logger.set("cr", this->logger.doubles["step"] / this->current_time);
 
 			this->callbacks.run_after_time_step();

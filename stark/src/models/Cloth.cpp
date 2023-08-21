@@ -391,8 +391,13 @@ void stark::models::Cloth::_before_time_step(Stark& sim)
 {
 	if (this->is_empty()) { return; }
 
-	// Set next time velocities estimation to zero to avoid invalid state outside of the minimzer
-	std::fill(this->model.v1.begin(), this->model.v1.end(), Eigen::Vector3d::Zero());
+	// Keep inertial velocity subject to penetration-freeness
+	this->model.v1 = this->model.v0;
+	while (!this->_is_valid_configuration(sim)) {
+		for (Eigen::Vector3d& v : this->model.v1) {
+			v *= 0.5;
+		}
+	}
 
 	// Reset simulation structures if anything changed
 	this->_init_simulation_structures(sim.settings.execution.n_threads);
