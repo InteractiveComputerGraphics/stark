@@ -169,6 +169,7 @@ namespace symx
 		const bool success = this->compilation.template load_if_cached<COMPILED_FLOAT>(name, folder, id);
 		if (success) {
 			this->_init();
+			this->name = name;
 		}
 		return success;
 	}
@@ -467,7 +468,7 @@ namespace symx
 
 					if (check_for_NaNs) {
 						if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
-							std::cout << ("symx error: NaN found in CompiledInLoop::run() in the input " + std::to_string(symbol_i)) << std::endl;
+							std::cout << ("symx error: NaN found in CompiledInLoop::run() in the input " + std::to_string(symbol_i)) + " for instance with name \"" + this->name + "\"" << std::endl;
 							exit(-1);
 						}
 					}
@@ -501,7 +502,7 @@ namespace symx
 
 							if (check_for_NaNs) {
 								if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
-									std::cout << ("symx error: NaN foung in CompiledInLoop::run() in the input " + std::to_string(symbol_i)) << std::endl;
+									std::cout << ("symx error: NaN found in CompiledInLoop::run() in the input " + std::to_string(symbol_i)) + " for instance with name \"" + this->name + "\"" << std::endl;
 									exit(-1);
 								}
 							}
@@ -526,7 +527,7 @@ namespace symx
 				if (check_for_NaNs) {
 					for (int32_t i = 0; i < n_outputs; i++) {
 						if (std::isnan(f_output[i])) {
-							std::cout << "symx error: NaN foung in CompiledInLoop::run() in the outputs for instance with name \"" + this->name + "\"" << std::endl;
+							std::cout << "symx error: NaN found in CompiledInLoop::run() in the outputs for instance with name \"" + this->name + "\"" << std::endl;
 							std::cout << "Inputs: ";
 							for (int32_t i = 0; i < n_inputs; i++) {
 								std::cout << std::to_string(f_input[i]) << ", ";

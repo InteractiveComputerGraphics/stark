@@ -1,6 +1,17 @@
 stark repo TODO
 ===============
 
+Bosch
+-----
+	* I am not sure the torque is correct
+	* Can we record a tuning experiment for internal use so we can better fit parameters?
+		- [bending stiffness] 
+			Hold the towel high from two corners sharing the short edge
+			Release one vertex. Wait till rest.
+			Release the other vertex.
+		- 
+
+
 High priority
 -------------
 	* Check that all connectivity entries are used in CompiledInLoop
@@ -8,6 +19,11 @@ High priority
 
 Mid priority
 ------------
+	* Change everything to LabelledConnectivity
+	* We need measures on how stiff the problem is to solve and why.
+		It is too easy (most times!) to make an impossible scene with insane friction, collisions, BC...
+		But there is nothing to tell me that it is too hard and what exactly is happening
+	* Controlled collision bounciness/restoration. Cloth is extremely collision absorvent, it should not bounce.
 	* There is a BIG refactor to do in collisions and friction.
 		I should bring all the collisions to a single class and share all the tooling there.
 		In the end it's not going to be too bad (except building connectitivity)

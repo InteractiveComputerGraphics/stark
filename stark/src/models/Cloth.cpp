@@ -269,6 +269,19 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 		}
 	}
 
+	// Edge strain limiting
+	if (this->changed_discretization) {
+		this->edges = utils::MultiMeshEdges(this->model.mesh);  // Also used in collision
+		this->conn_mesh_numbered_edges.resize(this->edges.get_n_edges());
+		this->edge_rest_length.resize(this->edges.get_n_edges());
+		for (int edge_i = 0; edge_i < this->edges.get_n_edges(); edge_i++) {
+			const std::array<int, 2> edge = this->edges.connectivity[edge_i];
+			const int mesh_idx = this->model.mesh.get_mesh_containing_vertex(edge[0]);
+			this->conn_mesh_numbered_edges[edge_i] = {edge_i, mesh_idx, edge[0], edge[1]};
+			this->edge_rest_length[edge_i] = (this->model.mesh.vertices[1] - this->model.mesh.vertices[0]).norm();
+		}
+	}
+
 	// Bending
 	if (this->changed_discretization) {
 		// Internal edges connectivity and Bergou06 matrix Q
@@ -317,11 +330,6 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 			const int mesh_i = mesh_rest.get_mesh_containing_vertex(indices[0]);
 			this->conn_numbered_mesh_internal_edges[internal_angle_i] = { internal_angle_i, mesh_i, indices[0], indices[1], indices[2], indices[3] };
 		}
-	}
-
-	// Collisions
-	if (this->changed_discretization) {
-		this->edges = utils::MultiMeshEdges(this->model.mesh);
 	}
 
 	// Friction
@@ -667,20 +675,56 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 		}
 	);
 	
+	//// Strain limiting
+	//sim.global_energy.add_energy("cloth_strain_limiting", this->conn_mesh_numbered_triangles,
+	//	[&](symx::Energy& energy, symx::Element& mesh_idx_triangle)
+	//	{
+	//		// Unpack connectivity
+	//		symx::Index tri_idx = mesh_idx_triangle[0];
+	//		symx::Index mesh_idx = mesh_idx_triangle[1];
+	//		std::vector<symx::Index> triangle = mesh_idx_triangle.slice(2, 5);
+
+	//		// Create symbols
+	//		std::vector<symx::Vector> v1 = energy.make_dof_vectors(dof, this->model.v1, triangle);
+	//		std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, triangle);
+	//		symx::Matrix DXinv = energy.make_matrix(this->DXinv, { 2, 2 }, tri_idx);
+	//		symx::Scalar area = energy.make_scalar(this->triangle_area_rest, tri_idx);
+	//		symx::Scalar strain_limiting_start = energy.make_scalar(this->strain_limiting_start, mesh_idx);
+	//		symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, mesh_idx);
+	//		symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+
+	//		// Time integration
+	//		std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+
+	//		// Kinematics
+	//		symx::Matrix Dx = symx::Matrix(symx::gather({
+	//			x1[1] - x1[0],
+	//			x1[2] - x1[0],
+	//			}), { 2, 3 }).transpose();
+	//		symx::Matrix F_32 = Dx * DXinv;  // 3x2
+	//		symx::Matrix C = F_32.transpose() * F_32;
+
+	//		symx::Vector s = C.singular_values_2x2();
+	//		symx::Scalar constraint = symx::sqrt(s[0]) - strain_limiting_start;
+	//		symx::Scalar E = area * strain_limiting_stiffness * constraint.powN(3);
+	//		energy.set_with_condition(E, constraint > 0.0);
+	//		energy.activate(this->is_strain_limiting_active);
+	//	}
+	//);
+	
 	// Strain limiting
-	sim.global_energy.add_energy("cloth_strain_limiting", this->conn_mesh_numbered_triangles,
-		[&](symx::Energy& energy, symx::Element& mesh_idx_triangle)
+	sim.global_energy.add_energy("cloth_edge_strain_limiting", this->conn_mesh_numbered_edges, // [edge_idx, mesh_idx, edge]
+		[&](symx::Energy& energy, symx::Element& mesh_idx_edge)
 		{
 			// Unpack connectivity
-			symx::Index tri_idx = mesh_idx_triangle[0];
-			symx::Index mesh_idx = mesh_idx_triangle[1];
-			std::vector<symx::Index> triangle = mesh_idx_triangle.slice(2, 5);
+			symx::Index edge_idx = mesh_idx_edge[0];
+			symx::Index mesh_idx = mesh_idx_edge[1];
+			std::vector<symx::Index> edge = mesh_idx_edge.slice(2, 4);
 
 			// Create symbols
-			std::vector<symx::Vector> v1 = energy.make_dof_vectors(dof, this->model.v1, triangle);
-			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, triangle);
-			symx::Matrix DXinv = energy.make_matrix(this->DXinv, { 2, 2 }, tri_idx);
-			symx::Scalar area = energy.make_scalar(this->triangle_area_rest, tri_idx);
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(dof, this->model.v1, edge);
+			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, edge);
+			symx::Scalar l0 = energy.make_scalar(this->edge_rest_length, edge_idx);
 			symx::Scalar strain_limiting_start = energy.make_scalar(this->strain_limiting_start, mesh_idx);
 			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, mesh_idx);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
@@ -688,22 +732,16 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			// Time integration
 			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
 
-			// Kinematics
-			symx::Matrix Dx = symx::Matrix(symx::gather({
-				x1[1] - x1[0],
-				x1[2] - x1[0],
-				}), { 2, 3 }).transpose();
-			symx::Matrix F_32 = Dx * DXinv;  // 3x2
-			symx::Matrix C = F_32.transpose() * F_32;
-
-			symx::Vector s = C.singular_values_2x2();
-			symx::Scalar constraint = symx::sqrt(s[0]) - strain_limiting_start;
-			symx::Scalar E = area * strain_limiting_stiffness * constraint.powN(3);
-			energy.set_with_condition(E, constraint > 0.0);
+			// Constraint
+			symx::Scalar l = (x1[0] - x1[1]).norm();
+			symx::Scalar s = (l - l0) / l0;
+			symx::Scalar C = s - strain_limiting_start;
+			symx::Scalar E = l0 * strain_limiting_stiffness * C.powN(3);
+			energy.set_with_condition(E, C > 0.0);
 			energy.activate(this->is_strain_limiting_active);
 		}
 	);
-	
+
 	// Bergou06 Bending Energy
 	sim.global_energy.add_energy("cloth_bending", this->conn_numbered_mesh_internal_edges,
 		[&](symx::Energy& energy, symx::Element& mesh_idx_internal_edge)

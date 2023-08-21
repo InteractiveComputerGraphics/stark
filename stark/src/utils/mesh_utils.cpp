@@ -219,6 +219,21 @@ void stark::utils::generate_triangular_grid(std::vector<Eigen::Vector3d>& out_ve
 		}
 	}
 }
+std::array<int, 2> stark::utils::generate_triangular_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, const double x_length, const double y_length, const int n_short_side, const bool randomize, const double z)
+{
+	int nx = 0;
+	int ny = 0;
+	if (x_length < y_length) {
+		nx = n_short_side;
+		ny = (int)((y_length/x_length)*(double)nx);
+	}
+	else {
+		ny = n_short_side;
+		nx = (int)((y_length/x_length)*(double)ny);
+	}
+	generate_triangular_grid(out_vertices, out_connectivity, { -0.5*x_length, -0.5*y_length }, { 0.5*x_length, 0.5*y_length }, {nx, ny}, randomize, z);
+	return {nx, ny};
+}
 void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const bool generate_normals)
 {
 	vtkio::VTKFile vtk_file;

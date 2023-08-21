@@ -259,7 +259,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 
 	// Edge - Edge
 	const std::vector<Eigen::Vector3d>& X_rb = this->rigid_bodies->mesh.vertices;
-	const std::vector<Eigen::Vector3d>& X_cloth = this->rigid_bodies->mesh.vertices;
+	const std::vector<Eigen::Vector3d>& X_cloth = this->cloth->model.X;
 	auto mollifier_f = [&](const tmcd::Edge& rb_edge, const tmcd::Edge& cloth_edge)
 	{
 		return edge_edge_mollifier(x_rb[rb_edge.vertices[0]], x_rb[rb_edge.vertices[1]], x_cloth[cloth_edge.vertices[0]], x_cloth[cloth_edge.vertices[1]],

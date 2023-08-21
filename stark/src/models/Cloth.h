@@ -44,6 +44,8 @@ namespace stark::models
 		bool is_strain_limiting_active = true;
 		std::vector<double> strain_limiting_start;  // per mesh
 		std::vector<double> strain_limiting_stiffness;  // per mesh
+		std::vector<std::array<int32_t, 4>> conn_mesh_numbered_edges;  // [glob_edge_id, mesh_id, i, j]
+		std::vector<double> edge_rest_length;  // per edge
 
 		// Bending (Bergou)
 		std::vector<double> bending_stiffness;  // per mesh
