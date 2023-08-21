@@ -14,11 +14,14 @@ Bosch
 
 High priority
 -------------
-	* Check that all connectivity entries are used in CompiledInLoop
+	* Why luxo sim is sensitive to kc in the first time step?
+	* Output the gradient norm of each constraint to see the amount of force in the sim
+		- How to deal with torque?
 	* Blacklists in the intersection detection between cloth and rb are generating wrong results
 
 Mid priority
 ------------
+	* Check that all connectivity entries are used in CompiledInLoop
 	* Change everything to LabelledConnectivity
 	* We need measures on how stiff the problem is to solve and why.
 		It is too easy (most times!) to make an impossible scene with insane friction, collisions, BC...
