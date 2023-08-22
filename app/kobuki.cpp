@@ -78,7 +78,7 @@ int make_towel(stark::models::Simulation& sim, const int n_short_side = 30)
 void towel_parametrization()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "towel_d2.5_f0.25";
+	settings.output.simulation_name = "towel_f0.5_b5e-6";
 	settings.output.output_directory = "D:/sciebo/wd/stark/towel_parametrization";
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
@@ -113,7 +113,7 @@ void towel_parametrization()
 	// Towel
 	int towel_id = -1;
 	{
-		const double towel_friction = 0.25;
+		const double towel_friction = 0.5;
 
 		std::vector<Eigen::Vector3d> vertices;
 		std::vector<std::array<int, 3>> triangles;
@@ -124,7 +124,7 @@ void towel_parametrization()
 		towel_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
 		sim.cloth.set_density(towel_id, towel.density);
 		sim.cloth.set_strain_parameters(towel_id, 100.0, 0.3, 0.1, 1.0);
-		sim.cloth.set_bending_stiffness(towel_id, 1e-5);
+		sim.cloth.set_bending_stiffness(towel_id, 5e-6);
 		sim.cloth.set_friction(towel_id, towel_friction);
 		sim.cloth.set_damping(2.0);
 		sim.cloth.bending_damping = 0.1;
