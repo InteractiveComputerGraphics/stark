@@ -3,6 +3,8 @@ stark repo TODO
 
 Bosch
 -----
+	* Suspension to the kobuki?
+	* Damping for better looking cloth.
 	* I am not sure the torque is correct
 	* Can we record a tuning experiment for internal use so we can better fit parameters?
 		- [bending stiffness] 
@@ -14,6 +16,8 @@ Bosch
 
 High priority
 -------------
+	* Lambdas to log the parameters of each system
+	* Clean up the default strain limiting
 	* Why luxo sim is sensitive to kc in the first time step?
 	* Output the gradient norm of each constraint to see the amount of force in the sim
 		- How to deal with torque?

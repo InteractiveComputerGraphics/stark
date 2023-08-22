@@ -48,6 +48,12 @@ void stark::models::Cloth::set_attached_vertices(const int cloth_0_id, const int
 	this->attached_nodes_set.insert({ std::min(glob_idx_a, glob_idx_b), std::max(glob_idx_a, glob_idx_b) });
 	this->changed_attachments = true;
 }
+void stark::models::Cloth::freeze(const int cloth_id)
+{
+	for (int i = 0; i < this->model.mesh.get_n_vertices(cloth_id); i++) {
+		this->set_vertex_target_position_as_initial(cloth_id, i);
+	}
+}
 void stark::models::Cloth::clear_vertex_target_position()
 {
 	this->prescribed_nodes_map.clear();
@@ -121,9 +127,9 @@ int stark::models::Cloth::add(const std::vector<Eigen::Vector3d>& vertices, cons
 
 	return cloth_id;
 }
-void stark::models::Cloth::set_damping(const double damping)
+void stark::models::Cloth::set_damping(const double inertial_damping)
 {
-	this->damping = damping;
+	this->inertial_damping = inertial_damping;
 }
 void stark::models::Cloth::set_material_preset(const int cloth_id, const MaterialPreset material)
 {
@@ -135,6 +141,14 @@ void stark::models::Cloth::set_material_preset(const int cloth_id, const Materia
 		this->set_strain_parameters(cloth_id, 30.0, 0.3, 1.1);
 		this->set_bending_stiffness(cloth_id, 1e-5);
 		this->set_friction(cloth_id, 0.1);
+		break;
+	case MaterialPreset::Towel:
+		this->set_density(cloth_id, 0.5);
+		this->set_strain_parameters(cloth_id, 100.0, 0.3, 1.1, 1000.0);
+		this->set_bending_stiffness(cloth_id, 2e-5);
+		this->bending_damping = 0.0;
+		this->strain_damping = 0.0;
+		//this->set_friction(cloth_id, 0.1);
 		break;
 	default:
 		std::cout << "stark::models::Cloth::set_material_preset() error: cloth material preset not defined." << std::endl;
@@ -278,7 +292,7 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 			const std::array<int, 2> edge = this->edges.connectivity[edge_i];
 			const int mesh_idx = this->model.mesh.get_mesh_containing_vertex(edge[0]);
 			this->conn_mesh_numbered_edges[edge_i] = {edge_i, mesh_idx, edge[0], edge[1]};
-			this->edge_rest_length[edge_i] = (this->model.mesh.vertices[1] - this->model.mesh.vertices[0]).norm();
+			this->edge_rest_length[edge_i] = (this->model.mesh.vertices[edge[1]] - this->model.mesh.vertices[edge[0]]).norm();
 		}
 	}
 
@@ -619,7 +633,7 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			symx::Vector a = energy.make_vector(this->model.a, node[0]);
 			symx::Scalar mass = energy.make_scalar(this->lumped_mass, node[0]);
 
-			symx::Scalar damping = energy.make_scalar(this->damping);
+			symx::Scalar inertial_damping = energy.make_scalar(this->inertial_damping);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 			symx::Vector gravity = energy.make_vector(sim.settings.simulation.gravity);
 
@@ -628,7 +642,7 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			symx::Vector xhat = x0 + dt * v0 + dt * dt * (a + gravity);
 			symx::Vector dev = x1 - xhat;
 			symx::Vector dev2 = x1 - x0;
-			symx::Scalar E = 0.5 * mass * (dev.dot(dev) / (dt.powN(2)) + dev2.dot(dev2) * damping / dt);
+			symx::Scalar E = 0.5 * mass * (dev.dot(dev) / (dt.powN(2)) + dev2.dot(dev2) * inertial_damping / dt);
 			energy.set(E);
 		}
 	);
@@ -674,6 +688,32 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			energy.set(Energy);
 		}
 	);
+
+	// Strain damping
+	sim.global_energy.add_energy("cloth_strain_damping", this->conn_mesh_numbered_edges,
+		[&](symx::Energy& energy, symx::Element& mesh_idx_edge)
+		{
+			// Unpack connectivity
+			symx::Index edge_idx = mesh_idx_edge[0];
+			symx::Index mesh_idx = mesh_idx_edge[1];
+			std::vector<symx::Index> edge = mesh_idx_edge.slice(2, 4);
+
+			// Create symbols
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(dof, this->model.v1, edge);
+			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, edge);
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			symx::Scalar l0 = energy.make_scalar(this->edge_rest_length, edge_idx);
+			symx::Scalar damping = energy.make_scalar(this->strain_damping);
+
+			// Set energy expression
+			symx::Vector u = (x0[1] - x0[0]).normalized();
+			symx::Vector dv = v1[1] - v1[0];
+			symx::Scalar E = l0*damping*dt*(u.transpose()*dv).powN(2);  // f = dE/dx = -l0*damping*(u.T*dv)u
+			energy.set(E);
+		}
+	);
+
+
 	
 	//// Strain limiting
 	//sim.global_energy.add_energy("cloth_strain_limiting", this->conn_mesh_numbered_triangles,
@@ -755,8 +795,9 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			std::vector<symx::Vector> v1 = energy.make_dof_vectors(dof, this->model.v1, internal_edge);
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->model.x0, internal_edge);
 			symx::Matrix Q = energy.make_matrix(this->bergou_Q_matrix, { 4, 4 }, ie_idx);
-			symx::Scalar bending_stiffness = energy.make_scalar(this->bending_stiffness, mesh_idx);
+			symx::Scalar stiffness = energy.make_scalar(this->bending_stiffness, mesh_idx);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			symx::Scalar damping = energy.make_scalar(this->bending_damping);
 
 			// Time integration
 			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
@@ -765,9 +806,9 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			symx::Scalar E = dt.get_zero();
 			for (int i = 0; i < 3; i++) {
 				symx::Vector x = symx::Vector({ x1[0][i], x1[1][i], x1[2][i], x1[3][i] });
-				E += x.transpose() * Q * x;
+				symx::Vector v = symx::Vector({ v1[0][i], v1[1][i], v1[2][i], v1[3][i] });
+				E += stiffness*(x.transpose()*Q*x) + 0.5*damping*stiffness*dt*(v.transpose()*Q*v);
 			}
-			E *= bending_stiffness;
 			energy.set(E);
 		}
 	);

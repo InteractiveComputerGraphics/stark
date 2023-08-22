@@ -19,7 +19,7 @@ namespace stark::models
 	class Cloth 
 	{
 	public:
-		enum class MaterialPreset { Cotton, Wool, Silk, RubberShell };
+		enum class MaterialPreset { Cotton, Towel };
 
 		/* Fields */
 		utils::MeshWithDynamics<3> model;
@@ -31,7 +31,7 @@ namespace stark::models
 		std::vector<std::array<int32_t, 1>> conn_nodes;
 		std::vector<double> lumped_mass;  // [kg] per vertex
 		std::vector<double> density;  // [kg/m2]  per mesh
-		double damping = 0.0;
+		double inertial_damping = 0.0;
 
 		// Strain (Neo-Hookean)
 		std::vector<double> young_modulus;  // per mesh
@@ -39,6 +39,7 @@ namespace stark::models
 		std::vector<std::array<int32_t, 5>> conn_mesh_numbered_triangles;  // [glob_tri_id, mesh_id, i, j, k]
 		std::vector<std::array<double, 4>> DXinv;  // per triangle
 		std::vector<double> triangle_area_rest;  // per triangle
+		double strain_damping = 0.0;
 
 		//// Strain limiting
 		bool is_strain_limiting_active = true;
@@ -51,6 +52,7 @@ namespace stark::models
 		std::vector<double> bending_stiffness;  // per mesh
 		std::vector<std::array<int32_t, 6>> conn_numbered_mesh_internal_edges;  // [glob_ie_id, mesh_id, i, j, k, l]
 		std::vector<std::array<double, 16>> bergou_Q_matrix;    // per internal angle
+		double bending_damping = 0.0;
 
 		// Prescribed positions
 		std::unordered_map<int, Eigen::Vector3d> prescribed_nodes_map;
@@ -81,7 +83,7 @@ namespace stark::models
 		// Cloth interface
 		//// Setters
 		int add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const MaterialPreset material = MaterialPreset::Cotton);
-		void set_damping(const double damping);
+		void set_damping(const double inertial_damping);
 		void set_material_preset(const int cloth_id, const MaterialPreset material);
 		void set_density(const int cloth_id, const double density = 0.5);
 		void set_strain_parameters(const int cloth_id, const double young_modulus = 1e3, const double poisson_ratio = 0.3, const double strain_limit = 1.10, const double strain_limit_stiffness = 1.0);
@@ -93,6 +95,7 @@ namespace stark::models
 		void set_vertex_target_position_as_initial(const int cloth_id, const int vertex_id);
 		void set_vertex_target_position(const int cloth_id, const int vertex_id, const Eigen::Vector3d& position);
 		void set_attached_vertices(const int cloth_0_id, const int vertex_0_idx, const int cloth_1_id, const int vertex_1_idx);
+		void freeze(const int cloth_id);
 		void clear_vertex_target_position();
 		void clear_attached_vertices();
 

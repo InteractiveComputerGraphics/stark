@@ -3,8 +3,5 @@
 #include <Eigen/Dense>
 #include <stark>
 
-struct Kobuki {};
-
-Kobuki make_kobuki(stark::models::Simulation& sim);
-
+void towel_parametrization();
 void kobuki_test();
