@@ -444,27 +444,33 @@ void cloth_wrap()
 	settings.output.output_directory = "D:/sciebo/wd/stark/wrap";
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
-	settings.execution.end_simulation_time = 5.0;
+	settings.execution.end_simulation_time = 25.0;
 	//settings.execution.n_threads = 1;
 	settings.simulation.gravity = { 0, 0, 0 };
 
 	settings.contact.collisions_enabled = true;
 	settings.contact.friction_enabled = false;
-	settings.contact.adaptive_contact_stiffness.set(1e16, 1e16, 1e18);
+	settings.contact.adaptive_contact_stiffness.set(1e5, 1e5, 1e13);
+	settings.contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = 999999999;
 	settings.newton.max_newton_iterations = 50;
 
 	settings.contact.dhat = 0.001;
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
-	const int n = 400;
+	const int n = 100;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5, -0.5 }, { 0.5, 0.5 }, { n, n }, false);
 	const int cloth_id = simulation.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
+
+	simulation.cloth.set_density(cloth_id, 0.2);
+	simulation.cloth.set_strain_parameters(cloth_id, 30.0, 0.3, 1.1);
+	simulation.cloth.set_bending_stiffness(cloth_id, 1e-5);
 	simulation.cloth.is_strain_limiting_active = false;
 	simulation.cloth.set_damping(1.0);
-	simulation.cloth.set_friction(cloth_id, 1.0);
+	simulation.cloth.bending_damping = 0.1;
+	simulation.cloth.strain_damping = 0.1;
 
 	// Run
 	simulation.stark.run(

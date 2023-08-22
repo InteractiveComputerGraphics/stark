@@ -704,12 +704,15 @@ void stark::models::Cloth::_energies_mechanical(Stark& sim)
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 			symx::Scalar l0 = energy.make_scalar(this->edge_rest_length, edge_idx);
 			symx::Scalar damping = energy.make_scalar(this->strain_damping);
+			symx::Scalar E = energy.make_scalar(this->young_modulus, mesh_idx);
+			symx::Scalar nu = energy.make_scalar(this->poisson_ratio, mesh_idx);
 
 			// Set energy expression
+			symx::Scalar mu = E / (2.0 * (1.0 + nu));
 			symx::Vector u = (x0[1] - x0[0]).normalized();
 			symx::Vector dv = v1[1] - v1[0];
-			symx::Scalar E = l0*damping*dt*(u.transpose()*dv).powN(2);  // f = dE/dx = -l0*damping*(u.T*dv)u
-			energy.set(E);
+			symx::Scalar Energy = l0*damping*mu*dt*(u.transpose()*dv).powN(2);  // f = dE/dx = -l0*damping*(u.T*dv)u
+			energy.set(Energy);
 		}
 	);
 
