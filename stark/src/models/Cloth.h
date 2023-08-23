@@ -82,14 +82,13 @@ namespace stark::models
 
 		// Cloth interface
 		//// Setters
-		int add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const MaterialPreset material = MaterialPreset::Cotton);
-		void set_damping(const double inertial_damping);
+		int add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const MaterialPreset material = MaterialPreset::Towel);
+		void set_damping(const double inertial_damping = 2.0, const double strain_damping = 0.1, const double bending_damping = 0.1);
 		void set_material_preset(const int cloth_id, const MaterialPreset material);
 		void set_density(const int cloth_id, const double density = 0.5);
 		void set_strain_parameters(const int cloth_id, const double young_modulus = 1e3, const double poisson_ratio = 0.3, const double strain_limit = 1.10, const double strain_limit_stiffness = 1.0);
 		void set_bending_stiffness(const int cloth_id, const double bending_stiffness = 1e-5);
 		void set_friction(const int cloth_id, const double coulombs_mu = 0.1);
-		//void set_contact_parameters(const bool activate, const double dhat = 0.005, const double stiffness = 1e6);
 		void enable_writing_vtk(const bool write = true);
 
 		void set_vertex_target_position_as_initial(const int cloth_id, const int vertex_id);

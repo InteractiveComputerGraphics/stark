@@ -78,7 +78,7 @@ int make_towel(stark::models::Simulation& sim, const int n_short_side = 30)
 void towel_parametrization()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "towel_f0.5_b5e-6";
+	settings.output.simulation_name = "towel_final";
 	settings.output.output_directory = "D:/sciebo/wd/stark/towel_parametrization";
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
@@ -90,8 +90,8 @@ void towel_parametrization()
 
 	settings.newton.max_newton_iterations = 50;
 
-	settings.contact.collisions_enabled = true;
-	settings.contact.friction_enabled = true;
+	settings.contact.collisions_enabled = false;
+	settings.contact.friction_enabled = false;
 	settings.contact.friction_stick_slide_threshold = 0.001;
 	settings.contact.adaptive_contact_stiffness.value = 1e6;
 	settings.contact.dhat = 0.0025;

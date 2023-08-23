@@ -127,9 +127,11 @@ int stark::models::Cloth::add(const std::vector<Eigen::Vector3d>& vertices, cons
 
 	return cloth_id;
 }
-void stark::models::Cloth::set_damping(const double inertial_damping)
+void stark::models::Cloth::set_damping(const double inertial_damping, const double strain_damping, const double bending_damping)
 {
 	this->inertial_damping = inertial_damping;
+	this->strain_damping = strain_damping;
+	this->bending_damping = bending_damping;
 }
 void stark::models::Cloth::set_material_preset(const int cloth_id, const MaterialPreset material)
 {
@@ -144,11 +146,10 @@ void stark::models::Cloth::set_material_preset(const int cloth_id, const Materia
 		break;
 	case MaterialPreset::Towel:
 		this->set_density(cloth_id, 0.5);
-		this->set_strain_parameters(cloth_id, 100.0, 0.3, 1.1, 1000.0);
-		this->set_bending_stiffness(cloth_id, 2e-5);
-		this->bending_damping = 0.0;
-		this->strain_damping = 0.0;
-		//this->set_friction(cloth_id, 0.1);
+		this->set_strain_parameters(cloth_id, 100.0, 0.3, 0.1, 1.0);
+		this->set_bending_stiffness(cloth_id, 5e-6);
+		this->set_friction(cloth_id, 0.5);
+		this->set_damping(2.0, 0.1, 0.1);
 		break;
 	default:
 		std::cout << "stark::models::Cloth::set_material_preset() error: cloth material preset not defined." << std::endl;
