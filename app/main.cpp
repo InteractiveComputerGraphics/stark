@@ -31,10 +31,10 @@ int main()
 	// ------------------------- INTERACTIONS -------------------------
 	//interaction_cloth_rb();
 	//interaction_cloth_rb_bowl();
-	//laundry_cloth();
+	laundry_cloth();
 
 
 	// ------------------------- KOBUKI -------------------------
 	//kobuki_test();
-	towel_parametrization();
+	//towel_parametrization();
 }

@@ -83,7 +83,7 @@ void interaction_cloth_rb_bowl()
 void laundry_cloth()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "laundry_cloth";
+	settings.output.simulation_name = "laundry_cloth_damping";
 	settings.output.output_directory = "D:/sciebo/wd/stark/laundry_cloth";
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
@@ -127,14 +127,17 @@ void laundry_cloth()
 	stark::utils::rotate_deg(vertices, -85.0, Eigen::Vector3d::UnitX());
 	stark::utils::move(vertices, { 0.0, -0.2, 0.0 });
 
-	for (size_t i = 0; i < 8; i++) {
-		const int cloth_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
-		stark::utils::move(vertices, { 0.0, 0.05, 0.0 });
-		sim.cloth.set_bending_stiffness(cloth_id, 1.5e-4);
-		sim.cloth.set_density(cloth_id, 0.4);
+	for (size_t i = 0; i < 6; i++) {
+		const int cloth_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
+		stark::utils::move(vertices, { 0.0, 0.075, 0.0 });
+		sim.cloth.set_density(cloth_id, 0.48);
+		sim.cloth.set_strain_parameters(cloth_id, 100.0, 0.3, 0.1, 1.0);
+		sim.cloth.set_bending_stiffness(cloth_id, 5e-6);
 		sim.cloth.set_friction(cloth_id, friction);
+		sim.cloth.set_damping(2.0);
+		sim.cloth.bending_damping = 0.1;
+		sim.cloth.strain_damping = 0.1;
 	}
-	sim.cloth.set_damping(0.75);
 
 	// Run
 	sim.stark.run();
