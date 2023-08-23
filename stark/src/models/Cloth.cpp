@@ -573,6 +573,14 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 
 
 	// Edge - Edge
+	auto are_not_almost_parallel = [&](const tmcd::Edge& edge_a, const tmcd::Edge& edge_b) 
+	{
+		const Eigen::Vector3d& ea0 = x[edge_a.vertices[0]];
+		const Eigen::Vector3d& ea1 = x[edge_a.vertices[1]];
+		const Eigen::Vector3d& eb0 = x[edge_b.vertices[0]];
+		const Eigen::Vector3d& eb1 = x[edge_b.vertices[1]];
+		return (ea1 - ea0).cross(eb1 - eb0).squaredNorm() > 1e-16;
+	};
 	auto mollifier = [&](const tmcd::Edge& edge_a, const tmcd::Edge& edge_b) 
 	{
 		const std::vector<Eigen::Vector3d>& X = this->model.X;
@@ -588,7 +596,7 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 		const tmcd::Point& q = ep_b.point;
 
 		const double mu = 0.5 * (this->vertex_mu[p.idx] + this->vertex_mu[q.idx]);
-		if (mu > 0.0) {
+		if (mu > 0.0 && are_not_almost_parallel(ep_a.edge, ep_b.edge)) {
 			this->friction.point_point.conn.push_back({ (int)this->friction.point_point.conn.size(), p.idx, q.idx });
 			this->friction.point_point.contact.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
 			this->friction.point_point.contact.mu.push_back(mu);
@@ -602,7 +610,7 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 		const tmcd::Edge& edge = pair.second;
 
 		const double mu = 0.5 * (this->vertex_mu[p.idx] + this->vertex_mu[edge.vertices[0]]);
-		if (mu > 0.0) {
+		if (mu > 0.0 && are_not_almost_parallel(ep.edge, edge)) {
 			this->friction.point_edge.conn.push_back({ (int)this->friction.point_edge.conn.size(), p.idx, edge.vertices[0], edge.vertices[1] });
 			this->friction.point_edge.bary.push_back(barycentric_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
 			this->friction.point_edge.contact.T.push_back(projection_matrix_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
@@ -616,7 +624,7 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 		const tmcd::Edge& eb = pair.second;
 
 		const double mu = 0.5 * (this->vertex_mu[ea.vertices[0]] + this->vertex_mu[eb.vertices[0]]);
-		if (mu > 0.0) {
+		if (mu > 0.0 && are_not_almost_parallel(ea, eb)) {
 			this->friction.edge_edge.conn.push_back({ (int)this->friction.edge_edge.conn.size(), ea.vertices[0], ea.vertices[1], eb.vertices[0], eb.vertices[1] });
 			this->friction.edge_edge.bary.push_back(barycentric_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
 			this->friction.edge_edge.contact.T.push_back(projection_matrix_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));
@@ -889,7 +897,6 @@ void stark::models::Cloth::_energies_contact(Stark& sim)
 		symx::Scalar dhat = energy.make_scalar(sim.settings.contact.dhat);
 		symx::Scalar E = barrier_energy(d, dhat, k);
 		energy.set(E);
-		energy.activate(sim.settings.contact.collisions_enabled);
 	};
 	auto edge_edge_mollifier = [&](const std::vector<symx::Vector>& EA, const std::vector<symx::Vector>& EB, const std::vector<symx::Vector>& EA_REST, const std::vector<symx::Vector>& EB_REST)
 	{
@@ -906,7 +913,6 @@ void stark::models::Cloth::_energies_contact(Stark& sim)
 		symx::Scalar dhat = energy.make_scalar(sim.settings.contact.dhat);
 		symx::Scalar E = edge_edge_mollifier(EA, EB, EA_REST, EB_REST)*barrier_energy(d, dhat, k);
 		energy.set(E);
-		energy.activate(sim.settings.contact.collisions_enabled);
 	};
 	// -----------------------------------------------------------------------------
 
@@ -1026,8 +1032,6 @@ void stark::models::Cloth::_energies_friction(Stark& sim)
 			symx::Scalar E = symx::branch(u < epsu, E_stick, E_slide);
 			energy.set(E);
 		}
-
-		energy.activate(sim.settings.contact.collisions_enabled && sim.settings.contact.friction_enabled);
 	};
 	// ----------------------------------------------------------------------------------------------------------------------------------------------------
 

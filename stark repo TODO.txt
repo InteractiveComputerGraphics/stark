@@ -3,6 +3,8 @@ stark repo TODO
 
 Bosch
 -----
+	* Activate friction is wrong!
+	* Exclude almost parallel edges from friction.
 	* Suspension to the kobuki?
 	* Damping for better looking cloth.
 	* I am not sure the torque is correct
@@ -78,7 +80,6 @@ Low priority
 	* Better support for AMR. explicit .update(mesh_id) functions so I can track when to recompute stuff.
 	* Rigid bodies should output standar format poses for easy integration in other softwares.
 	* Friction makes everything too slow. Implement fixed-branched friction energies.
-	* Per-mesh damping
 
 		
 Convergence improvements

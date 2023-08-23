@@ -6,8 +6,8 @@ struct Towel
 	const double w = 0.75;
 	const double mass = 0.484;
 	const double density = 0.484;
-	const double thickness = 0.03/8.0;  // 8 layers reach 5cm tall
-	const double friction = 0.25;
+	const double thickness = 0.04/8.0;  // 8 layers reach 5cm tall
+	const double friction = 1.0;
 };
 Towel towel;
 
@@ -148,7 +148,7 @@ void towel_parametrization()
 void folding_towel()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "folding_towel_magnet_fine";
+	settings.output.simulation_name = "folding_towel_f1.0";
 	settings.output.output_directory = "D:/sciebo/wd/stark/folding_towel";
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
@@ -160,7 +160,7 @@ void folding_towel()
 	settings.newton.max_newton_iterations = 50;
 
 	settings.contact.collisions_enabled = true;
-	settings.contact.friction_enabled = false;
+	settings.contact.friction_enabled = true;
 	settings.contact.friction_stick_slide_threshold = 0.001;
 	settings.contact.adaptive_contact_stiffness.value = 1e4;
 	settings.contact.dhat = towel.thickness;
@@ -170,13 +170,13 @@ void folding_towel()
 	// Towel
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
-	const int ny = 2*100;
-	const int nx = 2*56;
+	const int ny = 100;
+	const int nx = 56;
 	stark::utils::generate_triangular_grid(vertices, triangles, {-0.5*towel.w, -0.5*towel.l}, {0.5*towel.w, 0.5*towel.l}, {nx, ny});
 	const int towel_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
-	//sim.cloth.set_bending_stiffness(towel_id, 0.0);
-
-	// TODO: Less bending?
+	//sim.cloth.set_bending_stiffness(towel_id, 1e-6);
+	sim.cloth.set_friction(towel_id, 1.0);
+	
 
 	// Run
 	sim.stark.run(
@@ -238,11 +238,10 @@ void folding_towel()
 					stark::utils::move(vertices, {0.11, 0.173, -0.157});
 					sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
 					sim.cloth.set_damping(10.0, 0.5, 0.5);
+					sim.cloth.set_friction(floor_id, 1.0);
 				}
 				sim.cloth.freeze(floor_id);
-				sim.cloth.set_friction(floor_id, 2.0);
-				sim.cloth.set_friction(towel_id, 2.0);
-				settings.contact.friction_enabled = true;
+				//settings.contact.friction_enabled = true;
 			}
 		}
 	);
