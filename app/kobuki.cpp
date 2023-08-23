@@ -176,6 +176,8 @@ void folding_towel()
 	const int towel_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
 	//sim.cloth.set_bending_stiffness(towel_id, 0.0);
 
+	// TODO: Less bending?
+
 	// Run
 	sim.stark.run(
 		[&]()
