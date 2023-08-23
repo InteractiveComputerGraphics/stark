@@ -253,6 +253,20 @@ void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Ve
 	}
 }
 
+std::vector<int> stark::utils::vertices_in_AABB(const std::vector<Eigen::Vector3d>& vertices, const Eigen::Vector3d& bottom, const Eigen::Vector3d& top)
+{
+	std::vector<int> indices;
+	for (int i = 0; i < (int)vertices.size(); i++) {
+		const Eigen::Vector3d& p = vertices[i];
+		if (bottom[0] <= p[0] && p[0] < top[0] &&
+			bottom[1] <= p[1] && p[1] < top[1] &&
+			bottom[2] <= p[2] && p[2] < top[2]) {
+			indices.push_back(i);
+		}
+	}
+	return indices;
+}
+
 void stark::utils::move(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& translation)
 {
 	for (Eigen::Vector3d& point : points) {

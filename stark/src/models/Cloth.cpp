@@ -51,7 +51,8 @@ void stark::models::Cloth::set_attached_vertices(const int cloth_0_id, const int
 void stark::models::Cloth::freeze(const int cloth_id)
 {
 	for (int i = 0; i < this->model.mesh.get_n_vertices(cloth_id); i++) {
-		this->set_vertex_target_position_as_initial(cloth_id, i);
+		const int idx = this->model.mesh.get_global_vertex_idx(cloth_id, i);
+		this->set_vertex_target_position(cloth_id, i, this->model.x1[idx]);
 	}
 }
 void stark::models::Cloth::clear_vertex_target_position()
@@ -93,6 +94,10 @@ void stark::models::Cloth::add_displacement(const int cloth_id, const int vertex
 {
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->model.add_displacement(cloth_id, vertex_idx, displacement);
+}
+void stark::models::Cloth::clear_acceleration()
+{
+	std::fill(this->model.a.begin(), this->model.a.end(), Eigen::Vector3d::Zero());
 }
 void stark::models::Cloth::enable_writing_vtk(const bool write)
 {

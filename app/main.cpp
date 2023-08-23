@@ -36,5 +36,6 @@ int main()
 
 	// ------------------------- KOBUKI -------------------------
 	//kobuki_test();
-	towel_parametrization();
+	//towel_parametrization();
+	folding_towel();
 }

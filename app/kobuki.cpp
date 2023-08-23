@@ -6,6 +6,7 @@ struct Towel
 	const double w = 0.75;
 	const double mass = 0.484;
 	const double density = 0.484;
+	const double thickness = 0.03/8.0;  // 8 layers reach 5cm tall
 	const double friction = 0.25;
 };
 Towel towel;
@@ -140,6 +141,106 @@ void towel_parametrization()
 			sim.cloth.freeze(floor_id);
 			if (t < 5.0) {
 				sim.cloth.set_vertex_target_position_as_initial(towel_id, 0);
+			}
+		}
+	);
+}
+void folding_towel()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "folding_towel_magnet_fine";
+	settings.output.output_directory = "D:/sciebo/wd/stark/folding_towel";
+	settings.output.codegen_directory = "../output/codegen";
+	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
+	settings.output.fps = 30;
+
+	settings.execution.end_simulation_time = 15.0;
+	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
+
+	settings.newton.max_newton_iterations = 50;
+
+	settings.contact.collisions_enabled = true;
+	settings.contact.friction_enabled = false;
+	settings.contact.friction_stick_slide_threshold = 0.001;
+	settings.contact.adaptive_contact_stiffness.value = 1e4;
+	settings.contact.dhat = towel.thickness;
+
+	stark::models::Simulation sim(settings);
+
+	// Towel
+	std::vector<Eigen::Vector3d> vertices;
+	std::vector<std::array<int, 3>> triangles;
+	const int ny = 2*100;
+	const int nx = 2*56;
+	stark::utils::generate_triangular_grid(vertices, triangles, {-0.5*towel.w, -0.5*towel.l}, {0.5*towel.w, 0.5*towel.l}, {nx, ny});
+	const int towel_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
+	//sim.cloth.set_bending_stiffness(towel_id, 0.0);
+
+	// Run
+	sim.stark.run(
+		[&]()
+		{
+			const double t = sim.stark.current_time;
+			sim.cloth.clear_vertex_target_position();
+			sim.cloth.clear_acceleration();
+
+			if (t < 3.0) {
+				sim.stark.settings.simulation.gravity = {0, 0, -9.81};
+				for (const int i : stark::utils::vertices_in_AABB(sim.cloth.model.x1, {-1.0, -0.001, -1.0}, {1.0, 0.001, 1.0})) {
+					sim.cloth.set_vertex_target_position(towel_id, i, sim.cloth.model.x1[i]);
+				}
+				if (t > 2.0) {
+					const Eigen::Vector3d e0 = {-1.0, 0.0, -0.3485};
+					const Eigen::Vector3d e1 = {1.0, 0.0, -0.3485};
+					for (const int i : stark::utils::vertices_in_AABB(sim.cloth.model.x1, { -0.4, -0.02, -0.353 }, { 0.4, 0.02, -0.344 })) {
+						const Eigen::Vector3d& p = sim.cloth.model.x1[i];
+						const std::array<double, 2> bary = stark::models::barycentric_point_edge(p, e0, e1);
+						const Eigen::Vector3d q = bary[0]*e0 + bary[1]*e1;
+						const Eigen::Vector3d u = (q - p).normalized();
+						sim.cloth.set_acceleration(towel_id, i, 10.0 * u);
+					}
+				}
+			}
+			else if (t < 6.0) {
+				sim.stark.settings.simulation.gravity = {0, 9.81, 0};
+				for (const int i : stark::utils::vertices_in_AABB(sim.cloth.model.x1, { -0.4, -0.02, -0.353 }, { 0.4, 0.02, -0.344 })) {
+					sim.cloth.set_vertex_target_position(towel_id, i, sim.cloth.model.x1[i]);
+				}
+				if (t > 5.0) {
+					const Eigen::Vector3d e0 = { 0.0, -1.0, -0.345 };
+					const Eigen::Vector3d e1 = { 0.0, 1.0, -0.345 };
+					for (const int i : stark::utils::vertices_in_AABB(sim.cloth.model.x1, { -0.005, -0.04, -0.364 }, { 0.005, 0.4, -0.320 })) {
+						const Eigen::Vector3d& p = sim.cloth.model.x1[i];
+						const std::array<double, 2> bary = stark::models::barycentric_point_edge(p, e0, e1);
+						const Eigen::Vector3d q = bary[0] * e0 + bary[1] * e1;
+						const Eigen::Vector3d u = (q - p).normalized();
+						sim.cloth.set_acceleration(towel_id, i, 10.0 * u);
+					}
+				}
+			}
+			else if (t < 9.0) {
+				sim.stark.settings.simulation.gravity = {0, 0, 9.81};
+				for (const int i : stark::utils::vertices_in_AABB(sim.cloth.model.x1, { -0.005, -0.04, -0.364 }, { 0.005, 0.4, -0.320 })) {
+					sim.cloth.set_vertex_target_position(towel_id, i, sim.cloth.model.x1[i]);
+				}
+			}
+			else {
+				sim.stark.settings.simulation.gravity = { 9.81, 0, 0 };
+				const int floor_id = 1;
+				if (sim.cloth.get_n_cloths() == 1) {
+					std::vector<Eigen::Vector3d> vertices;
+					std::vector<std::array<int, 3>> triangles;
+					stark::utils::generate_triangular_grid(vertices, triangles, 1.0, 1.0, 1);
+					stark::utils::scale(vertices, 0.45);
+					stark::utils::rotate_deg(vertices, 90, Eigen::Vector3d::UnitY());
+					stark::utils::move(vertices, {0.11, 0.173, -0.157});
+					sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
+					sim.cloth.set_damping(10.0, 0.5, 0.5);
+				}
+				sim.cloth.freeze(floor_id);
+				sim.cloth.set_friction(floor_id, 2.0);
+				sim.cloth.set_friction(towel_id, 2.0);
+				settings.contact.friction_enabled = true;
 			}
 		}
 	);

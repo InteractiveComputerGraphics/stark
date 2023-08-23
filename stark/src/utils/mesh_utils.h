@@ -34,6 +34,7 @@ namespace stark::utils
 	void generate_triangular_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, const Eigen::Vector2d& bottom, const Eigen::Vector2d& top, const std::array<int, 2>& n_quads_per_dim, const bool randomize = false, const double z = 0.0);
 	std::array<int, 2> generate_triangular_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, const double x_length, const double y_length, const int n_short_side, const bool randomize = false, const double z = 0.0);
 	void write_VTK(const std::string path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const bool generate_normals = true);
+	std::vector<int> vertices_in_AABB(const std::vector<Eigen::Vector3d>& vertices, const Eigen::Vector3d& bottom, const Eigen::Vector3d& top);
 
 	//// Transformations
 	void move(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& translation);

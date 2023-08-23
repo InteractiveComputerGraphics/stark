@@ -104,6 +104,7 @@ namespace stark::models
 		void add_velocity(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& velocity);
 		void set_position(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& position);
 		void add_displacement(const int cloth_id, const int vertex_idx, const Eigen::Vector3d& displacement);
+		void clear_acceleration();
 
 		//// Getters
 		bool is_cloth_declared(const int cloth_id) const;

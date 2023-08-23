@@ -45,18 +45,24 @@ namespace stark::utils
 	inline int MeshWithDynamics<N_NODES_PER_ELEM>::add_mesh(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, N_NODES_PER_ELEM>>& connectivity)
 	{
 		// Dynamics
-		this->mesh.add_mesh(vertices, connectivity);
+		const int idx = this->mesh.add_mesh(vertices, connectivity);
 		const int n = (int)this->mesh.vertices.size();
 
-		this->X = this->mesh.vertices;
-		this->x0 = this->mesh.vertices;
-		this->x1 = this->mesh.vertices;
-
+		this->X.resize(n, Eigen::Vector3d::Zero());
+		this->x0.resize(n, Eigen::Vector3d::Zero());
+		this->x1.resize(n, Eigen::Vector3d::Zero());
 		this->v0.resize(n, Eigen::Vector3d::Zero());
 		this->v1.resize(n, Eigen::Vector3d::Zero());
 		this->a.resize(n, Eigen::Vector3d::Zero());
 
-		return this->mesh.get_n_meshes() - 1;
+		const std::array<int, 2> range = this->mesh.get_vertices_range(idx);
+		for (int i = range[0]; i < range[1]; i++) {
+			this->X[i] = vertices[i - range[0]];
+			this->x0[i] = vertices[i - range[0]];
+			this->x1[i] = vertices[i - range[0]];
+		}
+
+		return idx;
 	}
 	template<int N_NODES_PER_ELEM>
 	inline void MeshWithDynamics<N_NODES_PER_ELEM>::set_acceleration(const int body_id, const int loc_vertex_id, const Eigen::Vector3d& acceleration)

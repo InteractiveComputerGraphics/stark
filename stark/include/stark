@@ -1,6 +1,10 @@
 #pragma once
 #include "../src/solver/Stark.h"
-#include "../src/models/Simulation.h"
 #include "../src/utils/mesh_utils.h"
 #include "../src/utils/mesh_generators.h"
 #include "../src/utils/inertia_tensors.h"
+
+#include "../src/models/Simulation.h"
+#include "../src/models/distances.h"
+#include "../src/models/friction_geometry.h"
+
