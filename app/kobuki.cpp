@@ -1,5 +1,9 @@
 #include "kobuki.h"
 
+#include <unordered_map>
+
+#include "paths.h"
+
 struct Towel
 {
 	const double l = 1.35;
@@ -11,7 +15,7 @@ struct Towel
 };
 Towel towel;
 
-void make_kobuki(stark::models::Simulation& sim)
+void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collision_path)
 {
 	// Input
 	const double power_multiplier = 1.0;
@@ -25,7 +29,7 @@ void make_kobuki(stark::models::Simulation& sim)
 	// Body
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
-	stark::utils::load_obj(vertices, triangles, "D:/sciebo/wd/stark/res/kobuki_collision.obj");
+	stark::utils::load_obj(vertices, triangles, kobuki_collision_path);
 	const int body = rb.add_cylinder(mass, 0.175, 0.07, vertices, triangles, { 0, 0, 0.057 });
 	rb.add_to_output_group("body", body);
 
@@ -75,13 +79,12 @@ int make_towel(stark::models::Simulation& sim, const int n_short_side = 30)
 	return cloth_id;
 }
 
-
 void towel_parametrization()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "towel_final";
 	settings.output.output_directory = "D:/sciebo/wd/stark/towel_parametrization";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
@@ -150,7 +153,7 @@ void folding_towel()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "folding_towel_f1.0";
 	settings.output.output_directory = "D:/sciebo/wd/stark/folding_towel";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
@@ -251,7 +254,7 @@ void kobuki_test()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "kobuki_test";
 	settings.output.output_directory = "D:/sciebo/wd/stark/kobuki_test";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
@@ -270,7 +273,7 @@ void kobuki_test()
 	stark::models::Simulation sim(settings);
 
 	// Kobuki
-	make_kobuki(sim);
+	make_kobuki(sim, MODELS_PATH + "/kobuki_collision.obj");
 
 	// Floor
 	const double floor_friction = 1.0;
@@ -285,23 +288,22 @@ void kobuki_test()
 	// Run
 	sim.stark.run();
 }
-
-void kobuki_v_towel_3folds()
+void kobuki_v_towel(const std::string output_directory, const std::string name, const std::string mesh_path, const std::string kobuki_collision_path, const double floor_friction, const double rotation)
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "kobuki_v_towel_3folds";
-	settings.output.output_directory = "D:/sciebo/wd/stark/kobuki_v_towel";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.simulation_name = name;
+	settings.output.output_directory = output_directory;
+	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
-	settings.execution.end_simulation_time = 10.0;
+	settings.execution.end_simulation_time = 0.02;
 	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
 
 	settings.newton.max_newton_iterations = 50;
 
-	settings.contact.collisions_enabled = true;
-	settings.contact.friction_enabled = true;
+	settings.contact.collisions_enabled = false;
+	settings.contact.friction_enabled = false;
 	settings.contact.friction_stick_slide_threshold = 0.001;
 	settings.contact.adaptive_contact_stiffness.value = 1e4;
 	settings.contact.dhat = 0.85*towel.thickness;
@@ -309,24 +311,51 @@ void kobuki_v_towel_3folds()
 	stark::models::Simulation sim(settings);
 
 	// Kobuki
-	make_kobuki(sim);
+	make_kobuki(sim, kobuki_collision_path);
 
 	// Floor
-	const double floor_friction = 1.0;
 	const int floor = sim.rigid_bodies.add_box(10.0, { 2, 3, 0.1 }, { 0, 1, -(0.05 + settings.contact.dhat) });
 	sim.rigid_bodies.set_friction(floor, floor_friction);
 	sim.rigid_bodies.add_constraint_freeze(floor);
-	sim.rigid_bodies.add_to_output_group("floor", floor);
+	//sim.rigid_bodies.add_to_output_group("floor", floor);
 
 	// Towel
 	const double towel_friction = 1.0;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
-	stark::utils::load_obj(vertices, triangles, "D:/sciebo/wd/stark/res/towel_3folds.obj");
-	stark::utils::move(vertices, { 0.0, 1.0, 0.0 });
+	stark::utils::load_obj(vertices, triangles, mesh_path);
+	stark::utils::rotate_deg(vertices, rotation, Eigen::Vector3d::UnitZ());
+	stark::utils::move(vertices, { 0.0, 0.5, 0.0 });
 	const int towel_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
 	sim.cloth.set_friction(towel_id, towel_friction);
 
 	// Run
 	sim.stark.run();
+}
+
+void kobuki_v_towel_suite()
+{
+	std::unordered_map<std::string, double> friction;
+	friction["carpet"] = 1.0;
+	friction["polished"] = 0.01;
+	std::vector<std::string> floor_types = {"carpet", "polished"};
+	std::vector<std::string> folds = {"1fold", "2folds", "3fold"};
+
+	const std::string base = "C:/Users/jose/sciebo/paper_project_box/icra24";
+	const std::string out = base + "scenes/kobuki_v_towel/v0";
+	const std::string mesh_3_folds = base + "/models/towel_3folds.obj";
+	const std::string mesh_2_folds = base + "/models/towel_2folds.obj";
+	const std::string mesh_1_fold = base + "/models/towel_1fold.obj";
+	const std::string mesh_flat = base + "/models/towel_flat.obj";
+	const std::string kobuki_collision_path = base + "/models/kobuki_collision.obj";
+
+	for (const std::string floor : floor_types) {
+		kobuki_v_towel(out, "flat_" + floor,  mesh_flat, kobuki_collision_path, friction[floor], 0);
+		kobuki_v_towel(out, "1fold_" + floor,  mesh_1_fold, kobuki_collision_path, friction[floor], 0);
+		kobuki_v_towel(out, "2folds_" + floor,  mesh_2_folds, kobuki_collision_path, friction[floor], 0);
+
+		kobuki_v_towel(out, "3folds_" + floor + "_1foldside", mesh_3_folds, kobuki_collision_path, friction[floor], 0);
+		kobuki_v_towel(out, "3folds_" + floor + "_2foldside", mesh_3_folds, kobuki_collision_path, friction[floor], -90);
+		kobuki_v_towel(out, "3folds_" + floor + "_openside",  mesh_3_folds, kobuki_collision_path, friction[floor], 180);
+	}
 }
