@@ -260,6 +260,14 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 	// Edge - Edge
 	const std::vector<Eigen::Vector3d>& X_rb = this->rigid_bodies->mesh.vertices;
 	const std::vector<Eigen::Vector3d>& X_cloth = this->cloth->model.X;
+	auto are_not_almost_parallel = [&](const tmcd::Edge& rb_edge, const tmcd::Edge& cloth_edge)
+	{
+		const Eigen::Vector3d& ea0 = x_rb[rb_edge.vertices[0]];
+		const Eigen::Vector3d& ea1 = x_rb[rb_edge.vertices[1]];
+		const Eigen::Vector3d& eb0 = x_cloth[cloth_edge.vertices[0]];
+		const Eigen::Vector3d& eb1 = x_cloth[cloth_edge.vertices[1]];
+		return (ea1 - ea0).cross(eb1 - eb0).squaredNorm() > 1e-16;
+	};
 	auto mollifier_f = [&](const tmcd::Edge& rb_edge, const tmcd::Edge& cloth_edge)
 	{
 		return edge_edge_mollifier(x_rb[rb_edge.vertices[0]], x_rb[rb_edge.vertices[1]], x_cloth[cloth_edge.vertices[0]], x_cloth[cloth_edge.vertices[1]],
@@ -279,7 +287,8 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 
 		const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p_idx);
 		const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[q_idx]);
-		if (mu > 0.0) {
+		const bool not_parallel = (is_p_rb) ? are_not_almost_parallel(ep_a.edge, ep_b.edge) : are_not_almost_parallel(ep_b.edge, ep_a.edge);
+		if (mu > 0.0 && not_parallel) {
 			const double mollifier = (is_p_rb) ? mollifier_f(ep_a.edge, ep_b.edge) : mollifier_f(ep_b.edge, ep_a.edge);
 			this->friction.rb_d_point_point.conn.numbered_push_back({ rb_idx, p_idx, q_idx });
 			this->friction.rb_d_point_point.contact.T.push_back(projection_matrix_point_point(x_rb[p_idx], x_cloth[q_idx]));
@@ -296,7 +305,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		if ((p.set == this->rigid_bodies_id) && (edge.set == this->cloth_id)) {
 			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p.idx);
 			const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[edge.vertices[0]]);
-			if (mu > 0.0) {
+			if (mu > 0.0 && are_not_almost_parallel(ep.edge, edge)) {
 				this->friction.rb_d_point_edge.conn.numbered_push_back({ rb_idx, p.idx, edge.vertices[0], edge.vertices[1] });
 				this->friction.rb_d_point_edge.bary.push_back(barycentric_point_edge(x_rb[p.idx], x_cloth[edge.vertices[0]], x_cloth[edge.vertices[1]]));
 				this->friction.rb_d_point_edge.contact.T.push_back(projection_matrix_point_edge(x_rb[p.idx], x_cloth[edge.vertices[0]], x_cloth[edge.vertices[1]]));
@@ -307,7 +316,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		else {
 			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(edge.vertices[0]);
 			const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[p.idx]);
-			if (mu > 0.0) {
+			if (mu > 0.0 && are_not_almost_parallel(edge, ep.edge)) {
 				this->friction.rb_d_edge_point.conn.numbered_push_back({ rb_idx, edge.vertices[0], edge.vertices[1], p.idx });
 				this->friction.rb_d_edge_point.bary.push_back(barycentric_point_edge(x_cloth[p.idx], x_rb[edge.vertices[0]], x_rb[edge.vertices[1]]));
 				this->friction.rb_d_edge_point.contact.T.push_back(projection_matrix_point_edge(x_cloth[p.idx], x_rb[edge.vertices[0]], x_rb[edge.vertices[1]]));
@@ -326,7 +335,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 
 		const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(edge_rb.vertices[0]);
 		const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[edge_cloth.vertices[0]]);
-		if (mu > 0.0) {
+		if (mu > 0.0 && are_not_almost_parallel(edge_rb, edge_cloth)) {
 			this->friction.rb_d_edge_edge.conn.numbered_push_back({ rb_idx, edge_rb.vertices[0], edge_rb.vertices[1], edge_cloth.vertices[0], edge_cloth.vertices[1] });
 			this->friction.rb_d_edge_edge.bary.push_back(barycentric_edge_edge(x_rb[edge_rb.vertices[0]], x_rb[edge_rb.vertices[1]], x_cloth[edge_cloth.vertices[0]], x_cloth[edge_cloth.vertices[1]]));
 			this->friction.rb_d_edge_edge.contact.T.push_back(projection_matrix_edge_edge(x_rb[edge_rb.vertices[0]], x_rb[edge_rb.vertices[1]], x_cloth[edge_cloth.vertices[0]], x_cloth[edge_cloth.vertices[1]]));

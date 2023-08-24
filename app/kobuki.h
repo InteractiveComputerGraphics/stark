@@ -6,3 +6,4 @@
 void towel_parametrization();
 void folding_towel();
 void kobuki_test();
+void kobuki_v_towel_3folds();

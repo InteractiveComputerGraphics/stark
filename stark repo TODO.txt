@@ -4,7 +4,6 @@ stark repo TODO
 Bosch
 -----
 	* Activate friction is wrong!
-	* Exclude almost parallel edges from friction.
 	* Suspension to the kobuki?
 	* Damping for better looking cloth.
 	* I am not sure the torque is correct

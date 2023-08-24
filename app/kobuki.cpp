@@ -14,7 +14,7 @@ Towel towel;
 void make_kobuki(stark::models::Simulation& sim)
 {
 	// Input
-	const double power_multiplier = 5.0;
+	const double power_multiplier = 1.0;
 	const double mass = 2.951;
 	const double torque = power_multiplier*0.0666; // (Per-motor) Torque output at stall, that is, at max output due to an obstacle
 	const double max_linear_velocity = power_multiplier*0.26;
@@ -246,7 +246,6 @@ void folding_towel()
 		}
 	);
 }
-
 void kobuki_test()
 {
 	stark::Settings settings = stark::Settings();
@@ -282,6 +281,51 @@ void kobuki_test()
 
 	// Towel
 	const int cloth_id = make_towel(sim);
+
+	// Run
+	sim.stark.run();
+}
+
+void kobuki_v_towel_3folds()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "kobuki_v_towel_3folds";
+	settings.output.output_directory = "D:/sciebo/wd/stark/kobuki_v_towel";
+	settings.output.codegen_directory = "../output/codegen";
+	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
+	settings.output.fps = 30;
+
+	settings.execution.end_simulation_time = 10.0;
+	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
+
+	settings.newton.max_newton_iterations = 50;
+
+	settings.contact.collisions_enabled = true;
+	settings.contact.friction_enabled = true;
+	settings.contact.friction_stick_slide_threshold = 0.001;
+	settings.contact.adaptive_contact_stiffness.value = 1e4;
+	settings.contact.dhat = 0.85*towel.thickness;
+
+	stark::models::Simulation sim(settings);
+
+	// Kobuki
+	make_kobuki(sim);
+
+	// Floor
+	const double floor_friction = 1.0;
+	const int floor = sim.rigid_bodies.add_box(10.0, { 2, 3, 0.1 }, { 0, 1, -(0.05 + settings.contact.dhat) });
+	sim.rigid_bodies.set_friction(floor, floor_friction);
+	sim.rigid_bodies.add_constraint_freeze(floor);
+	sim.rigid_bodies.add_to_output_group("floor", floor);
+
+	// Towel
+	const double towel_friction = 1.0;
+	std::vector<Eigen::Vector3d> vertices;
+	std::vector<std::array<int, 3>> triangles;
+	stark::utils::load_obj(vertices, triangles, "D:/sciebo/wd/stark/res/towel_3folds.obj");
+	stark::utils::move(vertices, { 0.0, 1.0, 0.0 });
+	const int towel_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
+	sim.cloth.set_friction(towel_id, towel_friction);
 
 	// Run
 	sim.stark.run();

@@ -83,7 +83,7 @@ void interaction_cloth_rb_bowl()
 void laundry_cloth()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "laundry_cloth_damping";
+	settings.output.simulation_name = "laundry_cloth_damping1";
 	settings.output.output_directory = "D:/sciebo/wd/stark/laundry_cloth";
 	settings.output.codegen_directory = "../output/codegen";
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
@@ -98,7 +98,7 @@ void laundry_cloth()
 	settings.contact.adaptive_contact_stiffness.set(1e6, 1e6, 1e12);
 	settings.contact.adaptive_contact_stiffness.success_multiplier = 0.8;
 	settings.contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = 50;
-	settings.contact.friction_stick_slide_threshold = 0.05;
+	settings.contact.friction_stick_slide_threshold = 0.01;
 	settings.contact.dhat = 0.002;
 	stark::models::Simulation sim(settings);
 
@@ -118,25 +118,18 @@ void laundry_cloth()
 	sim.rigid_bodies.add_to_output_group("drum", drum);
 
 	// Cloth
-	const double friction = 0.5;
 	const double scale = 1.0;
-	const int n = 50;
+	const int n = 150;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5 * scale, -0.5 * scale }, { 0.5 * scale, 0.5 * scale }, { n, n });
 	stark::utils::rotate_deg(vertices, -85.0, Eigen::Vector3d::UnitX());
 	stark::utils::move(vertices, { 0.0, -0.2, 0.0 });
 
-	for (size_t i = 0; i < 6; i++) {
+	for (size_t i = 0; i < 1; i++) {
 		const int cloth_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
+		sim.cloth.set_friction(cloth_id, 1.0);
 		stark::utils::move(vertices, { 0.0, 0.075, 0.0 });
-		sim.cloth.set_density(cloth_id, 0.48);
-		sim.cloth.set_strain_parameters(cloth_id, 100.0, 0.3, 0.1, 1.0);
-		sim.cloth.set_bending_stiffness(cloth_id, 5e-6);
-		sim.cloth.set_friction(cloth_id, friction);
-		sim.cloth.set_damping(2.0);
-		sim.cloth.bending_damping = 0.1;
-		sim.cloth.strain_damping = 0.1;
 	}
 
 	// Run

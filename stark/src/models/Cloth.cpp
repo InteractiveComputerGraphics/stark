@@ -154,7 +154,7 @@ void stark::models::Cloth::set_material_preset(const int cloth_id, const Materia
 		this->set_strain_parameters(cloth_id, 100.0, 0.3, 0.1, 1.0);
 		this->set_bending_stiffness(cloth_id, 5e-6);
 		this->set_friction(cloth_id, 0.5);
-		this->set_damping(2.0, 0.1, 0.1);
+		this->set_damping(2.0, 0.2, 0.2);
 		break;
 	default:
 		std::cout << "stark::models::Cloth::set_material_preset() error: cloth material preset not defined." << std::endl;
