@@ -258,7 +258,7 @@ void rolling_towel()
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
-	settings.execution.end_simulation_time = 20.0;
+	settings.execution.end_simulation_time = 100.0;
 	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
 
 	settings.newton.max_newton_iterations = 50;
@@ -383,7 +383,6 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 	// Run
 	sim.stark.run();
 }
-
 void kobuki_v_towel_suite()
 {
 	std::unordered_map<std::string, double> friction;
