@@ -38,5 +38,6 @@ int main()
 	//kobuki_test();
 	//towel_parametrization();
 	//folding_towel();
-	kobuki_v_towel_suite();
+	rolling_towel();
+	//kobuki_v_towel_suite();
 }

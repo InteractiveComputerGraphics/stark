@@ -249,6 +249,57 @@ void folding_towel()
 		}
 	);
 }
+void rolling_towel()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "rolling_towel";
+	settings.output.output_directory = OUTPUT_PATH + "/rolling_towel";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
+	settings.output.fps = 30;
+
+	settings.execution.end_simulation_time = 20.0;
+	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
+
+	settings.newton.max_newton_iterations = 50;
+
+	settings.contact.collisions_enabled = true;
+	settings.contact.friction_enabled = false;
+	settings.contact.friction_stick_slide_threshold = 0.001;
+	settings.contact.adaptive_contact_stiffness.value = 1e4;
+	settings.contact.dhat = towel.thickness;
+
+	stark::models::Simulation sim(settings);
+
+	// Towel
+	std::vector<Eigen::Vector3d> vertices;
+	std::vector<std::array<int, 3>> triangles;
+	const int ny = 100;
+	const int nx = 56;
+	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5 * towel.w, -0.5 * towel.l }, { 0.5 * towel.w, 0.5 * towel.l }, { nx, ny });
+	stark::utils::rotate_deg(vertices, 90.0, { 1, 0, 0 });
+	stark::utils::move(vertices, {0.0, 0.0, -0.5*towel.l});
+	const int towel_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
+
+	// Run
+	sim.stark.run(
+		[&]()
+		{
+			const double t = sim.stark.current_time;
+			const double w = 5.0;
+			sim.cloth.clear_vertex_target_position();
+
+			for (const int i : stark::utils::vertices_in_AABB(sim.cloth.model.X, { -1.0, -1.0, -0.01 }, { 1.0, 1.0, 0.01 })) {
+				sim.cloth.set_vertex_target_position_as_initial(towel_id, i);
+			}
+			for (const int i : stark::utils::vertices_in_AABB(sim.cloth.model.X, { -1.0, -1.0, -0.02 }, { 1.0, 1.0, -0.01 })) {
+				const double x = sim.cloth.model.x1[i].x();
+				const double r = std::abs(sim.cloth.model.X[i].z());
+				sim.cloth.set_vertex_target_position(towel_id, i, {x, r*std::sin(w*t), -r*std::cos(w*t)});
+			}
+		}
+	);
+}
 void kobuki_test()
 {
 	stark::Settings settings = stark::Settings();
@@ -347,6 +398,8 @@ void kobuki_v_towel_suite()
 	const std::string mesh_2_folds = base + "/models/towel_2folds.obj";
 	const std::string mesh_1_fold = base + "/models/towel_1fold.obj";
 	const std::string mesh_flat = base + "/models/towel_flat.obj";
+	const std::string mesh_rolled_rolled_side = base + "/models/mesh_rolled_rolled_side.obj";
+	const std::string mesh_rolled_open_side = base + "/models/mesh_rolled_open_side.obj";
 	const std::string kobuki_collision_path = base + "/models/kobuki_collision.obj";
 
 	for (const std::string floor : floor_types) {
@@ -357,5 +410,8 @@ void kobuki_v_towel_suite()
 		kobuki_v_towel(out, "3folds_" + floor + "_1foldside", mesh_3_folds, kobuki_collision_path, friction[floor], 0);
 		kobuki_v_towel(out, "3folds_" + floor + "_2foldside", mesh_3_folds, kobuki_collision_path, friction[floor], -90);
 		kobuki_v_towel(out, "3folds_" + floor + "_openside",  mesh_3_folds, kobuki_collision_path, friction[floor], 180);
+
+		kobuki_v_towel(out, "rolled_" + floor + "_rolledside", mesh_rolled_rolled_side, kobuki_collision_path, friction[floor], 0);
+		kobuki_v_towel(out, "rolled_" + floor + "_openside", mesh_rolled_open_side, kobuki_collision_path, friction[floor], 0);
 	}
 }
