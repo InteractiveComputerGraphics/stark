@@ -348,13 +348,14 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
-	settings.execution.end_simulation_time = 0.02;
+	settings.execution.end_simulation_time = 10.0;
+	//settings.execution.end_simulation_time = 0.02;
 	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
 
 	settings.newton.max_newton_iterations = 50;
 
-	settings.contact.collisions_enabled = false;
-	settings.contact.friction_enabled = false;
+	settings.contact.collisions_enabled = true;
+	settings.contact.friction_enabled = true;
 	settings.contact.friction_stick_slide_threshold = 0.001;
 	settings.contact.adaptive_contact_stiffness.value = 1e4;
 	settings.contact.dhat = 0.85*towel.thickness;
@@ -385,32 +386,45 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 }
 void kobuki_v_towel_suite()
 {
-	std::unordered_map<std::string, double> friction;
-	friction["carpet"] = 1.0;
-	friction["polished"] = 0.01;
-	std::vector<std::string> floor_types = {"carpet", "polished"};
+	std::vector<std::pair<std::string, double>> friction_types;
+	friction_types.push_back({"001", 0.01});
+	friction_types.push_back({"005", 0.05});
+	friction_types.push_back({"010", 0.1});
+	friction_types.push_back({"025", 0.25});
+	friction_types.push_back({"050", 0.5});
+	friction_types.push_back({"075", 0.75});
+	friction_types.push_back({"100", 1.0});
+	friction_types.push_back({"150", 1.5});
+	friction_types.push_back({"200", 2.0});
+	//std::vector<std::string> floor_types = {"carpet", "polished"};
 	std::vector<std::string> folds = {"1fold", "2folds", "3fold"};
 
-	const std::string base = "C:/Users/jose/sciebo/paper_project_box/icra24";
-	const std::string out = base + "scenes/kobuki_v_towel/v0";
+	//const std::string base = "C:/Users/jose/sciebo/paper_project_box/icra24";
+	const std::string base = "D:/sciebo/paper_project_box/icra24";
+	//const std::string base = "/local-hdd/jfernandez/sciebo/icra24";
+	const std::string out = base + "/scenes/kobuki_v_towel/v0";
 	const std::string mesh_3_folds = base + "/models/towel_3folds.obj";
 	const std::string mesh_2_folds = base + "/models/towel_2folds.obj";
 	const std::string mesh_1_fold = base + "/models/towel_1fold.obj";
 	const std::string mesh_flat = base + "/models/towel_flat.obj";
-	const std::string mesh_rolled_rolled_side = base + "/models/mesh_rolled_rolled_side.obj";
-	const std::string mesh_rolled_open_side = base + "/models/mesh_rolled_open_side.obj";
+	const std::string mesh_rolled_rolled_side = base + "/models/towel_rolled_rolledside.obj";
+	const std::string mesh_rolled_open_side = base + "/models/towel_rolled_openside.obj";
+	const std::string mesh_rolled_side = base + "/models/towel_rolled_side.obj";
 	const std::string kobuki_collision_path = base + "/models/kobuki_collision.obj";
 
-	for (const std::string floor : floor_types) {
-		kobuki_v_towel(out, "flat_" + floor,  mesh_flat, kobuki_collision_path, friction[floor], 0);
-		kobuki_v_towel(out, "1fold_" + floor,  mesh_1_fold, kobuki_collision_path, friction[floor], 0);
-		kobuki_v_towel(out, "2folds_" + floor,  mesh_2_folds, kobuki_collision_path, friction[floor], 0);
+	for (const auto pair : friction_types) {
+		const std::string label = pair.first;
+		const double friction = pair.second;
+		kobuki_v_towel(out + "/" + label, "flat", mesh_flat, kobuki_collision_path, friction, 0);
+		kobuki_v_towel(out + "/" + label, "1fold",  mesh_1_fold, kobuki_collision_path, friction, 0);
+		kobuki_v_towel(out + "/" + label, "2folds",  mesh_2_folds, kobuki_collision_path, friction, 0);
 
-		kobuki_v_towel(out, "3folds_" + floor + "_1foldside", mesh_3_folds, kobuki_collision_path, friction[floor], 0);
-		kobuki_v_towel(out, "3folds_" + floor + "_2foldside", mesh_3_folds, kobuki_collision_path, friction[floor], -90);
-		kobuki_v_towel(out, "3folds_" + floor + "_openside",  mesh_3_folds, kobuki_collision_path, friction[floor], 180);
+		kobuki_v_towel(out + "/" + label, "3folds_1foldside", mesh_3_folds, kobuki_collision_path, friction, 0);
+		kobuki_v_towel(out + "/" + label, "3folds_2foldside", mesh_3_folds, kobuki_collision_path, friction, -90);
+		kobuki_v_towel(out + "/" + label, "3folds_openside",  mesh_3_folds, kobuki_collision_path, friction, 180);
 
-		kobuki_v_towel(out, "rolled_" + floor + "_rolledside", mesh_rolled_rolled_side, kobuki_collision_path, friction[floor], 0);
-		kobuki_v_towel(out, "rolled_" + floor + "_openside", mesh_rolled_open_side, kobuki_collision_path, friction[floor], 0);
+		kobuki_v_towel(out + "/" + label, "rolled_rolledside", mesh_rolled_rolled_side, kobuki_collision_path, friction, 0);
+		kobuki_v_towel(out + "/" + label, "rolled_openside", mesh_rolled_open_side, kobuki_collision_path, friction, 0);
+		kobuki_v_towel(out + "/" + label, "rolled_side", mesh_rolled_side, kobuki_collision_path, friction, 0);
 	}
 }
