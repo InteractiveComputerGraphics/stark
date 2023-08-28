@@ -10,8 +10,8 @@ void interaction_cloth_rb()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "interaction_cloth_rb";
-	settings.output.output_directory = "D:/sciebo/wd/stark/interaction_cloth_rb";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.output_directory = BASE_PATH + "/interaction_cloth_rb";
+	 settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 120;
 
@@ -30,7 +30,6 @@ void interaction_cloth_rb()
 	const double mu = 1.0;
 	const int o1 = sim.rigid_bodies.add_box(10.0, { 0.2, 2.0, 0.1 }, { 0, 0, 0 });
 	sim.rigid_bodies.add_rotation(o1, -rot_deg, Eigen::Vector3d::UnitX());
-	sim.rigid_bodies.set_friction(o1, mu);
 	sim.rigid_bodies.add_constraint_freeze(o1);
 
 	// Cloth
@@ -43,6 +42,8 @@ void interaction_cloth_rb()
 	stark::utils::move(vertices, {0.0, 0.0, 0.05 + 0.5*scale + 1.5*settings.contact.dhat });
 	const int cloth_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Cotton);
 	sim.cloth.set_bending_stiffness(cloth_id, 1e-3);
+	
+	sim.interactions.set_friction(o1, cloth_id, mu);
 
 	// Run
 	sim.stark.run();
@@ -87,8 +88,8 @@ void laundry_cloth()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "laundry_cloth_damping1";
-	settings.output.output_directory = "D:/sciebo/wd/stark/laundry_cloth";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.output_directory = BASE_PATH + "/laundry_cloth";
+	 settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
@@ -105,8 +106,6 @@ void laundry_cloth()
 	settings.contact.dhat = 0.002;
 	stark::models::Simulation sim(settings);
 
-	//sim.rigid_bodies.set_damping(0.25);
-
 	// Wall
 	const int wall = sim.rigid_bodies.add_box(10.0, { 2.0, 0.5, 2.0 }, { 0.0, -0.6, 0.0 });
 	sim.rigid_bodies.add_constraint_freeze(wall);
@@ -114,10 +113,7 @@ void laundry_cloth()
 
 	// Drum
 	const int drum = sim.rigid_bodies.add_cylinder(1.0, 0.75, 0.5, { 0, 0, 0 }, 90.0, { 1, 0, 0 }, 64);
-	sim.rigid_bodies.set_friction(drum, 1.0);
 	sim.rigid_bodies.add_constraint_motor(wall, drum, { 0, 0, 0 }, Eigen::Vector3d::UnitY(), 50.0, 0.75 * 3.14, /*delay*/0.01);
-	//sim.rigid_bodies.add_constraint_hinge_joint(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY());
-	//sim.rigid_bodies.add_torque(drum, 0.2*Eigen::Vector3d::UnitY());
 	sim.rigid_bodies.add_to_output_group("drum", drum);
 
 	// Cloth
@@ -131,6 +127,7 @@ void laundry_cloth()
 
 	for (size_t i = 0; i < 1; i++) {
 		const int cloth_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
+		sim.interactions.set_friction(drum, cloth_id, 1.0);
 		sim.cloth.set_friction(cloth_id, 1.0);
 		stark::utils::move(vertices, { 0.0, 0.075, 0.0 });
 	}

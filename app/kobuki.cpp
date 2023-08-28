@@ -15,7 +15,7 @@ struct Towel
 };
 Towel towel;
 
-void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collision_path)
+void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collision_path, const int floor_id)
 {
 	// Input
 	const double power_multiplier = 1.0;
@@ -68,8 +68,8 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 	rb.disable_collisions(right, right_suspension);
 
 	// Friction
-	rb.set_friction(left, power_wheels_friction);
-	rb.set_friction(right, power_wheels_friction);
+	rb.set_friction(floor_id, left, power_wheels_friction);
+	rb.set_friction(floor_id, right, power_wheels_friction);
 
 	// Lift
 	for (int i : {body, front, back, left, right, left_suspension, right_suspension}) {
@@ -103,7 +103,7 @@ void towel_parametrization()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "towel_final";
-	settings.output.output_directory = "D:/sciebo/wd/stark/towel_parametrization";
+	settings.output.output_directory = BASE_PATH + "/towel_parametrization";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
@@ -172,7 +172,7 @@ void folding_towel()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "folding_towel_f1.0";
-	settings.output.output_directory = "D:/sciebo/wd/stark/folding_towel";
+	settings.output.output_directory = BASE_PATH + "/folding_towel";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
@@ -343,15 +343,14 @@ void kobuki_test()
 
 	stark::models::Simulation sim(settings);
 
-	// Kobuki
-	make_kobuki(sim, MODELS_PATH + "/kobuki_collision.obj");
-
 	// Floor
 	const double floor_friction = 1.0;
 	const int floor = sim.rigid_bodies.add_box(10.0, { 2, 3, 0.1 }, { 0, 1, -(0.05 + settings.contact.dhat) });
-	sim.rigid_bodies.set_friction(floor, floor_friction);
 	sim.rigid_bodies.add_constraint_freeze(floor);
 	sim.rigid_bodies.add_to_output_group("floor", floor);
+
+	// Kobuki
+	make_kobuki(sim, MODELS_PATH + "/kobuki_collision.obj", floor);
 
 	// Towel
 	//const int cloth_id = make_towel(sim);
@@ -382,14 +381,13 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 
 	stark::models::Simulation sim(settings);
 
-	// Kobuki
-	make_kobuki(sim, kobuki_collision_path);
-
 	// Floor
 	const int floor = sim.rigid_bodies.add_box(10.0, { 2, 3, 0.1 }, { 0, 1, -(0.05 + settings.contact.dhat) });
-	sim.rigid_bodies.set_friction(floor, floor_friction);
 	sim.rigid_bodies.add_constraint_freeze(floor);
 	//sim.rigid_bodies.add_to_output_group("floor", floor);
+
+	// Kobuki
+	make_kobuki(sim, kobuki_collision_path, floor);
 
 	// Towel
 	const double towel_friction = 1.0;
@@ -416,12 +414,11 @@ void kobuki_v_towel_suite()
 	friction_types.push_back({"100", 1.0});
 	friction_types.push_back({"150", 1.5});
 	friction_types.push_back({"200", 2.0});
-	//std::vector<std::string> floor_types = {"carpet", "polished"};
-	std::vector<std::string> folds = {"1fold", "2folds", "3fold"};
 
 	//const std::string base = "C:/Users/jose/sciebo/paper_project_box/icra24";
 	const std::string base = "D:/sciebo/paper_project_box/icra24";
 	//const std::string base = "/local-hdd/jfernandez/sciebo/icra24";
+
 	const std::string out = base + "/scenes/kobuki_v_towel/v0";
 	const std::string mesh_3_folds = base + "/models/towel_3folds.obj";
 	const std::string mesh_2_folds = base + "/models/towel_2folds.obj";

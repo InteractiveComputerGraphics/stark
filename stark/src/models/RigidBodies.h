@@ -12,6 +12,7 @@
 #include "../utils/MultiMeshEdges.h"
 #include "../utils/mesh_generators.h"
 #include "../utils/inertia_tensors.h"
+#include "../utils/unordered_array_set_and_map.h"
 #include "RigidBodyContacts.h"
 #include "RigidBodyFriction.h"
 
@@ -110,7 +111,7 @@ namespace stark::models
 
 		// Friction
 		RigidBodyFriction friction;
-		std::vector<double> mu;
+		utils::unordered_array_map<int, 2, double> mu;
 
 		// Output
 		utils::MultiMesh<3> mesh;  // Always stays at rest positions
@@ -160,7 +161,8 @@ namespace stark::models
 		void add_acceleration(const int body_id, const Eigen::Vector3d& acc_glob_coords);
 		void set_angular_acceleration(const int body_id, const Eigen::Vector3d& ang_acc_glob_coords);
 		void add_angular_acceleration(const int body_id, const Eigen::Vector3d& ang_acc_glob_coords);
-		void set_friction(const int body_id, const double coulombs_mu);
+		void set_friction(const int body_0, const int body_1, const double coulombs_mu);
+		double get_friction(const int body_0, const int body_1);
 
 		void disable_collisions(const int body_0, const int body_1);
 		Eigen::Vector3d get_point_in_global_coordinates(const int body_id, const Eigen::Vector3d& p);

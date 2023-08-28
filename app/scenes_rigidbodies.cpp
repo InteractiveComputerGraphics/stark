@@ -1,5 +1,7 @@
 #include "scenes_rigidbodies.h"
 
+#include "paths.h"
+
 #include <Eigen/Dense>
 #include <stark>
 
@@ -8,8 +10,8 @@ void rb_ball_joint()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "ball_joint";
-	settings.output.output_directory = "D:/sciebo/wd/stark/rigid_body_joints";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.output_directory = BASE_PATH + "/rigid_body_joints";
+	 settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 10.0;
 	stark::models::Simulation sim(settings);
@@ -30,8 +32,8 @@ void rb_slider()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "slider";
-	settings.output.output_directory = "D:/sciebo/wd/stark/rigid_body_joints";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.output_directory = BASE_PATH + "/rigid_body_joints";
+	 settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	
 	settings.execution.end_simulation_time = 5.0;
@@ -55,9 +57,9 @@ void rb_contacts_floor_test()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "contacts_floor_test";
-	settings.output.output_directory = "D:/sciebo/wd/stark/rigid_body_contacts";
-	settings.output.codegen_directory = "../output/codegen";
-	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
+	settings.output.output_directory = BASE_PATH + "/rigid_body_contacts";
+	 settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 120;
 
 	settings.execution.end_simulation_time = 1.0;
@@ -65,7 +67,7 @@ void rb_contacts_floor_test()
 
 	settings.contact.friction_enabled = true;
 	settings.contact.adaptive_contact_stiffness.value = 1e8;
-	settings.contact.dhat = 0.001;
+	settings.contact.dhat = 0.002;
 	stark::models::Simulation sim(settings);
  
 	// Slope
@@ -80,8 +82,7 @@ void rb_contacts_floor_test()
 	const int o2 = sim.rigid_bodies.add_box(mass, {scale, scale, scale}, { 0.1, -0.2, scale + drop_height + 1.5*settings.contact.dhat });
 	sim.rigid_bodies.add_rotation(o1, -rot_deg, Eigen::Vector3d::UnitX());
 	sim.rigid_bodies.add_rotation(o2, -rot_deg, Eigen::Vector3d::UnitX());
-	sim.rigid_bodies.set_friction(o1, mu);
-	sim.rigid_bodies.set_friction(o2, mu);
+	sim.rigid_bodies.set_friction(o1, o2, mu);
 
 	// Constraints
 	sim.rigid_bodies.add_constraint_freeze(o1);
@@ -93,8 +94,8 @@ void rb_contact_edge_test()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "rb_contact_edge_test";
-	settings.output.output_directory = "D:/sciebo/wd/stark/rigid_body_contacts";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.output_directory = BASE_PATH + "/rigid_body_contacts";
+	 settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::NewtonIterations;
 	settings.output.fps = 120;
 
@@ -116,8 +117,7 @@ void rb_contact_edge_test()
 	const double scale = 0.1;
 	const int o1 = sim.rigid_bodies.add_box(mass, { scale, scale, scale }, { 0, 0, 0 }, 45.0, {1, 0, 0});
 	const int o2 = sim.rigid_bodies.add_box(mass, { scale, scale, scale }, { 0, 0, 0.2 }, 45.0, {0, 1, 0});
-	sim.rigid_bodies.set_friction(o1, mu);
-	sim.rigid_bodies.set_friction(o2, mu);
+	sim.rigid_bodies.set_friction(o1, o2, mu);
 
 	// Constraints
 	sim.rigid_bodies.add_constraint_freeze(o1);
@@ -129,8 +129,8 @@ void laundry()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "laundry";
-	settings.output.output_directory = "D:/sciebo/wd/stark/laundry";
-	settings.output.codegen_directory = "../output/codegen";
+	settings.output.output_directory = BASE_PATH + "/laundry";
+	 settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
@@ -153,11 +153,9 @@ void laundry()
 	sim.rigid_bodies.add_to_output_group("wall", wall);
 
 	// Drum
+	const double drum_friction = 1.0;
 	const int drum = sim.rigid_bodies.add_cylinder(1.0, 0.75, 0.5, {0, 0, 0}, 90.0, {1, 0, 0}, 64);
-	sim.rigid_bodies.set_friction(drum, 1.0);
 	sim.rigid_bodies.add_constraint_motor(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY(), 50.0, 0.75*3.14, /*delay*/0.01);
-	//sim.rigid_bodies.add_constraint_hinge_joint(wall, drum, {0, 0, 0}, Eigen::Vector3d::UnitY());
-	//sim.rigid_bodies.add_torque(drum, 0.2*Eigen::Vector3d::UnitY());
 	sim.rigid_bodies.add_to_output_group("drum", drum);
 
 	// Objects
@@ -172,14 +170,18 @@ void laundry()
 				const Eigen::Vector3d p = 0.1*scale*Eigen::Vector3d::Random();
 				//const int idx = sim.rigid_bodies.add_sphere(mass, 0.5 * scale, Eigen::Vector3d(x, y, z) + p, 0.0, {1, 0, 0}, 2);
 				const int idx = sim.rigid_bodies.add_box(mass, { scale, scale, scale }, Eigen::Vector3d(x, y, z) + p);
-				sim.rigid_bodies.set_friction(idx, mu);
 				sim.rigid_bodies.add_to_output_group("objs", idx);
+				sim.rigid_bodies.set_friction(drum, idx, drum_friction);
 			}
 		}
 	}
-	 
-	//const int idx = sim.rigid_bodies.add_sphere(mass, 0.5 * scale, { 0.0, 0.0, -0.6 });
-	//sim.rigid_bodies.set_friction(idx, mu);
+	
+	// Friction pairs
+	for (int i = drum + 1; i < sim.rigid_bodies.get_n_bodies(); i++) {
+		for (int j = i + 1; j < sim.rigid_bodies.get_n_bodies(); j++) {
+			sim.rigid_bodies.set_friction(i, j, mu);
+		}
+	}
 
 	// Run
 	sim.stark.run();

@@ -23,14 +23,14 @@ int main()
 	// ------------------------- RIGID BODIES -------------------------
 	//rb_ball_joint();
 	//rb_slider();
-	//rb_contacts_floor_test();
+	rb_contacts_floor_test();
 	//rb_contact_edge_test();
 	//laundry();
 
 
 	// ------------------------- INTERACTIONS -------------------------
 	//interaction_cloth_rb();
-	interaction_cloth_rb_bowl();
+	//interaction_cloth_rb_bowl();
 	//laundry_cloth();
 
 

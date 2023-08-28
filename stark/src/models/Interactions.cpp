@@ -36,7 +36,6 @@ double stark::models::Interactions::get_friction(const int rb_idx, const int clo
 		return it->second;
 	}
 }
-
 bool stark::models::Interactions::is_empty() const
 {
 	return this->cloth->is_empty() && this->rigid_bodies->is_empty();
@@ -191,8 +190,6 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 
 	// Fill friction data
 	this->friction.clear();
-	const std::vector<double>& mu_cloth = this->cloth->vertex_mu;
-	const std::vector<double>& mu_rb = this->rigid_bodies->mu;
 
 	// Point - Triangle
 	//// Point - Point

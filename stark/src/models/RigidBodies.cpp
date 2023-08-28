@@ -46,7 +46,6 @@ int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& vertices
 	this->torque.push_back(Eigen::Vector3d::Zero());
 	this->J_loc.push_back(inertia_loc);
 	this->mass.push_back(mass);
-	this->mu.push_back(0.0);
 	this->motor_torque.push_back(Eigen::Vector3d::Zero());
 
 	this->mesh.add_mesh(vertices, triangles);
@@ -261,9 +260,20 @@ void stark::models::RigidBodies::add_angular_acceleration(const int body_id, con
 {
 	this->aa[body_id] += ang_acc_glob_coords;
 }
-void stark::models::RigidBodies::set_friction(const int body_id, const double coulombs_mu)
+void stark::models::RigidBodies::set_friction(const int body_0, const int body_1, const double coulombs_mu)
 {
-	this->mu[body_id] = coulombs_mu;
+	this->mu[{body_0, body_1}] = coulombs_mu;
+	this->mu[{body_1, body_0}] = coulombs_mu;
+}
+double stark::models::RigidBodies::get_friction(const int body_0, const int body_1)
+{
+	auto it = this->mu.find({ body_0, body_1 });
+	if (it == this->mu.end()) {
+		return 0.0;
+	}
+	else {
+		return it->second;
+	}
 }
 void stark::models::RigidBodies::disable_collisions(const int body_0, const int body_1)
 {
@@ -575,7 +585,7 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
 		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(q.idx);
 		if (rb_a_idx != rb_b_idx) {
-			const double mu = 0.5 * (this->mu[rb_a_idx] + this->mu[rb_b_idx]);
+			const double mu = this->get_friction(rb_a_idx, rb_b_idx);
 			if (mu > 0.0) {
 				this->friction.point_point.conn.push_back({ (int)this->friction.point_point.conn.size(), rb_a_idx, rb_b_idx, p.idx, q.idx });
 				this->friction.point_point.contact.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
@@ -594,7 +604,7 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(edge.vertices[0]);
 
 		if (rb_a_idx != rb_b_idx) {
-			const double mu = 0.5 * (this->mu[rb_a_idx] + this->mu[rb_b_idx]);
+			const double mu = this->get_friction(rb_a_idx, rb_b_idx);
 			if (mu > 0.0) {
 				this->friction.point_edge.conn.push_back({ (int)this->friction.point_edge.conn.size(), rb_a_idx, rb_b_idx, p.idx, edge.vertices[0], edge.vertices[1] });
 				this->friction.point_edge.bary.push_back(barycentric_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
@@ -613,7 +623,7 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(t.vertices[0]);
 
 		if (rb_a_idx != rb_b_idx) {
-			const double mu = 0.5 * (this->mu[rb_a_idx] + this->mu[rb_b_idx]);
+			const double mu = this->get_friction(rb_a_idx, rb_b_idx);
 			if (mu > 0.0) {
 				this->friction.point_triangle.conn.push_back({ (int)this->friction.point_triangle.conn.size(), rb_a_idx, rb_b_idx, p.idx, t.vertices[0], t.vertices[1], t.vertices[2] });
 				this->friction.point_triangle.bary.push_back(barycentric_point_triangle(x[p.idx], x[t.vertices[0]], x[t.vertices[1]], x[t.vertices[2]]));
@@ -650,7 +660,7 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
 		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(q.idx);
 		if (rb_a_idx != rb_b_idx) {
-			const double mu = 0.5 * (this->mu[rb_a_idx] + this->mu[rb_b_idx]);
+			const double mu = this->get_friction(rb_a_idx, rb_b_idx);
 			if (mu > 0.0 && are_not_almost_parallel(ep_a.edge, ep_b.edge)) {
 				this->friction.point_point.conn.push_back({ (int)this->friction.point_point.conn.size(), rb_a_idx, rb_b_idx, p.idx, q.idx });
 				this->friction.point_point.contact.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
@@ -668,7 +678,7 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
 		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(edge.vertices[0]);
 		if (rb_a_idx != rb_b_idx) {
-			const double mu = 0.5 * (this->mu[rb_a_idx] + this->mu[rb_b_idx]);
+			const double mu = this->get_friction(rb_a_idx, rb_b_idx);
 			if (mu > 0.0 && are_not_almost_parallel(ep.edge, edge)) {
 				this->friction.point_edge.conn.push_back({ (int)this->friction.point_edge.conn.size(), rb_a_idx, rb_b_idx, p.idx, edge.vertices[0], edge.vertices[1] });
 				this->friction.point_edge.bary.push_back(barycentric_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
@@ -686,7 +696,7 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(ea.vertices[0]);
 		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(eb.vertices[0]);
 		if (rb_a_idx != rb_b_idx) {
-			const double mu = 0.5 * (this->mu[rb_a_idx] + this->mu[rb_b_idx]);
+			const double mu = this->get_friction(rb_a_idx, rb_b_idx);
 			if (mu > 0.0 && are_not_almost_parallel(ea, eb)) {
 				this->friction.edge_edge.conn.push_back({ (int)this->friction.edge_edge.conn.size(), rb_a_idx, rb_b_idx, ea.vertices[0], ea.vertices[1], eb.vertices[0], eb.vertices[1] });
 				this->friction.edge_edge.bary.push_back(barycentric_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));

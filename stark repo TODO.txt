@@ -81,6 +81,9 @@ Mid priority
 		
 Low priority
 ------------
+	* Friction groups (or material groups)
+		In the loundry machine example, we have 100s of objects and the friction pair table is 100**2, literally for the same number.
+		We need maybe a better solution for user friendliness on interactive environments.
 	* Soften adaptive contact stiffness.
 		This is more relevant for rigid bodies as some high velocity impacts at very small time steps might require huge forces.
 		The laundry capped at 3e10.
