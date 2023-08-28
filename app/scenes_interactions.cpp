@@ -128,8 +128,13 @@ void laundry_cloth()
 	for (size_t i = 0; i < 1; i++) {
 		const int cloth_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
 		sim.interactions.set_friction(drum, cloth_id, 1.0);
-		sim.cloth.set_friction(cloth_id, 1.0);
 		stark::utils::move(vertices, { 0.0, 0.075, 0.0 });
+	}
+
+	for (int i = 0; i < sim.cloth.get_n_cloths(); i++) {
+		for (int j = i + 1; j < sim.cloth.get_n_cloths(); j++) {
+			sim.cloth.set_friction(i, j, 1.0);
+		}
 	}
 
 	// Run

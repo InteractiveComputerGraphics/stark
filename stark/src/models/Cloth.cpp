@@ -123,9 +123,6 @@ int stark::models::Cloth::add(const std::vector<Eigen::Vector3d>& vertices, cons
 	//// Bending
 	this->bending_stiffness.push_back(-1.0);
 
-	//// Friction
-	this->mu.push_back(-1.0);
-
 	// Set preset material
 	this->set_material_preset(cloth_id, material);
 	this->changed_discretization = true;
@@ -147,13 +144,11 @@ void stark::models::Cloth::set_material_preset(const int cloth_id, const Materia
 		this->set_density(cloth_id, 0.2);
 		this->set_strain_parameters(cloth_id, 30.0, 0.3, 1.1);
 		this->set_bending_stiffness(cloth_id, 1e-5);
-		this->set_friction(cloth_id, 0.1);
 		break;
 	case MaterialPreset::Towel:
 		this->set_density(cloth_id, 0.5);
 		this->set_strain_parameters(cloth_id, 100.0, 0.3, 0.1, 1.0);
 		this->set_bending_stiffness(cloth_id, 5e-6);
-		this->set_friction(cloth_id, 0.5);
 		this->set_damping(2.0, 0.2, 0.2);
 		break;
 	default:
@@ -181,11 +176,22 @@ void stark::models::Cloth::set_bending_stiffness(const int cloth_id, const doubl
 	this->_exit_if_cloth_not_declared(cloth_id);
 	this->bending_stiffness[cloth_id] = bending_stiffness;
 }
-void stark::models::Cloth::set_friction(const int cloth_id, const double coulombs_mu)
+void stark::models::Cloth::set_friction(const int cloth_0, const int cloth_1, const double coulombs_mu)
 {
-	this->_exit_if_cloth_not_declared(cloth_id);
-	this->mu[cloth_id] = coulombs_mu;
-	this->changed_discretization = true;
+	this->_exit_if_cloth_not_declared(cloth_0);
+	this->_exit_if_cloth_not_declared(cloth_1);
+	this->mu[{cloth_0, cloth_1}] = coulombs_mu;
+	this->mu[{cloth_1, cloth_0}] = coulombs_mu;
+}
+double stark::models::Cloth::get_friction(const int cloth_0, const int cloth_1)
+{
+	auto it = this->mu.find({ cloth_0, cloth_1 });
+	if (it == this->mu.end()) {
+		return 0.0;
+	}
+	else {
+		return it->second;
+	}
 }
 bool stark::models::Cloth::is_cloth_declared(const int cloth_id) const
 {
@@ -349,17 +355,6 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 			};
 			const int mesh_i = mesh_rest.get_mesh_containing_vertex(indices[0]);
 			this->conn_numbered_mesh_internal_edges[internal_angle_i] = { internal_angle_i, mesh_i, indices[0], indices[1], indices[2], indices[3] };
-		}
-	}
-
-	// Friction
-	if (this->changed_discretization) {
-		this->vertex_mu.resize(this->model.mesh.get_n_vertices());
-		for (int cloth_id = 0; cloth_id < this->model.mesh.get_n_meshes(); cloth_id++) {
-			const std::array<int, 2> range = this->model.mesh.get_vertices_range(cloth_id);
-			for (int i = range[0]; i < range[1]; i++) {
-				this->vertex_mu[i] = this->mu[cloth_id];
-			}
 		}
 	}
 
@@ -533,7 +528,9 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 		const tmcd::TrianglePoint& tp = pair.second;
 		const tmcd::Point& q = tp.point;
 
-		const double mu = 0.5*(this->vertex_mu[p.idx] + this->vertex_mu[q.idx]);
+		const int cloth_a_idx = this->model.mesh.get_mesh_containing_vertex(p.idx);
+		const int cloth_b_idx = this->model.mesh.get_mesh_containing_vertex(q.idx);
+		const double mu = this->get_friction(cloth_a_idx, cloth_b_idx);
 		if (mu > 0.0) {
 			this->friction.point_point.conn.push_back({ (int)this->friction.point_point.conn.size(), p.idx, q.idx});
 			this->friction.point_point.contact.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
@@ -547,7 +544,9 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 		const tmcd::TriangleEdge& te = pair.second;
 		const tmcd::TriangleEdge::Edge& edge = te.edge;
 
-		const double mu = 0.5 * (this->vertex_mu[p.idx] + this->vertex_mu[edge.vertices[0]]);
+		const int cloth_a_idx = this->model.mesh.get_mesh_containing_vertex(p.idx);
+		const int cloth_b_idx = this->model.mesh.get_mesh_containing_vertex(edge.vertices[0]);
+		const double mu = this->get_friction(cloth_a_idx, cloth_b_idx);
 		if (mu > 0.0) {
 			this->friction.point_edge.conn.push_back({ (int)this->friction.point_edge.conn.size(), p.idx, edge.vertices[0], edge.vertices[1] });
 			this->friction.point_edge.bary.push_back(barycentric_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
@@ -561,7 +560,9 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 		const tmcd::Point& p = pair.first;
 		const tmcd::Triangle& t = pair.second;
 
-		const double mu = 0.5 * (this->vertex_mu[p.idx] + this->vertex_mu[t.vertices[0]]);
+		const int cloth_a_idx = this->model.mesh.get_mesh_containing_vertex(p.idx);
+		const int cloth_b_idx = this->model.mesh.get_mesh_containing_vertex(t.vertices[0]);
+		const double mu = this->get_friction(cloth_a_idx, cloth_b_idx);
 		if (mu > 0.0) {
 			this->friction.point_triangle.conn.push_back({ (int)this->friction.point_triangle.conn.size(), p.idx, t.vertices[0], t.vertices[1], t.vertices[2] });
 			this->friction.point_triangle.bary.push_back(barycentric_point_triangle(x[p.idx], x[t.vertices[0]], x[t.vertices[1]], x[t.vertices[2]]));
@@ -595,7 +596,9 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 		const tmcd::Point& p = ep_a.point;
 		const tmcd::Point& q = ep_b.point;
 
-		const double mu = 0.5 * (this->vertex_mu[p.idx] + this->vertex_mu[q.idx]);
+		const int cloth_a_idx = this->model.mesh.get_mesh_containing_vertex(p.idx);
+		const int cloth_b_idx = this->model.mesh.get_mesh_containing_vertex(q.idx);
+		const double mu = this->get_friction(cloth_a_idx, cloth_b_idx);
 		if (mu > 0.0 && are_not_almost_parallel(ep_a.edge, ep_b.edge)) {
 			this->friction.point_point.conn.push_back({ (int)this->friction.point_point.conn.size(), p.idx, q.idx });
 			this->friction.point_point.contact.T.push_back(projection_matrix_point_point(x[p.idx], x[q.idx]));
@@ -609,7 +612,9 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 		const tmcd::Point& p = ep.point;
 		const tmcd::Edge& edge = pair.second;
 
-		const double mu = 0.5 * (this->vertex_mu[p.idx] + this->vertex_mu[edge.vertices[0]]);
+		const int cloth_a_idx = this->model.mesh.get_mesh_containing_vertex(p.idx);
+		const int cloth_b_idx = this->model.mesh.get_mesh_containing_vertex(edge.vertices[0]);
+		const double mu = this->get_friction(cloth_a_idx, cloth_b_idx);
 		if (mu > 0.0 && are_not_almost_parallel(ep.edge, edge)) {
 			this->friction.point_edge.conn.push_back({ (int)this->friction.point_edge.conn.size(), p.idx, edge.vertices[0], edge.vertices[1] });
 			this->friction.point_edge.bary.push_back(barycentric_point_edge(x[p.idx], x[edge.vertices[0]], x[edge.vertices[1]]));
@@ -623,7 +628,9 @@ void stark::models::Cloth::_update_friction_contacts(Stark& sim)
 		const tmcd::Edge& ea = pair.first;
 		const tmcd::Edge& eb = pair.second;
 
-		const double mu = 0.5 * (this->vertex_mu[ea.vertices[0]] + this->vertex_mu[eb.vertices[0]]);
+		const int cloth_a_idx = this->model.mesh.get_mesh_containing_vertex(ea.vertices[0]);
+		const int cloth_b_idx = this->model.mesh.get_mesh_containing_vertex(eb.vertices[0]);
+		const double mu = this->get_friction(cloth_a_idx, cloth_b_idx);
 		if (mu > 0.0 && are_not_almost_parallel(ea, eb)) {
 			this->friction.edge_edge.conn.push_back({ (int)this->friction.edge_edge.conn.size(), ea.vertices[0], ea.vertices[1], eb.vertices[0], eb.vertices[1] });
 			this->friction.edge_edge.bary.push_back(barycentric_edge_edge(x[ea.vertices[0]], x[ea.vertices[1]], x[eb.vertices[0]], x[eb.vertices[1]]));

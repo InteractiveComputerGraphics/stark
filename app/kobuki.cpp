@@ -15,7 +15,7 @@ struct Towel
 };
 Towel towel;
 
-void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collision_path, const int floor_id)
+void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collision_path, const int floor_id = -1, const int towel_id = -1)
 {
 	// Input
 	const double power_multiplier = 1.0;
@@ -68,8 +68,14 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 	rb.disable_collisions(right, right_suspension);
 
 	// Friction
-	rb.set_friction(floor_id, left, power_wheels_friction);
-	rb.set_friction(floor_id, right, power_wheels_friction);
+	if (floor_id >= 0) {
+		rb.set_friction(floor_id, left, power_wheels_friction);
+		rb.set_friction(floor_id, right, power_wheels_friction);
+	}
+	if (towel_id >= 0) {
+		sim.interactions.set_friction(towel_id, left, power_wheels_friction);
+		sim.interactions.set_friction(towel_id, right, power_wheels_friction);
+	}
 
 	// Lift
 	for (int i : {body, front, back, left, right, left_suspension, right_suspension}) {
@@ -79,25 +85,25 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 	// Other
 	//rb.add_constraint_freeze(body);
 }
-int make_towel(stark::models::Simulation& sim, const int n_short_side = 30)
-{
-	std::vector<Eigen::Vector3d> vertices;
-	std::vector<std::array<int, 3>> triangles;
-	const std::array<int, 2> n = stark::utils::generate_triangular_grid(vertices, triangles, towel.w, towel.l, n_short_side);
-	stark::utils::move(vertices, {0, 1.0, 0.5});
-
-	const int cloth_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
-	sim.cloth.set_density(cloth_id, towel.density);
-	sim.cloth.set_strain_parameters(cloth_id, 100.0, 0.3, 1.1, 1000.0);
-	sim.cloth.set_bending_stiffness(cloth_id, 2e-5);
-	sim.cloth.set_friction(cloth_id, towel.friction);
-	sim.cloth.set_damping(0.2);
-
-	//sim.cloth.set_vertex_target_position_as_initial(cloth_id, n[1]);
-	//sim.cloth.set_vertex_target_position_as_initial(cloth_id, (int)vertices.size() - 1);
-
-	return cloth_id;
-}
+//int make_towel(stark::models::Simulation& sim, const int n_short_side = 30)
+//{
+//	std::vector<Eigen::Vector3d> vertices;
+//	std::vector<std::array<int, 3>> triangles;
+//	const std::array<int, 2> n = stark::utils::generate_triangular_grid(vertices, triangles, towel.w, towel.l, n_short_side);
+//	stark::utils::move(vertices, {0, 1.0, 0.5});
+//
+//	const int cloth_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
+//	sim.cloth.set_density(cloth_id, towel.density);
+//	sim.cloth.set_strain_parameters(cloth_id, 100.0, 0.3, 1.1, 1000.0);
+//	sim.cloth.set_bending_stiffness(cloth_id, 2e-5);
+//	sim.cloth.set_friction(cloth_id, towel.friction);
+//	sim.cloth.set_damping(0.2);
+//
+//	//sim.cloth.set_vertex_target_position_as_initial(cloth_id, n[1]);
+//	//sim.cloth.set_vertex_target_position_as_initial(cloth_id, (int)vertices.size() - 1);
+//
+//	return cloth_id;
+//}
 
 void towel_parametrization()
 {
@@ -149,7 +155,8 @@ void towel_parametrization()
 		sim.cloth.set_density(towel_id, towel.density);
 		sim.cloth.set_strain_parameters(towel_id, 100.0, 0.3, 0.1, 1.0);
 		sim.cloth.set_bending_stiffness(towel_id, 5e-6);
-		sim.cloth.set_friction(towel_id, towel_friction);
+		sim.cloth.set_friction(towel_id, towel_id, towel_friction);
+		sim.cloth.set_friction(floor_id, towel_id, towel_friction);
 		sim.cloth.set_damping(2.0);
 		sim.cloth.bending_damping = 0.1;
 		sim.cloth.strain_damping = 0.1;
@@ -198,7 +205,7 @@ void folding_towel()
 	stark::utils::generate_triangular_grid(vertices, triangles, {-0.5*towel.w, -0.5*towel.l}, {0.5*towel.w, 0.5*towel.l}, {nx, ny});
 	const int towel_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
 	//sim.cloth.set_bending_stiffness(towel_id, 1e-6);
-	sim.cloth.set_friction(towel_id, 1.0);
+	sim.cloth.set_friction(towel_id, towel_id, 1.0);
 	
 
 	// Run
@@ -261,7 +268,7 @@ void folding_towel()
 					stark::utils::move(vertices, {0.11, 0.173, -0.157});
 					sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
 					sim.cloth.set_damping(10.0, 0.5, 0.5);
-					sim.cloth.set_friction(floor_id, 1.0);
+					sim.cloth.set_friction(floor_id, towel_id, 1.0);
 				}
 				sim.cloth.freeze(floor_id);
 				//settings.contact.friction_enabled = true;
@@ -386,8 +393,6 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 	sim.rigid_bodies.add_constraint_freeze(floor);
 	//sim.rigid_bodies.add_to_output_group("floor", floor);
 
-	// Kobuki
-	make_kobuki(sim, kobuki_collision_path, floor);
 
 	// Towel
 	const double towel_friction = 1.0;
@@ -397,7 +402,13 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 	stark::utils::rotate_deg(vertices, rotation, Eigen::Vector3d::UnitZ());
 	stark::utils::move(vertices, { 0.0, 0.5, 0.0 });
 	const int towel_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
-	sim.cloth.set_friction(towel_id, towel_friction);
+	sim.cloth.set_friction(towel_id, towel_id, towel_friction);
+
+	// Interactions
+	sim.interactions.set_friction(floor, towel_id, floor_friction);
+
+	// Kobuki
+	make_kobuki(sim, kobuki_collision_path, floor, towel_id);
 
 	// Run
 	sim.stark.run();

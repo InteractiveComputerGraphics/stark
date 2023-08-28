@@ -346,17 +346,8 @@ void cloth_friction_slope_test()
 	settings.execution.end_simulation_time = 2.5;
 	//settings.execution.n_threads = 1;
 
-	settings.debug.line_search_output = true;
-	settings.newton.use_direct_linear_solve = false;
-	settings.newton.project_to_PD = false;
-	settings.newton.max_newton_iterations = 200;
-
 	settings.contact.friction_enabled = true;
-
 	settings.contact.collisions_enabled = true;
-	settings.contact.triangle_point_enabled = true;
-	settings.contact.edge_edge_enabled = true;
-	settings.contact.enable_intersection_test = true;
 	settings.contact.friction_stick_slide_threshold = 0.001;
 	settings.contact.dhat = 0.01;
 	stark::models::Simulation simulation(settings);
@@ -384,8 +375,7 @@ void cloth_friction_slope_test()
 	const int small_id = simulation.cloth.add(vertices_small, triangles_small, stark::models::Cloth::MaterialPreset::Cotton);
 
 	const double mu = 0.5;
-	simulation.cloth.set_friction(large_id, mu);
-	simulation.cloth.set_friction(small_id, mu);
+	simulation.cloth.set_friction(large_id, small_id, mu);
 
 	// Run
 	simulation.stark.run();
@@ -431,8 +421,7 @@ void cloth_friction_corner()
 	}
 	const int small_id = simulation.cloth.add(vertices_small, triangles_small, stark::models::Cloth::MaterialPreset::Cotton);
 
-	simulation.cloth.set_friction(large_id, 2.0);
-	simulation.cloth.set_friction(small_id, 0.0);
+	simulation.cloth.set_friction(large_id, small_id, 1.0);
 	simulation.cloth.set_damping(1.0);
 
 	// Run

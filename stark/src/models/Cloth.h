@@ -73,8 +73,7 @@ namespace stark::models
 		std::vector<Eigen::Vector3d> collision_x1;
 
 		// Friction
-		std::vector<double> mu;  // per mesh
-		std::vector<double> vertex_mu;  // per vertex
+		utils::unordered_array_map<int, 2, double> mu;
 		TriangleMeshFriction friction;
 
 		/* Methods */
@@ -88,7 +87,8 @@ namespace stark::models
 		void set_density(const int cloth_id, const double density = 0.5);
 		void set_strain_parameters(const int cloth_id, const double young_modulus = 1e3, const double poisson_ratio = 0.3, const double strain_limit = 1.10, const double strain_limit_stiffness = 1.0);
 		void set_bending_stiffness(const int cloth_id, const double bending_stiffness = 1e-5);
-		void set_friction(const int cloth_id, const double coulombs_mu = 0.1);
+		void set_friction(const int cloth_0, const int cloth_1, const double coulombs_mu);
+		double get_friction(const int cloth_0, const int cloth_1);
 		void enable_writing_vtk(const bool write = true);
 
 		void set_vertex_target_position_as_initial(const int cloth_id, const int vertex_id);
