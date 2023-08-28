@@ -3,7 +3,18 @@ stark repo TODO
 
 Bosch
 -----
-	* Activate friction is wrong!
+	Kobuki modelling
+		- Back wheels no friction at all
+		- Suspension: 
+			Should be able to easily go over 1 fold carpet.
+			Struggle but go over 2 folds.
+			But not 3 folds.
+		- Sim length shorte. 6 seconds?
+			
+
+	* Pairwise friction coefficient
+	* Timeout simulations
+	* ? Activate friction is wrong!
 	* Suspension to the kobuki?
 	* Damping for better looking cloth.
 	* I am not sure the torque is correct

@@ -23,6 +23,8 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 	const double torque = power_multiplier*0.0666; // (Per-motor) Torque output at stall, that is, at max output due to an obstacle
 	const double max_linear_velocity = power_multiplier*0.26;
 	const double power_wheels_friction = 1.0;
+	const double suspension_height = 0.005;
+	const double suspension_stiffness = 2.0;
 
 	auto& rb = sim.rigid_bodies;
 
@@ -36,13 +38,22 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 	// Wheels
 	const int front = rb.add_cylinder(0.1, 0.0135, 0.012, { 0, 0.115, 0.0135 }, 90.0, Eigen::Vector3d::UnitY(), 32, 2);
 	const int back = rb.add_cylinder(0.1, 0.0135, 0.012, { 0, -0.136, 0.0135 }, 90.0, Eigen::Vector3d::UnitY(), 32, 2);
-	const int left = rb.add_cylinder(0.1, 0.035, 0.02, { -0.115, 0, 0.035 }, 90.0, Eigen::Vector3d::UnitY(), 64, 4);
-	const int right = rb.add_cylinder(0.1, 0.035, 0.02, { 0.115, 0, 0.035 }, 90.0, Eigen::Vector3d::UnitY(), 64, 4);
+	const int left = rb.add_cylinder(0.1, 0.035, 0.02, { -0.115, 0, 0.035 - suspension_height }, 90.0, Eigen::Vector3d::UnitY(), 64, 4);
+	const int right = rb.add_cylinder(0.1, 0.035, 0.02, { 0.115, 0, 0.035 - suspension_height }, 90.0, Eigen::Vector3d::UnitY(), 64, 4);
 	rb.add_to_output_group("wheels", { front, back, left, right });
 
+	// Suspension
+	const int left_suspension = rb.add_box(0.1, {0.015, 0.04, 0.04}, { -0.115, 0, 0.035 - suspension_height });
+	const int right_suspension = rb.add_box(0.1, {0.015, 0.04, 0.04}, { 0.115, 0, 0.035 - suspension_height });
+	rb.add_to_output_group("suspension", { left_suspension, right_suspension });
+
 	// Contraints
-	rb.add_constraint_motor(body, left, { -0.115, 0, 0.035 }, -Eigen::Vector3d::UnitX(), torque, max_linear_velocity/0.035, 1.0);
-	rb.add_constraint_motor(body, right, { 0.115, 0, 0.035 }, -Eigen::Vector3d::UnitX(), torque, max_linear_velocity/0.035, 1.0);
+	rb.add_constraint_motor(left_suspension, left, { -0.115, 0, 0.035 - suspension_height }, -Eigen::Vector3d::UnitX(), torque, max_linear_velocity/0.035, 1.0);
+	rb.add_constraint_motor(right_suspension, right, { 0.115, 0, 0.035 - suspension_height }, -Eigen::Vector3d::UnitX(), torque, max_linear_velocity/0.035, 1.0);
+	rb.add_constraint_slider(body, left_suspension, { -0.115, 0, 0.035 - suspension_height + 0.035 }, { -0.115, 0, 0.035 - suspension_height }, suspension_stiffness, 0.1);
+	rb.add_constraint_slider(body, right_suspension, { 0.115, 0, 0.035 - suspension_height + 0.035 }, { 0.115, 0, 0.035 - suspension_height }, suspension_stiffness, 0.1);
+	rb.add_constraint_relative_direction_lock(body, left_suspension, { 0, 1, 0 });
+	rb.add_constraint_relative_direction_lock(body, right_suspension, { 0, 1, 0 });
 	rb.add_constraint_hinge_joint(body, front, { 0, 0.115, 0.0135 }, Eigen::Vector3d::UnitX());
 	rb.add_constraint_hinge_joint(body, back, { 0, -0.136, 0.0135 }, Eigen::Vector3d::UnitX());
 
@@ -51,10 +62,19 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 	rb.disable_collisions(body, back);
 	rb.disable_collisions(body, left);
 	rb.disable_collisions(body, right);
+	rb.disable_collisions(body, left_suspension);
+	rb.disable_collisions(body, right_suspension);
+	rb.disable_collisions(left, left_suspension);
+	rb.disable_collisions(right, right_suspension);
 
 	// Friction
 	rb.set_friction(left, power_wheels_friction);
 	rb.set_friction(right, power_wheels_friction);
+
+	// Lift
+	for (int i : {body, front, back, left, right, left_suspension, right_suspension}) {
+		rb.add_displacement(i, { 0, 0, suspension_height });
+	}
 
 	// Other
 	//rb.add_constraint_freeze(body);
@@ -304,7 +324,7 @@ void kobuki_test()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "kobuki_test";
-	settings.output.output_directory = "D:/sciebo/wd/stark/kobuki_test";
+	settings.output.output_directory = BASE_PATH + "/kobuki_test";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
@@ -319,7 +339,7 @@ void kobuki_test()
 	settings.contact.friction_enabled = true;
 	settings.contact.friction_stick_slide_threshold = 0.01;
 	settings.contact.adaptive_contact_stiffness.value = 1e6;
-	settings.contact.dhat = 0.001;
+	settings.contact.dhat = 0.01;
 
 	stark::models::Simulation sim(settings);
 
@@ -334,7 +354,7 @@ void kobuki_test()
 	sim.rigid_bodies.add_to_output_group("floor", floor);
 
 	// Towel
-	const int cloth_id = make_towel(sim);
+	//const int cloth_id = make_towel(sim);
 
 	// Run
 	sim.stark.run();
