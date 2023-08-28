@@ -6,6 +6,7 @@
 #include <symx>
 #include <TriangleMeshCollisionDetection>
 
+#include "../utils/unordered_array_set_and_map.h"
 #include "../solver/Stark.h"
 #include "Cloth.h"
 #include "RigidBodies.h"
@@ -23,6 +24,7 @@ namespace stark::models
 		RigidBodies* rigid_bodies = nullptr;
 		int cloth_id = -1;
 		int rigid_bodies_id = -1;
+		utils::unordered_array_map<int, 2, double> rb_d_mu;
 
 		// Contacts
 		tmcd::IntersectionDetection id;
@@ -32,6 +34,8 @@ namespace stark::models
 		
 		/* Methods */
 		void init(Stark& sim, Cloth* cloth, RigidBodies* rigid_bodies);
+		void set_friction(const int rb_idx, const int cloth_idx, const double coulombs_mu);
+		double get_friction(const int rb_idx, const int cloth_idx);
 		bool is_empty() const;
 
 	private:

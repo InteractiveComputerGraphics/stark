@@ -1,6 +1,23 @@
 stark repo TODO
 ===============
 
+Today
+-----
+	* Pairwise friction coefficient.
+		* Interactions
+		* Cloth
+		* RB
+	* Fit the following specific simulations:
+		- Forget about the rolled simulation
+		- No friction floor
+			- 3fold should push the towel
+		- Friction floor
+			- 1 fold should go over
+			- 3 folds should get realistically stuck
+	* When all that is ready. Set simulations and start writting the paper.
+
+
+
 Bosch
 -----
 	Kobuki modelling
@@ -15,15 +32,7 @@ Bosch
 	* Pairwise friction coefficient
 	* Timeout simulations
 	* ? Activate friction is wrong!
-	* Suspension to the kobuki?
-	* Damping for better looking cloth.
 	* I am not sure the torque is correct
-	* Can we record a tuning experiment for internal use so we can better fit parameters?
-		- [bending stiffness] 
-			Hold the towel high from two corners sharing the short edge
-			Release one vertex. Wait till rest.
-			Release the other vertex.
-		- 
 
 
 High priority

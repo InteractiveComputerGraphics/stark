@@ -22,6 +22,21 @@ void stark::models::Interactions::init(Stark& sim, Cloth* cloth, RigidBodies* ri
 	this->_energies_friction(sim);
 }
 
+void stark::models::Interactions::set_friction(const int rb_idx, const int cloth_idx, const double coulombs_mu)
+{
+	this->rb_d_mu[{rb_idx, cloth_idx}] = coulombs_mu;
+}
+double stark::models::Interactions::get_friction(const int rb_idx, const int cloth_idx)
+{
+	auto it = this->rb_d_mu.find({rb_idx, cloth_idx});
+	if (it == this->rb_d_mu.end()) {
+		return 0.0;
+	}
+	else {
+		return it->second;
+	}
+}
+
 bool stark::models::Interactions::is_empty() const
 {
 	return this->cloth->is_empty() && this->rigid_bodies->is_empty();
@@ -191,7 +206,8 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		const int q_idx = (is_p_rb) ? q.idx : p.idx;
 
 		const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p_idx);
-		const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[q_idx]);
+		const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(q_idx);
+		const double mu = this->get_friction(rb_idx, d_idx);
 		if (mu > 0.0) {
 			this->friction.rb_d_point_point.conn.numbered_push_back({ rb_idx, p_idx, q_idx });
 			this->friction.rb_d_point_point.contact.T.push_back(projection_matrix_point_point(x_rb[p_idx], x_cloth[q_idx]));
@@ -207,7 +223,8 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 
 		if ((p.set == this->rigid_bodies_id) && (edge.set == this->cloth_id)) {
 			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p.idx);
-			const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[edge.vertices[0]]);
+			const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(edge.vertices[0]);
+			const double mu = this->get_friction(rb_idx, d_idx);
 			if (mu > 0.0) {
 				this->friction.rb_d_point_edge.conn.numbered_push_back({ rb_idx, p.idx, edge.vertices[0], edge.vertices[1] });
 				this->friction.rb_d_point_edge.bary.push_back(barycentric_point_edge(x_rb[p.idx], x_cloth[edge.vertices[0]], x_cloth[edge.vertices[1]]));
@@ -218,7 +235,8 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		}
 		else {
 			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(edge.vertices[0]);
-			const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[p.idx]);
+			const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(p.idx);
+			const double mu = this->get_friction(rb_idx, d_idx);
 			if (mu > 0.0) {
 				this->friction.rb_d_edge_point.conn.numbered_push_back({ rb_idx, edge.vertices[0], edge.vertices[1], p.idx });
 				this->friction.rb_d_edge_point.bary.push_back(barycentric_point_edge(x_cloth[p.idx], x_rb[edge.vertices[0]], x_rb[edge.vertices[1]]));
@@ -235,7 +253,8 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 
 		if ((p.set == this->rigid_bodies_id) && (t.set == this->cloth_id)) {
 			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p.idx);
-			const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[t.vertices[0]]);
+			const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(t.vertices[0]);
+			const double mu = this->get_friction(rb_idx, d_idx);
 			if (mu > 0.0) {
 				this->friction.rb_d_point_triangle.conn.numbered_push_back({ rb_idx, p.idx, t.vertices[0], t.vertices[1], t.vertices[2] });
 				this->friction.rb_d_point_triangle.bary.push_back(barycentric_point_triangle(x_rb[p.idx], x_cloth[t.vertices[0]], x_cloth[t.vertices[1]], x_cloth[t.vertices[2]]));
@@ -246,7 +265,8 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		}
 		else {
 			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(t.vertices[0]);
-			const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[p.idx]);
+			const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(p.idx);
+			const double mu = this->get_friction(rb_idx, d_idx);
 			if (mu > 0.0) {
 				this->friction.rb_d_triangle_point.conn.numbered_push_back({ rb_idx, t.vertices[0], t.vertices[1], t.vertices[2], p.idx });
 				this->friction.rb_d_triangle_point.bary.push_back(barycentric_point_triangle(x_cloth[p.idx], x_rb[t.vertices[0]], x_rb[t.vertices[1]], x_rb[t.vertices[2]]));
@@ -286,7 +306,8 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		const int q_idx = (is_p_rb) ? q.idx : p.idx;
 
 		const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p_idx);
-		const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[q_idx]);
+		const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(q.idx);
+		const double mu = this->get_friction(rb_idx, d_idx);
 		const bool not_parallel = (is_p_rb) ? are_not_almost_parallel(ep_a.edge, ep_b.edge) : are_not_almost_parallel(ep_b.edge, ep_a.edge);
 		if (mu > 0.0 && not_parallel) {
 			const double mollifier = (is_p_rb) ? mollifier_f(ep_a.edge, ep_b.edge) : mollifier_f(ep_b.edge, ep_a.edge);
@@ -304,7 +325,8 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 
 		if ((p.set == this->rigid_bodies_id) && (edge.set == this->cloth_id)) {
 			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p.idx);
-			const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[edge.vertices[0]]);
+			const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(edge.vertices[0]);
+			const double mu = this->get_friction(rb_idx, d_idx);
 			if (mu > 0.0 && are_not_almost_parallel(ep.edge, edge)) {
 				this->friction.rb_d_point_edge.conn.numbered_push_back({ rb_idx, p.idx, edge.vertices[0], edge.vertices[1] });
 				this->friction.rb_d_point_edge.bary.push_back(barycentric_point_edge(x_rb[p.idx], x_cloth[edge.vertices[0]], x_cloth[edge.vertices[1]]));
@@ -315,7 +337,8 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		}
 		else {
 			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(edge.vertices[0]);
-			const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[p.idx]);
+			const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(p.idx);
+			const double mu = this->get_friction(rb_idx, d_idx);
 			if (mu > 0.0 && are_not_almost_parallel(edge, ep.edge)) {
 				this->friction.rb_d_edge_point.conn.numbered_push_back({ rb_idx, edge.vertices[0], edge.vertices[1], p.idx });
 				this->friction.rb_d_edge_point.bary.push_back(barycentric_point_edge(x_cloth[p.idx], x_rb[edge.vertices[0]], x_rb[edge.vertices[1]]));
@@ -334,7 +357,8 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		const tmcd::Edge& edge_cloth = (ea.set == this->rigid_bodies_id) ? eb : ea;
 
 		const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(edge_rb.vertices[0]);
-		const double mu = 0.5 * (mu_rb[rb_idx] + mu_cloth[edge_cloth.vertices[0]]);
+		const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(edge_cloth.vertices[0]);
+		const double mu = this->get_friction(rb_idx, d_idx);
 		if (mu > 0.0 && are_not_almost_parallel(edge_rb, edge_cloth)) {
 			this->friction.rb_d_edge_edge.conn.numbered_push_back({ rb_idx, edge_rb.vertices[0], edge_rb.vertices[1], edge_cloth.vertices[0], edge_cloth.vertices[1] });
 			this->friction.rb_d_edge_edge.bary.push_back(barycentric_edge_edge(x_rb[edge_rb.vertices[0]], x_rb[edge_rb.vertices[1]], x_cloth[edge_cloth.vertices[0]], x_cloth[edge_cloth.vertices[1]]));
