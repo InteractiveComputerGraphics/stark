@@ -18,7 +18,7 @@ Towel towel;
 void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collision_path, const int floor_id = -1, const int towel_id = -1)
 {
 	// Input
-	const double power_multiplier = 1.0;
+	const double power_multiplier = 1.0;  // 2.0 works better for the rolled-side
 	const double mass = 2.951;
 	const double torque = power_multiplier*0.0666; // (Per-motor) Torque output at stall, that is, at max output due to an obstacle
 	const double max_linear_velocity = 0.26;
