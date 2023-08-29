@@ -21,8 +21,9 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 	const double power_multiplier = 1.0;
 	const double mass = 2.951;
 	const double torque = power_multiplier*0.0666; // (Per-motor) Torque output at stall, that is, at max output due to an obstacle
-	const double max_linear_velocity = power_multiplier*0.26;
-	const double power_wheels_friction = 1.0;
+	const double max_linear_velocity = 0.26;
+	const double power_wheels_floor_friction = 1.0;
+	const double power_wheels_cloth_friction = 1.0;
 	const double suspension_height = 0.005;
 	const double suspension_stiffness = 2.0;
 
@@ -45,13 +46,13 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 	// Suspension
 	const int left_suspension = rb.add_box(0.1, {0.015, 0.04, 0.04}, { -0.115, 0, 0.035 - suspension_height });
 	const int right_suspension = rb.add_box(0.1, {0.015, 0.04, 0.04}, { 0.115, 0, 0.035 - suspension_height });
-	rb.add_to_output_group("suspension", { left_suspension, right_suspension });
+	//rb.add_to_output_group("suspension", { left_suspension, right_suspension });
 
 	// Contraints
 	rb.add_constraint_motor(left_suspension, left, { -0.115, 0, 0.035 - suspension_height }, -Eigen::Vector3d::UnitX(), torque, max_linear_velocity/0.035, 1.0);
 	rb.add_constraint_motor(right_suspension, right, { 0.115, 0, 0.035 - suspension_height }, -Eigen::Vector3d::UnitX(), torque, max_linear_velocity/0.035, 1.0);
-	rb.add_constraint_slider(body, left_suspension, { -0.115, 0, 0.035 - suspension_height + 0.035 }, { -0.115, 0, 0.035 - suspension_height }, suspension_stiffness, 0.1);
-	rb.add_constraint_slider(body, right_suspension, { 0.115, 0, 0.035 - suspension_height + 0.035 }, { 0.115, 0, 0.035 - suspension_height }, suspension_stiffness, 0.1);
+	rb.add_constraint_slider(body, left_suspension, { -0.115, 0, 0.035 - suspension_height + 0.035 }, { -0.115, 0, 0.035 - suspension_height }, suspension_stiffness, 0.01);
+	rb.add_constraint_slider(body, right_suspension, { 0.115, 0, 0.035 - suspension_height + 0.035 }, { 0.115, 0, 0.035 - suspension_height }, suspension_stiffness, 0.01);
 	rb.add_constraint_relative_direction_lock(body, left_suspension, { 0, 1, 0 });
 	rb.add_constraint_relative_direction_lock(body, right_suspension, { 0, 1, 0 });
 	rb.add_constraint_hinge_joint(body, front, { 0, 0.115, 0.0135 }, Eigen::Vector3d::UnitX());
@@ -69,12 +70,12 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 
 	// Friction
 	if (floor_id >= 0) {
-		rb.set_friction(floor_id, left, power_wheels_friction);
-		rb.set_friction(floor_id, right, power_wheels_friction);
+		rb.set_friction(floor_id, left, power_wheels_floor_friction);
+		rb.set_friction(floor_id, right, power_wheels_floor_friction);
 	}
 	if (towel_id >= 0) {
-		sim.interactions.set_friction(towel_id, left, power_wheels_friction);
-		sim.interactions.set_friction(towel_id, right, power_wheels_friction);
+		sim.interactions.set_friction(left, towel_id, power_wheels_cloth_friction);
+		sim.interactions.set_friction(right, towel_id, power_wheels_cloth_friction);
 	}
 
 	// Lift
@@ -85,25 +86,6 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 	// Other
 	//rb.add_constraint_freeze(body);
 }
-//int make_towel(stark::models::Simulation& sim, const int n_short_side = 30)
-//{
-//	std::vector<Eigen::Vector3d> vertices;
-//	std::vector<std::array<int, 3>> triangles;
-//	const std::array<int, 2> n = stark::utils::generate_triangular_grid(vertices, triangles, towel.w, towel.l, n_short_side);
-//	stark::utils::move(vertices, {0, 1.0, 0.5});
-//
-//	const int cloth_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
-//	sim.cloth.set_density(cloth_id, towel.density);
-//	sim.cloth.set_strain_parameters(cloth_id, 100.0, 0.3, 1.1, 1000.0);
-//	sim.cloth.set_bending_stiffness(cloth_id, 2e-5);
-//	sim.cloth.set_friction(cloth_id, towel.friction);
-//	sim.cloth.set_damping(0.2);
-//
-//	//sim.cloth.set_vertex_target_position_as_initial(cloth_id, n[1]);
-//	//sim.cloth.set_vertex_target_position_as_initial(cloth_id, (int)vertices.size() - 1);
-//
-//	return cloth_id;
-//}
 
 void towel_parametrization()
 {
@@ -374,17 +356,17 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
-	settings.execution.end_simulation_time = 10.0;
+	settings.execution.end_simulation_time = 5.0;
 	//settings.execution.end_simulation_time = 0.02;
-	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
+	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
 
 	settings.newton.max_newton_iterations = 50;
 
 	settings.contact.collisions_enabled = true;
 	settings.contact.friction_enabled = true;
-	settings.contact.friction_stick_slide_threshold = 0.001;
-	settings.contact.adaptive_contact_stiffness.value = 1e4;
-	settings.contact.dhat = 0.85*towel.thickness;
+	settings.contact.friction_stick_slide_threshold = 0.01;
+	settings.contact.adaptive_contact_stiffness.set(1e4, 1e4, 1e12);
+	settings.contact.dhat = 0.7*towel.thickness;
 
 	stark::models::Simulation sim(settings);
 
@@ -392,7 +374,6 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 	const int floor = sim.rigid_bodies.add_box(10.0, { 2, 3, 0.1 }, { 0, 1, -(0.05 + settings.contact.dhat) });
 	sim.rigid_bodies.add_constraint_freeze(floor);
 	//sim.rigid_bodies.add_to_output_group("floor", floor);
-
 
 	// Towel
 	const double towel_friction = 1.0;
@@ -416,21 +397,21 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 void kobuki_v_towel_suite()
 {
 	std::vector<std::pair<std::string, double>> friction_types;
-	friction_types.push_back({"001", 0.01});
-	friction_types.push_back({"005", 0.05});
-	friction_types.push_back({"010", 0.1});
-	friction_types.push_back({"025", 0.25});
-	friction_types.push_back({"050", 0.5});
-	friction_types.push_back({"075", 0.75});
+	//friction_types.push_back({"001", 0.01});
+	//friction_types.push_back({"005", 0.05});
+	//friction_types.push_back({"010", 0.1});
+	//friction_types.push_back({"025", 0.25});
+	//friction_types.push_back({"050", 0.5});
+	//friction_types.push_back({"075", 0.75});
 	friction_types.push_back({"100", 1.0});
-	friction_types.push_back({"150", 1.5});
-	friction_types.push_back({"200", 2.0});
+	//friction_types.push_back({"150", 1.5});
+	//friction_types.push_back({"200", 2.0});
 
 	//const std::string base = "C:/Users/jose/sciebo/paper_project_box/icra24";
-	const std::string base = "D:/sciebo/paper_project_box/icra24";
+	const std::string base = "D:/icra24_viz";
 	//const std::string base = "/local-hdd/jfernandez/sciebo/icra24";
 
-	const std::string out = base + "/scenes/kobuki_v_towel/v0";
+	const std::string out = base + "/v2";
 	const std::string mesh_3_folds = base + "/models/towel_3folds.obj";
 	const std::string mesh_2_folds = base + "/models/towel_2folds.obj";
 	const std::string mesh_1_fold = base + "/models/towel_1fold.obj";
@@ -443,16 +424,16 @@ void kobuki_v_towel_suite()
 	for (const auto pair : friction_types) {
 		const std::string label = pair.first;
 		const double friction = pair.second;
-		kobuki_v_towel(out + "/" + label, "flat", mesh_flat, kobuki_collision_path, friction, 0);
-		kobuki_v_towel(out + "/" + label, "1fold",  mesh_1_fold, kobuki_collision_path, friction, 0);
+		//kobuki_v_towel(out + "/" + label, "flat", mesh_flat, kobuki_collision_path, friction, 0);
+		//kobuki_v_towel(out + "/" + label, "1fold",  mesh_1_fold, kobuki_collision_path, friction, 0);
 		kobuki_v_towel(out + "/" + label, "2folds",  mesh_2_folds, kobuki_collision_path, friction, 0);
 
-		kobuki_v_towel(out + "/" + label, "3folds_1foldside", mesh_3_folds, kobuki_collision_path, friction, 0);
-		kobuki_v_towel(out + "/" + label, "3folds_2foldside", mesh_3_folds, kobuki_collision_path, friction, -90);
-		kobuki_v_towel(out + "/" + label, "3folds_openside",  mesh_3_folds, kobuki_collision_path, friction, 180);
+		//kobuki_v_towel(out + "/" + label, "3folds_1foldside", mesh_3_folds, kobuki_collision_path, friction, 0);
+		//kobuki_v_towel(out + "/" + label, "3folds_2foldside", mesh_3_folds, kobuki_collision_path, friction, -90);
+		//kobuki_v_towel(out + "/" + label, "3folds_openside",  mesh_3_folds, kobuki_collision_path, friction, 180);
 
-		kobuki_v_towel(out + "/" + label, "rolled_rolledside", mesh_rolled_rolled_side, kobuki_collision_path, friction, 0);
-		kobuki_v_towel(out + "/" + label, "rolled_openside", mesh_rolled_open_side, kobuki_collision_path, friction, 0);
-		kobuki_v_towel(out + "/" + label, "rolled_side", mesh_rolled_side, kobuki_collision_path, friction, 0);
+		//kobuki_v_towel(out + "/" + label, "rolled_rolledside", mesh_rolled_rolled_side, kobuki_collision_path, friction, 0);
+		//kobuki_v_towel(out + "/" + label, "rolled_openside", mesh_rolled_open_side, kobuki_collision_path, friction, 0);
+		//kobuki_v_towel(out + "/" + label, "rolled_side", mesh_rolled_side, kobuki_collision_path, friction, 0);
 	}
 }

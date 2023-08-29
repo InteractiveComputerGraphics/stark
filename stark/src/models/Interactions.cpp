@@ -303,7 +303,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		const int q_idx = (is_p_rb) ? q.idx : p.idx;
 
 		const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p_idx);
-		const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(q.idx);
+		const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(q_idx);
 		const double mu = this->get_friction(rb_idx, d_idx);
 		const bool not_parallel = (is_p_rb) ? are_not_almost_parallel(ep_a.edge, ep_b.edge) : are_not_almost_parallel(ep_b.edge, ep_a.edge);
 		if (mu > 0.0 && not_parallel) {
