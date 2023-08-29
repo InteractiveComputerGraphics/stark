@@ -358,7 +358,7 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
-	settings.execution.end_simulation_time = 5.0;
+	settings.execution.end_simulation_time = 6.0;
 	//settings.execution.end_simulation_time = 0.02;
 	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
 
@@ -385,8 +385,7 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 	stark::utils::rotate_deg(vertices, rotation, Eigen::Vector3d::UnitZ());
 	stark::utils::move(vertices, { 0.0, 0.5, 0.0 });
 	const int towel_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
-	sim.cloth.set_strain_parameters(towel_id, 50.0);  // TRYING FOR THE ROLL
-	//sim.cloth.set_bending_stiffness(towel_id, 0.0);  // TRYING FOR THE ROLL
+	sim.cloth.set_strain_parameters(towel_id, 50.0);  // Better for the roll
 	sim.cloth.set_friction(towel_id, towel_id, towel_friction);
 
 	// Interactions
@@ -401,12 +400,15 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 void kobuki_v_towel_suite()
 {
 	std::vector<std::pair<std::string, double>> friction_types;
+	friction_types.push_back({ "100", 1.0 });
+	friction_types.push_back({ "010", 0.1 });
 
 	//const std::string base = "C:/Users/jose/sciebo/paper_project_box/icra24";
-	const std::string base = "D:/icra24_viz";
+	//const std::string base = "D:/icra24_viz";
 	//const std::string base = "/local-hdd/jfernandez/sciebo/icra24";
+	const std::string base = "/local-hdd/jfernandez/icra24_prezip";
 
-	const std::string out = base + "/v2";
+	const std::string out = base + "/v1";
 	const std::string mesh_3_folds_openside = base + "/models/towel_3folds_openside.obj";
 	const std::string mesh_2_folds = base + "/models/towel_2folds.obj";
 	const std::string mesh_1_fold = base + "/models/towel_1fold.obj";
@@ -416,17 +418,17 @@ void kobuki_v_towel_suite()
 	const std::string mesh_rolled_side = base + "/models/towel_rolled_side.obj";
 	const std::string kobuki_collision_path = base + "/models/kobuki_collision.obj";
 
-	const std::string label = "100";
-	const double friction = 1.0;
-	//kobuki_v_towel(out + "/" + label, "flat", mesh_flat, kobuki_collision_path, friction, 0);
-	//kobuki_v_towel(out + "/" + label, "1fold",  mesh_1_fold, kobuki_collision_path, friction, 0);
-	//kobuki_v_towel(out + "/" + label, "2folds",  mesh_2_folds, kobuki_collision_path, friction, 0);
+	for (auto pair : friction_types) {
+		const std::string label = pair.first;
+		const double friction = pair.second;
+		kobuki_v_towel(out + "/" + label, "flat", mesh_flat, kobuki_collision_path, friction, 0);
+		kobuki_v_towel(out + "/" + label, "1fold",  mesh_1_fold, kobuki_collision_path, friction, 0);
+		kobuki_v_towel(out + "/" + label, "2folds",  mesh_2_folds, kobuki_collision_path, friction, 0);
 
-	////kobuki_v_towel(out + "/" + label, "3folds_1foldside", mesh_3_folds, kobuki_collision_path, friction, 0);
-	////kobuki_v_towel(out + "/" + label, "3folds_2foldside", mesh_3_folds, kobuki_collision_path, friction, -90);
-	//kobuki_v_towel(out + "/" + label, "3folds_openside", mesh_3_folds_openside, kobuki_collision_path, friction, 0);
+		kobuki_v_towel(out + "/" + label, "3folds_openside", mesh_3_folds_openside, kobuki_collision_path, friction, 0);
 
-	//kobuki_v_towel(out + "/" + label, "rolled_rolledside", mesh_rolled_rolled_side, kobuki_collision_path, friction, 0);
-	//kobuki_v_towel(out + "/" + label, "rolled_openside", mesh_rolled_open_side, kobuki_collision_path, friction, 0);
-	kobuki_v_towel(out + "/" + label, "rolled_side", mesh_rolled_side, kobuki_collision_path, friction, 0);
+		kobuki_v_towel(out + "/" + label, "rolled_rolledside", mesh_rolled_rolled_side, kobuki_collision_path, friction, 0);
+		kobuki_v_towel(out + "/" + label, "rolled_openside", mesh_rolled_open_side, kobuki_collision_path, friction, 0);
+		kobuki_v_towel(out + "/" + label, "rolled_side", mesh_rolled_side, kobuki_collision_path, friction, 0);
+	}
 }
