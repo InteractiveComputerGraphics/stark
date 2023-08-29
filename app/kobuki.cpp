@@ -366,7 +366,7 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 
 	settings.contact.collisions_enabled = true;
 	settings.contact.friction_enabled = true;
-	settings.contact.friction_stick_slide_threshold = 0.01;
+	settings.contact.friction_stick_slide_threshold = 0.005; // 0.01 works well
 	settings.contact.adaptive_contact_stiffness.set(1e4, 1e4, 1e12);
 	//settings.contact.dhat = 0.6*towel.thickness;  // Works for 2 fold
 	settings.contact.dhat = 0.85*towel.thickness; // Works for 3 fold
@@ -379,7 +379,7 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 	//sim.rigid_bodies.add_to_output_group("floor", floor);
 
 	// Towel
-	const double towel_friction = 0.5;
+	const double towel_friction = 0.4;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::load_obj(vertices, triangles, mesh_path);
