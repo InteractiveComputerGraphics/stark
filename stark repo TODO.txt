@@ -1,12 +1,23 @@
 stark repo TODO
 ===============
 
+Paper
+-----
+	* Can we demostrate "Most relevant state-of-the-art physics engines used by the robotics community either cannot couple deformable and rigid bodies in the same easy-to-use framework or have stability issues with deformable objects and complex friction-dominated setups"?
+	
+	* We don't say anything about SymX or Stark being "easy to extend".
+		Stark is a system that simulates what we put in there and that's it.
+		
+		Jan: I would do it like last time, we could mention that we use symolic differentiation and have a pipeline that does everything automatically, but without too much detail and it should not be the main selling point
+	
+	
+	* Demostrate that I can just plug-and-play other people's very complex materials.
+		Plug and play the micropolar model from Fabian.
+		
+			Our unified framework provides researchers with unprecedented ease to reproduce other's work, which enhances testing and distribution of models used in mechanical simulations. To showcase this, we implement the micropolar material model by Loeschner et al., a very complex model used in XXXXX and YYYYY, which employs extra degrees of freedom to represent material micro-rotations. Reproducing such complex model only takes XXXX lines of code in Stark, and the resulting simulation can benefit from the rest of the facilities such as boundary conditions, contacts and friction.
+
 Today
 -----
-	* Pairwise friction coefficient.
-		* Interactions
-		* Cloth
-		* RB
 	* Fit the following specific simulations:
 		- Forget about the rolled simulation
 		- No friction floor
@@ -20,18 +31,12 @@ Today
 
 Bosch
 -----
-	Kobuki modelling
-		- Back wheels no friction at all
-		- Suspension: 
-			Should be able to easily go over 1 fold carpet.
-			Struggle but go over 2 folds.
-			But not 3 folds.
-		- Sim length shorte. 6 seconds?
-			
-
-	* Pairwise friction coefficient
+	* Need better suspension as wheels spin to the side.
+	* Sims too slow. Too many line search iterations.
+		- less stick-slide threshold
+			Yep, 0.01 is like a hundred times faster.
+		- friction triangle-point only
 	* Timeout simulations
-	* ? Activate friction is wrong!
 	* I am not sure the torque is correct
 
 
@@ -46,6 +51,7 @@ High priority
 
 Mid priority
 ------------
+	* ? Activate friction is wrong!
 	* Check that all connectivity entries are used in CompiledInLoop
 	* Change everything to LabelledConnectivity
 	* We need measures on how stiff the problem is to solve and why.
@@ -77,6 +83,9 @@ Mid priority
 		This is because RB have curved trajectories
 	* RWTH Cluster to run many kobuki sims asynchronously
 	* Verlet lists for proximity detection might be necessary as CD starts to catch up to CG in terms of performance.
+	* Make indentifiers types instead of `int` to avoid using them incorrectly.
+		I was passing a cloth_id to a function asking for a RB.
+		Counter-argument: I could also make a mistake by passing the wrong cloth id.
 	
 		
 Low priority

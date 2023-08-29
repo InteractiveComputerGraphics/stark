@@ -53,8 +53,8 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 	rb.add_constraint_motor(right_suspension, right, { 0.115, 0, 0.035 - suspension_height }, -Eigen::Vector3d::UnitX(), torque, max_linear_velocity/0.035, 1.0);
 	rb.add_constraint_slider(body, left_suspension, { -0.115, 0, 0.035 - suspension_height + 0.035 }, { -0.115, 0, 0.035 - suspension_height }, suspension_stiffness, 0.01);
 	rb.add_constraint_slider(body, right_suspension, { 0.115, 0, 0.035 - suspension_height + 0.035 }, { 0.115, 0, 0.035 - suspension_height }, suspension_stiffness, 0.01);
-	rb.add_constraint_relative_direction_lock(body, left_suspension, { 0, 1, 0 });
-	rb.add_constraint_relative_direction_lock(body, right_suspension, { 0, 1, 0 });
+	rb.add_constraint_relative_direction_lock(body, left_suspension);
+	rb.add_constraint_relative_direction_lock(body, right_suspension);
 	rb.add_constraint_hinge_joint(body, front, { 0, 0.115, 0.0135 }, Eigen::Vector3d::UnitX());
 	rb.add_constraint_hinge_joint(body, back, { 0, -0.136, 0.0135 }, Eigen::Vector3d::UnitX());
 

@@ -142,6 +142,12 @@ void stark::models::RigidBodies::add_constraint_relative_direction_lock(const in
 	this->constraints.relative_direction_lock.loc_da.push_back(global_to_local_direction(d_global, this->R1[body_0]));
 	this->constraints.relative_direction_lock.loc_db.push_back(global_to_local_direction(d_global, this->R1[body_1]));
 }
+void stark::models::RigidBodies::add_constraint_relative_direction_lock(const int body_0, const int body_1)
+{
+	this->add_constraint_relative_direction_lock(body_0, body_1, Eigen::Vector3d::UnitX());
+	this->add_constraint_relative_direction_lock(body_0, body_1, Eigen::Vector3d::UnitY());
+	this->add_constraint_relative_direction_lock(body_0, body_1, Eigen::Vector3d::UnitZ());
+}
 void stark::models::RigidBodies::add_constraint_freeze(const int body_id)
 {
 	this->add_constraint_anchor_point(body_id, this->t1[body_id]);
