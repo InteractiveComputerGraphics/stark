@@ -1,6 +1,8 @@
 #include "kobuki.h"
 
 #include <unordered_map>
+#include <thread>
+#include <chrono>
 
 #include "paths.h"
 
@@ -351,6 +353,8 @@ void kobuki_test()
 }
 void kobuki_v_towel(const std::string output_directory, const std::string name, const std::string mesh_path, const std::string kobuki_collision_path, const double floor_friction, const double rotation)
 {
+	std::this_thread::sleep_for(std::chrono::seconds(10));
+
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = name;
 	settings.output.output_directory = output_directory;
