@@ -10,7 +10,7 @@ struct Towel
 	const double w = 0.75;
 	const double mass = 0.484;
 	const double density = 0.484;
-	const double thickness = 0.04/8.0;  // 8 layers reach 5cm tall
+	const double thickness = 0.04/8.0;  // 8 layers reach 4cm tall
 	const double friction = 1.0;
 };
 Towel towel;
@@ -24,6 +24,7 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 	const double max_linear_velocity = 0.26;
 	const double power_wheels_floor_friction = 1.0;
 	const double power_wheels_cloth_friction = 1.0;
+	const double body_cloth_friction = 1.0;
 	const double suspension_height = 0.005;
 	const double suspension_stiffness = 2.0;
 
@@ -76,6 +77,7 @@ void make_kobuki(stark::models::Simulation& sim, const std::string kobuki_collis
 	if (towel_id >= 0) {
 		sim.interactions.set_friction(left, towel_id, power_wheels_cloth_friction);
 		sim.interactions.set_friction(right, towel_id, power_wheels_cloth_friction);
+		sim.interactions.set_friction(body, towel_id, body_cloth_friction);
 	}
 
 	// Lift
@@ -366,7 +368,8 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 	settings.contact.friction_enabled = true;
 	settings.contact.friction_stick_slide_threshold = 0.01;
 	settings.contact.adaptive_contact_stiffness.set(1e4, 1e4, 1e12);
-	settings.contact.dhat = 0.7*towel.thickness;
+	//settings.contact.dhat = 0.6*towel.thickness;  // Works for 2 fold
+	settings.contact.dhat = 0.85*towel.thickness; // Works for 3 fold
 
 	stark::models::Simulation sim(settings);
 
@@ -376,7 +379,7 @@ void kobuki_v_towel(const std::string output_directory, const std::string name, 
 	//sim.rigid_bodies.add_to_output_group("floor", floor);
 
 	// Towel
-	const double towel_friction = 1.0;
+	const double towel_friction = 0.5;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::load_obj(vertices, triangles, mesh_path);
@@ -412,7 +415,7 @@ void kobuki_v_towel_suite()
 	//const std::string base = "/local-hdd/jfernandez/sciebo/icra24";
 
 	const std::string out = base + "/v2";
-	const std::string mesh_3_folds = base + "/models/towel_3folds.obj";
+	const std::string mesh_3_folds_openside = base + "/models/towel_3folds_openside.obj";
 	const std::string mesh_2_folds = base + "/models/towel_2folds.obj";
 	const std::string mesh_1_fold = base + "/models/towel_1fold.obj";
 	const std::string mesh_flat = base + "/models/towel_flat.obj";
@@ -426,11 +429,11 @@ void kobuki_v_towel_suite()
 		const double friction = pair.second;
 		//kobuki_v_towel(out + "/" + label, "flat", mesh_flat, kobuki_collision_path, friction, 0);
 		//kobuki_v_towel(out + "/" + label, "1fold",  mesh_1_fold, kobuki_collision_path, friction, 0);
-		kobuki_v_towel(out + "/" + label, "2folds",  mesh_2_folds, kobuki_collision_path, friction, 0);
+		//kobuki_v_towel(out + "/" + label, "2folds",  mesh_2_folds, kobuki_collision_path, friction, 0);
 
 		//kobuki_v_towel(out + "/" + label, "3folds_1foldside", mesh_3_folds, kobuki_collision_path, friction, 0);
 		//kobuki_v_towel(out + "/" + label, "3folds_2foldside", mesh_3_folds, kobuki_collision_path, friction, -90);
-		//kobuki_v_towel(out + "/" + label, "3folds_openside",  mesh_3_folds, kobuki_collision_path, friction, 180);
+		kobuki_v_towel(out + "/" + label, "3folds_openside", mesh_3_folds_openside, kobuki_collision_path, friction, 0);
 
 		//kobuki_v_towel(out + "/" + label, "rolled_rolledside", mesh_rolled_rolled_side, kobuki_collision_path, friction, 0);
 		//kobuki_v_towel(out + "/" + label, "rolled_openside", mesh_rolled_open_side, kobuki_collision_path, friction, 0);
