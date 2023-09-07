@@ -3,6 +3,19 @@ stark repo TODO
 
 Paper
 -----
+	* I am running polished at mu=0.15 to try:
+		- flat at 0.1 doesn't go over
+		- 1 fold at 0.2 doesn't push it
+		- rolled open at 0.1 doesn't pass the start
+	
+		0.15 = 0.1
+
+	* Robot goes over in polished rolled openside
+		It didn't before but it does now... how do we explain that?
+
+	* Rolled towel might be the other way around!!
+		Maybe I can tilt it a bit to get a better effect?
+
 	* Can we demostrate "Most relevant state-of-the-art physics engines used by the robotics community either cannot couple deformable and rigid bodies in the same easy-to-use framework or have stability issues with deformable objects and complex friction-dominated setups"?
 	
 	* We don't say anything about SymX or Stark being "easy to extend".
