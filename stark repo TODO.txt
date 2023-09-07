@@ -9,6 +9,13 @@ Paper
 		- rolled open at 0.1 doesn't pass the start
 	
 		0.15 = 0.1
+		
+		Solutions:
+			- Stiffer towel
+			- stiffer suspension
+			- Heavier front wheel
+			- More friction front wheel
+			- [no] front wheel friction
 
 	* Robot goes over in polished rolled openside
 		It didn't before but it does now... how do we explain that?

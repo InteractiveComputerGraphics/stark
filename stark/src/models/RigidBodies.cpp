@@ -445,7 +445,12 @@ void stark::models::RigidBodies::_write_frame(Stark& sim)
 					triangles.push_back({ tri[0] + idx_offset, tri[1] + idx_offset, tri[2] + idx_offset });
 				}
 			}
-			utils::write_VTK(sim.get_vtk_path("rb_" + label), glob_vertices, triangles, false);
+			if (label.size() == 0) {
+				utils::write_VTK(sim.get_vtk_path("rb"), glob_vertices, triangles, false);
+			}
+			else {
+				utils::write_VTK(sim.get_vtk_path("rb_" + label), glob_vertices, triangles, false);
+			}
 		}
 	}
 	else {
