@@ -32,7 +32,28 @@ Paper
 		- System of C++ lambdas
 	* Experiments
 		- Motor!
+
+	* I am running polished at mu=0.15 to try:
+		- flat at 0.1 doesn't go over
+		- 1 fold at 0.2 doesn't push it
+		- rolled open at 0.1 doesn't pass the start
+	
+		0.15 = 0.1
 		
+		Solutions:
+			- Stiffer towel
+			- stiffer suspension
+			- Heavier front wheel
+			- More friction front wheel
+			- [no] front wheel friction
+
+	* Robot goes over in polished rolled openside
+		It didn't before but it does now... how do we explain that?
+
+	* Rolled towel might be the other way around!!
+		Maybe I can tilt it a bit to get a better effect?
+
+>>>>>>> 864778cd2d6c56920730d55439568f811d50346f
 	* Can we demostrate "Most relevant state-of-the-art physics engines used by the robotics community either cannot couple deformable and rigid bodies in the same easy-to-use framework or have stability issues with deformable objects and complex friction-dominated setups"?
 	
 	* Clarify to reviewers that we are renaming the SymX paper to "SymX: Differentiation and Assembly in Energy-based Simulation" to highlight the differences?
