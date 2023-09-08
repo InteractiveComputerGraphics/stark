@@ -3,13 +3,39 @@ stark repo TODO
 
 Paper
 -----
+	* Change the SymX title in arxiv
+		I think this is problematic as the title is the identifier of the paper itself
+
+	* Update Template
+	
+	* Do we include Fabians clip to justify how we fit the towel model?
+	
+	* Towel and kobuki close up for the discretization
+	
+	* Move the description of the models to the method section?
+	
+	* Read the whole thing adding references
+	
+	* The method section should be now:
+		- Simulation foundations
+		- Numerical solution
+			Newton's method
+			CG
+			Projection to PD
+			Adaptive time stepping
+		- Models
+			- RB system and constraints
+			- Deformables with FEM
+			- Strain limiting and bending
+	* Implementation
+		- Simulation loop
+		- System of C++ lambdas
+	* Experiments
+		- Motor!
+		
 	* Can we demostrate "Most relevant state-of-the-art physics engines used by the robotics community either cannot couple deformable and rigid bodies in the same easy-to-use framework or have stability issues with deformable objects and complex friction-dominated setups"?
 	
-	* We don't say anything about SymX or Stark being "easy to extend".
-		Stark is a system that simulates what we put in there and that's it.
-		
-		Jan: I would do it like last time, we could mention that we use symolic differentiation and have a pipeline that does everything automatically, but without too much detail and it should not be the main selling point
-	
+	* Clarify to reviewers that we are renaming the SymX paper to "SymX: Differentiation and Assembly in Energy-based Simulation" to highlight the differences?
 	
 	* Demostrate that I can just plug-and-play other people's very complex materials.
 		Plug and play the micropolar model from Fabian.
