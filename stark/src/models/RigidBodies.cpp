@@ -448,7 +448,7 @@ void stark::models::RigidBodies::_after_time_step(Stark& sim)
 		const double k = max_torque/delay;
 		const double eps = max_torque/(2.0*k);
 		const double dw = target_w - da.dot(w1b - w1a);
-		const double torque = (dw < delay) ? k*dw : max_torque;
+		const double torque = std::max(0.0, (dw < delay) ? k*dw : max_torque);
 		this->constraint_logger.append_to_series("motor_" + std::to_string(i), torque);
 	}
 }
@@ -966,7 +966,7 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 			symx::Scalar E_l = 0.5*k*dw.powN(2)*dt;
 			symx::Scalar E_r = max_torque*(dw - eps)*dt;
 			symx::Scalar E = symx::branch(dw < delay, E_l, E_r);
-			energy.set(E);
+			energy.set_with_condition(E, dw > 0.0);
 		}
 	);
 }

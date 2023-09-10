@@ -12,6 +12,8 @@ High priority
 
 Mid priority
 ------------
+	* Change name "Cloth" for "EmbeddedSolids" or something like that. Shells might be more important than cloth for the robotics community.
+		Maybe "VolumetricSolids" and "SurfaceSolids"
 	* The controller should be it's own function as it might be used in more places than for the motor.
 	* ? Activate friction mid simulation is wrong!
 	* Check that all connectivity entries are used in CompiledInLoop
