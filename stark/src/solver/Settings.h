@@ -16,6 +16,7 @@ namespace stark
 			std::string simulation_name = "";
 			std::string output_directory = "";
 			std::string codegen_directory = "";
+			std::string time_stamp = "SET_TO_CREATION_TIME_BY_DEFAULT";
 			int fps = 30;
 			Verbosity console_verbosity = Verbosity::TimeSteps;
 			OutputTo console_output_to = OutputTo::FileAndConsole;

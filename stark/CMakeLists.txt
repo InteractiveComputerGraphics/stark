@@ -84,7 +84,6 @@ set(UTILS_FILES
 	src/utils/MeshWithDynamics.h
 	src/utils/linear_system.cpp
 	src/utils/linear_system.h
-	src/utils/timestamp.h
 	)
 
 # Create lireary

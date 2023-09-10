@@ -1,9 +1,30 @@
 #include "Settings.h"
 
+#include <iostream>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 #include <omp.h>
+
 #include <fmt/format.h>
 
+std::string time_stamp()
+{
+	auto now = std::chrono::system_clock::now();
+	std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
 
+#ifdef _WIN32
+	std::tm localTime;
+	localtime_s(&localTime, &currentTime);
+#else
+	std::tm localTime;
+	localtime_r(&currentTime, &localTime);
+#endif
+
+	std::ostringstream oss;
+	oss << std::put_time(&localTime, "%Y-%m-%d__%H-%M-%S");
+	return oss.str();
+}
 std::string to_string(stark::Verbosity v)
 {
 	switch (v)
@@ -55,6 +76,7 @@ stark::Settings::Settings()
 {
 	// Initialize default parameters
 	this->execution.n_threads = omp_get_max_threads()/2;
+	this->output.time_stamp = time_stamp();
 	
 	//// Adaptive Time step
 	this->simulation.adaptive_time_step.value = 0.01; // [s]
@@ -83,6 +105,7 @@ std::string stark::Settings::as_string() const
 	out += "\n         simulation_name: " + fmt::format("\"{}\"", this->output.simulation_name);
 	out += "\n         output_directory: " + fmt::format("\"{}\"", this->output.output_directory);
 	out += "\n         codegen_directory: " + fmt::format("\"{}\"", this->output.codegen_directory);
+	out += "\n         time_stamp: " + fmt::format("\"{}\"", this->output.time_stamp);
 	out += "\n         fps: " + std::to_string(this->output.fps);
 	out += "\n         console_verbosity: " + to_string(this->output.console_verbosity);
 	out += "\n         console_output_to: " + to_string(this->output.console_output_to);

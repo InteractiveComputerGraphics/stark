@@ -12,7 +12,7 @@
 void stark::models::RigidBodies::init(Stark& sim)
 {
 	// Logger
-	this->constraint_logger.set_path(sim.settings.output.output_directory + "/constraint_logger.txt");
+	this->constraint_logger.set_path(sim.settings.output.output_directory + "/constraint_logger__" + sim.settings.output.time_stamp + ".txt");
 
 	// DoFs
 	this->dof_v = sim.global_energy.add_dof_array(this->v1, "rb_v1");
@@ -420,6 +420,7 @@ void stark::models::RigidBodies::_after_time_step(Stark& sim)
 	this->w0 = this->w1;
 
 	// Log constraints
+	this->constraint_logger.append_to_series("time", sim.current_time);
 	for (int i = 0; i < (int)this->constraints.sliders.conn.size(); i++) {
 		const int a = this->constraints.sliders.conn[i][1];
 		const int b = this->constraints.sliders.conn[i][2];
