@@ -11,6 +11,9 @@
 
 void stark::models::RigidBodies::init(Stark& sim)
 {
+	// Logger
+	this->constraint_logger.set_path(sim.settings.output.output_directory + "/constraint_logger.txt");
+
 	// DoFs
 	this->dof_v = sim.global_energy.add_dof_array(this->v1, "rb_v1");
 	this->dof_w = sim.global_energy.add_dof_array(this->w1, "rb_w1");
@@ -415,10 +418,42 @@ void stark::models::RigidBodies::_after_time_step(Stark& sim)
 	this->R0 = this->R1;
 	this->v0 = this->v1;
 	this->w0 = this->w1;
+
+	// Log constraints
+	for (int i = 0; i < (int)this->constraints.sliders.conn.size(); i++) {
+		const int a = this->constraints.sliders.conn[i][1];
+		const int b = this->constraints.sliders.conn[i][2];
+		const double k = this->constraints.sliders.spring_stiffness[i];
+		const double l_rest = this->constraints.sliders.rest_length[i];
+		const Eigen::Vector3d p = local_to_global_point(this->constraints.sliders.loc_a[i], this->R1[a], this->t1[a]);
+		const Eigen::Vector3d q = local_to_global_point(this->constraints.sliders.loc_b[i], this->R1[b], this->t1[b]);
+
+		const double l = (p - q).norm();
+		const double f =  k*(l / l_rest - 1.0);
+		this->constraint_logger.append_to_series("slider_" + std::to_string(i), f);
+	}
+
+	for (int i = 0; i < (int)this->constraints.motors.conn.size(); i++) {
+		const int a = this->constraints.motors.conn[i][1];
+		const int b = this->constraints.motors.conn[i][2];
+		const double max_torque = this->constraints.motors.max_torque[i];
+		const double target_w = this->constraints.motors.target_w[i];
+		const double delay = this->constraints.motors.delay[i];
+		const Eigen::Vector3d da = local_to_global_direction(this->constraints.motors.loc_da[i], this->R1[a]);
+		const Eigen::Vector3d& w1a = this->w1[a];
+		const Eigen::Vector3d& w1b = this->w1[b];
+
+		const double k = max_torque/delay;
+		const double eps = max_torque/(2.0*k);
+		const double dw = target_w - da.dot(w1b - w1a);
+		const double torque = (dw < delay) ? k*dw : max_torque;
+		this->constraint_logger.append_to_series("motor_" + std::to_string(i), torque);
+	}
 }
 void stark::models::RigidBodies::_write_frame(Stark& sim)
 {
 	if (this->is_empty()) { return; }
+	this->constraint_logger.save_to_disk();
 	if (!this->write_VTK) { return; }
 
 	if (this->output_labeled_groups.size() > 0) {
@@ -912,7 +947,7 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 			symx::Vector da_loc = energy.make_vector(this->constraints.motors.loc_da, conn["idx"]);
 			symx::Scalar max_torque = energy.make_scalar(this->constraints.motors.max_torque, conn["idx"]);
 			symx::Scalar target_w = energy.make_scalar(this->constraints.motors.target_w, conn["idx"]);
-			symx::Scalar h = energy.make_scalar(this->constraints.motors.delay, conn["idx"]);
+			symx::Scalar delay = energy.make_scalar(this->constraints.motors.delay, conn["idx"]);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 			symx::Vector w1a = energy.make_dof_vector(this->dof_w, this->w1, conn["a"]);
 			symx::Vector w1b = energy.make_dof_vector(this->dof_w, this->w1, conn["b"]);
@@ -923,12 +958,12 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 
 			// Constraint (Analogous to C1 friction)
 			// Important: derivatives wrt "positions", therefore needed chain rule and resulted in added product by dt
-			symx::Scalar k = max_torque/h;
+			symx::Scalar k = max_torque/delay;
 			symx::Scalar eps = max_torque/(2.0*k);
 			symx::Scalar dw = target_w - da.dot(w1b - w1a);
 			symx::Scalar E_l = 0.5*k*dw.powN(2)*dt;
 			symx::Scalar E_r = max_torque*(dw - eps)*dt;
-			symx::Scalar E = symx::branch(dw < h, E_l, E_r);
+			symx::Scalar E = symx::branch(dw < delay, E_l, E_r);
 			energy.set(E);
 		}
 	);

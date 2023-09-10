@@ -8,6 +8,7 @@
 #include <TriangleMeshCollisionDetection>
 
 #include "../solver/Stark.h"
+#include "../utils/Logger.h"
 #include "../utils/MultiMesh.h"
 #include "../utils/MultiMeshEdges.h"
 #include "../utils/mesh_generators.h"
@@ -100,6 +101,7 @@ namespace stark::models
 		Constraints constraints;
 		double constraint_stiffness = 1e6;
 		std::vector<Eigen::Vector3d> motor_torque;
+		utils::Logger constraint_logger;
 
 		// Contacts
 		utils::MultiMeshEdges edges;
