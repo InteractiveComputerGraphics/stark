@@ -1,5 +1,4 @@
 #include "Stark.h"
-#include "../utils/timestamp.h"
 
 #include <iostream>
 
