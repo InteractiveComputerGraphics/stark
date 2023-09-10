@@ -32,7 +32,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		callbacks.run_after_energy_evaluation();
 		logger.stop_timing_add("evaluate_E_grad_hess");
 		logger.add_to_timer("compiled_E_g_h (acc)", assembled.compiled_runtime);
-		console.print(fmt::format("dE0 = {:.2e} | ", assembled.grad->norm()), Verbosity::NewtonIterations);
+		console.print(fmt::format("dE0 = {:.2e} | ", assembled.grad->maxCoeff()), Verbosity::NewtonIterations);
 
 		//// Solve
 		this->du.resize(ndofs);
@@ -100,7 +100,7 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		callbacks.run_after_energy_evaluation();
 		logger.stop_timing_add("evaluate_E_grad");
 		logger.add_to_timer("compiled_E_g (acc)", assembled.compiled_runtime);
-		residual = assembled.grad->norm();
+		residual = assembled.grad->maxCoeff();
 		console.print(fmt::format("dE1 = {:.2e}", residual), Verbosity::NewtonIterations);
 
 		if (residual < settings.newton.newton_tol) {
