@@ -24,6 +24,8 @@ set(SOURCE_FILES
     scenes_interactions.h
     kobuki.cpp
     kobuki.h
+    gripper.cpp
+    gripper.h
     main.cpp
 	)
 

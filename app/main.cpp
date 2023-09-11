@@ -4,6 +4,7 @@
 #include "scenes_rigidbodies.h"
 #include "scenes_interactions.h"
 #include "kobuki.h"
+#include "gripper.h"
 
 int main()
 {
@@ -39,5 +40,10 @@ int main()
 	//towel_parametrization();
 	//folding_towel();
 	//rolling_towel();
-	kobuki_v_towel_suite();
+	//kobuki_v_towel_suite();
+
+	// ------------------------- GRIPPER -------------------------
+	gripper_test();
+
+
 }
