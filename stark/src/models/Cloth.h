@@ -52,6 +52,7 @@ namespace stark::models
 		std::vector<double> bending_stiffness;  // per mesh
 		std::vector<std::array<int32_t, 6>> conn_numbered_mesh_internal_edges;  // [glob_ie_id, mesh_id, i, j, k, l]
 		std::vector<std::array<double, 16>> bergou_Q_matrix;    // per internal angle
+		double cutoff_bending_angle_deg = std::numeric_limits<double>::max();
 		double bending_damping = 0.0;
 
 		// Prescribed positions
@@ -66,6 +67,7 @@ namespace stark::models
 		bool changed_attachments = true;
 
 		// Contacts
+		bool self_collisions_enabled = true;  // DEBUG: This should be pair-wise objects
 		utils::MultiMeshEdges edges;
 		tmcd::IntersectionDetection id;
 		tmcd::ProximityDetection pd;

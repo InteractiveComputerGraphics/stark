@@ -174,6 +174,22 @@ void stark::models::RigidBodies::add_constraint_motor(const int body_0, const in
 	this->constraints.motors.target_w.push_back(target_w);
 	this->constraints.motors.delay.push_back(delay);
 }
+void stark::models::RigidBodies::add_constraint_parallel_gripper(const int base, const int right_finger, const int left_finger, const Eigen::Vector3d& d_global, const double max_force, const double closing_velocity, const double delay)
+{
+	const Eigen::Vector3d d = d_global.normalized();
+
+	this->add_constraint_relative_direction_lock(base, right_finger);
+	this->add_constraint_relative_direction_lock(base, left_finger);
+	this->add_constraint_slider(base, right_finger, this->t1[right_finger] + d, this->t1[right_finger]);
+	this->add_constraint_slider(base, left_finger, this->t1[left_finger] + d, this->t1[left_finger]);
+	
+	const int constraint_id = (int)this->constraints.parallel_gripper.conn.size();
+	this->constraints.parallel_gripper.conn.push_back({ constraint_id, right_finger, left_finger });
+	this->constraints.parallel_gripper.loc_da.push_back(global_to_local_direction(d, this->R1[right_finger]));
+	this->constraints.parallel_gripper.max_force.push_back(max_force);
+	this->constraints.parallel_gripper.target_v.push_back(closing_velocity);
+	this->constraints.parallel_gripper.delay.push_back(delay);
+}
 
 void stark::models::RigidBodies::set_damping(const double damping)
 {
@@ -967,6 +983,38 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 			symx::Scalar E_r = max_torque*(dw - eps)*dt;
 			symx::Scalar E = symx::branch(dw < delay, E_l, E_r);
 			energy.set_with_condition(E, dw > 0.0);
+		}
+	);
+
+	// Parallel gripper
+	sim.global_energy.add_energy("rb_constraint_parallel_gripper", this->constraints.parallel_gripper.conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			conn.set_labels({ "idx", "a", "b" });
+
+			// Inputs
+			symx::Vector da_loc = energy.make_vector(this->constraints.parallel_gripper.loc_da, conn["idx"]);
+			symx::Scalar max_force = energy.make_scalar(this->constraints.parallel_gripper.max_force, conn["idx"]);
+			symx::Scalar target_v = energy.make_scalar(this->constraints.parallel_gripper.target_v, conn["idx"]);
+			symx::Scalar delay = energy.make_scalar(this->constraints.parallel_gripper.delay, conn["idx"]);
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+			symx::Vector w1a = energy.make_dof_vector(this->dof_w, this->w1, conn["a"]);
+			symx::Vector v1a = energy.make_dof_vector(this->dof_v, this->v1, conn["a"]);
+			symx::Vector v1b = energy.make_dof_vector(this->dof_v, this->v1, conn["b"]);
+
+			// Transformations
+			symx::Vector q0a = energy.make_vector(this->q0_, conn["a"]);
+			symx::Vector da = integrate_loc_direction(da_loc, q0a, w1a, dt);
+
+			// Constraint (Analogous to C1 friction)
+			// Important: derivatives wrt "positions", therefore needed chain rule and resulted in added product by dt
+			symx::Scalar k = max_force/delay;
+			symx::Scalar eps = max_force/(2.0*k);
+			symx::Scalar dv = target_v - da.dot(v1b - v1a);
+			symx::Scalar E_l = 0.5*k*dv.powN(2)*dt;
+			symx::Scalar E_r = max_force*(dv - eps)*dt;
+			symx::Scalar E = symx::branch(dv < delay, E_l, E_r);
+			energy.set(E);
 		}
 	);
 }

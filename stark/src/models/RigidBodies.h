@@ -59,6 +59,14 @@ namespace stark::models
 			std::vector<double> delay;
 			std::vector<std::array<int, 3>> conn; // { "idx", "a", "b" }
 		};
+		struct ParallelGripper
+		{
+			std::vector<Eigen::Vector3d> loc_da;
+			std::vector<double> max_force;
+			std::vector<double> target_v;
+			std::vector<double> delay;
+			std::vector<std::array<int, 3>> conn; // { "idx", "a", "b" }
+		};
 		struct Constraints
 		{
 			AnchorPoints anchor_points;
@@ -66,6 +74,7 @@ namespace stark::models
 			RelativeDirectionLock relative_direction_lock;
 			Sliders sliders;
 			Motors motors;
+			ParallelGripper parallel_gripper;
 		};
 
 	public:
@@ -143,6 +152,7 @@ namespace stark::models
 		void add_constraint_relative_direction_lock(const int body_0, const int body_1);
 		void add_constraint_freeze(const int body_id);
 		void add_constraint_motor(const int body_0, const int body_1, const Eigen::Vector3d& c_global, const Eigen::Vector3d& d_global, const double max_torque, const double target_w, const double delay = 0.01);
+		void add_constraint_parallel_gripper(const int base, const int right_finger, const int left_finger, const Eigen::Vector3d& d_global, const double max_force, const double closing_velocity, const double delay = 0.01);
 
 		void set_damping(const double damping);
 		void set_displacement(const int body_id, const Eigen::Vector3d& displacement);

@@ -316,6 +316,7 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 			const double sinTheta = (v.cross(w)).norm();
 			return (cosTheta / sinTheta);
 		};
+		const double cutoff_angle_rad = utils::deg2rad(this->cutoff_bending_angle_deg);
 
 		std::vector<std::array<int, 4>> internal_angles;
 		utils::find_internal_angles(internal_angles, mesh_rest.connectivity, mesh_rest.get_n_vertices());
@@ -340,6 +341,11 @@ void stark::models::Cloth::_init_simulation_structures(const int n_threads)
 
 			const Eigen::Vector3d n0 = e0.cross(e1);
 			const Eigen::Vector3d n1 = -e0.cross(e2);
+
+			const double angle_rad = std::acos(n0.normalized().dot(n1.normalized()));
+			if (angle_rad > cutoff_angle_rad) {
+				continue;
+			}
 
 			const double A0 = 0.5 * n0.norm();
 			const double A1 = 0.5 * n1.norm();
@@ -400,6 +406,10 @@ void stark::models::Cloth::_update_collision_x1(Stark& sim)
 }
 const tmcd::ProximityResults& stark::models::Cloth::_run_proximity_detection(const std::vector<Eigen::Vector3d>& x, Stark& sim)
 {
+	if (!this->self_collisions_enabled) {
+		return this->pd.get_narrow_phase_results();
+	}
+
 	this->pd.clear();
 	this->pd.set_n_threads(sim.settings.execution.n_threads);
 	this->pd.set_edge_edge_parallel_cutoff(sim.settings.contact.edge_edge_cross_norm_sq_cutoff);
@@ -448,6 +458,7 @@ void stark::models::Cloth::_write_frame(Stark& sim)
 bool stark::models::Cloth::_is_valid_configuration(Stark& sim)
 {
 	if (this->is_empty()) { return true; }
+	if (!this->self_collisions_enabled) { return true; }
 	if (!sim.settings.contact.collisions_enabled) { return true; }
 	if (!sim.settings.contact.enable_intersection_test) { return true; }
 
