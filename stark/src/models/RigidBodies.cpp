@@ -450,7 +450,6 @@ void stark::models::RigidBodies::_after_time_step(Stark& sim)
 		const double f =  k*(l / l_rest - 1.0);
 		this->constraint_logger.append_to_series("slider_" + std::to_string(i), f);
 	}
-
 	for (int i = 0; i < (int)this->constraints.motors.conn.size(); i++) {
 		const int a = this->constraints.motors.conn[i][1];
 		const int b = this->constraints.motors.conn[i][2];
@@ -466,6 +465,22 @@ void stark::models::RigidBodies::_after_time_step(Stark& sim)
 		const double dw = target_w - da.dot(w1b - w1a);
 		const double torque = std::max(0.0, (dw < delay) ? k*dw : max_torque);
 		this->constraint_logger.append_to_series("motor_" + std::to_string(i), torque);
+	}
+	for (int i = 0; i < (int)this->constraints.parallel_gripper.conn.size(); i++) {
+		const int a = this->constraints.parallel_gripper.conn[i][1];
+		const int b = this->constraints.parallel_gripper.conn[i][2];
+		const double max_force = this->constraints.parallel_gripper.max_force[i];
+		const double target_v = this->constraints.parallel_gripper.target_v[i];
+		const double delay = this->constraints.parallel_gripper.delay[i];
+		const Eigen::Vector3d da = local_to_global_direction(this->constraints.parallel_gripper.loc_da[i], this->R1[a]);
+		const Eigen::Vector3d& v1a = this->v1[a];
+		const Eigen::Vector3d& v1b = this->v1[b];
+
+		const double k = max_force /delay;
+		const double eps = max_force /(2.0*k);
+		const double dv = target_v - da.dot(v1b - v1a);
+		const double f = std::max(0.0, (dv < delay) ? k*dv : max_force);
+		this->constraint_logger.append_to_series("parallel_gripper_" + std::to_string(i), f);
 	}
 }
 void stark::models::RigidBodies::_write_frame(Stark& sim)
@@ -986,7 +1001,7 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 		}
 	);
 
-	// Parallel gripper
+	// Parallel gripper_cup
 	sim.global_energy.add_energy("rb_constraint_parallel_gripper", this->constraints.parallel_gripper.conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{

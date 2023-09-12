@@ -54,6 +54,7 @@ Mid priority
 		
 Low priority
 ------------
+	* I really need a OOP system to handle higher level things. Right now, **I** know how to implement a parallel gripper with a logger, but it's impossible for an external person.
 	* Friction groups (or material groups)
 		In the loundry machine example, we have 100s of objects and the friction pair table is 100**2, literally for the same number.
 		We need maybe a better solution for user friendliness on interactive environments.

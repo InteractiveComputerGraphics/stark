@@ -45,7 +45,7 @@ namespace stark
 		struct NewtonsMethod
 		{
 			double newton_tol = 1e-8;
-			int max_newton_iterations = 10;
+			int max_newton_iterations = 30;
 			int max_line_search_iterations = 10;
 			double line_search_multiplier = 0.5;
 

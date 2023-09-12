@@ -43,5 +43,6 @@ int main()
 	//kobuki_v_towel_suite();
 
 	// ------------------------- GRIPPER -------------------------
-	gripper(1e-5);
+	//gripper_box();
+	gripper_cup(5e-3);
 }
