@@ -3,4 +3,5 @@
 #include <Eigen/Dense>
 #include <stark>
 
-void gripper_test();
+void gripper(const double bending_stiffness);
+void gripper_suite();
