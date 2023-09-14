@@ -12,7 +12,7 @@ Gripper make_franka_gripper(stark::models::Simulation& sim, const std::string ri
 {
 	// Input
 	// Manual: https://download.franka.de/documents/220010_Product%20Manual_Franka%20Hand_1.2_EN.pdf
-	const double grasp_force = 9.84;
+	const double grasp_force = 5.0;
 	auto& rb = sim.rigid_bodies;
 
 	// Body
@@ -25,7 +25,8 @@ Gripper make_franka_gripper(stark::models::Simulation& sim, const std::string ri
 	const int right = rb.add_box(0.1, { 0.025, 0.054, 0.025 }, vertices, triangles, { 0.052445, 0.060518, 0.0 });
 	stark::utils::scale(vertices, { -1.0, 1.0, 1.0 });
 	const int left = rb.add_box(0.1, { 0.025, 0.054, 0.025 }, vertices, triangles, { -0.052445, 0.060518, 0.0 });
-	sim.rigid_bodies.add_to_output_group("hand", {hand, right, left});
+	sim.rigid_bodies.add_to_output_group("hand", {hand});
+	sim.rigid_bodies.add_to_output_group("fingers", {right, left});
 
 	// Constraints
 	rb.add_constraint_freeze(hand);
@@ -84,23 +85,26 @@ void gripper_cup(const double bending_stiffness)
 {
 	stark::Settings settings = stark::Settings();
 	//settings.output.simulation_name = "gripper_cup" + fmt::format("{:.1e}", bending_stiffness);
-	settings.output.simulation_name = "gripper_cup_simple";
-	settings.output.output_directory = BASE_PATH + "/gripper_cup";
+	settings.output.simulation_name = "gripper";
+	settings.output.output_directory = BASE_PATH + "/gripper_local_2g";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
-	settings.execution.end_simulation_time = 20.0;
-	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
+	settings.execution.end_simulation_time = 40.0;
+	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
 	settings.simulation.boundary_conditions_stiffness = 1e7;
 
 	settings.newton.use_direct_linear_solve = true;
+	settings.newton.newton_tol = 1e-4;
 
 	settings.contact.collisions_enabled = true;
 	settings.contact.friction_enabled = true;
-	settings.contact.friction_stick_slide_threshold = 0.001;
-	settings.contact.adaptive_contact_stiffness.value = 1e6;
-	settings.contact.dhat = 0.001;
+	settings.contact.friction_stick_slide_threshold = 0.0001;
+	settings.contact.adaptive_contact_stiffness.set(1e6, 1e6, 1e12);
+	settings.contact.adaptive_contact_stiffness.success_multiplier = 0.8;
+	settings.contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = 50;
+	settings.contact.dhat = 0.0005;
 
 	stark::models::Simulation sim(settings);
 
@@ -122,11 +126,11 @@ void gripper_cup(const double bending_stiffness)
 		//vertices = m.vertices;
 		//triangles = m.triangles;
 
-		stark::utils::load_obj(vertices, triangles, MODELS_PATH + "/cup_simple.obj");
+		stark::utils::load_obj(vertices, triangles, MODELS_PATH + "/cup_simple_small_lip.obj");
 		cup_id = sim.cloth.add(vertices, triangles, stark::models::Cloth::MaterialPreset::Towel);
 
 		sim.cloth.set_density(cup_id, 0.2);
-		sim.cloth.set_strain_parameters(cup_id, 1e6, 0.45);  // Provides the resistance to be squeezed
+		sim.cloth.set_strain_parameters(cup_id, 1e6, 0.45);  // Note that while PET plastic has a Young's modulus on the order of $E = \SI{1e9}{\pascal}$, this leads to extremely stiff behavior of the cup. Therefore, we adjust it to obtain a more realistic deformation under such load.
 		sim.cloth.set_bending_stiffness(cup_id, 1e-4);  // smooth consistent surface. Without it its just a bunch of triangles. With only it, numerically unstable
 		sim.cloth.set_damping(2.0, 0.2, 0.2);
 		sim.cloth.self_collisions_enabled = false;
@@ -134,8 +138,8 @@ void gripper_cup(const double bending_stiffness)
 
 		// Attach close vertices
 		for (int i = 0; i < (int)vertices.size(); i++) {
-			for (int j = 0; j < (int)vertices.size(); j++) {
-				if ((vertices[i] - vertices[j]).norm() < 0.001) {
+			for (int j = i + 1; j < (int)vertices.size(); j++) {
+				if ((vertices[i] - vertices[j]).norm() < 0.0002) {
 					sim.cloth.set_attached_vertices(cup_id, i, cup_id, j);
 				}
 			}
@@ -147,43 +151,58 @@ void gripper_cup(const double bending_stiffness)
 		std::vector<std::array<int, 3>> triangles;
 		stark::utils::load_obj(vertices, triangles, MODELS_PATH + "/box_cup.obj");
 		box_id = sim.rigid_bodies.add_box(0.2, { 0.044, 0.044, 0.095 }, vertices, triangles, { 0, 0.07, 0.0 });
+		sim.rigid_bodies.add_to_output_group("box", { box_id });
 	}
 
 	// Gripper
-	Gripper gripper = make_franka_gripper(sim, MODELS_PATH + "/franka_finger.obj", cup_id, box_id, 0.7);
+	Gripper gripper = make_franka_gripper(sim, MODELS_PATH + "/franka_finger.obj", cup_id, box_id, 0.3);
+
+	// Nirvana ball for sequence
+	const int ball = sim.rigid_bodies.add_sphere(0.01, 0.003, { -0.01, 0.064, -2.0 }, 0.0, { 1, 0, 0 }, 1);
+	sim.rigid_bodies.add_constraint_freeze(ball);
+	sim.rigid_bodies.add_to_output_group("balls", { ball });
 
 	// Run
 	double time_next_drop = 4.0;
-	const double drop_dt = 0.1;
-	bool swapped_constraints = false;
+	const double drop_dt = 0.2;
+	const double balls_mass = 0.002;
+	const double balls_radius = 0.00395;
 	sim.stark.run(
 		[&]()
 		{
 			const double t = sim.stark.current_time;
 			const double dt = sim.stark.settings.simulation.adaptive_time_step.value;
-			if (t > 2.0 && t < 4.0) {
-				//if (!swapped_constraints) {
-				//	swapped_constraints = true;
-				//	sim.rigid_bodies.constraints.parallel_gripper.conn.clear();
-				//}
+
+			if (t < 2.0) {
+			}
+			else if (t < 4.0) {
 				sim.rigid_bodies.constraints.anchor_points.conn.clear();
 				sim.rigid_bodies.constraints.anchor_points.loc.clear();
 				sim.rigid_bodies.constraints.anchor_points.target.clear();
 
-				sim.rigid_bodies.add_displacement(floor, {0, 0, -0.1*dt});
+				sim.rigid_bodies.add_displacement(floor, {0, 0.1*dt, 0});
 
 				sim.rigid_bodies.add_constraint_freeze(gripper.left);
-				//sim.rigid_bodies.add_constraint_freeze(gripper.right);
 				sim.rigid_bodies.add_constraint_freeze(gripper.hand);
 				sim.rigid_bodies.add_constraint_freeze(floor);
 			} 
 			else {
+				if (t < 5.0) {
+					sim.stark.settings.simulation.adaptive_time_step.max = 0.001;
+				}
+				else {
+					sim.stark.settings.simulation.adaptive_time_step.max = 0.01;
+				}
 				if (t > time_next_drop) {
 					time_next_drop += drop_dt;
-					const int idx0 = sim.rigid_bodies.add_sphere(0.01, 0.003, { -0.01, 0.064, 0.06 }, 0.0, { 1, 0, 0 }, 1);
-					const int idx1 = sim.rigid_bodies.add_sphere(0.01, 0.003, { -0.01, 0.074, 0.06 }, 0.0, { 1, 0, 0 }, 1);
-					const int idx2 = sim.rigid_bodies.add_sphere(0.01, 0.003, {  0.01, 0.064, 0.06 }, 0.0, { 1, 0, 0 }, 1);
-					const int idx3 = sim.rigid_bodies.add_sphere(0.01, 0.003, {  0.01, 0.074, 0.06 }, 0.0, { 1, 0, 0 }, 1);
+					//const int idx0 = sim.rigid_bodies.add_box(balls_mass, {0.005, 0.005, 0.005}, { -0.01, 0.064, 0.06 });
+					//const int idx1 = sim.rigid_bodies.add_box(balls_mass, {0.005, 0.005, 0.005}, { -0.01, 0.074, 0.06 });
+					//const int idx2 = sim.rigid_bodies.add_box(balls_mass, {0.005, 0.005, 0.005}, {  0.01, 0.064, 0.06 });
+					//const int idx3 = sim.rigid_bodies.add_box(balls_mass, {0.005, 0.005, 0.005}, {  0.01, 0.074, 0.06 });
+					const int idx0 = sim.rigid_bodies.add_sphere(balls_mass, balls_radius, { -0.015, 0.06, 0.06 }, 0.0, { 1, 0, 0 }, 1);
+					const int idx1 = sim.rigid_bodies.add_sphere(balls_mass, balls_radius, { -0.015, 0.09, 0.06 }, 0.0, { 1, 0, 0 }, 1);
+					const int idx2 = sim.rigid_bodies.add_sphere(balls_mass, balls_radius, {  0.015, 0.09, 0.06 }, 0.0, { 1, 0, 0 }, 1);
+					const int idx3 = sim.rigid_bodies.add_sphere(balls_mass, balls_radius, {  0.015, 0.06, 0.06 }, 0.0, { 1, 0, 0 }, 1);
 					sim.rigid_bodies.add_to_output_group("balls", { idx0, idx1, idx2, idx3 });
 				}
 			}

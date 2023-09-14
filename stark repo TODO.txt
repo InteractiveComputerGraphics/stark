@@ -12,6 +12,8 @@ High priority
 
 Mid priority
 ------------
+	* Soft problems can be solved to 1e-8, but when things get even moderately stiff, the line search is so noisy that it's impossible.
+		I need better automatic debug info so it can let me know what is going wrong. Otherwise I really don't know if it's the collisions that are too tough, the line search, the indefiniteness...
 	* Change name "Cloth" for "EmbeddedSolids" or something like that. Shells might be more important than cloth for the robotics community.
 		Maybe "VolumetricSolids" and "SurfaceSolids"
 	* The controller should be it's own function as it might be used in more places than for the motor.
@@ -50,6 +52,7 @@ Mid priority
 	* Make indentifiers types instead of `int` to avoid using them incorrectly.
 		I was passing a cloth_id to a function asking for a RB.
 		Counter-argument: I could also make a mistake by passing the wrong cloth id.
+	* Investigate why it is so hard to simulate a bunch of spheres as triangular objects in a cup.
 	
 		
 Low priority
