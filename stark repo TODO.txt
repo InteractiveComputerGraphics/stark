@@ -12,6 +12,17 @@ High priority
 
 Mid priority
 ------------
+	* System to export frames as images so they can be inspected when running on the cluster.
+		Polyscope has few and simple dependencies and uses OpenGL to generate images from meshes
+		It is not ideal that uses OpenGL instead of software simulated rendering, but if you don't have OpenGL in a server, also you cannot open the images
+		https://github.com/nmwsharp/polyscope/tree/master
+		
+		-> This is going to need a rework of the `.write_frame()` facilities
+		
+	* Object thickness.
+		Decouple contact distance from object thickness. Specially important for co-dimensional: granular materials, rods, shells.
+	* Built-in renderer for the cluster to faster inspect results (I just set a camera within Stark)
+	* Separate rigid body and sof body BC stiffness
 	* Soft problems can be solved to 1e-8, but when things get even moderately stiff, the line search is so noisy that it's impossible.
 		I need better automatic debug info so it can let me know what is going wrong. Otherwise I really don't know if it's the collisions that are too tough, the line search, the indefiniteness...
 	* Change name "Cloth" for "EmbeddedSolids" or something like that. Shells might be more important than cloth for the robotics community.

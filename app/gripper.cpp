@@ -12,7 +12,7 @@ Gripper make_franka_gripper(stark::models::Simulation& sim, const std::string ri
 {
 	// Input
 	// Manual: https://download.franka.de/documents/220010_Product%20Manual_Franka%20Hand_1.2_EN.pdf
-	const double grasp_force = 5.0;
+	const double grasp_force = 1.0;
 	auto& rb = sim.rigid_bodies;
 
 	// Body
@@ -86,7 +86,7 @@ void gripper_cup(const double bending_stiffness)
 	stark::Settings settings = stark::Settings();
 	//settings.output.simulation_name = "gripper_cup" + fmt::format("{:.1e}", bending_stiffness);
 	settings.output.simulation_name = "gripper";
-	settings.output.output_directory = BASE_PATH + "/gripper_local_2g";
+	settings.output.output_directory = BASE_PATH + "/gripper_local_2g_1N";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
@@ -103,7 +103,7 @@ void gripper_cup(const double bending_stiffness)
 	settings.contact.friction_stick_slide_threshold = 0.0001;
 	settings.contact.adaptive_contact_stiffness.set(1e6, 1e6, 1e12);
 	settings.contact.adaptive_contact_stiffness.success_multiplier = 0.8;
-	settings.contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = 50;
+	settings.contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = 100;
 	settings.contact.dhat = 0.0005;
 
 	stark::models::Simulation sim(settings);
@@ -165,8 +165,8 @@ void gripper_cup(const double bending_stiffness)
 	// Run
 	double time_next_drop = 4.0;
 	const double drop_dt = 0.2;
-	const double balls_mass = 0.002;
-	const double balls_radius = 0.00395;
+	const double balls_mass = 0.005;
+	const double balls_radius = 0.0054;
 	sim.stark.run(
 		[&]()
 		{
