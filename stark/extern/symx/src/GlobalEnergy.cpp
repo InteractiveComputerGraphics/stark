@@ -103,6 +103,7 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 	this->symbols_bytes = 0;
 	output += "SymX energies:\n";
 
+	const double t0 = omp_get_wtime();
 	#pragma omp parallel for num_threads(this->n_threads)
 	for (int i = 0; i < (int)this->energies.size(); i++) {
 		this->energies[i]->working_directory = this->working_directory;
@@ -130,12 +131,15 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 			output += "\t " + two_columns(this->energies[i]->name, "compiled. (" + std::to_string(t1 - t0) + " s)\n", 60);
 		}
 	}
+	const double t1 = omp_get_wtime();
+
 	std::string slow_compile_note;
 	#ifdef _MSC_VER
 	slow_compile_note = "(Note: MSVC takes a lot of time just to load!)";
 	#endif
 
 	output += "SymX stats\n";
+	output += "\t Total time: " + std::to_string(t1 - t0) + " s.\n";
 	output += "\t Differentiation (acc): " + std::to_string(this->runtime_differentiation) + " s.\n";
 	output += "\t Code generation (acc): " + std::to_string(this->runtime_codegen) + " s.\n";
 	output += "\t Compilation (acc): " + std::to_string(this->runtime_compilation) + " s. " + slow_compile_note + "\n";

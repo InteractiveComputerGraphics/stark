@@ -32,7 +32,7 @@ int main()
 	// ------------------------- INTERACTIONS -------------------------
 	//interaction_cloth_rb();
 	//interaction_cloth_rb_bowl();
-	//laundry_cloth();
+	laundry_cloth();
 
 
 	// ------------------------- KOBUKI -------------------------
@@ -44,5 +44,5 @@ int main()
 
 	// ------------------------- GRIPPER -------------------------
 	//gripper_box();
-	gripper_cup(5e-3);
+	//gripper_cup(5e-3);
 }
