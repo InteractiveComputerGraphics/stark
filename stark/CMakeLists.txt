@@ -56,6 +56,8 @@ set(MODELS_FILES
 	src/models/TriangleMeshFriction.h
 	src/models/Cloth.h
 	src/models/Cloth.cpp
+	src/models/DeformableSolids.h
+	src/models/DeformableSolids.cpp
 	src/models/RigidBodies.h
 	src/models/RigidBodies.cpp
 	src/models/RigidBodyContacts.h

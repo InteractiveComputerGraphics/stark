@@ -18,6 +18,8 @@ set(SOURCE_FILES
     paths.h
     scenes_cloth.cpp
     scenes_cloth.h
+    scenes_deformable_solids.cpp
+    scenes_deformable_solids.h
     scenes_rigidbodies.cpp
     scenes_rigidbodies.h
     scenes_interactions.cpp

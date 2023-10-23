@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "scenes_cloth.h"
+#include "scenes_deformable_solids.h"
 #include "scenes_rigidbodies.h"
 #include "scenes_interactions.h"
 #include "kobuki.h"
@@ -32,7 +33,7 @@ int main()
 	// ------------------------- INTERACTIONS -------------------------
 	//interaction_cloth_rb();
 	//interaction_cloth_rb_bowl();
-	laundry_cloth();
+	//laundry_cloth();
 
 
 	// ------------------------- KOBUKI -------------------------
@@ -45,4 +46,7 @@ int main()
 	// ------------------------- GRIPPER -------------------------
 	//gripper_box();
 	//gripper_cup(5e-3);
+
+	// ------------------------- DEFORMABLE VOLUMETRICS -------------------------
+	andreas_cantilever();
 }

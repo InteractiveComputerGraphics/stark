@@ -234,6 +234,121 @@ std::array<int, 2> stark::utils::generate_triangular_grid(std::vector<Eigen::Vec
 	generate_triangular_grid(out_vertices, out_connectivity, { -0.5*x_length, -0.5*y_length }, { 0.5*x_length, 0.5*y_length }, {nx, ny}, randomize, z);
 	return {nx, ny};
 }
+void stark::utils::generate_tet_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 4>>& out_tets, const Eigen::Vector3d& bottom, const Eigen::Vector3d& top, const std::array<int, 3>& n_quads_per_dim)
+{
+	assert(bottom[0] <= top[0] && bottom[1] <= top[1] && bottom[2] <= top[2]);
+
+	// Precomputation
+	const int nx = n_quads_per_dim[0] + 1;
+	const int ny = n_quads_per_dim[1] + 1;
+	const int nz = n_quads_per_dim[2] + 1;
+	const int n_points = nx * ny * nz;
+	const int n_hexas = n_quads_per_dim[0] * n_quads_per_dim[1] * n_quads_per_dim[2];
+	const int n_tetras = 12 * n_hexas;
+	const double dx = (top[0] - bottom[0]) / (double)n_quads_per_dim[0];
+	const double dy = (top[1] - bottom[1]) / (double)n_quads_per_dim[1];
+	const double dz = (top[2] - bottom[2]) / (double)n_quads_per_dim[2];
+
+	const int nx_hex = n_quads_per_dim[0];
+	const int ny_hex = n_quads_per_dim[1];
+	const int nz_hex = n_quads_per_dim[2];
+
+	const double dx_half = 0.5 * dx;
+	const double dy_half = 0.5 * dy;
+	const double dz_half = 0.5 * dz;
+
+	// Points
+	/* Correspond to a hexahedron following the pattern:
+			[[0, 0, 0],
+				[0, 0, 1],
+				[0, 1, 0],
+				[0, 1, 1],
+				[1, 0, 0],
+				[1, 0, 1],
+				[1, 1, 0],
+				[1, 1, 1]]
+
+		move z -> move y -> move x
+	*/
+	out_vertices.resize(n_points + n_hexas);
+	for (int i = 0; i < nx; i++) {
+		for (int j = 0; j < ny; j++) {
+			for (int k = 0; k < nz; k++) {
+				out_vertices[nz * ny * i + nz * j + k] = { bottom[0] + i * dx, bottom[1] + j * dy, bottom[2] + k * dz };
+			}
+		}
+	}
+
+	// Add the hex center points
+	const int center_offset = n_points;
+	for (int i = 0; i < nx_hex; i++) {
+		for (int j = 0; j < ny_hex; j++) {
+			for (int k = 0; k < nz_hex; k++) {
+				out_vertices[center_offset + nz_hex * ny_hex * i + nz_hex * j + k] = { bottom[0] + i * dx + dx_half, bottom[1] + j * dy + dy_half, bottom[2] + k * dz + dz_half };
+			}
+		}
+	}
+
+	out_tets.reserve(n_tetras);
+	for (int ei = 0; ei < nx_hex; ei++) {
+		for (int ej = 0; ej < ny_hex; ej++) {
+			for (int ek = 0; ek < nz_hex; ek++) {
+				int nodes_idx[] = { nz * ny * (ei + 0) + nz * (ej + 0) + (ek + 0),
+									nz * ny * (ei + 0) + nz * (ej + 0) + (ek + 1),
+									nz * ny * (ei + 0) + nz * (ej + 1) + (ek + 0),
+									nz * ny * (ei + 0) + nz * (ej + 1) + (ek + 1),
+									nz * ny * (ei + 1) + nz * (ej + 0) + (ek + 0),
+									nz * ny * (ei + 1) + nz * (ej + 0) + (ek + 1),
+									nz * ny * (ei + 1) + nz * (ej + 1) + (ek + 0),
+									nz * ny * (ei + 1) + nz * (ej + 1) + (ek + 1),
+									center_offset + nz_hex * ny_hex * ei + nz_hex * ej + ek };
+
+				if (((ek % 2 == 0) && (ei % 2 == ej % 2)) || ((ek % 2 == 1) && (ei % 2 != ej % 2))) {
+					// Front
+					out_tets.push_back({ nodes_idx[0], nodes_idx[1], nodes_idx[4], nodes_idx[8] });
+					out_tets.push_back({ nodes_idx[1], nodes_idx[5], nodes_idx[4], nodes_idx[8] });
+					// Left
+					out_tets.push_back({ nodes_idx[0], nodes_idx[2], nodes_idx[1], nodes_idx[8] });
+					out_tets.push_back({ nodes_idx[1], nodes_idx[2], nodes_idx[3], nodes_idx[8] });
+					// Bottom
+					out_tets.push_back({ nodes_idx[0], nodes_idx[4], nodes_idx[6], nodes_idx[8] });
+					out_tets.push_back({ nodes_idx[0], nodes_idx[6], nodes_idx[2], nodes_idx[8] });
+
+					// Back
+					out_tets.push_back({ nodes_idx[3], nodes_idx[2], nodes_idx[7], nodes_idx[8] });
+					out_tets.push_back({ nodes_idx[2], nodes_idx[6], nodes_idx[7], nodes_idx[8] });
+					// Right
+					out_tets.push_back({ nodes_idx[4], nodes_idx[5], nodes_idx[7], nodes_idx[8] });
+					out_tets.push_back({ nodes_idx[4], nodes_idx[7], nodes_idx[6], nodes_idx[8] });
+					// Top
+					out_tets.push_back({ nodes_idx[1], nodes_idx[3], nodes_idx[5], nodes_idx[8] });
+					out_tets.push_back({ nodes_idx[3], nodes_idx[7], nodes_idx[5], nodes_idx[8] });
+				}
+				else {
+					// Front
+					out_tets.push_back({ nodes_idx[0], nodes_idx[1], nodes_idx[5], nodes_idx[8] });
+					out_tets.push_back({ nodes_idx[0], nodes_idx[5], nodes_idx[4], nodes_idx[8] });
+					// Left
+					out_tets.push_back({ nodes_idx[0], nodes_idx[3], nodes_idx[1], nodes_idx[8] });
+					out_tets.push_back({ nodes_idx[0], nodes_idx[2], nodes_idx[3], nodes_idx[8] });
+					// Bottom
+					out_tets.push_back({ nodes_idx[0], nodes_idx[4], nodes_idx[2], nodes_idx[8] });
+					out_tets.push_back({ nodes_idx[2], nodes_idx[4], nodes_idx[6], nodes_idx[8] });
+
+					// Back
+					out_tets.push_back({ nodes_idx[3], nodes_idx[2], nodes_idx[6], nodes_idx[8] });
+					out_tets.push_back({ nodes_idx[3], nodes_idx[6], nodes_idx[7], nodes_idx[8] });
+					// Right
+					out_tets.push_back({ nodes_idx[5], nodes_idx[7], nodes_idx[6], nodes_idx[8] });
+					out_tets.push_back({ nodes_idx[5], nodes_idx[6], nodes_idx[4], nodes_idx[8] });
+					// Top
+					out_tets.push_back({ nodes_idx[1], nodes_idx[3], nodes_idx[7], nodes_idx[8] });
+					out_tets.push_back({ nodes_idx[1], nodes_idx[7], nodes_idx[5], nodes_idx[8] });
+				}
+			}
+		}
+	}
+}
 void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const bool generate_normals)
 {
 	vtkio::VTKFile vtk_file;
