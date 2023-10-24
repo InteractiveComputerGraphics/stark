@@ -13,11 +13,14 @@ void andreas_cantilever()
 	settings.output.output_directory = BASE_PATH + "/andreas_cantilever";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
-	settings.execution.end_simulation_time = 10.0;
+	settings.simulation.adaptive_time_step.set(1.0/60.0, 1.0/60.0, 1.0/60.0);
+	settings.execution.end_simulation_time = 1.5;
 	settings.contact.collisions_enabled = false;
 	settings.contact.friction_enabled = false;
 
-	settings.newton.project_to_PD = false;
+	settings.newton.newton_tol = 1e-4;
+	settings.newton.project_to_PD = true;
+	//settings.execution.n_threads = 1;
 
 	stark::models::Simulation simulation(settings);
 

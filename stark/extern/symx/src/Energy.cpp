@@ -225,7 +225,7 @@ void symx::Energy::evaluate_E_grad_hess(Assembly& assembly, const bool runtime_N
 
 		double* hess_loc = grad_loc + this->n_dofs;
 		if (this->project_to_PD) {
-			project_to_PD_from_pointer(hess_loc, this->n_dofs);
+			project_to_PD_from_pointer(hess_loc, this->n_dofs, /*debug_print_lowest = */ false);
 		}
 
 		for (int block_i = 0; block_i < n_blocks; block_i++) {

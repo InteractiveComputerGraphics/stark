@@ -299,7 +299,7 @@ void stark::models::DeformableSolids::_energies_mechanical(Stark& sim)
 			symx::Scalar detF = F.det();
 			symx::Scalar Ic = F.frobenius_norm_sq();
 			symx::Scalar logJ = symx::log(detF);
-			symx::Scalar energy_density = 0.5 * mu * (Ic - 3.0) - mu * logJ + 0.5 * lambda * logJ.powN(2);
+			symx::Scalar energy_density = 0.5*mu*(Ic - 3.0) - mu*logJ + 0.5*lambda*logJ.powN(2);
 			
 			// Total energy for a linear tet
 			const double w = 1.0 / 6.0;
