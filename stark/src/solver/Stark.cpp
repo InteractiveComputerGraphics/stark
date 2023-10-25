@@ -85,6 +85,7 @@ bool stark::Stark::run(std::function<void()> callback)
 	}
 	this->console.print(fmt::format("\t before_energy_evaluation: {:.3f} s\n", this->logger.doubles["before_energy_evaluation"]), Verbosity::Frames);
 	this->console.print(fmt::format("\t after_energy_evaluation: {:.3f} s\n", this->logger.doubles["after_energy_evaluation"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t is_state_valid: {:.3f} s\n", this->logger.doubles["is_state_valid"]), Verbosity::Frames);
 	this->console.print(fmt::format("\t failed steps: {:.3f} s\n", this->logger.doubles["failed_steps"]), Verbosity::Frames);
 	return true;
 }

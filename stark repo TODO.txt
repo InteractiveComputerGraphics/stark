@@ -14,6 +14,15 @@ Mid priority
 ------------
 	* Need to improve stopping criterion. See Andreas paper.
 		We can easily have a switch to decide if we enforce balance of forces or changes in the visuals of the simulation.
+		
+		Newton and CG non-smart and non-adaptive tolerances might be the real bottleneck here.
+		We can surely use a combined Newton-CG solver with much better criteria that should be *much* faster than what we got.
+		Projection might play a significant role here:
+			I could run large time steps with 1e-8 CG tolerance with projection, but not without projection. I had to go back to 1e-12.
+		Hard-coded tolerances are resolution dependent: stuff that works well for fine cloths (100x100), works pooly for very fine cloths (400x400).
+		
+		Note: Just hard-coded weaker CG convergence leads to more Newton iterations, being slower overall.
+		
 	* With the working project_to_PD, the door is open to much more efficient simulations as we can actually control the time step size.
 		Very large dt still is slower. But we no longer are forced to sub ms.
 		Now making the projection to PD faster would make much more sense.
