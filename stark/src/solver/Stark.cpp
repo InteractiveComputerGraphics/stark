@@ -68,7 +68,7 @@ bool stark::Stark::run(std::function<void()> callback)
 		this->console.print(fmt::format("\t # CG_iterations/newton: {:.1f}\n", (double)this->logger.ints["CG_iterations"]/(double)this->logger.ints["newton_iterations"]), Verbosity::Frames);
 	}
 	this->console.print(fmt::format("\t # line_search/newton: {:.1f}\n", (double)this->logger.ints["line_search_iterations"]/(double)this->logger.ints["newton_iterations"]), Verbosity::Frames);
-	this->console.print(fmt::format("\t avg dt: {:.6f} ms\n", this->logger.doubles["avg dt"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t avg dt: {:.6f} ms\n", 1000.0*this->logger.doubles["avg dt"]), Verbosity::Frames);
 	this->console.print(fmt::format("\t cr: {:.1f}\n", this->logger.doubles["cr"]), Verbosity::Frames);
 
 	//// Runtime
@@ -83,6 +83,8 @@ bool stark::Stark::run(std::function<void()> callback)
 	else {
 		this->console.print(fmt::format("\t directLU: {:.3f} s\n", this->logger.doubles["directLU"]), Verbosity::Frames);
 	}
+	this->console.print(fmt::format("\t before_energy_evaluation: {:.3f} s\n", this->logger.doubles["before_energy_evaluation"]), Verbosity::Frames);
+	this->console.print(fmt::format("\t after_energy_evaluation: {:.3f} s\n", this->logger.doubles["after_energy_evaluation"]), Verbosity::Frames);
 	this->console.print(fmt::format("\t failed steps: {:.3f} s\n", this->logger.doubles["failed_steps"]), Verbosity::Frames);
 	return true;
 }
@@ -113,7 +115,7 @@ bool stark::Stark::run_one_step()
 			this->logger.append_to_series("dt", this->settings.simulation.adaptive_time_step.value);
 			this->logger.append_to_series("time", this->current_time);
 			this->logger.append_to_series("frame", this->current_frame);
-			this->logger.set("avg dt [ms]", 1000.0*this->current_time / (double)this->logger.ints["time_steps"]);
+			this->logger.set("avg dt", this->current_time / (double)this->logger.ints["time_steps"]);
 			this->logger.set("cr", this->logger.doubles["step"] / this->current_time);
 
 			this->callbacks.run_after_time_step();

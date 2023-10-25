@@ -12,6 +12,13 @@ High priority
 
 Mid priority
 ------------
+	* Need to improve stopping criterion. See Andreas paper.
+		We can easily have a switch to decide if we enforce balance of forces or changes in the visuals of the simulation.
+	* With the working project_to_PD, the door is open to much more efficient simulations as we can actually control the time step size.
+		Very large dt still is slower. But we no longer are forced to sub ms.
+		Now making the projection to PD faster would make much more sense.
+		Implement project-on-demand. The problem is that it's going to be required *always* at large time steps...
+	
 	* System to export frames as images so they can be inspected when running on the cluster.
 		Polyscope has few and simple dependencies and uses OpenGL to generate images from meshes
 		It is not ideal that uses OpenGL instead of software simulated rendering, but if you don't have OpenGL in a server, also you cannot open the images

@@ -26,11 +26,18 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 
 		// Linear system
 		//// Evaluate and assemble
-		logger.start_timing("evaluate_E_grad_hess");
+		logger.start_timing("before_energy_evaluation");
 		callbacks.run_before_energy_evaluation();
+		logger.stop_timing_add("before_energy_evaluation");
+
+		logger.start_timing("evaluate_E_grad_hess");
 		symx::Assembled assembled = global_energy.evaluate_E_grad_hess(settings.debug.symx_check_for_NaNs);
-		callbacks.run_after_energy_evaluation();
 		logger.stop_timing_add("evaluate_E_grad_hess");
+
+		logger.start_timing("after_energy_evaluation");
+		callbacks.run_after_energy_evaluation();
+		logger.stop_timing_add("after_energy_evaluation");
+
 		logger.add_to_timer("compiled_E_g_h (acc)", assembled.compiled_runtime);
 		console.print(fmt::format("dE0 = {:.2e} | ", assembled.grad->maxCoeff()), Verbosity::NewtonIterations);
 
@@ -94,11 +101,18 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		console.print(fmt::format("max step = {:.2e} | ", step), Verbosity::NewtonIterations);
 
 		// Convergence?
-		logger.start_timing("evaluate_E_grad");
+		logger.start_timing("before_energy_evaluation");
 		callbacks.run_before_energy_evaluation();
+		logger.stop_timing_add("before_energy_evaluation");
+
+		logger.start_timing("evaluate_E_grad");
 		assembled = global_energy.evaluate_E_grad(settings.debug.symx_check_for_NaNs);
-		callbacks.run_after_energy_evaluation();
 		logger.stop_timing_add("evaluate_E_grad");
+
+		logger.start_timing("after_energy_evaluation");
+		callbacks.run_after_energy_evaluation();
+		logger.stop_timing_add("after_energy_evaluation");
+
 		logger.add_to_timer("compiled_E_g (acc)", assembled.compiled_runtime);
 		residual = assembled.grad->maxCoeff();
 		console.print(fmt::format("dE1 = {:.2e}", residual), Verbosity::NewtonIterations);
@@ -120,11 +134,18 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 			global_energy.set_dofs(this->u1.data());
 
 			// Sequence
-			logger.start_timing("evaluate_E");
+			logger.start_timing("before_energy_evaluation");
 			callbacks.run_before_energy_evaluation();
+			logger.stop_timing_add("before_energy_evaluation");
+
+			logger.start_timing("evaluate_E");
 			assembled = global_energy.evaluate_E(settings.debug.symx_check_for_NaNs);
-			callbacks.run_after_energy_evaluation();
 			logger.stop_timing_add("evaluate_E");
+
+			logger.start_timing("after_energy_evaluation");
+			callbacks.run_after_energy_evaluation();
+			logger.stop_timing_add("after_energy_evaluation");
+
 			logger.add_to_timer("compiled_E (acc)", assembled.compiled_runtime);
 
 			// Counters
