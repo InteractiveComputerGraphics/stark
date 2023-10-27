@@ -16,7 +16,7 @@ int main()
 	//collision_cloth_parallel_edge_test_rotation();
 	//collision_cloth_parallel_edge_test_shear();
 	//collision_cloth_parallel_edge_test_slide();
-	cloth_wrap();
+	//cloth_wrap();
 
 	//cloth_friction_slope_test();
 	//cloth_friction_corner();
@@ -33,7 +33,7 @@ int main()
 	// ------------------------- INTERACTIONS -------------------------
 	//interaction_cloth_rb();
 	//interaction_cloth_rb_bowl();
-	//laundry_cloth();
+	laundry_cloth();
 
 
 	// ------------------------- KOBUKI -------------------------
@@ -43,9 +43,11 @@ int main()
 	//rolling_towel();
 	//kobuki_v_towel_suite();
 
+
 	// ------------------------- GRIPPER -------------------------
 	//gripper_box();
 	//gripper_cup(5e-3);
+
 
 	// ------------------------- DEFORMABLE VOLUMETRICS -------------------------
 	//andreas_cantilever();

@@ -94,10 +94,11 @@ void laundry_cloth()
 	settings.output.fps = 30;
 
 	settings.execution.end_simulation_time = 20.0;
-	settings.simulation.adaptive_time_step.set(0.0, 0.002, 0.002);
+	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
 	settings.newton.max_newton_iterations = 20;
 	settings.newton.max_line_search_iterations = 10;
-	settings.debug.line_search_output = false;
+	settings.newton.newton_tol = 1e-3;
+	settings.newton.cg_tol = 1e-10;
 
 	settings.contact.adaptive_contact_stiffness.set(1e4, 1e4, 1e12);
 	settings.contact.adaptive_contact_stiffness.success_multiplier = 0.8;
@@ -126,9 +127,9 @@ void laundry_cloth()
 	// Cloth
 	const double friction = 1.0;
 	const double scale = 0.34;
-	const int n_cloths = 6;// 20;
-	const double spacing = 0.03;
-	const int cloth_resolution = 80;// 100;
+	const int n_cloths = 8;// 8;
+	const double spacing = 0.025;
+	const int cloth_resolution = 100;// 100;
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<std::array<int, 3>> triangles;
 	stark::utils::generate_triangular_grid(vertices, triangles, { -0.5 * scale, -0.5 * scale }, { 0.5 * scale, 0.5 * scale }, { cloth_resolution, cloth_resolution });
