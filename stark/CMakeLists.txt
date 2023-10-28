@@ -86,6 +86,9 @@ set(UTILS_FILES
 	src/utils/MeshWithDynamics.h
 	src/utils/linear_system.cpp
 	src/utils/linear_system.h
+	src/utils/MultiMesh/IntervalVector.h
+	src/utils/MultiMesh/IntervalConnectivity.h
+	src/utils/MultiMesh/Vertices.h
 	)
 
 # Create lireary

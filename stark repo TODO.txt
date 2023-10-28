@@ -1,6 +1,24 @@
 stark repo TODO
 ===============
 
+
+Unified deformables refactor
+----------------------------
+	* Expand MultiMesh: .update(int id) & .remove(int id)
+	* Test Multimesh logic. Do it. It's impossible it is correct.
+	* Indices/identifiers cannot change, at least at export time.
+
+	* Write down somewhere the reasons for the all-concatenated deformables:
+		"Don't bring the application complexities into the core of the solver"
+		Multiple meshes, per physical system, remeshing, adding, deleting on the fly, ...
+		This should be handled as logic/integer operations in a middle level of abstraction
+		between the user API and the core of the solver, where it's just sorting numbers.
+		Bringing this to the core of the derivatives and assembly brings so much complexity to a place that doesn't need it at all.
+
+	Don't worry about export now. It is completely detached from simulation and it will have to be overhaul anyway.
+		I should be able to name objects for export, for example.
+
+
 High priority
 -------------
 	* Lambdas to log the parameters of each system
