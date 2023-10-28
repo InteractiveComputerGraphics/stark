@@ -17,6 +17,17 @@ Unified deformables refactor
 
 	Don't worry about export now. It is completely detached from simulation and it will have to be overhaul anyway.
 		I should be able to name objects for export, for example.
+		
+	* Cross energies
+		Contact + friction
+		Attachments
+		Lumped mass inertia + velocity damping
+		Strain limiting + Damping
+		
+	using Vertices = IntervalVector<Eigen::Vector3d>;
+	using Edges = IntervalConnectivity<2>;
+	using Triangles = IntervalConnectivity<3>;
+	using Tets = IntervalConnectivity<4>;
 
 
 High priority
@@ -30,6 +41,7 @@ High priority
 
 Mid priority
 ------------
+	* Split the codebase into StarkCore/StarkLib (solver/engine) and Stark ("models")
 	* Need to improve stopping criterion. See Andreas paper.
 		We can easily have a switch to decide if we enforce balance of forces or changes in the visuals of the simulation.
 		

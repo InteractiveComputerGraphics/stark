@@ -4,6 +4,7 @@
 #include <array>
 #include <cassert>
 
+
 namespace stark::utils
 {
 	/**
@@ -206,16 +207,16 @@ namespace stark::utils
 	template<typename T>
 	inline void IntervalVector<T>::_assert_existing_set(const int set_id) const
 	{
-		assert(set_id >= 0 && set_id < this->get_n_sets() && "set_id out of range");
+		assert(set_id >= 0 && set_id < this->get_n_sets() && "IntervalVector set_id out of range");
 	}
 	template<typename T>
 	inline void IntervalVector<T>::_assert_local_idx(const int set_id, const int local_idx) const
 	{
-		assert(local_idx >= 0 && local_idx < this->get_set_size(set_id) && "local_idx out of range");
+		assert(local_idx >= 0 && local_idx < this->get_set_size(set_id) && "IntervalVector local_idx out of range");
 	}
 	template<typename T>
 	inline void IntervalVector<T>::_assert_global_idx(const int global_idx) const
 	{
-		assert(global_idx >= 0 && global_idx < this->offsets.back() && "global_idx out of range");
+		assert(global_idx >= 0 && global_idx < this->offsets.back() && "IntervalVector global_idx out of range");
 	}
 }

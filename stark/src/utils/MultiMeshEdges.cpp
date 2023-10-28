@@ -5,7 +5,7 @@
 stark::utils::MultiMeshEdges::MultiMeshEdges(const MultiMesh<3>& triangle_mesh)
 {
 	this->connectivity.clear();
-	utils::find_edges(this->connectivity, triangle_mesh.connectivity, triangle_mesh.get_n_vertices());
+	utils::find_edges_from_simplices(this->connectivity, triangle_mesh.connectivity, triangle_mesh.get_n_vertices());
 
 	// Find groups
 	this->connectivity_offsets = {0};

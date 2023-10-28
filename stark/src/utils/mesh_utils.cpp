@@ -70,18 +70,6 @@ double stark::utils::signed_tetra_volume(const Eigen::Vector3d& p0, const Eigen:
 	return std::abs(unsigned_tetra_volume(p0, p1, p2, p3));
 }
 
-void stark::utils::find_edges(std::vector<std::array<int, 2>>& out_edges, const std::vector<std::array<int, 3>>& triangles, const int n_nodes)
-{
-	out_edges.reserve(3 * triangles.size());
-	for (const std::array<int, 3>&triangle : triangles) {
-		out_edges.push_back({ std::min(triangle[0], triangle[1]), std::max(triangle[0], triangle[1]) });
-		out_edges.push_back({ std::min(triangle[1], triangle[2]), std::max(triangle[1], triangle[2]) });
-		out_edges.push_back({ std::min(triangle[2], triangle[0]), std::max(triangle[2], triangle[0]) });
-	}
-	std::sort(out_edges.begin(), out_edges.end(), [&](const std::array<int, 2>& a, const std::array<int, 2>& b) { return a[0] * n_nodes + a[1] < b[0] * n_nodes + b[1]; });
-	auto end_unique = std::unique(out_edges.begin(), out_edges.end());
-	out_edges.erase(end_unique, out_edges.end());
-}
 void stark::utils::find_node_node_map_simplex(std::vector<std::vector<int>>& output, const int32_t* connectivity, const int32_t n_simplices, const int32_t n_nodes_per_simplex, const int32_t n_nodes)
 {
 	output.resize(n_nodes);
@@ -114,7 +102,7 @@ void stark::utils::find_internal_angles(std::vector<std::array<int, 4>>& interna
 	}
 
 	std::vector<std::array<int, 2>> edges;
-	find_edges(edges, triangles, n_nodes);
+	find_edges_from_simplices(edges, triangles, n_nodes);
 
 	std::vector<int> buffer;
 	internal_angles.reserve(edges.size());

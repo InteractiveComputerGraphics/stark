@@ -2,6 +2,8 @@
 #include <vector>
 #include <array>
 #include <string>
+#include <type_traits>
+
 
 #include <Eigen/Dense>
 #include <vtkio>
@@ -25,7 +27,8 @@ namespace stark::utils
 
 	// Meshes
 	//// Topology
-	void find_edges(std::vector<std::array<int, 2>>& out_edges, const std::vector<std::array<int, 3>>& triangles, const int n_nodes);
+	template<std::size_t N>
+	void find_edges_from_simplices(std::vector<std::array<int, 2>>& out_edges, const std::vector<std::array<int, N>>& simplices, const int n_nodes);
 	void find_node_node_map_simplex(std::vector<std::vector<int>>& output, const int32_t* connectivity, const int32_t n_simplices, const int32_t n_nodes_per_simplex, const int32_t n_nodes);
 	void find_internal_angles(std::vector<std::array<int, 4>>& internal_edges, const std::vector<std::array<int, 3>>& triangles, const int n_nodes);
 
@@ -44,4 +47,22 @@ namespace stark::utils
 	void scale(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& scale);
 	void scale(std::vector<Eigen::Vector3d>& points, const double scale);
 	void mirror(std::vector<Eigen::Vector3d>& points, const int dim, const double pivot = 0.0);
+
+
+	// DEFINITIONS ==========================================================================================
+	template<std::size_t N>
+	inline void find_edges_from_simplices(std::vector<std::array<int, 2>>& out_edges, const std::vector<std::array<int, N>>& simplices, const int n_nodes)
+	{
+		out_edges.reserve(N * simplices.size());
+		for (const std::array<int, N>& simplex : simplices) {
+			for (std::size_t i = 0; i < N; i++) {
+				for (std::size_t j = i + 1; j < N; j++) {
+					out_edges.push_back({ std::min(simplex[i], simplex[j]), std::max(simplex[i], simplex[j]) });
+				}
+			}
+		}
+		std::sort(out_edges.begin(), out_edges.end(), [&](const std::array<int, 2>& a, const std::array<int, 2>& b) { return a[0] * n_nodes + a[1] < b[0] * n_nodes + b[1]; });
+		auto end_unique = std::unique(out_edges.begin(), out_edges.end());
+		out_edges.erase(end_unique, out_edges.end());
+	}
 }

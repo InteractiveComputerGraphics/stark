@@ -66,6 +66,9 @@ set(MODELS_FILES
 	src/models/Interactions.cpp
 	src/models/RB_Deformable_Contacts.h
 	src/models/RB_Deformable_Friction.h
+	src/models/deformables/interval_types.h
+	src/models/deformables/Deformables.h
+	src/models/deformables/Deformables.cpp
 	)
 
 set(UTILS_FILES
@@ -88,7 +91,6 @@ set(UTILS_FILES
 	src/utils/linear_system.h
 	src/utils/MultiMesh/IntervalVector.h
 	src/utils/MultiMesh/IntervalConnectivity.h
-	src/utils/MultiMesh/Vertices.h
 	)
 
 # Create lireary

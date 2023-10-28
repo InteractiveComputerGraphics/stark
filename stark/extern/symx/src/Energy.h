@@ -150,7 +150,7 @@ namespace symx
 	template<typename STATIC_VECTOR>
 	inline Vector Energy::make_vector(STATIC_VECTOR& arr, const std::string name)
 	{
-		return this->make_vector(l2data_double(arr), sizeof(STATIC_VECTOR)/8, name);
+		return this->make_vector(l2data_double(arr), sizeof(STATIC_VECTOR)/sizeof(double), name);
 	}
 	template<typename DYNAMIC_VECTOR>
 	inline Scalar Energy::make_scalar(const DYNAMIC_VECTOR& arr, const Index& idx, const std::string name)
@@ -160,7 +160,7 @@ namespace symx
 	template<typename STATIC_VECTOR>
 	inline Vector Energy::make_vector(std::vector<STATIC_VECTOR>& arr, const Index& idx, const std::string name)
 	{
-		return this->make_vector(l2data_double(arr), sizeof(STATIC_VECTOR)/8, idx, name);
+		return this->make_vector(l2data_double(arr), sizeof(STATIC_VECTOR)/sizeof(double), idx, name);
 	}
 	template<typename DYNAMIC_VECTOR>
 	inline Vector Energy::make_vector(DYNAMIC_VECTOR& arr, const int32_t stride, const Index& idx, const std::string name)
@@ -170,7 +170,7 @@ namespace symx
 	template<typename STATIC_VECTOR>
 	inline Vector Energy::make_dof_vector(const DoF& dof, std::vector<STATIC_VECTOR>& arr, const Index& idx, const std::string name)
 	{
-		return this->make_dof_vector(dof, l2data_double(arr), sizeof(STATIC_VECTOR)/8, idx, name);
+		return this->make_dof_vector(dof, l2data_double(arr), sizeof(STATIC_VECTOR)/sizeof(double), idx, name);
 	}
 	template<typename DYNAMIC_VECTOR>
 	inline Vector Energy::make_dof_vector(const DoF& dof, DYNAMIC_VECTOR& arr, const int32_t stride, const Index& idx, const std::string name)
@@ -180,7 +180,7 @@ namespace symx
 	template<typename STATIC_VECTOR>
 	inline std::vector<Vector> Energy::make_vectors(std::vector<STATIC_VECTOR>& arr, const std::vector<Index>& indices, const std::string name)
 	{
-		return this->make_vectors(l2data_double(arr), sizeof(STATIC_VECTOR)/8, indices, name);
+		return this->make_vectors(l2data_double(arr), sizeof(STATIC_VECTOR)/sizeof(double), indices, name);
 	}
 	template<typename STATIC_VECTOR>
 	inline std::vector<Vector> Energy::make_vectors(std::vector<STATIC_VECTOR>& arr, const Element& element, const std::string name)
@@ -195,7 +195,7 @@ namespace symx
 	template<typename STATIC_VECTOR>
 	inline std::vector<Vector> Energy::make_dof_vectors(const DoF& dof, std::vector<STATIC_VECTOR>& arr, const std::vector<Index>& indices, const std::string name)
 	{
-		return this->make_dof_vectors(dof, l2data_double(arr), sizeof(STATIC_VECTOR)/8, indices, name);
+		return this->make_dof_vectors(dof, l2data_double(arr), sizeof(STATIC_VECTOR)/sizeof(double), indices, name);
 	}
 	template<typename STATIC_VECTOR>
 	inline std::vector<Vector> Energy::make_dof_vectors(const DoF& dof, std::vector<STATIC_VECTOR>& arr, const Element& element, const std::string name)
