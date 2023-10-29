@@ -36,44 +36,57 @@ namespace stark::models
 		/* ------------------------------  Potentials  ------------------------------ */
 		// Nodal Potentials
 		//// Inertia
-		symx::LabelledConnectivity<2> conn_all_nodes{ { "mesh", "node" } };
-		IntervalVector<double> lumped_mass;  // [kg] per vertex
-		std::vector<double> inertial_damping; // per mesh
+		symx::LabelledConnectivity<2> nodes_conn{ { "mesh", "node" } };
+		IntervalVector<double> nodes_lumped_mass;  // [kg] per vertex
+		std::vector<double> nodes_inertial_damping; // per mesh
 
 		//// Prescribed positions
-		symx::LabelledConnectivity<2> conn_prescribed_positions{ {"idx", "node"}};
+		symx::LabelledConnectivity<2> prescribed_positions_conn{ {"idx", "node"}};
 		std::unordered_map<int, Eigen::Vector3d> prescribed_nodes_map;
 		std::vector<Eigen::Vector3d> prescribed_positions;
 
 		//// Attachments
-		symx::LabelledConnectivity<2> conn_attached_nodes{ {"i", "j"} };
+		symx::LabelledConnectivity<2> attached_nodes_conn{ {"i", "j"} };
 		utils::unordered_array_set<int, 2> attached_nodes_set;
 
 
 		// Edge Potentials
 		//// Strain (rods)
-		symx::LabelledConnectivity<3> conn_rod_segments{ {"mesh", "i", "j"} };
+		symx::LabelledConnectivity<3> rods_conn{ {"mesh", "i", "j"} };
 		std::vector<double> rods_strain_stiffness;  // per mesh
 
 		//// Strain limiting and damping (non-exclusive to rods)
-		symx::LabelledConnectivity<3> conn_all_edges{ {"mesh", "i", "j"}};
-		std::vector<double> strain_limiting_start;  // per mesh
-		std::vector<double> strain_limiting_stiffness;  // per mesh
+		symx::LabelledConnectivity<3> edges_conn{ {"mesh", "i", "j"}};
+		std::vector<double> edges_strain_limiting_start;  // per mesh
+		std::vector<double> edges_strain_limiting_stiffness;  // per mesh
 		
 		//// Strain damping (non-exclusive to rods) [uses conn_all_edges]
-		std::vector<double> edge_strain_damping;  // per mesh
+		std::vector<double> edges_strain_damping;  // per mesh
 
 
 		// Triangle Potentials
 		//// Neo-Hookean strain (cloth and shells)
-		symx::LabelledConnectivity<4> conn_surface_triangles{ {"mesh", "i", "j", "k"} };
-		std::vector<double> surfaces_young_modulus;  // per mesh
-		std::vector<double> surfaces_poisson_ratio;  // per mesh
+		symx::LabelledConnectivity<5> shells_conn_triangles{ {"mesh", "tri", "i", "j", "k"} };
+		std::vector<double> shells_young_modulus;  // per mesh
+		std::vector<double> shells_poisson_ratio;  // per mesh
+		std::vector<std::array<double, 4>> shells_triangle_DXinv;  // per triangle
+		std::vector<double> shells_triangle_rest_area;  // per triangle
 
 		//// Bending (cloth and shells)
+		symx::LabelledConnectivity<6> shells_conn_surface_internal_edges{ {"mesh", "ie", "i", "j", "k", "l"}};
+		std::vector<double> shells_bending_stiffness;  // per mesh
+		std::vector<double> shells_bending_damping;  // per mesh
+		std::vector<std::array<double, 16>> shells_bergou_Q_matrix;  // per internal angle
+		std::vector<double> shells_cutoff_bending_angle_deg;  // per mesh
 
 
-
+		// Tet potentials
+		//// Neo-Hookean strain (volumetrics)
+		symx::LabelledConnectivity<6> volumetrics_conn_tets{ {"mesh", "tet", "i", "j", "k", "l"}};
+		std::vector<double> volumetrics_young_modulus;  // per mesh
+		std::vector<double> volumetrics_poisson_ratio;  // per mesh
+		std::vector<std::array<double, 9>> volumetrics_tet_DXinv;  // per tet
+		std::vector<double> volumetrics_tet_rest_volume;  // per tet
 
 
 		/* ==============================  Methods  ============================== */
@@ -84,6 +97,7 @@ namespace stark::models
 		void _potentials_boundary_conditions(Stark& sim);
 		void _potentials_edge_strain_limiting_and_damping(Stark& sim);
 		void _potentials_mechanics_rods(Stark& sim);
-		void _potentials_mechanics_surface(Stark& sim);
+		void _potentials_mechanics_shells(Stark& sim);
+		void _potentials_mechanics_volumetrics(Stark& sim);
 	};
 }

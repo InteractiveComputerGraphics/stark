@@ -24,7 +24,7 @@ void stark::models::Deformables::init(Stark& sim)
 void stark::models::Deformables::_potentials_inertia(Stark& sim)
 {
 	// Lumped mass inertia
-	sim.global_energy.add_energy("deformables_inertia", this->conn_all_nodes,
+	sim.global_energy.add_energy("deformables_inertia", this->nodes_conn,
 		[&](symx::Energy& energy, symx::Element& node)
 		{
 			//// Create symbols
@@ -32,9 +32,9 @@ void stark::models::Deformables::_potentials_inertia(Stark& sim)
 			symx::Vector x0 = energy.make_vector(this->x0.data, node["node"]);
 			symx::Vector v0 = energy.make_vector(this->v0.data, node["node"]);
 			symx::Vector a = energy.make_vector(this->a.data, node["node"]);
-			symx::Scalar mass = energy.make_scalar(this->lumped_mass.data, node["node"]);
+			symx::Scalar mass = energy.make_scalar(this->nodes_lumped_mass.data, node["node"]);
 
-			symx::Scalar inertial_damping = energy.make_scalar(this->inertial_damping, node["mesh"]);
+			symx::Scalar inertial_damping = energy.make_scalar(this->nodes_inertial_damping, node["mesh"]);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 			symx::Vector gravity = energy.make_vector(sim.settings.simulation.gravity);
 
@@ -51,7 +51,7 @@ void stark::models::Deformables::_potentials_inertia(Stark& sim)
 void stark::models::Deformables::_potentials_boundary_conditions(Stark& sim)
 {
 	// Prescribed nodes
-	sim.global_energy.add_energy("deformables_prescribed_positions", this->conn_prescribed_positions,
+	sim.global_energy.add_energy("deformables_prescribed_positions", this->prescribed_positions_conn,
 		[&](symx::Energy& energy, symx::Element& node)
 		{
 			//// Create symbols
@@ -71,7 +71,7 @@ void stark::models::Deformables::_potentials_boundary_conditions(Stark& sim)
 	);
 
 	// Attachments
-	sim.global_energy.add_energy("deformables_attached_nodes", this->conn_attached_nodes,
+	sim.global_energy.add_energy("deformables_attached_nodes", this->attached_nodes_conn,
 		[&](symx::Energy& energy, symx::Element& node_pair)
 		{
 			//// Create symbols
@@ -92,7 +92,7 @@ void stark::models::Deformables::_potentials_boundary_conditions(Stark& sim)
 void stark::models::Deformables::_potentials_edge_strain_limiting_and_damping(Stark& sim)
 {
 	// Edge strain limiting
-	sim.global_energy.add_energy("deformables_edge_strain_limiting", this->conn_all_edges,
+	sim.global_energy.add_energy("deformables_edge_strain_limiting", this->edges_conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Index> edge = { conn["i"], conn["j"] };
@@ -101,8 +101,8 @@ void stark::models::Deformables::_potentials_edge_strain_limiting_and_damping(St
 			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dof, this->v1.data, edge);
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->x0.data, edge);
 			std::vector<symx::Vector> X = energy.make_vectors(this->X.data, edge);
-			symx::Scalar strain_limiting_start = energy.make_scalar(this->strain_limiting_start, conn["mesh"]);
-			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, conn["mesh"]);
+			symx::Scalar strain_limiting_start = energy.make_scalar(this->edges_strain_limiting_start, conn["mesh"]);
+			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->edges_strain_limiting_stiffness, conn["mesh"]);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 
 			// Time integration
@@ -119,7 +119,7 @@ void stark::models::Deformables::_potentials_edge_strain_limiting_and_damping(St
 	);
 
 	// Edge strain damping
-	sim.global_energy.add_energy("deformables_edge_strain_damping", this->conn_all_edges,
+	sim.global_energy.add_energy("deformables_edge_strain_damping", this->edges_conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Index> edge = { conn["i"], conn["j"] };
@@ -127,7 +127,7 @@ void stark::models::Deformables::_potentials_edge_strain_limiting_and_damping(St
 			// Create symbols
 			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dof, this->v1.data, edge);
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->x0.data, edge);
-			symx::Scalar damping = energy.make_scalar(this->edge_strain_damping, conn["mesh"]);
+			symx::Scalar damping = energy.make_scalar(this->edges_strain_damping, conn["mesh"]);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 
 			// Time integration
@@ -144,7 +144,7 @@ void stark::models::Deformables::_potentials_edge_strain_limiting_and_damping(St
 void stark::models::Deformables::_potentials_mechanics_rods(Stark& sim)
 {
 	// Edge strain limiting
-	sim.global_energy.add_energy("deformables_rod_segment_strain", this->conn_rod_segments,
+	sim.global_energy.add_energy("deformables_rod_segment_strain", this->rods_conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Index> edge = { conn["i"], conn["j"] };
@@ -168,52 +168,110 @@ void stark::models::Deformables::_potentials_mechanics_rods(Stark& sim)
 		}
 	);
 }
-void stark::models::Deformables::_potentials_mechanics_surface(Stark& sim)
+void stark::models::Deformables::_potentials_mechanics_shells(Stark& sim)
 {
 	// Triangle strain
-	sim.global_energy.add_energy("deformables_surfaces_triangle_strain", this->conn_surface_triangles,
+	sim.global_energy.add_energy("deformables_shells_triangle_strain", this->shells_conn_triangles,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			// Unpack connectivity
-			std::vector<symx::Index> triangle = conn.slice(1, 4);
+			std::vector<symx::Index> triangle = conn.slice(2, 5);
 
 			// Create symbols
 			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dof, this->v1.data, triangle);
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->x0.data, triangle);
-			std::vector<symx::Vector> X = energy.make_vectors(this->X.data, triangle);
-			symx::Scalar E = energy.make_scalar(this->surfaces_young_modulus, conn["mesh"]);
-			symx::Scalar nu = energy.make_scalar(this->surfaces_poisson_ratio, conn["mesh"]);
+			symx::Matrix DXinv = energy.make_matrix(this->shells_triangle_DXinv, { 2, 2 }, conn["tri"]);
+			symx::Scalar rest_area = energy.make_scalar(this->shells_triangle_rest_area, conn["tri"]);
+			symx::Scalar E = energy.make_scalar(this->shells_young_modulus, conn["mesh"]);
+			symx::Scalar nu = energy.make_scalar(this->shells_poisson_ratio, conn["mesh"]);
 			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
 
 			// Time integration
 			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
 
 			// Kinematics
-			//// Jacobian at rest configuration (needs projection to triangle)
-			symx::Vector u = (X[1] - X[0]).normalized();
-			symx::Vector n = u.cross3(X[2] - X[0]);
-			symx::Vector v = u.cross3(n).normalized();
-			symx::Matrix P = symx::Matrix(symx::gather({ u, v }), { 2, 3 });
-			std::vector<symx::Vector> X_ = { P*X[0], P*X[1], P*X[2] };
-			symx::Matrix DX = symx::Matrix(symx::gather({ X_[1] - X_[0], X_[2] - X_[0] }), { 2, 2 }).transpose();
-
-			//// Jacobian at current configuration
 			symx::Matrix Dx_32 = symx::Matrix(symx::gather({ x1[1] - x1[0], x1[2] - x1[0] }), { 2, 3 }).transpose();
-			
-			//// Deformation gradient
-			symx::Matrix F_32 = Dx_32 * DX.inv();  // 3x2
+			symx::Matrix F_32 = Dx_32 * DXinv;  // 3x2
 			symx::Matrix C = F_32.transpose() * F_32;
 
 			// Stable Neo-Hookean strain energy
 			symx::Scalar mu = E / (2.0 * (1.0 + nu));
 			symx::Scalar lambda = (E * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
-			symx::Scalar rest_area = 0.5 * ((X[0] - X[2]).cross3(X[1] - X[2])).norm();
 			symx::Scalar area = 0.5 * ((x1[0] - x1[2]).cross3(x1[1] - x1[2])).norm();
 			symx::Scalar J = area / rest_area;
 			symx::Scalar Ic = C.trace();
 			symx::Scalar logJ = symx::log(J);
 			symx::Scalar energy_density = 0.5 * mu * (Ic - 3.0) - mu * logJ + 0.5 * lambda * logJ.powN(2);
 			symx::Scalar Energy = area * energy_density;
+			energy.set(Energy);
+		}
+	);
+
+	// Bergou06 Bending Energy
+	sim.global_energy.add_energy("deformables_shells_bending", this->shells_conn_surface_internal_edges,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			// Unpack connectivity
+			std::vector<symx::Index> internal_edge = conn.slice(2, 6);
+
+			// Create symbols
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dof, this->v1.data, internal_edge);
+			std::vector<symx::Vector> x0 = energy.make_vectors(this->x0.data, internal_edge);
+			symx::Matrix Q = energy.make_matrix(this->shells_bergou_Q_matrix, { 4, 4 }, conn["ie"]);
+			symx::Scalar stiffness = energy.make_scalar(this->shells_bending_stiffness, conn["mesh"]);
+			symx::Scalar damping = energy.make_scalar(this->shells_bending_damping, conn["mesh"]);
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+
+			// Time integration
+			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+
+			// Energy
+			symx::Scalar E = dt.get_zero();
+			for (int i = 0; i < 3; i++) {
+				symx::Vector x = symx::Vector({ x1[0][i], x1[1][i], x1[2][i], x1[3][i] });
+				symx::Vector v = symx::Vector({ v1[0][i], v1[1][i], v1[2][i], v1[3][i] });
+				E += stiffness * (x.transpose() * Q * x) + 0.5 * damping * dt * (v.transpose() * Q * v);
+			}
+			energy.set(E);
+		}
+	);
+}
+void stark::models::Deformables::_potentials_mechanics_volumetrics(Stark& sim)
+{
+	// Stable Neo-Hookean strain
+	sim.global_energy.add_energy("deformables_volumetrics_tet_strain", this->volumetrics_conn_tets,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			// Unpack connectivity
+			std::vector<symx::Index> tet = conn.slice(2, 6);
+
+			// Create symbols
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dof, this->v1.data, tet);
+			std::vector<symx::Vector> x0 = energy.make_vectors(this->x0.data, tet);
+			symx::Matrix DXinv = energy.make_matrix(this->volumetrics_tet_DXinv, { 3, 3 }, conn["tet"]);
+			symx::Scalar tet_rest_volume = energy.make_scalar(this->volumetrics_tet_rest_volume, conn["tet"]);
+			symx::Scalar E = energy.make_scalar(this->volumetrics_young_modulus, conn["mesh"]);
+			symx::Scalar nu = energy.make_scalar(this->volumetrics_poisson_ratio, conn["mesh"]);
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+
+			// Time integration
+			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+
+			// Kinematics
+			symx::Matrix Dx = symx::Matrix(symx::gather({ x1[1] - x1[0], x1[2] - x1[0], x1[3] - x1[0] }), { 3, 3 }).transpose();
+			symx::Matrix F = Dx * DXinv;
+
+			// [Smith et al. 2022] Stable Neo-Hookean Flesh Simulation
+			// Eq. 49 from [Smith et al. 2022]
+			symx::Scalar mu = E / (2.0 * (1.0 + nu));
+			symx::Scalar lambda = (E * nu) / ((1.0 + nu) * (1.0 - 2.0 * nu)); // 3D
+			symx::Scalar mu_ = 4.0/3.0*mu;
+			symx::Scalar lambda_ = lambda + 5.0/6.0*mu;
+			symx::Scalar detF = F.det();
+			symx::Scalar Ic = F.frobenius_norm_sq();
+			symx::Scalar alpha = 1.0 + mu_ / lambda_ - mu_ / (4.0 * lambda_);
+			symx::Scalar energy_density = 0.5*mu_*(Ic - 3.0) + 0.5*lambda_*(detF - alpha).powN(2) - 0.5*mu_*symx::log(Ic + 1.0);
+			symx::Scalar Energy = energy_density * tet_rest_volume;
 			energy.set(Energy);
 		}
 	);
