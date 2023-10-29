@@ -52,7 +52,7 @@ namespace stark::models
 
 		// Edge Potentials
 		//// Strain (rods)
-		symx::LabelledConnectivity<3> conn_rods{ {"mesh", "i", "j"} };
+		symx::LabelledConnectivity<3> conn_rod_segments{ {"mesh", "i", "j"} };
 		std::vector<double> rods_strain_stiffness;  // per mesh
 
 		//// Strain limiting and damping (non-exclusive to rods)
@@ -61,13 +61,15 @@ namespace stark::models
 		std::vector<double> strain_limiting_stiffness;  // per mesh
 		
 		//// Strain damping (non-exclusive to rods) [uses conn_all_edges]
-		std::vector<double> strain_damping;  // per mesh
-
+		std::vector<double> edge_strain_damping;  // per mesh
 
 
 		// Triangle Potentials
-		//// Strain (cloth and shells)
-		
+		//// Neo-Hookean strain (cloth and shells)
+		symx::LabelledConnectivity<4> conn_surface_triangles{ {"mesh", "i", "j", "k"} };
+		std::vector<double> surfaces_young_modulus;  // per mesh
+		std::vector<double> surfaces_poisson_ratio;  // per mesh
+
 		//// Bending (cloth and shells)
 
 
@@ -81,6 +83,7 @@ namespace stark::models
 		void _potentials_inertia(Stark& sim);
 		void _potentials_boundary_conditions(Stark& sim);
 		void _potentials_edge_strain_limiting_and_damping(Stark& sim);
-		void _potentials_mechanics_edges(Stark& sim);
+		void _potentials_mechanics_rods(Stark& sim);
+		void _potentials_mechanics_surface(Stark& sim);
 	};
 }

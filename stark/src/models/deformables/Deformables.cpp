@@ -89,7 +89,6 @@ void stark::models::Deformables::_potentials_boundary_conditions(Stark& sim)
 		}
 	);
 }
-
 void stark::models::Deformables::_potentials_edge_strain_limiting_and_damping(Stark& sim)
 {
 	// Edge strain limiting
@@ -142,11 +141,10 @@ void stark::models::Deformables::_potentials_edge_strain_limiting_and_damping(St
 		}
 	);
 }
-
 void stark::models::Deformables::_potentials_mechanics_rods(Stark& sim)
 {
 	// Edge strain limiting
-	sim.global_energy.add_energy("deformables_rods_strain", this->conn_rods,
+	sim.global_energy.add_energy("deformables_rod_segment_strain", this->conn_rod_segments,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Index> edge = { conn["i"], conn["j"] };
@@ -167,6 +165,56 @@ void stark::models::Deformables::_potentials_mechanics_rods(Stark& sim)
 			symx::Scalar dl = l - l_rest;
 			symx::Scalar E = strain_stiffness * dl.powN(2) / 2.0;
 			energy.set(E);
+		}
+	);
+}
+void stark::models::Deformables::_potentials_mechanics_surface(Stark& sim)
+{
+	// Triangle strain
+	sim.global_energy.add_energy("deformables_surfaces_triangle_strain", this->conn_surface_triangles,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			// Unpack connectivity
+			std::vector<symx::Index> triangle = conn.slice(1, 4);
+
+			// Create symbols
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dof, this->v1.data, triangle);
+			std::vector<symx::Vector> x0 = energy.make_vectors(this->x0.data, triangle);
+			std::vector<symx::Vector> X = energy.make_vectors(this->X.data, triangle);
+			symx::Scalar E = energy.make_scalar(this->surfaces_young_modulus, conn["mesh"]);
+			symx::Scalar nu = energy.make_scalar(this->surfaces_poisson_ratio, conn["mesh"]);
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+
+			// Time integration
+			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+
+			// Kinematics
+			//// Jacobian at rest configuration (needs projection to triangle)
+			symx::Vector u = (X[1] - X[0]).normalized();
+			symx::Vector n = u.cross3(X[2] - X[0]);
+			symx::Vector v = u.cross3(n).normalized();
+			symx::Matrix P = symx::Matrix(symx::gather({ u, v }), { 2, 3 });
+			std::vector<symx::Vector> X_ = { P*X[0], P*X[1], P*X[2] };
+			symx::Matrix DX = symx::Matrix(symx::gather({ X_[1] - X_[0], X_[2] - X_[0] }), { 2, 2 }).transpose();
+
+			//// Jacobian at current configuration
+			symx::Matrix Dx_32 = symx::Matrix(symx::gather({ x1[1] - x1[0], x1[2] - x1[0] }), { 2, 3 }).transpose();
+			
+			//// Deformation gradient
+			symx::Matrix F_32 = Dx_32 * DX.inv();  // 3x2
+			symx::Matrix C = F_32.transpose() * F_32;
+
+			// Stable Neo-Hookean strain energy
+			symx::Scalar mu = E / (2.0 * (1.0 + nu));
+			symx::Scalar lambda = (E * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
+			symx::Scalar rest_area = 0.5 * ((X[0] - X[2]).cross3(X[1] - X[2])).norm();
+			symx::Scalar area = 0.5 * ((x1[0] - x1[2]).cross3(x1[1] - x1[2])).norm();
+			symx::Scalar J = area / rest_area;
+			symx::Scalar Ic = C.trace();
+			symx::Scalar logJ = symx::log(J);
+			symx::Scalar energy_density = 0.5 * mu * (Ic - 3.0) - mu * logJ + 0.5 * lambda * logJ.powN(2);
+			symx::Scalar Energy = area * energy_density;
+			energy.set(Energy);
 		}
 	);
 }
