@@ -2,34 +2,6 @@ stark repo TODO
 ===============
 
 
-Unified deformables refactor
-----------------------------
-	* Expand MultiMesh: .update(int id) & .remove(int id)
-	* Test Multimesh logic. Do it. It's impossible it is correct.
-	* Indices/identifiers cannot change, at least at export time.
-
-	* Write down somewhere the reasons for the all-concatenated deformables:
-		"Don't bring the application complexities into the core of the solver"
-		Multiple meshes, per physical system, remeshing, adding, deleting on the fly, ...
-		This should be handled as logic/integer operations in a middle level of abstraction
-		between the user API and the core of the solver, where it's just sorting numbers.
-		Bringing this to the core of the derivatives and assembly brings so much complexity to a place that doesn't need it at all.
-
-	Don't worry about export now. It is completely detached from simulation and it will have to be overhaul anyway.
-		I should be able to name objects for export, for example.
-		
-	* Cross energies
-		Contact + friction
-		Attachments
-		Lumped mass inertia + velocity damping
-		Strain limiting + Damping
-		
-	using Vertices = IntervalVector<Eigen::Vector3d>;
-	using Edges = IntervalConnectivity<2>;
-	using Triangles = IntervalConnectivity<3>;
-	using Tets = IntervalConnectivity<4>;
-
-
 High priority
 -------------
 	* Lambdas to log the parameters of each system
@@ -124,6 +96,8 @@ Mid priority
 		
 Low priority
 ------------
+	* Can we take a std::shared_ptr<> to Settings so the user can more intuitively edit it?
+		At the moment, copying it to an internal copy is confusing.
 	* Attachments should not pull to zero distance, but rather keep 1.1*dhat
 	* I really need a OOP system to handle higher level things. Right now, **I** know how to implement a parallel gripper with a logger, but it's impossible for an external person.
 	* Friction groups (or material groups)
@@ -147,7 +121,6 @@ Low priority
 	* Better support for AMR. explicit .update(mesh_id) functions so I can track when to recompute stuff.
 	* Rigid bodies should output standar format poses for easy integration in other softwares.
 	* Friction makes everything too slow. Implement fixed-branched friction energies.
-
 		
 Convergence improvements
 ------------------------
