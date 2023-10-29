@@ -89,3 +89,84 @@ void stark::models::Deformables::_potentials_boundary_conditions(Stark& sim)
 		}
 	);
 }
+
+void stark::models::Deformables::_potentials_edge_strain_limiting_and_damping(Stark& sim)
+{
+	// Edge strain limiting
+	sim.global_energy.add_energy("deformables_edge_strain_limiting", this->conn_all_edges,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			std::vector<symx::Index> edge = { conn["i"], conn["j"] };
+
+			// Create symbols
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dof, this->v1.data, edge);
+			std::vector<symx::Vector> x0 = energy.make_vectors(this->x0.data, edge);
+			std::vector<symx::Vector> X = energy.make_vectors(this->X.data, edge);
+			symx::Scalar strain_limiting_start = energy.make_scalar(this->strain_limiting_start, conn["mesh"]);
+			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, conn["mesh"]);
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+
+			// Time integration
+			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+
+			// Constraint
+			symx::Scalar l_rest = (X[0] - X[1]).norm();
+			symx::Scalar l = (x1[0] - x1[1]).norm();
+			symx::Scalar dl = l - l_rest;
+			symx::Scalar dl_penalty = dl - strain_limiting_start*l_rest;  // absolute stretch that we penalize
+			symx::Scalar E = strain_limiting_stiffness * dl_penalty.powN(3)/3.0;
+			energy.set_with_condition(E, dl_penalty > 0.0);
+		}
+	);
+
+	// Edge strain damping
+	sim.global_energy.add_energy("deformables_edge_strain_damping", this->conn_all_edges,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			std::vector<symx::Index> edge = { conn["i"], conn["j"] };
+
+			// Create symbols
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dof, this->v1.data, edge);
+			std::vector<symx::Vector> x0 = energy.make_vectors(this->x0.data, edge);
+			symx::Scalar damping = energy.make_scalar(this->edge_strain_damping, conn["mesh"]);
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+
+			// Time integration
+			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+
+			// Set energy expression
+			symx::Scalar l = (x1[1] - x1[0]).norm();
+			symx::Scalar l0 = (x0[1] - x0[0]).norm();
+			symx::Scalar Energy = 0.5*dt*damping*((l - l0)/dt).powN(2);
+			energy.set(Energy);
+		}
+	);
+}
+
+void stark::models::Deformables::_potentials_mechanics_rods(Stark& sim)
+{
+	// Edge strain limiting
+	sim.global_energy.add_energy("deformables_rods_strain", this->conn_rods,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			std::vector<symx::Index> edge = { conn["i"], conn["j"] };
+
+			// Create symbols
+			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dof, this->v1.data, edge);
+			std::vector<symx::Vector> x0 = energy.make_vectors(this->x0.data, edge);
+			std::vector<symx::Vector> X = energy.make_vectors(this->X.data, edge);
+			symx::Scalar strain_stiffness = energy.make_scalar(this->rods_strain_stiffness, conn["mesh"]);
+			symx::Scalar dt = energy.make_scalar(sim.settings.simulation.adaptive_time_step.value);
+
+			// Time integration
+			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+
+			// Constraint
+			symx::Scalar l_rest = (X[0] - X[1]).norm();
+			symx::Scalar l = (x1[0] - x1[1]).norm();
+			symx::Scalar dl = l - l_rest;
+			symx::Scalar E = strain_stiffness * dl.powN(2) / 2.0;
+			energy.set(E);
+		}
+	);
+}

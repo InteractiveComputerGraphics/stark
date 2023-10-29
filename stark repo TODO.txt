@@ -41,6 +41,15 @@ High priority
 
 Mid priority
 ------------
+	* Verify edge energies are discretization consistent!
+		Strain, strain limiting, strain damping
+	* Verify damping is consistent with time step (I think it is not, it will apply the same force every time step regardless of time step size... which is correct! Time integration apply the force consistently.)
+		we should document this in a short latex document because it is a pain everytime starting from scratch
+	* Should we really have strain damping factors normalized to strain stiffness?
+		It's in the ICRA paper!
+		This is all numbers at input time. Not in the formulation. It can just be an option.
+		The point was to not need tiny numbers. But I am not sure it is an obvious relation and can be dangerous!
+		We say in the paper that it´s normalized, we could just have input that number into the solver by hand.
 	* Split the codebase into StarkCore/StarkLib (solver/engine) and Stark ("models")
 	* Need to improve stopping criterion. See Andreas paper.
 		We can easily have a switch to decide if we enforce balance of forces or changes in the visuals of the simulation.
@@ -115,6 +124,7 @@ Mid priority
 		
 Low priority
 ------------
+	* Attachments should not pull to zero distance, but rather keep 1.1*dhat
 	* I really need a OOP system to handle higher level things. Right now, **I** know how to implement a parallel gripper with a logger, but it's impossible for an external person.
 	* Friction groups (or material groups)
 		In the loundry machine example, we have 100s of objects and the friction pair table is 100**2, literally for the same number.

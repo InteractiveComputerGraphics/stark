@@ -7,12 +7,14 @@
 
 #include "interval_types.h"
 
+
 namespace stark::models
 {
 	class Deformables
 	{
 	public:
-		/* Fields */
+		/* ==============================  Fields  =============================== */
+		/* ------------------------------  General  ------------------------------ */
 		// Dynamics
 		IntervalVector<Eigen::Vector3d> X;   // Node positions at rest
 		IntervalVector<Eigen::Vector3d> x0;  // Node positions at time n
@@ -27,11 +29,12 @@ namespace stark::models
 		IntervalConnectivity<4> input_tets;
 
 		// Misc
+		symx::DoF dof;
 		bool needs_initialization = true;
 
-		// Potentials
-		symx::DoF dof;
-		
+
+		/* ------------------------------  Potentials  ------------------------------ */
+		// Nodal Potentials
 		//// Inertia
 		symx::LabelledConnectivity<2> conn_all_nodes{ { "mesh", "node" } };
 		IntervalVector<double> lumped_mass;  // [kg] per vertex
@@ -43,16 +46,41 @@ namespace stark::models
 		std::vector<Eigen::Vector3d> prescribed_positions;
 
 		//// Attachments
-		symx::LabelledConnectivity<2> conn_attached_nodes{ {"node_a", "node_b"} };
+		symx::LabelledConnectivity<2> conn_attached_nodes{ {"i", "j"} };
 		utils::unordered_array_set<int, 2> attached_nodes_set;
 
 
-		/* Methods */
+		// Edge Potentials
+		//// Strain (rods)
+		symx::LabelledConnectivity<3> conn_rods{ {"mesh", "i", "j"} };
+		std::vector<double> rods_strain_stiffness;  // per mesh
+
+		//// Strain limiting and damping (non-exclusive to rods)
+		symx::LabelledConnectivity<3> conn_all_edges{ {"mesh", "i", "j"}};
+		std::vector<double> strain_limiting_start;  // per mesh
+		std::vector<double> strain_limiting_stiffness;  // per mesh
+		
+		//// Strain damping (non-exclusive to rods) [uses conn_all_edges]
+		std::vector<double> strain_damping;  // per mesh
+
+
+
+		// Triangle Potentials
+		//// Strain (cloth and shells)
+		
+		//// Bending (cloth and shells)
+
+
+
+
+
+		/* ==============================  Methods  ============================== */
 		void init(Stark& sim);
 
 	private:
 		void _potentials_inertia(Stark& sim);
 		void _potentials_boundary_conditions(Stark& sim);
 		void _potentials_edge_strain_limiting_and_damping(Stark& sim);
+		void _potentials_mechanics_edges(Stark& sim);
 	};
 }
