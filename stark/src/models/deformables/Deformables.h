@@ -28,6 +28,10 @@ namespace stark::models
 		IntervalConnectivity<3> input_triangles;
 		IntervalConnectivity<4> input_tets;
 
+		// Collision meshes
+		IntervalConnectivity<2> collision_edges;
+		IntervalConnectivity<3> collision_triangles;
+
 		// Misc
 		symx::DoF dof;
 		bool needs_initialization = true;

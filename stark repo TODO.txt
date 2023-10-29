@@ -98,6 +98,7 @@ Low priority
 ------------
 	* Can we take a std::shared_ptr<> to Settings so the user can more intuitively edit it?
 		At the moment, copying it to an internal copy is confusing.
+	* Plugin API Generalization so other scientists can actually add and distribute their models without hacking.
 	* Attachments should not pull to zero distance, but rather keep 1.1*dhat
 	* I really need a OOP system to handle higher level things. Right now, **I** know how to implement a parallel gripper with a logger, but it's impossible for an external person.
 	* Friction groups (or material groups)
