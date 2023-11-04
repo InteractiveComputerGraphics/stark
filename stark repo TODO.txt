@@ -1,6 +1,15 @@
 stark repo TODO
 ===============
 
+Oct unification
+---------------
+	* Work with IntervalVector in PointDynamics for now but consider splitting it into one `Interval` and multiple `std::vector`
+	* Need to resolve:
+		- User adding and updating (handlers)
+		- Initialization of sim data
+	* Tests:
+		- Adaptivity. Lot's of questionable update functions everywhere!
+
 
 High priority
 -------------
@@ -230,3 +239,15 @@ Architecture
 		While that sounds good to merge cloth-softbody-rods, we still have a lot of combinations with rigidbody and static.
 		Probably the best option is to do the combinatorial explosion with test and pointers.
 	
+	
+Limitations (things I don't want to support)
+--------------------------------------------
+	* At simulation time...
+		- Removing objects.
+			Just teleport them out of view and freeze them.
+		- Changing energies (start with lumped mass and then change to FEM mass)
+	
+
+
+
+

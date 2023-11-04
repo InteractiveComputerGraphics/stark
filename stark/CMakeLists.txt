@@ -37,6 +37,7 @@ set(SOLVER_FILES
 	src/solver/AdaptiveParameter.h
 	src/solver/NewtonsMethod.cpp
 	src/solver/NewtonsMethod.h
+	src/solver/Energy.h
 	src/solver/Stark.cpp
 	src/solver/Stark.h
 	)
@@ -67,8 +68,12 @@ set(MODELS_FILES
 	src/models/RB_Deformable_Contacts.h
 	src/models/RB_Deformable_Friction.h
 	src/models/deformables/interval_types.h
+	src/models/deformables/PointDynamics.h
+	src/models/deformables/PointDynamics.cpp
 	src/models/deformables/Deformables.h
 	src/models/deformables/Deformables.cpp
+	src/models/deformables/EnergyPointLumpedMassAndDamping.h
+	src/models/deformables/EnergyPointLumpedMassAndDamping.cpp
 	)
 
 set(UTILS_FILES

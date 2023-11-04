@@ -59,7 +59,7 @@ namespace stark::models
 		symx::LabelledConnectivity<3> rods_conn{ {"mesh", "i", "j"} };
 		std::vector<double> rods_strain_stiffness;  // per mesh
 
-		//// Strain limiting and damping (non-exclusive to rods)
+		//// Strain limiting (non-exclusive to rods)
 		symx::LabelledConnectivity<3> edges_conn{ {"mesh", "i", "j"}};
 		std::vector<double> edges_strain_limiting_start;  // per mesh
 		std::vector<double> edges_strain_limiting_stiffness;  // per mesh
