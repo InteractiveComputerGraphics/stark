@@ -24,12 +24,12 @@ namespace stark::utils
 		// Setters
 		void clear();
 		int append(const std::vector<T>& input);
-		void update(const int set_id, const std::vector<T>& input);
+		//void update(const int set_id, const std::vector<T>& input);
 
 		template<typename T_It>
 		int append(const T_It begin, const T_It end);
-		template<typename T_It>
-		void update(const int set_id, const T_It begin, const T_It end);
+		//template<typename T_It>
+		//void update(const int set_id, const T_It begin, const T_It end);
 
 		// Getters
 		int size() const;
@@ -37,6 +37,7 @@ namespace stark::utils
 		int get_set_size(const int set_id) const;
 		int get_begin(const int set_id) const;
 		int get_end(const int set_id) const;
+		std::array<int, 2> get_range(const int set_id) const;
 		int get_global_index(const int set_id, const int local_idx) const;
 		int get_set_bounding_index(const int global_idx) const;
 		int get_set_bounding_index(const int set_id, const int local_idx) const;
@@ -76,29 +77,29 @@ namespace stark::utils
 		this->offsets.push_back((int)this->data.size());
 		return set_id;
 	}
-	template<typename T>
-	inline void IntervalVector<T>::update(const int set_id, const std::vector<T>& input)
-	{
-		this->_assert_existing_set(set_id);
-		this->update(set_id, input.begin(), input.end());
-	}
-	template<typename T>
-	template<typename T_It>
-	inline void IntervalVector<T>::update(const int set_id, const T_It begin, const T_It end)
-	{
-		this->_assert_existing_set(set_id);
+	//template<typename T>
+	//inline void IntervalVector<T>::update(const int set_id, const std::vector<T>& input)
+	//{
+	//	this->_assert_existing_set(set_id);
+	//	this->update(set_id, input.begin(), input.end());
+	//}
+	//template<typename T>
+	//template<typename T_It>
+	//inline void IntervalVector<T>::update(const int set_id, const T_It begin, const T_It end)
+	//{
+	//	this->_assert_existing_set(set_id);
 
-		// Data
-		//// PERFORMANCE: could be done in a single loop if necessary
-		this->data.erase(this->data.begin() + this->get_begin(set_id), this->data.begin() + this->get_end(set_id));
-		this->data.insert(this->data.begin() + this->get_begin(set_id), begin, end);
+	//	// Data
+	//	//// PERFORMANCE: could be done in a single loop if necessary
+	//	this->data.erase(this->data.begin() + this->get_begin(set_id), this->data.begin() + this->get_end(set_id));
+	//	this->data.insert(this->data.begin() + this->get_begin(set_id), begin, end);
 
-		// Offsets
-		const int n_diff = (int)std::distance(begin, end) - this->get_set_size(set_id);
-		for (int set_i = set_id + 1; set_i < (int)this->offsets.size(); set_i++) {
-			this->offsets[set_i] += n_diff;
-		}
-	}
+	//	// Offsets
+	//	const int n_diff = (int)std::distance(begin, end) - this->get_set_size(set_id);
+	//	for (int set_i = set_id + 1; set_i < (int)this->offsets.size(); set_i++) {
+	//		this->offsets[set_i] += n_diff;
+	//	}
+	//}
 	template<typename T>
 	inline void IntervalVector<T>::clear()
 	{
@@ -135,6 +136,11 @@ namespace stark::utils
 	{
 		this->_assert_existing_set(set_id);
 		return this->offsets[set_id + 1];
+	}
+	template<typename T>
+	inline std::array<int, 2> IntervalVector<T>::get_range(const int set_id) const
+	{
+		return {this->get_begin(set_id), this->get_end(set_id)};
 	}
 	template<typename T>
 	inline int IntervalVector<T>::get_global_index(const int set_id, const int local_idx) const

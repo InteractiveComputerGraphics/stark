@@ -74,6 +74,14 @@ set(MODELS_FILES
 	src/models/deformables/Deformables.cpp
 	src/models/deformables/EnergyPointLumpedMassAndDamping.h
 	src/models/deformables/EnergyPointLumpedMassAndDamping.cpp
+	src/models/deformables/Shells.h
+	src/models/deformables/Shells.cpp
+	src/models/deformables/PrescribedPointGroup.h
+	src/models/deformables/PrescribedPointGroup.cpp
+	src/models/deformables/PrescribedPointGroupWithTransformation.h
+	src/models/deformables/PrescribedPointGroupWithTransformation.cpp
+	src/models/deformables/EnergyPointPrescribedPositions.h
+	src/models/deformables/EnergyPointPrescribedPositions.cpp
 	)
 
 set(UTILS_FILES

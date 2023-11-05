@@ -3,7 +3,17 @@ stark repo TODO
 
 Oct unification
 ---------------
+	* I am massively overthinking how to make this design to work by "setting" a complicated energy, which is NOT the task and likely impossible
+	* DO NOT SUPPORT ADAPTIVITY.
+		Things are declared once, and cannot be updated or removed.
+		
+
+	* PrescribedPositions
+		- Offer common lambdas uses cases (distance from line, plane... inside box, sphere...)
+
 	* Work with IntervalVector in PointDynamics for now but consider splitting it into one `Interval` and multiple `std::vector`
+	* `Settings` has things that really should not go into the core. Some stuff has to be placed outside. 
+		Maybe I can add custom entries ?
 	* Need to resolve:
 		- User adding and updating (handlers)
 		- Initialization of sim data
@@ -22,6 +32,8 @@ High priority
 
 Mid priority
 ------------
+	* Add boundary condition helpers
+		The 
 	* Verify edge energies are discretization consistent!
 		Strain, strain limiting, strain damping
 	* Verify damping is consistent with time step (I think it is not, it will apply the same force every time step regardless of time step size... which is correct! Time integration apply the force consistently.)
@@ -105,6 +117,8 @@ Mid priority
 		
 Low priority
 ------------
+	* Versatile Boundary Conditions is a very important part of the simulation but it is hard.
+		I would like to support independent nodes, volume selectors, rigid transformations, activating/deactivating....
 	* Can we take a std::shared_ptr<> to Settings so the user can more intuitively edit it?
 		At the moment, copying it to an internal copy is confusing.
 	* Plugin API Generalization so other scientists can actually add and distribute their models without hacking.
@@ -247,6 +261,17 @@ Limitations (things I don't want to support)
 			Just teleport them out of view and freeze them.
 		- Changing energies (start with lumped mass and then change to FEM mass)
 	
+
+Adaptivity
+----------
+	* BC needs to be solved with bounding volumes that move.
+	* Coarsening should not happen where collisions are active.
+	
+
+
+
+
+
 
 
 
