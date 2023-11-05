@@ -1,9 +1,13 @@
 #pragma once
 
 #include "../../solver/Stark.h"
-#include "PointDynamics.h"
-#include "EnergyPointLumpedMassAndDamping.h"
 #include "interval_types.h"
+#include "PointDynamics.h"
+#include "EnergyPointInertia.h"
+#include "EnergyPointPrescribedPositions.h"
+#include "EnergyTriangleStrain.h"
+#include "EnergyTriangleBendingBergou06.h"
+#include "EnergyEdgeStrain.h"
 
 
 namespace stark::models
@@ -15,11 +19,23 @@ namespace stark::models
 	{
 	public:
 		/* Fields */
-		spPointDynamics dyn;
-		spEnergyPointLumpedMassAndDamping lumped_mass_and_damping;
+		const spPointDynamics dyn;
+		spEnergyPointInertia inertia;
+		spEnergyPointPrescribedPositions prescribed_positions;
+		spEnergyTriangleStrain strain;
+		spEnergyTriangleBendingBergou06 bending_bergou;
+		spEnergyEdgeStrain edge_strain_limiting_and_damping;
 
 		/* Methods */
-		Shells(Stark& stark, spPointDynamics dyn, spEnergyPointLumpedMassAndDamping lumped_mass_and_damping);
+		Shells(
+			Stark& stark, 
+			spPointDynamics dyn, 
+			spEnergyPointInertia inertia,
+			spEnergyPointPrescribedPositions prescribed_positions,
+			spEnergyTriangleStrain strain,
+			spEnergyTriangleBendingBergou06 bending_bergou,
+			spEnergyEdgeStrain edge_strain
+		);
 
 		int add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles);
 	};

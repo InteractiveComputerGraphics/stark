@@ -44,6 +44,16 @@ void stark::models::PrescribedPointGroupWithTransformation::add_from_range(const
 	}
 }
 
+void stark::models::PrescribedPointGroupWithTransformation::add_from_aabb(const std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& center, const Eigen::Vector3d& size)
+{
+	const Eigen::AlignedBox3d aabb = Eigen::AlignedBox3d(center - 0.5 * size, center + 0.5 * size);
+	for (int i = 0; i < (int)points.size(); i++) {
+		if (aabb.contains(points[i])) {
+			this->add(i);
+		}
+	}
+}
+
 Eigen::Vector3d stark::models::PrescribedPointGroupWithTransformation::get_transformed(const Eigen::Vector3d& rest_position, const double sim_time)
 {
 	const double dt = std::min(std::max(0.0, sim_time - this->t_begin), 1.0);

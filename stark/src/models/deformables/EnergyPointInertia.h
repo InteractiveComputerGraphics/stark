@@ -8,7 +8,7 @@
 
 namespace stark::models
 {
-	class EnergyPointLumpedMassAndDamping :
+	class EnergyPointInertia :
 		public Energy
 	{
 	public:
@@ -20,10 +20,10 @@ namespace stark::models
 		std::vector<std::string> labels;  // per obj
 
 		/* Methods */
-		EnergyPointLumpedMassAndDamping(const spPointDynamics dyn);
+		EnergyPointInertia(const spPointDynamics dyn);
 		void declare(Stark& stark);
 		int add(const std::array<int, 2>& node_range, const std::vector<double>& lumped_mass, const double inertial_damping, const std::string label = "");
 		void update(const int id, const std::array<int, 2>& node_range, const std::vector<double>& lumped_mass, const double inertial_damping);
 	};
-	using spEnergyPointLumpedMassAndDamping = std::shared_ptr<EnergyPointLumpedMassAndDamping>;
+	using spEnergyPointInertia = std::shared_ptr<EnergyPointInertia>;
 }

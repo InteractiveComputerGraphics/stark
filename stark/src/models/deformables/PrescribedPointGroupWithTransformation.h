@@ -28,8 +28,7 @@ namespace stark::models
 		void set_angular_velocity(const Eigen::Vector3d& w, const Eigen::Vector3d& rotation_center);
 		void add(const int loc_idx);
 		void add_from_range(const int loc_idx_begin, const int loc_idx_end);
-		template<typename It>
-		void add_from_aabb(It begin, It end, const Eigen::Vector3d& center, const Eigen::Vector3d& size);
+		void add_from_aabb(const std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& center, const Eigen::Vector3d& size);
 		Eigen::Vector3d get_transformed(const Eigen::Vector3d& rest_position, const double sim_time);
 
 		int size() const;
@@ -51,17 +50,4 @@ namespace stark::models
 		Eigen::Vector3d angular_velocity;
 		Eigen::Vector3d rotation_center;
 	};
-
-
-	template<typename It>
-	inline void PrescribedPointGroupWithTransformation::add_from_aabb(It begin, It end, const Eigen::Vector3d& center, const Eigen::Vector3d& size)
-	{
-		const Eigen::AlignedBox3d aabb = Eigen::AlignedBox3d(center - 0.5*size, center + 0.5*size);
-		const int n = (int)std::distance(begin, end);
-		for (int i = 0; i < n; i++) {
-			if (aabb.contains(begin[i])) {
-				this->add(i);
-			}
-		}
-	}
 }

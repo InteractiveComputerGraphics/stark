@@ -1,0 +1,34 @@
+#pragma once
+#include <vector>
+#include <string>
+#include <memory>
+
+#include <Eigen/Dense>
+
+#include "../../solver/Energy.h"
+#include "../../solver/Stark.h"
+#include "PointDynamics.h"
+
+namespace stark::models
+{
+	class EnergyTriangleBendingBergou06 :
+		public Energy
+	{
+	public:
+		/* Fields */
+		const spPointDynamics dyn;
+		symx::LabelledConnectivity<6> conn{ {"idx", "group", "i", "j", "k", "l"} };
+		std::vector<double> stiffness;  // per group
+		std::vector<double> damping;  // per group
+		std::vector<std::array<double, 16>> Q_matrix;  // per ie
+		std::vector<double> cutoff_angle_deg;  // per group
+		std::vector<std::string> labels;  // per group
+
+		/* Methods */
+		EnergyTriangleBendingBergou06(spPointDynamics dyn);
+		void declare(Stark& stark);
+		int add(const int obj_idx, const std::vector<std::array<int, 3>>& triangles, const double stiffness, const double damping, const double cutoff_angle_deg, const std::string label = "");
+		void set_parameters(const int id, const double stiffness, const double damping);
+	};
+	using spEnergyTriangleBendingBergou06 = std::shared_ptr<EnergyTriangleBendingBergou06>;
+}

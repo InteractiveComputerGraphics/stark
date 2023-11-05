@@ -72,16 +72,24 @@ set(MODELS_FILES
 	src/models/deformables/PointDynamics.cpp
 	src/models/deformables/Deformables.h
 	src/models/deformables/Deformables.cpp
-	src/models/deformables/EnergyPointLumpedMassAndDamping.h
-	src/models/deformables/EnergyPointLumpedMassAndDamping.cpp
 	src/models/deformables/Shells.h
 	src/models/deformables/Shells.cpp
 	src/models/deformables/PrescribedPointGroup.h
 	src/models/deformables/PrescribedPointGroup.cpp
 	src/models/deformables/PrescribedPointGroupWithTransformation.h
 	src/models/deformables/PrescribedPointGroupWithTransformation.cpp
+	src/models/deformables/EnergyPointInertia.h
+	src/models/deformables/EnergyPointInertia.cpp
 	src/models/deformables/EnergyPointPrescribedPositions.h
 	src/models/deformables/EnergyPointPrescribedPositions.cpp
+	src/models/deformables/EnergyEdgeStrain.h
+	src/models/deformables/EnergyEdgeStrain.cpp
+	src/models/deformables/EnergyTriangleStrain.h
+	src/models/deformables/EnergyTriangleStrain.cpp
+	src/models/deformables/EnergyTriangleBendingBergou06.h
+	src/models/deformables/EnergyTriangleBendingBergou06.cpp
+	src/models/deformables/EnergyTetStrain.h
+	src/models/deformables/EnergyTetStrain.cpp
 	)
 
 set(UTILS_FILES

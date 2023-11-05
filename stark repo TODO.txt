@@ -7,6 +7,7 @@ Oct unification
 	* DO NOT SUPPORT ADAPTIVITY.
 		Things are declared once, and cannot be updated or removed.
 		
+	* We have many different index types. Do I want to hard-type them? GroupId, ObjId...
 
 	* PrescribedPositions
 		- Offer common lambdas uses cases (distance from line, plane... inside box, sphere...)
@@ -187,6 +188,11 @@ Ideas:
 		
 Documentation
 -------------
+	* The big contention point of the architecture is that we have a global `PointDynamics`
+		When this is explained and justified, everything else becomes much easier to understand.
+		This fundamental decision puts some stress on the mid complexity layer (user layer and core layer remain simple).
+		In order for Stark developers to leverage the power of automation, complexities related to multiple discretization are moved there,
+		where the harm is minimized. The mid-layer is a funnel. The user doesn't know about any of this and the core doesn't know about the user.
 	* DoFs must be non-empty at initialization time. Otherwise they will not be added to SymX.
 	* It needs to be revisited as building something completely from zero ala hello world.
 		There are a lot of error catches we should put in place (like no dofs, no energies, empty stuff...)

@@ -1,11 +1,11 @@
 #include "EnergyPointLumpedMassAndDamping.h"
 
-stark::models::EnergyPointLumpedMassAndDamping::EnergyPointLumpedMassAndDamping(const spPointDynamics dyn)
+stark::models::EnergyPointInertia::EnergyPointInertia(const spPointDynamics dyn)
 	: dyn(dyn)
 {
 }
 
-void stark::models::EnergyPointLumpedMassAndDamping::declare(Stark& stark)
+void stark::models::EnergyPointInertia::declare(Stark& stark)
 {
 	stark.global_energy.add_energy("PointLumpedMassAndDamping", this->conn,
 		[&](symx::Energy& energy, symx::Element& node)
@@ -33,14 +33,14 @@ void stark::models::EnergyPointLumpedMassAndDamping::declare(Stark& stark)
 	);
 }
 
-int stark::models::EnergyPointLumpedMassAndDamping::add(const std::array<int, 2>& node_range, const std::vector<double>& lumped_mass, const double inertial_damping, const std::string label)
+int stark::models::EnergyPointInertia::add(const std::array<int, 2>& node_range, const std::vector<double>& lumped_mass, const double inertial_damping, const std::string label)
 {
 	const int set_id = this->lumped_mass.append(lumped_mass);
 	this->inertial_damping.push_back(inertial_damping);
 	this->labels.push_back(label);
 	return set_id;
 }
-void stark::models::EnergyPointLumpedMassAndDamping::update(const int id, const std::array<int, 2>& node_range, const std::vector<double>& lumped_mass, const double inertial_damping)
+void stark::models::EnergyPointInertia::update(const int id, const std::array<int, 2>& node_range, const std::vector<double>& lumped_mass, const double inertial_damping)
 {
 	this->lumped_mass.update(id, lumped_mass);
 	this->inertial_damping[id] = inertial_damping;

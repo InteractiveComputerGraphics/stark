@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <functional>
 #include <memory>
 
 #include <Eigen/Dense>

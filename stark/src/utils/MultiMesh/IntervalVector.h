@@ -41,8 +41,11 @@ namespace stark::utils
 		int get_global_index(const int set_id, const int local_idx) const;
 		int get_set_bounding_index(const int global_idx) const;
 		int get_set_bounding_index(const int set_id, const int local_idx) const;
+		template<std::size_t N>
+		std::array<int, N> get_global_indices(const int set_id, const std::array<int, N>& local_indices) const;
 
 		// Indexing
+		T* get_begin_ptr(const int set_id);
 		T& operator[](const int global_idx);
 		T& get(const int global_idx);
 		T& get(const int set_id, const int local_idx);
@@ -76,6 +79,18 @@ namespace stark::utils
 		if (set_id == 0) { this->offsets.push_back(0); }
 		this->offsets.push_back((int)this->data.size());
 		return set_id;
+	}
+	template<typename T>
+	template<std::size_t N>
+	inline std::array<int, N> IntervalVector<T>::get_global_indices(const int set_id, const std::array<int, N>& local_indices) const
+	{
+		std::array<int, N> glob;
+
+		for (std::size_t i = 0; i < N; i++) {
+			glob[i] = this->get_global_index(set_id, local_indices[i]);
+		}
+
+		return glob;
 	}
 	//template<typename T>
 	//inline void IntervalVector<T>::update(const int set_id, const std::vector<T>& input)
@@ -169,6 +184,11 @@ namespace stark::utils
 
 
 
+	template<typename T>
+	inline T* IntervalVector<T>::get_begin_ptr(const int set_id)
+	{
+		return this->data.begin() + this->get_begin(set_id);
+	}
 	template<typename T>
 	inline T& IntervalVector<T>::operator[](const int global_idx)
 	{
