@@ -3,6 +3,9 @@ stark repo TODO
 
 Oct unification
 ---------------
+	NEXT: Implement the whole Shells front end
+
+
 	* I am massively overthinking how to make this design to work by "setting" a complicated energy, which is NOT the task and likely impossible
 	* DO NOT SUPPORT ADAPTIVITY.
 		Things are declared once, and cannot be updated or removed.
