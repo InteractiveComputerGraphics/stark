@@ -34,6 +34,18 @@ void stark::models::EnergyPointPrescribedPositions::declare(Stark& stark)
 	);
 }
 
+std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::EnergyPointPrescribedPositions::add_group(const int obj_idx, const std::string label)
+{
+	this->bc_source.emplace_back(obj_idx, label);
+	return this->bc_source.back();
+}
+
+std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::EnergyPointPrescribedPositions::add_group_with_transformation(const int obj_idx, const std::string label)
+{
+	this->bc_transform_source.emplace_back(obj_idx, label);
+	return this->bc_transform_source.back();
+}
+
 void stark::models::EnergyPointPrescribedPositions::_before_time_step(Stark& stark)
 {
 	this->conn.clear();
@@ -48,7 +60,7 @@ void stark::models::EnergyPointPrescribedPositions::_before_time_step(Stark& sta
 
 		const int obj = bc->get_obj_idx();
 		for (int i = 0; i < bc->size(); i++) {
-			const int loc_idx = bc->get_idx(i);
+			const int loc_idx = bc->get_point_idx(i);
 			const Eigen::Vector3d& target = bc->get_target_position(i);
 			const int glob_idx = this->dyn->X.get_global_index(obj, loc_idx);
 			this->conn.numbered_push_back({ glob_idx, group_idx });
@@ -63,7 +75,7 @@ void stark::models::EnergyPointPrescribedPositions::_before_time_step(Stark& sta
 
 		const int obj = bc->get_obj_idx();
 		for (int i = 0; i < bc->size(); i++) {
-			const int loc_idx = bc->get_idx(i);
+			const int loc_idx = bc->get_point_idx(i);
 			const int glob_idx = this->dyn->X.get_global_index(obj, loc_idx);
 			const Eigen::Vector3d& X = this->dyn->X[glob_idx];
 			const Eigen::Vector3d& target = bc->get_transformed(X, stark.current_time);
