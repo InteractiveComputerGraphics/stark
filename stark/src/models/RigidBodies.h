@@ -2,6 +2,7 @@
 #include <vector>
 #include <array>
 #include <unordered_map>
+#include <memory>
 
 #include <Eigen/Dense>
 #include <symx>
@@ -204,4 +205,5 @@ namespace stark::models
 		void _energies_contact(Stark& sim);
 		void _energies_friction(Stark& sim);
 	};
+	using spRigidBodies = std::shared_ptr<RigidBodies>;
 }

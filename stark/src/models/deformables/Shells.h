@@ -8,6 +8,7 @@
 #include "EnergyTriangleStrain.h"
 #include "EnergyTriangleBendingBergou06.h"
 #include "EnergyEdgeStrain.h"
+#include "EnergyFrictionalContact.h"
 
 
 namespace stark::models
@@ -25,6 +26,7 @@ namespace stark::models
 		spEnergyTriangleStrain strain;
 		spEnergyTriangleBendingBergou06 bending_bergou;
 		spEnergyEdgeStrain edge_strain_limiting_and_damping;
+		spEnergyFrictionalContact contact;
 
 		/* Methods */
 		Shells(
@@ -34,7 +36,8 @@ namespace stark::models
 			spEnergyPointPrescribedPositions prescribed_positions,
 			spEnergyTriangleStrain strain,
 			spEnergyTriangleBendingBergou06 bending_bergou,
-			spEnergyEdgeStrain edge_strain
+			spEnergyEdgeStrain edge_strain,
+			spEnergyFrictionalContact contact
 		);
 
 		int add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles);

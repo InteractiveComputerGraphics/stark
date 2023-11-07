@@ -90,6 +90,9 @@ set(MODELS_FILES
 	src/models/deformables/EnergyTriangleBendingBergou06.cpp
 	src/models/deformables/EnergyTetStrain.h
 	src/models/deformables/EnergyTetStrain.cpp
+	src/models/deformables/contact_and_friction_data.h
+	src/models/deformables/EnergyFrictionalContact.h
+	src/models/deformables/EnergyFrictionalContact.cpp
 	)
 
 set(UTILS_FILES
