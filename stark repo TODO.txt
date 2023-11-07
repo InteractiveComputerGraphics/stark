@@ -24,7 +24,6 @@ Oct unification
 	* Tests:
 		- Adaptivity. Lot's of questionable update functions everywhere!
 
-
 High priority
 -------------
 	* Lambdas to log the parameters of each system
@@ -48,6 +47,7 @@ Mid priority
 		The point was to not need tiny numbers. But I am not sure it is an obvious relation and can be dangerous!
 		We say in the paper that it´s normalized, we could just have input that number into the solver by hand.
 	* Split the codebase into StarkCore/StarkLib (solver/engine) and Stark ("models")
+	* Gast paper has some hints on improving CG, also accounting for adaptive tolerances.
 	* Need to improve stopping criterion. See Andreas paper.
 		We can easily have a switch to decide if we enforce balance of forces or changes in the visuals of the simulation.
 		
@@ -127,6 +127,10 @@ Low priority
 		At the moment, copying it to an internal copy is confusing.
 	* Plugin API Generalization so other scientists can actually add and distribute their models without hacking.
 	* Attachments should not pull to zero distance, but rather keep 1.1*dhat
+	* Local line search step. Each dof has it's own allowed step to avoid locking of the whole simulation just because a node doesn't advance.
+		This is very discussed in literature but not sure the practical implications for me that I do very close to zero avg line search iterations.
+		It might be more important for quasi-Newton where the search direction is more random.
+	* Check for element inversion in the line search. This is kind of straightforward and guarantees that Newton doesn't try a stupid step.
 	* I really need a OOP system to handle higher level things. Right now, **I** know how to implement a parallel gripper with a logger, but it's impossible for an external person.
 	* Friction groups (or material groups)
 		In the loundry machine example, we have 100s of objects and the friction pair table is 100**2, literally for the same number.
@@ -149,6 +153,7 @@ Low priority
 	* Better support for AMR. explicit .update(mesh_id) functions so I can track when to recompute stuff.
 	* Rigid bodies should output standar format poses for easy integration in other softwares.
 	* Friction makes everything too slow. Implement fixed-branched friction energies.
+
 		
 Convergence improvements
 ------------------------
@@ -277,11 +282,4 @@ Adaptivity
 	* Coarsening should not happen where collisions are active.
 	
 
-
-
-
-
-
-
-
-
+	
