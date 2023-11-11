@@ -10,7 +10,7 @@ namespace stark::models
 	/* ================================================================= */
 	/* ===========================  CONTACT  =========================== */
 	/* ================================================================= */
-	struct Contacts_Deformable
+	struct Contacts_Deformables
 	{
 		struct PointTriangle
 		{
@@ -20,9 +20,9 @@ namespace stark::models
 		};
 		struct EdgeEdge
 		{
-			symx::LabelledConnectivity<6> point_point{ { "a_e0", "a_e1", "p", "b_e0", "b_e1", "q" } };
-			symx::LabelledConnectivity<5> point_edge{ { "a_e0", "a_e1", "p", "b_e0", "b_e1" } };
-			symx::LabelledConnectivity<4> edge_edge{ { "a_e0", "a_e1", "b_e0", "b_e1" } };
+			symx::LabelledConnectivity<6> point_point{ { "ea0", "ea1", "p", "eb0", "eb1", "q" } };
+			symx::LabelledConnectivity<5> point_edge{ { "ea0", "ea1", "p", "eb0", "eb1" } };
+			symx::LabelledConnectivity<4> edge_edge{ { "ea0", "ea1", "eb0", "eb1" } };
 		};
 		PointTriangle point_triangle;
 		EdgeEdge edge_edge;
@@ -49,9 +49,9 @@ namespace stark::models
 		};
 		struct EdgeEdge
 		{
-			symx::LabelledConnectivity<8> point_point{ { "a", "b", "a_e0", "a_e1", "p", "b_e0", "b_e1", "q" } };
-			symx::LabelledConnectivity<7> point_edge{ { "a", "b", "a_e0", "a_e1", "p", "b_e0", "b_e1" } };
-			symx::LabelledConnectivity<6> edge_edge{ { "a", "b", "a_e0", "a_e1", "b_e0", "b_e1" } };
+			symx::LabelledConnectivity<8> point_point{ { "a", "b", "ea0", "ea1", "p", "eb0", "eb1", "q" } };
+			symx::LabelledConnectivity<7> point_edge{ { "a", "b", "ea0", "ea1", "p", "eb0", "eb1" } };
+			symx::LabelledConnectivity<6> edge_edge{ { "a", "b", "ea0", "ea1", "eb0", "eb1" } };
 		};
 		PointTriangle point_triangle;
 		EdgeEdge edge_edge;
@@ -68,22 +68,22 @@ namespace stark::models
 		}
 	};
 
-	struct Contacts_RB_Deformable
+	struct Contacts_RB_Deformables
 	{
 		struct PointTriangle
 		{
 			symx::LabelledConnectivity<3> rb_d_point_point{ { "rb", "rb_p_loc", "q" } };
 			symx::LabelledConnectivity<4> rb_d_point_edge{ { "rb", "rb_p_loc", "e0", "e1" } };
 			symx::LabelledConnectivity<5> rb_d_point_triangle{ { "rb", "rb_p_loc", "t0", "t1", "t2" } };
-			symx::LabelledConnectivity<4> rb_d_edge_point{ { "rb", "rb_e0_loc", "rb_e1_loc", "p" } };
-			symx::LabelledConnectivity<5> rb_d_triangle_point{ { "rb", "rb_t0_loc", "rb_t1_loc", "rb_t2_loc", "p" } };
+			symx::LabelledConnectivity<4> rb_d_edge_point{ { "rb", "reb0_loc", "reb1_loc", "p" } };
+			symx::LabelledConnectivity<5> rb_d_triangle_point{ { "rb", "rt0_loc", "rt1_loc", "rt2_loc", "p" } };
 		};
 		struct EdgeEdge
 		{
-			symx::LabelledConnectivity<7> rb_d_point_point{ { "rb", "rb_e0", "rb_e1", "rb_p", "e0", "e1", "q" } };
-			symx::LabelledConnectivity<6> rb_d_point_edge{ { "rb", "rb_e0", "rb_e1", "rb_p", "e0", "e1" } };
-			symx::LabelledConnectivity<5> rb_d_edge_edge{ { "rb", "rb_e0", "rb_e1", "e0", "e1" } };
-			symx::LabelledConnectivity<6> rb_d_edge_point{ { "rb", "rb_e0", "rb_e1", "e0", "e1", "q" } };
+			symx::LabelledConnectivity<7> rb_d_point_point{ { "rb", "reb0", "reb1", "rb_p", "e0", "e1", "q" } };
+			symx::LabelledConnectivity<6> rb_d_point_edge{ { "rb", "reb0", "reb1", "rb_p", "e0", "e1" } };
+			symx::LabelledConnectivity<5> rb_d_edge_edge{ { "rb", "reb0", "reb1", "e0", "e1" } };
+			symx::LabelledConnectivity<6> rb_d_edge_point{ { "rb", "reb0", "reb1", "e0", "e1", "q" } };
 		};
 		PointTriangle point_triangle;
 		EdgeEdge edge_edge;
@@ -120,7 +120,38 @@ namespace stark::models
 		}
 	};
 
-	struct Friction_Deformable
+	struct FrictionPointEdge
+	{
+		FrictionContact contact;
+		std::vector<std::array<double, 2>> bary;
+		void clear()
+		{
+			this->contact.clear();
+			this->bary.clear();
+		}
+	};
+	struct FrictionPointTriangle
+	{
+		FrictionContact contact;
+		std::vector<std::array<double, 3>> bary;
+		void clear()
+		{
+			this->contact.clear();
+			this->bary.clear();
+		}
+	};
+	struct FrictionEdgeEdge
+	{
+		FrictionContact contact;
+		std::vector<std::array<double, 2>> bary;
+		void clear()
+		{
+			this->contact.clear();
+			this->bary.clear();
+		}
+	};
+
+	struct Friction_Deformables
 	{
 		struct PointPoint
 		{
@@ -129,21 +160,18 @@ namespace stark::models
 		};
 		struct PointEdge
 		{
-			FrictionContact contact;
-			symx::LabelledConnectivity<4> conn{ { "idx", "p", "e0" } };
-			std::vector<std::array<double, 2>> bary;
+			FrictionPointEdge data;
+			symx::LabelledConnectivity<4> conn{ { "idx", "p", "e0", "e1" }};
 		};
 		struct PointTriangle
 		{
-			FrictionContact contact;
+			FrictionPointTriangle data;
 			symx::LabelledConnectivity<5> conn{ { "idx", "p", "t0", "t1", "t2" } };
-			std::vector<std::array<double, 3>> bary;
 		};
 		struct EdgeEdge
 		{
-			FrictionContact contact;
-			symx::LabelledConnectivity<5> conn{ { "idx",  "a_e0", "a_e1", "b_e0", "b_e1" } };
-			std::vector<std::array<double, 2>> bary;
+			FrictionEdgeEdge data;
+			symx::LabelledConnectivity<5> conn{ { "idx",  "ea0", "ea1", "eb0", "eb1" } };
 		};
 
 		PointPoint point_point;
@@ -156,17 +184,14 @@ namespace stark::models
 			this->point_point.contact.clear();
 			this->point_point.conn.clear();
 
-			this->point_edge.contact.clear();
+			this->point_edge.data.clear();
 			this->point_edge.conn.clear();
-			this->point_edge.bary.clear();
 
-			this->point_triangle.contact.clear();
+			this->point_triangle.data.clear();
 			this->point_triangle.conn.clear();
-			this->point_triangle.bary.clear();
 
-			this->edge_edge.contact.clear();
+			this->edge_edge.data.clear();
 			this->edge_edge.conn.clear();
-			this->edge_edge.bary.clear();
 		}
 	};
 
@@ -175,26 +200,22 @@ namespace stark::models
 		struct PointPoint
 		{
 			FrictionContact contact;
-			std::vector<std::array<int32_t, 5>> conn;  // { "idx", "a", "b", "a_p", "b_q" }
-			symx::LabelledConnectivity<5> conn{ { "idx", "p", "q" } };
+			symx::LabelledConnectivity<5> conn{ { "idx", "a", "b", "p", "q" } };
 		};
 		struct PointEdge
 		{
-			FrictionContact contact;
-			symx::LabelledConnectivity<6> conn{ { "idx", "a", "b", "a_p", "b_e0", "b_e1" } };
-			std::vector<std::array<double, 2>> bary;
+			FrictionPointEdge data;
+			symx::LabelledConnectivity<6> conn{ { "idx", "a", "b", "p", "e0", "e1" } };
 		};
 		struct PointTriangle
 		{
-			FrictionContact contact;
-			symx::LabelledConnectivity<7> conn{ { "idx", "a", "b", "a_p", "b_t0", "b_t1", "b_t2" } };
-			std::vector<std::array<double, 3>> bary;
+			FrictionPointTriangle data;
+			symx::LabelledConnectivity<7> conn{ { "idx", "a", "b", "p", "t0", "t1", "t2" } };
 		};
 		struct EdgeEdge
 		{
-			FrictionContact contact;
-			symx::LabelledConnectivity<7> conn{ { "idx", "a", "b", "a_e0", "a_e1", "b_e0", "b_e1" } };
-			std::vector<std::array<double, 2>> bary;
+			FrictionEdgeEdge data;
+			symx::LabelledConnectivity<7> conn{ { "idx", "a", "b", "ea0", "ea1", "eb0", "eb1" } };
 		};
 
 		PointPoint point_point;
@@ -207,21 +228,18 @@ namespace stark::models
 			this->point_point.contact.clear();
 			this->point_point.conn.clear();
 
-			this->point_edge.contact.clear();
+			this->point_edge.data.clear();
 			this->point_edge.conn.clear();
-			this->point_edge.bary.clear();
 
-			this->point_triangle.contact.clear();
+			this->point_triangle.data.clear();
 			this->point_triangle.conn.clear();
-			this->point_triangle.bary.clear();
 
-			this->edge_edge.contact.clear();
+			this->edge_edge.data.clear();
 			this->edge_edge.conn.clear();
-			this->edge_edge.bary.clear();
 		}
 	};
 
-	struct Friction_RB_Deformable
+	struct Friction_RB_Deformables
 	{
 		struct PointPoint
 		{
@@ -243,7 +261,7 @@ namespace stark::models
 		struct EdgeEdge
 		{
 			FrictionContact contact;
-			symx::LabelledConnectivity<6> conn{ { "idx", "rb", "rb_e0", "rb_e1", "e0", "e1" } };
+			symx::LabelledConnectivity<6> conn{ { "idx", "rb", "reb0", "reb1", "e0", "e1" } };
 			std::vector<std::array<double, 2>> bary;
 		};
 		struct EdgePoint

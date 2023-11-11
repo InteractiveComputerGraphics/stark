@@ -6,6 +6,9 @@ Oct unification
 	NEXT: Implement the whole Shells front end
 
 
+	* RigidBodies should have different collision and render meshes.
+	* `stark.settings.contact.friction_displacement_perturbation` is hardcoded now
+
 	* I am massively overthinking how to make this design to work by "setting" a complicated energy, which is NOT the task and likely impossible
 	* DO NOT SUPPORT ADAPTIVITY.
 		Things are declared once, and cannot be updated or removed.
@@ -26,6 +29,7 @@ Oct unification
 
 High priority
 -------------
+	* Cloth strain wrong? " 0.5*mu*(Ic - 3.0)"  ->  -3.0 or 2.0 ???
 	* Lambdas to log the parameters of each system
 	* Clean up the default strain limiting
 	* Why luxo sim is sensitive to kc in the first time step?
@@ -35,6 +39,10 @@ High priority
 
 Mid priority
 ------------
+	* SymX can't use const data arrays?????
+	* Rigid bodies are very complicated. Probably too complicated to be practical.
+		Just to get the velocity of a contact point is insane.
+		Cannot we find an easier formulation?
 	* Add boundary condition helpers
 		The 
 	* Verify edge energies are discretization consistent!

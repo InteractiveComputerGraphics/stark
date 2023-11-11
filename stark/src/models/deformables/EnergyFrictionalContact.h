@@ -16,18 +16,23 @@
 
 namespace stark::models
 {
+	enum class IPCBarrierType { Log, Cubic };
+	enum class IPCFrictionType { C0, C1 };
+
 	class EnergyFrictionalContact :
 		public Energy
 	{
 	public:
 		/* Fields */
-		const spPointDynamics p_dyn;
+		const spPointDynamics dyn;
 		const spRigidBodies rb;
 		IntervalConnectivity<1> points;
 		IntervalConnectivity<2> edges;
 		IntervalConnectivity<3> triangles;
 		utils::unordered_array_map<int, 2, double> pair_coulombs_mu;
 		std::vector<std::string> labels;  // per group
+		IPCBarrierType ipc_barrier_type = IPCBarrierType::Cubic;
+		IPCFrictionType ipc_friction_type = IPCFrictionType::C0;
 
 		// Collision detection
 		tmcd::IntersectionDetection id;
@@ -45,15 +50,49 @@ namespace stark::models
 		/* Methods */
 		EnergyFrictionalContact(const spPointDynamics dyn, const spRigidBodies rb);
 		void declare(Stark& stark);
-		int add(const int obj_idx, const std::vector<std::array<int, 3>>& triangles, const double young_modulus, const double poisson_ratio, const std::string label = "");
-		void set_parameters(const int id, const double young_modulus, const double poisson_ratio);
 
 
 	private:
-		std::vector<symx::Vector> _get_rb_x1(const std::vector<symx::Index>& indices, const symx::Index& rb_idx, const symx::Scalar& dt, symx::Energy& energy);
+		// SymX definitions
+		void _energies_contact_deformables(Stark& stark);
+		void _energies_contact_rb(Stark& stark);
+		void _energies_contact_rb_deformables(Stark& stark);
 
+		void _energies_friction_deformables(Stark& stark);
+		void _energies_friction_rb(Stark& stark);
+		void _energies_friction_rb_deformables(Stark& stark);
 
+		// IPC
+		symx::Scalar _barrier_potential(const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k);
+		symx::Scalar _edge_edge_mollifier(const std::vector<symx::Vector>& ea, const std::vector<symx::Vector>& eb, const std::vector<symx::Vector>& ea_rest, const std::vector<symx::Vector>& eb_rest);
+		symx::Scalar _friction_potential(const symx::Vector& v, const symx::Scalar& fn, const symx::Scalar& mu, const symx::Matrix& T, const symx::Scalar& epsv, const symx::Scalar& dt);
 
+		// SymX setters
+		void _set_barrier_potential(symx::Energy& energy, const Stark& stark, const symx::Scalar& d);
+		void _set_edge_edge_mollified_barrier_potential(symx::Energy& energy, const Stark& stark, const symx::Scalar& d, const std::vector<symx::Vector>& ea, const std::vector<symx::Vector>& eb, const std::vector<symx::Vector>& ea_rest, const std::vector<symx::Vector>& eb_rest);
+		void _set_friction_potential(symx::Energy& energy, const Stark& stark, const symx::Vector& v, const symx::Index& contact_idx, const FrictionContact& contact);
+		void _set_friction_point_edge(symx::Energy& energy, const Stark& stark, const symx::Vector& vp, const std::vector<symx::Vector>& ve, const symx::Index& contact_idx, FrictionPointEdge& data);
+		void _set_friction_point_triangle(symx::Energy& energy, const Stark& stark, const symx::Vector& vp, const std::vector<symx::Vector>& vt, const symx::Index& contact_idx, FrictionPointTriangle& data);
+		void _set_friction_edge_edge(symx::Energy& energy, const Stark& stark, const std::vector<symx::Vector>& vea, const std::vector<symx::Vector>& veb, const symx::Index& contact_idx, FrictionEdgeEdge& data);
+
+		// SymX data-symbol getters
+		//// Rigid bodies
+		std::vector<symx::Vector> _get_rb_v1(symx::Energy& energy, const Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn);
+		std::vector<symx::Vector> _get_rb_x1(symx::Energy& energy, const Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn);
+		std::vector<symx::Vector> _get_rb_X(symx::Energy& energy, const std::vector<symx::Index>& conn);
+		std::array<std::vector<symx::Vector>, 2> _get_rb_edge(symx::Energy& energy, const Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn);
+		std::array<std::vector<symx::Vector>, 3> _get_rb_edge_point(symx::Energy& energy, const Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn);
+
+		//// Deformables
+		std::vector<symx::Vector> _get_d_v1(symx::Energy& energy, const std::vector<symx::Index>& conn);
+		std::vector<symx::Vector> _get_d_x1(symx::Energy& energy, const Stark& stark, const std::vector<symx::Index>& conn);
+		std::vector<symx::Vector> _get_d_X(symx::Energy& energy, const std::vector<symx::Index>& conn);
+		std::array<std::vector<symx::Vector>, 2> _get_d_edge(symx::Energy& energy, const Stark& stark, const std::vector<symx::Index>& conn);
+		std::array<std::vector<symx::Vector>, 3> _get_d_edge_point(symx::Energy& energy, const Stark& stark, const std::vector<symx::Index>& conn);
+
+		// Misc
+		std::string _get_contact_label(const std::string physical_system, const std::string pair) const;
+		std::string _get_friction_label(const std::string physical_system, const std::string pair) const;
 	};
 	using spEnergyFrictionalContact = std::shared_ptr<EnergyFrictionalContact>;
 }

@@ -126,7 +126,7 @@ namespace stark::models
 		utils::unordered_array_map<int, 2, double> mu;
 
 		// Output
-		utils::MultiMesh<3> mesh;  // Always stays at rest positions
+		utils::MultiMesh<3> collision_mesh;  // Always stays at rest positions
 		std::unordered_map<std::string, std::vector<int>> output_labeled_groups;
 
 

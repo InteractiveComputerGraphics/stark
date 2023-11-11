@@ -51,8 +51,8 @@ int stark::models::RigidBodies::add(const std::vector<Eigen::Vector3d>& vertices
 	this->mass.push_back(mass);
 	this->motor_torque.push_back(Eigen::Vector3d::Zero());
 
-	this->mesh.add_mesh(vertices, triangles);
-	this->edges = utils::MultiMeshEdges(this->mesh);
+	this->collision_mesh.add_mesh(vertices, triangles);
+	this->edges = utils::MultiMeshEdges(this->collision_mesh);
 
 	return this->get_n_bodies() - 1;
 }
@@ -310,8 +310,8 @@ Eigen::Vector3d stark::models::RigidBodies::get_point_in_global_coordinates(cons
 }
 Eigen::Vector3d stark::models::RigidBodies::get_point_in_global_coordinates(const int body_id, const int point_i)
 {
-	const int global_point_idx = this->mesh.get_global_vertex_idx(body_id, point_i);
-	return this->get_point_in_global_coordinates(body_id, this->mesh.vertices[global_point_idx]);
+	const int global_point_idx = this->collision_mesh.get_global_vertex_idx(body_id, point_i);
+	return this->get_point_in_global_coordinates(body_id, this->collision_mesh.vertices[global_point_idx]);
 }
 int stark::models::RigidBodies::get_n_bodies() const
 {
@@ -338,15 +338,15 @@ void stark::models::RigidBodies::add_to_output_group(const std::string label, co
 
 void stark::models::RigidBodies::_update_collision_x1(Stark& sim, const double dt)
 {
-	this->collision_x1.resize(this->mesh.vertices.size());
-	for (int rb_i = 0; rb_i < this->mesh.get_n_meshes(); rb_i++) {
+	this->collision_x1.resize(this->collision_mesh.vertices.size());
+	for (int rb_i = 0; rb_i < this->collision_mesh.get_n_meshes(); rb_i++) {
 		const Eigen::Vector3d t1 = time_integration(this->t0[rb_i], this->v1[rb_i], dt);
 		const Eigen::Quaterniond q1 = quat_time_integration(this->q0[rb_i], this->w1[rb_i], dt);
 		const Eigen::Matrix3d R1 = q1.toRotationMatrix();
 
-		const std::array<int, 2> range = this->mesh.get_vertices_range(rb_i);
+		const std::array<int, 2> range = this->collision_mesh.get_vertices_range(rb_i);
 		for (int vertex_i = range[0]; vertex_i < range[1]; vertex_i++) {
-			const Eigen::Vector3d p = local_to_global_point(this->mesh.vertices[vertex_i], R1, t1);
+			const Eigen::Vector3d p = local_to_global_point(this->collision_mesh.vertices[vertex_i], R1, t1);
 			this->collision_x1[vertex_i] = p;
 		}
 	}
@@ -356,20 +356,20 @@ const tmcd::ProximityResults& stark::models::RigidBodies::_run_proximity_detecti
 	this->pd.clear();
 	this->pd.set_n_threads(sim.settings.execution.n_threads);
 	this->pd.set_edge_edge_parallel_cutoff(sim.settings.contact.edge_edge_cross_norm_sq_cutoff);
-	this->pd.add_mesh(&x[0][0], (int)x.size(), &this->mesh.connectivity[0][0], this->mesh.get_n_elements(), &this->edges.connectivity[0][0], (int)this->edges.get_n_edges());
+	this->pd.add_mesh(&x[0][0], (int)x.size(), &this->collision_mesh.connectivity[0][0], this->collision_mesh.get_n_elements(), &this->edges.connectivity[0][0], (int)this->edges.get_n_edges());
 	this->pd.activate_point_triangle(sim.settings.contact.triangle_point_enabled);
 	this->pd.activate_edge_edge(sim.settings.contact.edge_edge_enabled);
 
 	// Disable self collisions
-	for (int rb_idx = 0; rb_idx < this->mesh.get_n_meshes(); rb_idx++) {
-		this->pd.add_blacklist_range_point_triangle(0, this->mesh.get_vertices_range(rb_idx), 0, this->mesh.get_elements_range(rb_idx));
+	for (int rb_idx = 0; rb_idx < this->collision_mesh.get_n_meshes(); rb_idx++) {
+		this->pd.add_blacklist_range_point_triangle(0, this->collision_mesh.get_vertices_range(rb_idx), 0, this->collision_mesh.get_elements_range(rb_idx));
 		this->pd.add_blacklist_range_edge_edge(0, this->edges.get_edges_range(rb_idx), 0, this->edges.get_edges_range(rb_idx));
 	}
 
 	// Disable user specified collisions
 	for (const std::array<int, 2>& pair : this->disabled_collisions) {
-		this->pd.add_blacklist_range_point_triangle(0, this->mesh.get_vertices_range(pair[0]), 0, this->mesh.get_elements_range(pair[1]));
-		this->pd.add_blacklist_range_point_triangle(0, this->mesh.get_vertices_range(pair[1]), 0, this->mesh.get_elements_range(pair[0]));
+		this->pd.add_blacklist_range_point_triangle(0, this->collision_mesh.get_vertices_range(pair[0]), 0, this->collision_mesh.get_elements_range(pair[1]));
+		this->pd.add_blacklist_range_point_triangle(0, this->collision_mesh.get_vertices_range(pair[1]), 0, this->collision_mesh.get_elements_range(pair[0]));
 		this->pd.add_blacklist_range_edge_edge(0, this->edges.get_edges_range(std::min(pair[0], pair[1])), 0, this->edges.get_edges_range(std::max(pair[0], pair[1])));
 	}
 
@@ -500,16 +500,16 @@ void stark::models::RigidBodies::_write_frame(Stark& sim)
 				const Eigen::Matrix3d& R = this->R1[rb_i];
 				const Eigen::Vector3d& t = this->t1[rb_i];
 
-				const std::array<int, 2> v_range = this->mesh.get_vertices_range(rb_i);
+				const std::array<int, 2> v_range = this->collision_mesh.get_vertices_range(rb_i);
 				const int idx_offset =  (int)glob_vertices.size() - v_range[0];
 				for (int vertex_i = v_range[0]; vertex_i < v_range[1]; vertex_i++) {
-					const Eigen::Vector3d p = local_to_global_point(this->mesh.vertices[vertex_i], R, t);
+					const Eigen::Vector3d p = local_to_global_point(this->collision_mesh.vertices[vertex_i], R, t);
 					glob_vertices.push_back(p);
 				}
 			
-				const std::array<int, 2> e_range = this->mesh.get_elements_range(rb_i);
+				const std::array<int, 2> e_range = this->collision_mesh.get_elements_range(rb_i);
 				for (int tri_i = e_range[0]; tri_i < e_range[1]; tri_i++) {
-					const std::array<int, 3>& tri = this->mesh.connectivity[tri_i];
+					const std::array<int, 3>& tri = this->collision_mesh.connectivity[tri_i];
 					triangles.push_back({ tri[0] + idx_offset, tri[1] + idx_offset, tri[2] + idx_offset });
 				}
 			}
@@ -522,18 +522,18 @@ void stark::models::RigidBodies::_write_frame(Stark& sim)
 		}
 	}
 	else {
-		std::vector<Eigen::Vector3d> glob_vertices(this->mesh.get_n_vertices());
-		for (int rb_i = 0; rb_i < this->mesh.get_n_meshes(); rb_i++) {
+		std::vector<Eigen::Vector3d> glob_vertices(this->collision_mesh.get_n_vertices());
+		for (int rb_i = 0; rb_i < this->collision_mesh.get_n_meshes(); rb_i++) {
 			const Eigen::Matrix3d& R = this->R1[rb_i];
 			const Eigen::Vector3d& t = this->t1[rb_i];
 
-			const std::array<int, 2> range = this->mesh.get_vertices_range(rb_i);
+			const std::array<int, 2> range = this->collision_mesh.get_vertices_range(rb_i);
 			for (int vertex_i = range[0]; vertex_i < range[1]; vertex_i++) {
-				const Eigen::Vector3d p = local_to_global_point(this->mesh.vertices[vertex_i], R, t);
+				const Eigen::Vector3d p = local_to_global_point(this->collision_mesh.vertices[vertex_i], R, t);
 				glob_vertices[vertex_i] = p;
 			}
 		}
-		utils::write_VTK(sim.get_vtk_path("rb"), glob_vertices, this->mesh.connectivity, false);
+		utils::write_VTK(sim.get_vtk_path("rb"), glob_vertices, this->collision_mesh.connectivity, false);
 	}
 }
 bool stark::models::RigidBodies::_is_valid_configuration(Stark& sim)
@@ -545,17 +545,17 @@ bool stark::models::RigidBodies::_is_valid_configuration(Stark& sim)
 	this->_update_collision_x1(sim, sim.settings.simulation.adaptive_time_step.value);
 	this->id.clear();
 	this->id.set_n_threads(sim.settings.execution.n_threads);
-	this->id.add_mesh(&this->collision_x1[0][0], (int)this->collision_x1.size(), &this->mesh.connectivity[0][0], this->mesh.get_n_elements(), &this->edges.connectivity[0][0], (int)this->edges.get_n_edges());
+	this->id.add_mesh(&this->collision_x1[0][0], (int)this->collision_x1.size(), &this->collision_mesh.connectivity[0][0], this->collision_mesh.get_n_elements(), &this->edges.connectivity[0][0], (int)this->edges.get_n_edges());
 	
 	// Disable self collisions
-	for (int rb_idx = 0; rb_idx < this->mesh.get_n_meshes(); rb_idx++) {
-		this->id.add_blacklist_range_edge_triangle(0, this->edges.get_edges_range(rb_idx), 0, this->mesh.get_elements_range(rb_idx));
+	for (int rb_idx = 0; rb_idx < this->collision_mesh.get_n_meshes(); rb_idx++) {
+		this->id.add_blacklist_range_edge_triangle(0, this->edges.get_edges_range(rb_idx), 0, this->collision_mesh.get_elements_range(rb_idx));
 	}
 
 	// Disable user specified collisions
 	for (const std::array<int, 2>&pair : this->disabled_collisions) {
-		this->id.add_blacklist_range_edge_triangle(0, this->edges.get_edges_range(pair[0]), 0, this->mesh.get_elements_range(pair[1]));
-		this->id.add_blacklist_range_edge_triangle(0, this->edges.get_edges_range(pair[1]), 0, this->mesh.get_elements_range(pair[0]));
+		this->id.add_blacklist_range_edge_triangle(0, this->edges.get_edges_range(pair[0]), 0, this->collision_mesh.get_elements_range(pair[1]));
+		this->id.add_blacklist_range_edge_triangle(0, this->edges.get_edges_range(pair[1]), 0, this->collision_mesh.get_elements_range(pair[0]));
 	}
 	
 	const tmcd::IntersectionResults& intersections = this->id.run();
@@ -579,8 +579,8 @@ void stark::models::RigidBodies::_update_contacts(Stark& sim)
 		const tmcd::TrianglePoint& tp = pair.second;
 		const tmcd::Point& q = tp.point;
 
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(q.idx);
+		const int rb_a_idx = this->collision_mesh.get_mesh_containing_vertex(p.idx);
+		const int rb_b_idx = this->collision_mesh.get_mesh_containing_vertex(q.idx);
 		if (rb_a_idx != rb_b_idx) {
 			this->contacts.point_triangle.point_point.push_back({ rb_a_idx, rb_b_idx, p.idx, q.idx });
 		}
@@ -590,8 +590,8 @@ void stark::models::RigidBodies::_update_contacts(Stark& sim)
 		const tmcd::TriangleEdge& te = pair.second;
 		const tmcd::TriangleEdge::Edge& edge = te.edge;
 
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(point.idx);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(edge.vertices[0]);
+		const int rb_a_idx = this->collision_mesh.get_mesh_containing_vertex(point.idx);
+		const int rb_b_idx = this->collision_mesh.get_mesh_containing_vertex(edge.vertices[0]);
 		if (rb_a_idx != rb_b_idx) {
 			this->contacts.point_triangle.point_edge.push_back({ rb_a_idx, rb_b_idx, point.idx, edge.vertices[0], edge.vertices[1] });
 		}
@@ -600,8 +600,8 @@ void stark::models::RigidBodies::_update_contacts(Stark& sim)
 		const tmcd::Point& point = pair.first;
 		const tmcd::Triangle& triangle = pair.second;
 
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(point.idx);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(triangle.vertices[0]);
+		const int rb_a_idx = this->collision_mesh.get_mesh_containing_vertex(point.idx);
+		const int rb_b_idx = this->collision_mesh.get_mesh_containing_vertex(triangle.vertices[0]);
 		if (rb_a_idx != rb_b_idx) {
 			this->contacts.point_triangle.point_triangle.push_back({ rb_a_idx, rb_b_idx, point.idx, triangle.vertices[0], triangle.vertices[1], triangle.vertices[2] });
 		}
@@ -612,8 +612,8 @@ void stark::models::RigidBodies::_update_contacts(Stark& sim)
 		const tmcd::EdgePoint& ep_a = pair.first;
 		const tmcd::EdgePoint& ep_b = pair.second;
 
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(ep_a.point.idx);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(ep_b.point.idx);
+		const int rb_a_idx = this->collision_mesh.get_mesh_containing_vertex(ep_a.point.idx);
+		const int rb_b_idx = this->collision_mesh.get_mesh_containing_vertex(ep_b.point.idx);
 		if (rb_a_idx != rb_b_idx) {
 			this->contacts.edge_edge.point_point.push_back({ rb_a_idx, rb_b_idx, ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx, ep_b.edge.vertices[0], ep_b.edge.vertices[1], ep_b.point.idx });
 		}
@@ -622,15 +622,15 @@ void stark::models::RigidBodies::_update_contacts(Stark& sim)
 		const tmcd::EdgePoint& ep_a = pair.first;
 		const tmcd::Edge& e_b = pair.second;
 
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(ep_a.point.idx);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(e_b.vertices[0]);
+		const int rb_a_idx = this->collision_mesh.get_mesh_containing_vertex(ep_a.point.idx);
+		const int rb_b_idx = this->collision_mesh.get_mesh_containing_vertex(e_b.vertices[0]);
 		if (rb_a_idx != rb_b_idx) {
 			this->contacts.edge_edge.point_edge.push_back({ rb_a_idx, rb_b_idx, ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx, e_b.vertices[0], e_b.vertices[1] });
 		}
 	}
 	for (const auto& pair : proximity.edge_edge.edge_edge) {
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(pair.first.vertices[0]);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(pair.second.vertices[0]);
+		const int rb_a_idx = this->collision_mesh.get_mesh_containing_vertex(pair.first.vertices[0]);
+		const int rb_b_idx = this->collision_mesh.get_mesh_containing_vertex(pair.second.vertices[0]);
 		if (rb_a_idx != rb_b_idx) {
 			this->contacts.edge_edge.edge_edge.push_back({ rb_a_idx, rb_b_idx, pair.first.vertices[0], pair.first.vertices[1], pair.second.vertices[0], pair.second.vertices[1] });
 		}
@@ -661,8 +661,8 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		const tmcd::TrianglePoint& tp = pair.second;
 		const tmcd::Point& q = tp.point;
 
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(q.idx);
+		const int rb_a_idx = this->collision_mesh.get_mesh_containing_vertex(p.idx);
+		const int rb_b_idx = this->collision_mesh.get_mesh_containing_vertex(q.idx);
 		if (rb_a_idx != rb_b_idx) {
 			const double mu = this->get_friction(rb_a_idx, rb_b_idx);
 			if (mu > 0.0) {
@@ -679,8 +679,8 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		const tmcd::TriangleEdge& te = pair.second;
 		const tmcd::TriangleEdge::Edge& edge = te.edge;
 
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(edge.vertices[0]);
+		const int rb_a_idx = this->collision_mesh.get_mesh_containing_vertex(p.idx);
+		const int rb_b_idx = this->collision_mesh.get_mesh_containing_vertex(edge.vertices[0]);
 
 		if (rb_a_idx != rb_b_idx) {
 			const double mu = this->get_friction(rb_a_idx, rb_b_idx);
@@ -698,8 +698,8 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		const tmcd::Point& p = pair.first;
 		const tmcd::Triangle& t = pair.second;
 
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(t.vertices[0]);
+		const int rb_a_idx = this->collision_mesh.get_mesh_containing_vertex(p.idx);
+		const int rb_b_idx = this->collision_mesh.get_mesh_containing_vertex(t.vertices[0]);
 
 		if (rb_a_idx != rb_b_idx) {
 			const double mu = this->get_friction(rb_a_idx, rb_b_idx);
@@ -724,7 +724,7 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 	};
 	auto mollifier = [&](const tmcd::Edge& edge_a, const tmcd::Edge& edge_b)
 	{
-		const std::vector<Eigen::Vector3d>& X = this->mesh.vertices;
+		const std::vector<Eigen::Vector3d>& X = this->collision_mesh.vertices;
 		return edge_edge_mollifier(x[edge_a.vertices[0]], x[edge_a.vertices[1]], x[edge_b.vertices[0]], x[edge_b.vertices[1]],
 			X[edge_a.vertices[0]], X[edge_a.vertices[1]], X[edge_b.vertices[0]], X[edge_b.vertices[1]]);
 	};
@@ -736,8 +736,8 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		const tmcd::Point& p = ep_a.point;
 		const tmcd::Point& q = ep_b.point;
 
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(q.idx);
+		const int rb_a_idx = this->collision_mesh.get_mesh_containing_vertex(p.idx);
+		const int rb_b_idx = this->collision_mesh.get_mesh_containing_vertex(q.idx);
 		if (rb_a_idx != rb_b_idx) {
 			const double mu = this->get_friction(rb_a_idx, rb_b_idx);
 			if (mu > 0.0 && are_not_almost_parallel(ep_a.edge, ep_b.edge)) {
@@ -754,8 +754,8 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		const tmcd::Point& p = ep.point;
 		const tmcd::Edge& edge = pair.second;
 
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(p.idx);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(edge.vertices[0]);
+		const int rb_a_idx = this->collision_mesh.get_mesh_containing_vertex(p.idx);
+		const int rb_b_idx = this->collision_mesh.get_mesh_containing_vertex(edge.vertices[0]);
 		if (rb_a_idx != rb_b_idx) {
 			const double mu = this->get_friction(rb_a_idx, rb_b_idx);
 			if (mu > 0.0 && are_not_almost_parallel(ep.edge, edge)) {
@@ -772,8 +772,8 @@ void stark::models::RigidBodies::_update_friction_contacts(Stark& sim)
 		const tmcd::Edge& ea = pair.first;
 		const tmcd::Edge& eb = pair.second;
 
-		const int rb_a_idx = this->mesh.get_mesh_containing_vertex(ea.vertices[0]);
-		const int rb_b_idx = this->mesh.get_mesh_containing_vertex(eb.vertices[0]);
+		const int rb_a_idx = this->collision_mesh.get_mesh_containing_vertex(ea.vertices[0]);
+		const int rb_b_idx = this->collision_mesh.get_mesh_containing_vertex(eb.vertices[0]);
 		if (rb_a_idx != rb_b_idx) {
 			const double mu = this->get_friction(rb_a_idx, rb_b_idx);
 			if (mu > 0.0 && are_not_almost_parallel(ea, eb)) {
@@ -1046,7 +1046,7 @@ void stark::models::RigidBodies::_energies_contact(Stark& sim)
 		symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
 		symx::Vector t1 = time_integration(t0, v1, dt);
 
-		std::vector<symx::Vector> x_loc = energy.make_vectors(this->mesh.vertices, indices);
+		std::vector<symx::Vector> x_loc = energy.make_vectors(this->collision_mesh.vertices, indices);
 
 		std::vector<symx::Vector> x1;
 		for (const symx::Vector& x_loc_a : x_loc) {
@@ -1056,7 +1056,7 @@ void stark::models::RigidBodies::_energies_contact(Stark& sim)
 	};
 	auto get_X = [&](const std::vector<symx::Index>& indices, symx::Energy& energy)
 	{
-		return energy.make_vectors(this->mesh.vertices, indices);
+		return energy.make_vectors(this->collision_mesh.vertices, indices);
 	};
 	auto get_edge_point = [&](const std::vector<symx::Index>& conn, const symx::Index& rb_idx, const symx::Scalar& dt, symx::Energy& energy)
 	{
@@ -1204,7 +1204,7 @@ void stark::models::RigidBodies::_energies_friction(Stark& sim)
 		symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
 		symx::Vector t1 = time_integration(t0, v1, dt);
 
-		std::vector<symx::Vector> x_loc = energy.make_vectors(this->mesh.vertices, indices);
+		std::vector<symx::Vector> x_loc = energy.make_vectors(this->collision_mesh.vertices, indices);
 
 		std::vector<symx::Vector> v1_glob;
 		for (const symx::Vector& x_loc_a : x_loc) {

@@ -53,7 +53,7 @@ const tmcd::ProximityResults& stark::models::Interactions::_run_proximity_detect
 		this->pd.add_blacklist(this->cloth_id, this->cloth_id);
 	}
 	if (!this->rigid_bodies->is_empty()) {
-		this->rigid_bodies_id = this->pd.add_mesh(&x_rb[0][0], (int)x_rb.size(), &this->rigid_bodies->mesh.connectivity[0][0], this->rigid_bodies->mesh.get_n_elements(), &this->rigid_bodies->edges.connectivity[0][0], (int)this->rigid_bodies->edges.get_n_edges());
+		this->rigid_bodies_id = this->pd.add_mesh(&x_rb[0][0], (int)x_rb.size(), &this->rigid_bodies->collision_mesh.connectivity[0][0], this->rigid_bodies->collision_mesh.get_n_elements(), &this->rigid_bodies->edges.connectivity[0][0], (int)this->rigid_bodies->edges.get_n_edges());
 		this->pd.add_blacklist(this->rigid_bodies_id, this->rigid_bodies_id);
 	}
 
@@ -80,11 +80,11 @@ void stark::models::Interactions::_update_contacts(Stark& sim)
 		const tmcd::Point& q = tp.point;
 
 		if (p.set == this->rigid_bodies_id && q.set == this->cloth_id) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p.idx);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(p.idx);
 			this->contacts.point_triangle.rb_d_point_point.push_back({ rb_idx, p.idx, q.idx });
 		}
 		else if (p.set == this->cloth_id && q.set == this->rigid_bodies_id) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(q.idx);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(q.idx);
 			this->contacts.point_triangle.rb_d_point_point.push_back({ rb_idx, q.idx, p.idx });
 		}
 		else {
@@ -97,11 +97,11 @@ void stark::models::Interactions::_update_contacts(Stark& sim)
 		const tmcd::TriangleEdge::Edge& edge = te.edge;
 
 		if (point.set == this->rigid_bodies_id && edge.set == this->cloth_id) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(point.idx);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(point.idx);
 			this->contacts.point_triangle.rb_d_point_edge.push_back({ rb_idx, point.idx, edge.vertices[0], edge.vertices[1] });
 		}
 		else if (point.set == this->cloth_id && edge.set == this->rigid_bodies_id) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(edge.vertices[0]);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(edge.vertices[0]);
 			this->contacts.point_triangle.rb_d_edge_point.push_back({ rb_idx, edge.vertices[0], edge.vertices[1], point.idx });
 		}
 		else {
@@ -113,11 +113,11 @@ void stark::models::Interactions::_update_contacts(Stark& sim)
 		const tmcd::Triangle& triangle = pair.second;
 
 		if (point.set == this->rigid_bodies_id && triangle.set == this->cloth_id) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(point.idx);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(point.idx);
 			this->contacts.point_triangle.rb_d_point_triangle.push_back({ rb_idx, point.idx, triangle.vertices[0], triangle.vertices[1], triangle.vertices[2] });
 		}
 		else if (point.set == this->cloth_id && triangle.set == this->rigid_bodies_id) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(triangle.vertices[0]);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(triangle.vertices[0]);
 			this->contacts.point_triangle.rb_d_triangle_point.push_back({ rb_idx, triangle.vertices[0], triangle.vertices[1], triangle.vertices[2], point.idx });
 		}
 		else {
@@ -131,11 +131,11 @@ void stark::models::Interactions::_update_contacts(Stark& sim)
 		const tmcd::EdgePoint& ep_b = pair.second;
 
 		if (ep_a.point.set == this->rigid_bodies_id && ep_b.point.set == this->cloth_id) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(ep_a.point.idx);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(ep_a.point.idx);
 			this->contacts.edge_edge.rb_d_point_point.push_back({ rb_idx, ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx, ep_b.edge.vertices[0], ep_b.edge.vertices[1], ep_b.point.idx });
 		}
 		else if (ep_a.point.set == this->cloth_id && ep_b.point.set == this->rigid_bodies_id) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(ep_b.point.idx);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(ep_b.point.idx);
 			this->contacts.edge_edge.rb_d_point_point.push_back({ rb_idx, ep_b.edge.vertices[0], ep_b.edge.vertices[1], ep_b.point.idx, ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx });
 		}
 		else {
@@ -147,11 +147,11 @@ void stark::models::Interactions::_update_contacts(Stark& sim)
 		const tmcd::Edge& e_b = pair.second;
 
 		if (ep_a.point.set == this->rigid_bodies_id && e_b.set == this->cloth_id) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(ep_a.point.idx);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(ep_a.point.idx);
 			this->contacts.edge_edge.rb_d_point_edge.push_back({ rb_idx, ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx, e_b.vertices[0], e_b.vertices[1] });
 		}
 		else if (ep_a.point.set == this->cloth_id && e_b.set == this->rigid_bodies_id) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(e_b.vertices[0]);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(e_b.vertices[0]);
 			this->contacts.edge_edge.rb_d_edge_point.push_back({ rb_idx, e_b.vertices[0], e_b.vertices[1], ep_a.edge.vertices[0], ep_a.edge.vertices[1], ep_a.point.idx });
 		}
 		else {
@@ -160,11 +160,11 @@ void stark::models::Interactions::_update_contacts(Stark& sim)
 	}
 	for (const auto& pair : proximity.edge_edge.edge_edge) {
 		if (pair.first.set == this->rigid_bodies_id && pair.second.set == this->cloth_id) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(pair.first.vertices[0]);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(pair.first.vertices[0]);
 			this->contacts.edge_edge.rb_d_edge_edge.push_back({ rb_idx, pair.first.vertices[0], pair.first.vertices[1], pair.second.vertices[0], pair.second.vertices[1] });
 		}
 		else if (pair.first.set == this->cloth_id && pair.second.set == this->rigid_bodies_id) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(pair.second.vertices[0]);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(pair.second.vertices[0]);
 			this->contacts.edge_edge.rb_d_edge_edge.push_back({ rb_idx, pair.second.vertices[0], pair.second.vertices[1], pair.first.vertices[0], pair.first.vertices[1] });
 		}
 		else {
@@ -202,7 +202,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		const int p_idx = (is_p_rb) ? p.idx : q.idx;
 		const int q_idx = (is_p_rb) ? q.idx : p.idx;
 
-		const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p_idx);
+		const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(p_idx);
 		const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(q_idx);
 		const double mu = this->get_friction(rb_idx, d_idx);
 		if (mu > 0.0) {
@@ -219,7 +219,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		const tmcd::TriangleEdge::Edge& edge = te.edge;
 
 		if ((p.set == this->rigid_bodies_id) && (edge.set == this->cloth_id)) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p.idx);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(p.idx);
 			const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(edge.vertices[0]);
 			const double mu = this->get_friction(rb_idx, d_idx);
 			if (mu > 0.0) {
@@ -231,7 +231,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 			}
 		}
 		else {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(edge.vertices[0]);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(edge.vertices[0]);
 			const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(p.idx);
 			const double mu = this->get_friction(rb_idx, d_idx);
 			if (mu > 0.0) {
@@ -249,7 +249,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		const tmcd::Triangle& t = pair.second;
 
 		if ((p.set == this->rigid_bodies_id) && (t.set == this->cloth_id)) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p.idx);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(p.idx);
 			const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(t.vertices[0]);
 			const double mu = this->get_friction(rb_idx, d_idx);
 			if (mu > 0.0) {
@@ -261,7 +261,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 			}
 		}
 		else {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(t.vertices[0]);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(t.vertices[0]);
 			const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(p.idx);
 			const double mu = this->get_friction(rb_idx, d_idx);
 			if (mu > 0.0) {
@@ -275,7 +275,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 	}
 
 	// Edge - Edge
-	const std::vector<Eigen::Vector3d>& X_rb = this->rigid_bodies->mesh.vertices;
+	const std::vector<Eigen::Vector3d>& X_rb = this->rigid_bodies->collision_mesh.vertices;
 	const std::vector<Eigen::Vector3d>& X_cloth = this->cloth->model.X;
 	auto are_not_almost_parallel = [&](const tmcd::Edge& rb_edge, const tmcd::Edge& cloth_edge)
 	{
@@ -302,7 +302,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		const int p_idx = (is_p_rb) ? p.idx : q.idx;
 		const int q_idx = (is_p_rb) ? q.idx : p.idx;
 
-		const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p_idx);
+		const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(p_idx);
 		const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(q_idx);
 		const double mu = this->get_friction(rb_idx, d_idx);
 		const bool not_parallel = (is_p_rb) ? are_not_almost_parallel(ep_a.edge, ep_b.edge) : are_not_almost_parallel(ep_b.edge, ep_a.edge);
@@ -321,7 +321,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		const tmcd::Edge& edge = pair.second;
 
 		if ((p.set == this->rigid_bodies_id) && (edge.set == this->cloth_id)) {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(p.idx);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(p.idx);
 			const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(edge.vertices[0]);
 			const double mu = this->get_friction(rb_idx, d_idx);
 			if (mu > 0.0 && are_not_almost_parallel(ep.edge, edge)) {
@@ -333,7 +333,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 			}
 		}
 		else {
-			const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(edge.vertices[0]);
+			const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(edge.vertices[0]);
 			const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(p.idx);
 			const double mu = this->get_friction(rb_idx, d_idx);
 			if (mu > 0.0 && are_not_almost_parallel(edge, ep.edge)) {
@@ -353,7 +353,7 @@ void stark::models::Interactions::_update_friction_contacts(Stark& sim)
 		const tmcd::Edge& edge_rb = (ea.set == this->rigid_bodies_id) ? ea : eb;
 		const tmcd::Edge& edge_cloth = (ea.set == this->rigid_bodies_id) ? eb : ea;
 
-		const int rb_idx = this->rigid_bodies->mesh.get_mesh_containing_vertex(edge_rb.vertices[0]);
+		const int rb_idx = this->rigid_bodies->collision_mesh.get_mesh_containing_vertex(edge_rb.vertices[0]);
 		const int d_idx = this->cloth->model.mesh.get_mesh_containing_vertex(edge_cloth.vertices[0]);
 		const double mu = this->get_friction(rb_idx, d_idx);
 		if (mu > 0.0 && are_not_almost_parallel(edge_rb, edge_cloth)) {
@@ -379,7 +379,7 @@ bool stark::models::Interactions::_is_valid_configuration(Stark& sim)
 		this->id.add_blacklist(this->cloth_id, this->cloth_id);
 	}
 	if (!this->rigid_bodies->is_empty()) {
-		this->rigid_bodies_id = this->id.add_mesh(&this->rigid_bodies->collision_x1[0][0], (int)this->rigid_bodies->collision_x1.size(), &this->rigid_bodies->mesh.connectivity[0][0], this->rigid_bodies->mesh.get_n_elements(), &this->rigid_bodies->edges.connectivity[0][0], (int)this->rigid_bodies->edges.get_n_edges());
+		this->rigid_bodies_id = this->id.add_mesh(&this->rigid_bodies->collision_x1[0][0], (int)this->rigid_bodies->collision_x1.size(), &this->rigid_bodies->collision_mesh.connectivity[0][0], this->rigid_bodies->collision_mesh.get_n_elements(), &this->rigid_bodies->edges.connectivity[0][0], (int)this->rigid_bodies->edges.get_n_edges());
 		this->id.add_blacklist(this->rigid_bodies_id, this->rigid_bodies_id);
 	}
 	const tmcd::IntersectionResults& intersections = this->id.run();
@@ -399,7 +399,7 @@ void stark::models::Interactions::_energies_contact(Stark& sim)
 		symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
 		symx::Vector t1 = time_integration(t0, v1, dt);
 
-		std::vector<symx::Vector> x_loc = energy.make_vectors(this->rigid_bodies->mesh.vertices, indices);
+		std::vector<symx::Vector> x_loc = energy.make_vectors(this->rigid_bodies->collision_mesh.vertices, indices);
 
 		std::vector<symx::Vector> x1;
 		for (const symx::Vector& x_loc_a : x_loc) {
@@ -415,7 +415,7 @@ void stark::models::Interactions::_energies_contact(Stark& sim)
 	};
 	auto get_rb_X = [&](const std::vector<symx::Index>& indices, symx::Energy& energy)
 	{
-		return energy.make_vectors(this->rigid_bodies->mesh.vertices, indices);
+		return energy.make_vectors(this->rigid_bodies->collision_mesh.vertices, indices);
 	};
 	auto get_d_X = [&](const std::vector<symx::Index>& indices, symx::Energy& energy)
 	{
@@ -605,7 +605,7 @@ void stark::models::Interactions::_energies_friction(Stark& sim)
 		symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
 		symx::Vector t1 = time_integration(t0, v1, dt);
 
-		std::vector<symx::Vector> x_loc = energy.make_vectors(this->rigid_bodies->mesh.vertices, indices);
+		std::vector<symx::Vector> x_loc = energy.make_vectors(this->rigid_bodies->collision_mesh.vertices, indices);
 
 		std::vector<symx::Vector> v1_glob;
 		for (const symx::Vector& x_loc_a : x_loc) {
