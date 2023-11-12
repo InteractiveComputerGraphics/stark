@@ -72,18 +72,18 @@ namespace stark::models
 	{
 		struct PointTriangle
 		{
-			symx::LabelledConnectivity<3> rb_d_point_point{ { "rb", "rb_p_loc", "q" } };
-			symx::LabelledConnectivity<4> rb_d_point_edge{ { "rb", "rb_p_loc", "e0", "e1" } };
-			symx::LabelledConnectivity<5> rb_d_point_triangle{ { "rb", "rb_p_loc", "t0", "t1", "t2" } };
-			symx::LabelledConnectivity<4> rb_d_edge_point{ { "rb", "reb0_loc", "reb1_loc", "p" } };
-			symx::LabelledConnectivity<5> rb_d_triangle_point{ { "rb", "rt0_loc", "rt1_loc", "rt2_loc", "p" } };
+			symx::LabelledConnectivity<3> rb_d_point_point{ { "rb", "p", "q" } };
+			symx::LabelledConnectivity<4> rb_d_point_edge{ { "rb", "p", "e0", "e1" } };
+			symx::LabelledConnectivity<5> rb_d_point_triangle{ { "rb", "p", "t0", "t1", "t2" } };
+			symx::LabelledConnectivity<4> rb_d_edge_point{ { "rb", "e0", "e1", "p" } };
+			symx::LabelledConnectivity<5> rb_d_triangle_point{ { "rb", "t0", "t1", "t2", "p" } };
 		};
 		struct EdgeEdge
 		{
-			symx::LabelledConnectivity<7> rb_d_point_point{ { "rb", "reb0", "reb1", "rb_p", "e0", "e1", "q" } };
-			symx::LabelledConnectivity<6> rb_d_point_edge{ { "rb", "reb0", "reb1", "rb_p", "e0", "e1" } };
-			symx::LabelledConnectivity<5> rb_d_edge_edge{ { "rb", "reb0", "reb1", "e0", "e1" } };
-			symx::LabelledConnectivity<6> rb_d_edge_point{ { "rb", "reb0", "reb1", "e0", "e1", "q" } };
+			symx::LabelledConnectivity<7> rb_d_point_point{ { "rb", "ea0", "ea1", "p", "eb0", "eb1", "q" } };
+			symx::LabelledConnectivity<6> rb_d_point_edge{ { "rb", "ea0", "ea1", "p", "eb0", "eb1" } };
+			symx::LabelledConnectivity<5> rb_d_edge_edge{ { "rb", "ea0", "ea1", "eb0", "eb1" } };
+			symx::LabelledConnectivity<6> rb_d_edge_point{ { "rb", "ea0", "ea1", "eb0", "eb1", "q" } };
 		};
 		PointTriangle point_triangle;
 		EdgeEdge edge_edge;
@@ -244,71 +244,61 @@ namespace stark::models
 		struct PointPoint
 		{
 			FrictionContact contact;
-			symx::LabelledConnectivity<4> conn{ { "idx", "rb", "rb_p", "q" } };
+			symx::LabelledConnectivity<4> conn{ { "idx", "rb", "p", "q" } };
 		};
 		struct PointEdge
 		{
-			FrictionContact contact;
+			FrictionPointEdge data;
 			symx::LabelledConnectivity<5> conn{ { "idx", "rb", "p", "e0", "e1"} };
-			std::vector<std::array<double, 2>> bary;
 		};
 		struct PointTriangle
 		{
-			FrictionContact contact;
+			FrictionPointTriangle data;
 			symx::LabelledConnectivity<6> conn{ { "idx", "rb", "p", "t0", "t1", "t2" } };
-			std::vector<std::array<double, 3>> bary;
 		};
 		struct EdgeEdge
 		{
-			FrictionContact contact;
-			symx::LabelledConnectivity<6> conn{ { "idx", "rb", "reb0", "reb1", "e0", "e1" } };
-			std::vector<std::array<double, 2>> bary;
+			FrictionEdgeEdge data;
+			symx::LabelledConnectivity<6> conn{ { "idx", "rb", "ea0", "ea1", "eb0", "eb1" } };
 		};
 		struct EdgePoint
 		{
-			FrictionContact contact;
+			FrictionPointEdge data;
 			symx::LabelledConnectivity<5> conn{ { "idx", "rb", "e0", "e1", "p"} };
-			std::vector<std::array<double, 2>> bary;
 		};
 		struct TrianglePoint
 		{
-			FrictionContact contact;
+			FrictionPointTriangle data;
 			symx::LabelledConnectivity<6> conn{ { "idx", "rb", "t0", "t1", "t2", "p" } };
-			std::vector<std::array<double, 3>> bary;
 		};
 
 
-		PointPoint rb_d_point_point;
-		PointEdge rb_d_point_edge;
-		PointTriangle rb_d_point_triangle;
-		EdgeEdge rb_d_edge_edge;
-		EdgePoint rb_d_edge_point;
-		TrianglePoint rb_d_triangle_point;
+		PointPoint point_point;
+		PointEdge point_edge;
+		PointTriangle point_triangle;
+		EdgeEdge edge_edge;
+		EdgePoint edge_point;
+		TrianglePoint triangle_point;
 
 		void clear()
 		{
-			this->rb_d_point_point.contact.clear();
-			this->rb_d_point_point.conn.clear();
+			this->point_point.contact.clear();
+			this->point_point.conn.clear();
 
-			this->rb_d_point_edge.contact.clear();
-			this->rb_d_point_edge.conn.clear();
-			this->rb_d_point_edge.bary.clear();
+			this->point_edge.data.clear();
+			this->point_edge.conn.clear();
 
-			this->rb_d_point_triangle.contact.clear();
-			this->rb_d_point_triangle.conn.clear();
-			this->rb_d_point_triangle.bary.clear();
+			this->point_triangle.data.clear();
+			this->point_triangle.conn.clear();
 
-			this->rb_d_edge_edge.contact.clear();
-			this->rb_d_edge_edge.conn.clear();
-			this->rb_d_edge_edge.bary.clear();
+			this->edge_edge.data.clear();
+			this->edge_edge.conn.clear();
 
-			this->rb_d_edge_point.contact.clear();
-			this->rb_d_edge_point.conn.clear();
-			this->rb_d_edge_point.bary.clear();
+			this->edge_point.data.clear();
+			this->edge_point.conn.clear();
 
-			this->rb_d_triangle_point.contact.clear();
-			this->rb_d_triangle_point.conn.clear();
-			this->rb_d_triangle_point.bary.clear();
+			this->triangle_point.data.clear();
+			this->triangle_point.conn.clear();
 		}
 	};
 }

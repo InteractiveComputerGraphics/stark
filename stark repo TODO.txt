@@ -5,7 +5,7 @@ Oct unification
 ---------------
 	NEXT: Implement the whole Shells front end
 
-
+	* CG forcing sequence
 	* RigidBodies should have different collision and render meshes.
 	* `stark.settings.contact.friction_displacement_perturbation` is hardcoded now
 
@@ -29,6 +29,10 @@ Oct unification
 
 High priority
 -------------
+	* Newton-CG. It's very very simple.
+		Nocedal 169.
+		When using the negative gradient descend, use the existing Hessian to compute
+			a newton step in that direction: d.T*H*d * dx = -d.T*g
 	* Cloth strain wrong? " 0.5*mu*(Ic - 3.0)"  ->  -3.0 or 2.0 ???
 	* Lambdas to log the parameters of each system
 	* Clean up the default strain limiting
@@ -129,6 +133,11 @@ Mid priority
 		
 Low priority
 ------------
+	Performance
+		* "Forcing sequence CG + projection to PD" seems to be the fastest. But it distributes the runtime into different bottlenecks.
+			Consider adding MKL as an optional dependency to speedup projections and CG.
+		* Collision dection could be improved by Verlet lists and to a lesser extent octree parallelization.
+		* Regardless of minimization technique, there is an optimal time step size and collision stiffness that we should try to track.
 	* Versatile Boundary Conditions is a very important part of the simulation but it is hard.
 		I would like to support independent nodes, volume selectors, rigid transformations, activating/deactivating....
 	* Can we take a std::shared_ptr<> to Settings so the user can more intuitively edit it?

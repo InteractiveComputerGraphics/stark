@@ -30,6 +30,7 @@ namespace stark::models
 		IntervalConnectivity<2> edges;
 		IntervalConnectivity<3> triangles;
 		utils::unordered_array_map<int, 2, double> pair_coulombs_mu;
+		std::vector<std::array<int, 2>> disabled_collision_pairs;
 		std::vector<std::string> labels;  // per group
 		IPCBarrierType ipc_barrier_type = IPCBarrierType::Cubic;
 		IPCFrictionType ipc_friction_type = IPCFrictionType::C0;
@@ -50,6 +51,9 @@ namespace stark::models
 		/* Methods */
 		EnergyFrictionalContact(const spPointDynamics dyn, const spRigidBodies rb);
 		void declare(Stark& stark);
+		void add_points(const int id, const int begin, const int end);
+		void add_edges(const int id, const std::vector<std::array<int, 2>>& conn);
+		void add_triangles(const int id, const std::vector<std::array<int, 3>>& conn);
 
 
 	private:
