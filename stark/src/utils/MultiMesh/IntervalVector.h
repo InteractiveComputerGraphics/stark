@@ -24,6 +24,7 @@ namespace stark::utils
 		// Setters
 		void clear();
 		int append(const std::vector<T>& input);
+		int append_empty();
 		//void update(const int set_id, const std::vector<T>& input);
 
 		template<typename T_It>
@@ -76,6 +77,14 @@ namespace stark::utils
 		const int n = (int)std::distance(begin, end);
 		const int set_id = this->get_n_sets();
 		this->data.insert(this->data.end(), begin, end);
+		if (set_id == 0) { this->offsets.push_back(0); }
+		this->offsets.push_back((int)this->data.size());
+		return set_id;
+	}
+	template<typename T>
+	inline int IntervalVector<T>::append_empty()
+	{
+		const int set_id = this->get_n_sets();
 		if (set_id == 0) { this->offsets.push_back(0); }
 		this->offsets.push_back((int)this->data.size());
 		return set_id;

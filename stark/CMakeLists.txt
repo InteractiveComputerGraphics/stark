@@ -68,6 +68,8 @@ set(MODELS_FILES
 	src/models/RB_Deformable_Contacts.h
 	src/models/RB_Deformable_Friction.h
 	src/models/deformables/interval_types.h
+	src/models/deformables/Id.h
+	src/models/deformables/Id.cpp
 	src/models/deformables/PointDynamics.h
 	src/models/deformables/PointDynamics.cpp
 	src/models/deformables/Deformables.h

@@ -10,6 +10,7 @@
 #include "../../solver/Energy.h"
 #include "../../solver/Stark.h"
 #include "../../utils/unordered_array_set_and_map.h"
+#include "Id.h"
 #include "PointDynamics.h"
 #include "../RigidBodies.h"
 #include "contact_and_friction_data.h"
@@ -26,14 +27,17 @@ namespace stark::models
 		/* Fields */
 		const spPointDynamics dyn;
 		const spRigidBodies rb;
-		IntervalConnectivity<1> points;
-		IntervalConnectivity<2> edges;
-		IntervalConnectivity<3> triangles;
-		utils::unordered_array_map<int, 2, double> pair_coulombs_mu;
-		std::vector<std::array<int, 2>> disabled_collision_pairs;
+		utils::unordered_array_map<int, 2, double> pair_coulombs_mu; // uses local_idx
+		std::vector<std::array<int, 2>> disabled_collision_pairs; // uses local_idx
 		std::vector<std::string> labels;  // per group
 		IPCBarrierType ipc_barrier_type = IPCBarrierType::Cubic;
 		IPCFrictionType ipc_friction_type = IPCFrictionType::C0;
+
+		// Connectivities
+		// Note: All have the same number of sets, even if empty (edge sets not having triangles)
+		IntervalConnectivity<1> points;
+		IntervalConnectivity<2> edges;
+		IntervalConnectivity<3> triangles;
 
 		// Collision detection
 		tmcd::IntersectionDetection id;
@@ -51,12 +55,19 @@ namespace stark::models
 		/* Methods */
 		EnergyFrictionalContact(const spPointDynamics dyn, const spRigidBodies rb);
 		void declare(Stark& stark);
-		void add_points(const int id, const int begin, const int end);
-		void add_edges(const int id, const std::vector<std::array<int, 2>>& conn);
-		void add_triangles(const int id, const std::vector<std::array<int, 3>>& conn);
 
+		The following are wrong because they only work for deformables
+		void add_points(Id& id);
+		void add_edges_and_points(Id& id, const std::vector<std::array<int, 2>>& edges);
+		void add_triangles_edges_and_points(Id& id, const std::vector<std::array<int, 3>>& triangles);
+		
 
 	private:
+		// SymX callbacks
+		void _before_time_step__update_friction_contacts(Stark& stark);
+		void _before_energy_evaluation__update_contacts(Stark& stark);
+		bool _is_valid_configuration(Stark& stark);
+
 		// SymX definitions
 		void _energies_contact_deformables(Stark& stark);
 		void _energies_contact_rb(Stark& stark);

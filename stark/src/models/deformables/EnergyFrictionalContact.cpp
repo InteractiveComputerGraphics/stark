@@ -3,6 +3,87 @@
 #include "../time_integration.h"
 #include "../rigidbody_transformations.h"
 #include "../distances.h"
+#include "../../utils/mesh_utils.h"
+
+
+void stark::models::EnergyFrictionalContact::declare(Stark& stark)
+{
+	// Callbacks
+	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step__update_friction_contacts(stark); });
+	stark.callbacks.before_energy_evaluation.push_back([&]() { this->_before_energy_evaluation__update_contacts(stark); });
+	stark.callbacks.is_state_valid.push_back([&]() { return this->_is_valid_configuration(stark); });
+
+	// Energy declarations
+	this->_energies_contact_deformables(stark);
+	this->_energies_contact_rb(stark);
+	this->_energies_contact_rb_deformables(stark);
+
+	this->_energies_friction_deformables(stark);
+	this->_energies_friction_rb(stark);
+	this->_energies_friction_rb_deformables(stark);
+}
+
+void stark::models::EnergyFrictionalContact::add_points(Id& id)
+{
+	// Points
+	const int n_points = this->dyn->size(id);
+	std::vector<std::array<int, 1>> points(n_points);
+	for (int i = 0; i < n_points; i++) {
+		points[i] = { i };
+	}
+
+	// Add
+	const int offset = this->dyn->get_begin(id);
+	const int local_idx = this->points.append(points, offset);
+	this->edges.append_empty();
+	this->triangles.append_empty();
+
+	// Set local index
+	id.set_local_idx("EnergyFrictionalContact", local_idx);
+}
+
+void stark::models::EnergyFrictionalContact::add_edges_and_points(Id& id, const std::vector<std::array<int, 2>>& edges)
+{
+	// Points
+	const int n_points = this->dyn->size(id);
+	std::vector<std::array<int, 1>> points(n_points);
+	for (int i = 0; i < n_points; i++) {
+		points[i] = { i };
+	}
+
+	// Add
+	const int offset = this->dyn->get_begin(id);
+	const int local_idx = this->points.append(points, offset);
+	this->edges.append(edges, offset);
+	this->triangles.append_empty();
+
+	// Set local index
+	id.set_local_idx("EnergyFrictionalContact", local_idx);
+}
+
+void stark::models::EnergyFrictionalContact::add_triangles_edges_and_points(Id& id, const std::vector<std::array<int, 3>>& triangles)
+{
+	// Points
+	const int n_points = this->dyn->size(id);
+	std::vector<std::array<int, 1>> points(n_points);
+	for (int i = 0; i < n_points; i++) {
+		points[i] = { i };
+	}
+
+	// Edges
+	std::vector<std::array<int, 2>> edges;
+	utils::find_edges_from_simplices(edges, triangles, n_points);
+	
+	// Add
+	const int offset = this->dyn->get_begin(id);
+	const int local_idx = this->points.append(points, offset);
+	this->edges.append(edges, offset);
+	this->triangles.append(triangles, offset);
+
+	// Set local index
+	id.set_local_idx("EnergyFrictionalContact", local_idx);
+}
+
 
 
 /* ========================================================================================== */
@@ -629,3 +710,4 @@ std::string stark::models::EnergyFrictionalContact::_get_friction_label(const st
 	}
 	return output;
 }
+

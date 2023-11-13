@@ -27,7 +27,7 @@ namespace stark::models
 		/* Methods */
 		EnergyTriangleStrain(spPointDynamics dyn);
 		void declare(Stark& stark);
-		int add(const int obj_idx, const std::vector<std::array<int, 3>>& triangles, const double young_modulus, const double poisson_ratio, const std::string label = "");
+		int add(const std::vector<std::array<int, 3>>& triangles, const int conn_offset, const double young_modulus, const double poisson_ratio, const std::string label = "");
 		void set_parameters(const int id, const double young_modulus, const double poisson_ratio);
 	};
 	using spEnergyTriangleStrain = std::shared_ptr<EnergyTriangleStrain>;

@@ -1,7 +1,9 @@
 #pragma once
 #include <memory>
+#include <cassert>
 
 #include "../../solver/Stark.h"
+#include "Id.h"
 #include "interval_types.h"
 
 
@@ -21,6 +23,10 @@ namespace stark::models
 
 		/* Methods */
 		PointDynamics(Stark& sim);
+		Id add(std::vector<Eigen::Vector3d>& x, std::vector<Eigen::Vector3d>& v = std::vector<Eigen::Vector3d>());
+		int get_begin(const Id& id) const;
+		int size(const Id& id) const;
+		int size() const;
 	};
 	using spPointDynamics = std::shared_ptr<PointDynamics>;
 }

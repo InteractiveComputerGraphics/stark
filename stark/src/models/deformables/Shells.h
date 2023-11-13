@@ -20,7 +20,7 @@ namespace stark::models
 	{
 	public:
 		/* Fields */
-		const spPointDynamics dyn;
+		spPointDynamics dyn;
 		spEnergyPointInertia inertia;
 		spEnergyPointPrescribedPositions prescribed_positions;
 		spEnergyTriangleStrain strain;
