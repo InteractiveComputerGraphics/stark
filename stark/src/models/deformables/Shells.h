@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../solver/Stark.h"
-//#include "../../solver/MeshWriter.h"
+#include "../../solver/MeshWriter.h"
 #include "Id.h"
 #include "interval_types.h"
 #include "PointDynamics.h"
@@ -35,7 +35,7 @@ namespace stark::models
 		std::vector<int> global_indices;
 		
 		// Output
-		//MeshWriter mesh_writer;
+		MeshWriter mesh_writer;
 		std::vector<std::vector<std::array<int, 3>>> input_triangles;
 		std::vector<std::string, std::vector<int>> labeled_groups;  // {label: global_idx}
 

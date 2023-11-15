@@ -30,26 +30,46 @@ void stark::models::Shells::_write_frame(Stark& stark)
 {
 	if (this->is_empty()) { return; }
 
-	std::vector<Eigen::Vector3d> vertices;
-	std::vector<std::array<int, 3>> triangles;
 	if (this->labeled_groups.size() == 0) {
 
 	}
 	else {
-		std::vector<Eigen::Vector3d> vertices = this->dyn->x1.extract(this->global_indices).data;
-		for (const int glob_idx : this->global_indices){
-			const int offset = 
+		// NAIVE VERSION
+		std::vector<Eigen::Vector3d> vertices;
+		std::vector<std::array<int, 3>> triangles;
+		for (int local_obj_idx = 0; local_obj_idx < (int)this->global_indices.size(); local_obj_idx++) {
+			const int glob_obj_idx = this->global_indices[local_obj_idx];
+			const int base_idx = (int)vertices.size();
+			vertices.insert(vertices.end(), this->dyn->x1.get_begin_ptr(glob_obj_idx), this->dyn->x1.get_end_ptr(glob_obj_idx));
+
+			for (const std::array<int, 3>&tri : this->input_triangles[local_obj_idx]) {
+				triangles.push_back({ tri[0] + base_idx, tri[1] + base_idx, tri[2] + base_idx });
+			}
 		}
+		utils::write_VTK(stark.get_vtk_path("cloth"), vertices, triangles, stark.settings.output.calculate_smooth_normals);
+
+		// SIMPLE MANAGER
+		// -> This would go when adding a cloth
+		this->mesh_writer.add_triangles(
+			[&](const int local_idx) { return { this->dyn->x1.get_begin_ptr(this->global_indices[local_idx]), this->dyn->x1.get_end_ptr(this->global_indices[local_idx]) }; },
+			[&](const int local_idx) { return { this->input_triangles[local_idx].begin(), this->input_triangles[local_idx].end() }; });
+		// Yes, it is only what it needs. But the execution order becomes really convoluted. This is called from somewhere and the pointers are get from somewhere else...
+		
+
+		// Instead of lambdas, we can be explicit here (old style)
+		this->mesh_writer.clear();
+		
+		for (int local_obj_idx = 0; local_obj_idx < (int)this->global_indices.size(); local_obj_idx++) {
+			const int glob_obj_idx = this->global_indices[local_obj_idx];
+
+			this->mesh_writer.add_triangles(
+				this->dyn->x1.get_begin_ptr(glob_obj_idx),
+				this->dyn->x1.get_end_ptr(glob_obj_idx),
+				this->input_triangles[local_obj_idx].begin(),
+				this->input_triangles[local_obj_idx].end()
+			);
+		}
+		
+		this->mesh_writer.write();
 	}
-
-
-
-
-	this->mesh_writer.write(
-		[&](const int local_idx) { return this->dyn->x1.get_begin_ptr(id); }
-		[&](const int local_idx) { return this->dyn->x1.get_end_ptr(local_idx); }
-		[&](const int local_idx) { return this->dyn->x1.get_end_ptr(local_idx); }
-	);
-
-	utils::write_VTK(stark.get_vtk_path("cloth"), this->model.x1, this->model.mesh.connectivity, stark.settings.output.calculate_smooth_normals);
 }
