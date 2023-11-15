@@ -32,6 +32,8 @@ set(SOLVER_FILES
 	include/stark
 	src/solver/Settings.cpp
 	src/solver/Settings.h
+	src/solver/MeshWriter.cpp
+	src/solver/MeshWriter.h
 	src/solver/Callbacks.h
 	src/solver/AdaptiveParameter.cpp
 	src/solver/AdaptiveParameter.h

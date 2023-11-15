@@ -31,6 +31,7 @@ namespace stark::utils
 		int append(const T_It begin, const T_It end);
 		//template<typename T_It>
 		//void update(const int set_id, const T_It begin, const T_It end);
+		void reserve(const int n);
 
 		// Getters
 		int size() const;
@@ -44,9 +45,13 @@ namespace stark::utils
 		int get_set_bounding_index(const int set_id, const int local_idx) const;
 		template<std::size_t N>
 		std::array<int, N> get_global_indices(const int set_id, const std::array<int, N>& local_indices) const;
+		IntervalVector<T> extract(const std::vector<int>& sets) const;
 
 		// Indexing
 		T* get_begin_ptr(const int set_id);
+		T* get_end_ptr(const int set_id);
+		const T* get_begin_ptr(const int set_id) const;
+		const T* get_end_ptr(const int set_id) const;
 		T& operator[](const int global_idx);
 		T& get(const int global_idx);
 		T& get(const int set_id, const int local_idx);
@@ -134,6 +139,12 @@ namespace stark::utils
 
 
 	template<typename T>
+	inline void IntervalVector<T>::reserve(const int n)
+	{
+		this->data.reserve(n);
+	}
+
+	template<typename T>
 	inline int IntervalVector<T>::size() const
 	{
 		return (int)this->size();
@@ -190,13 +201,43 @@ namespace stark::utils
 		this->_assert_local_idx(set_id, local_idx);
 		return this->get_set_bounding_index(this->get_global_index(set_id, local_idx));
 	}
+	template<typename T>
+	inline IntervalVector<T> IntervalVector<T>::extract(const std::vector<int>& sets) const
+	{
+		IntervalVector output;
 
+		int n = 0;
+		for (const int set : sets) {
+			n += this->get_set_size(set);
+		}
+		output.reserve(n);
 
+		for (const int set : sets) {
+			output.append(this->get_begin_ptr(set), this->get_end_ptr(set));
+		}
+
+		return output;
+	}
 
 	template<typename T>
 	inline T* IntervalVector<T>::get_begin_ptr(const int set_id)
 	{
-		return this->data.begin() + this->get_begin(set_id);
+		return this->data.data() + this->get_begin(set_id);
+	}
+	template<typename T>
+	inline T* IntervalVector<T>::get_end_ptr(const int set_id)
+	{
+		return this->data.data() + this->get_end(set_id);
+	}
+	template<typename T>
+	inline const T* IntervalVector<T>::get_begin_ptr(const int set_id) const
+	{
+		return this->data.data() + this->get_begin(set_id);
+	}
+	template<typename T>
+	inline const T* IntervalVector<T>::get_end_ptr(const int set_id) const
+	{
+		return this->data.data() + this->get_end(set_id);
 	}
 	template<typename T>
 	inline T& IntervalVector<T>::operator[](const int global_idx)
