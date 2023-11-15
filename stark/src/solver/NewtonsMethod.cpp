@@ -52,9 +52,14 @@ stark::NewtonError stark::NewtonsMethod::solve(symx::GlobalEnergy& global_energy
 		}
 		else {
 			logger.start_timing("CG");
+
+			// Forcing sequence
+			const double grad_norm = assembled.grad->norm();
+			const double cg_tol = std::min(0.1 /*TODO: arbritrary.*/, grad_norm*std::min(0.5, std::sqrt(grad_norm)));
+
 			this->du.setZero();
 			const int max_iterations = std::max(1000, (int)(settings.newton.cg_max_iterations_multiplier * ndofs)); // Very small sims will need to exceed ndofs iterations
-			const int iterations = utils::solve_linear_system_with_CG(this->du, *assembled.hess, rhs, max_iterations, settings.newton.cg_tol, settings.execution.n_threads);
+			const int iterations = utils::solve_linear_system_with_CG(this->du, *assembled.hess, rhs, max_iterations, cg_tol, settings.execution.n_threads);
 			total_CG_it += iterations;
 			logger.stop_timing_add("CG");
 

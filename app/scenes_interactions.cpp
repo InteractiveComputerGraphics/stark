@@ -88,17 +88,17 @@ void laundry_cloth()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "laundry_cloth";
-	settings.output.output_directory = BASE_PATH + "/laundry_cloth_6_80";
+	settings.output.output_directory = BASE_PATH + "/laundry_cloth";
 	 settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.output.fps = 30;
 
 	settings.execution.end_simulation_time = 20.0;
-	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
+	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
 	settings.newton.max_newton_iterations = 20;
 	settings.newton.max_line_search_iterations = 10;
 	settings.newton.newton_tol = 1e-3;
-	settings.newton.cg_tol = 1e-10;
+	settings.newton.project_to_PD = true;
 
 	settings.contact.adaptive_contact_stiffness.set(1e4, 1e4, 1e12);
 	settings.contact.adaptive_contact_stiffness.success_multiplier = 0.8;
@@ -122,12 +122,13 @@ void laundry_cloth()
 		drum = sim.rigid_bodies.add_cylinder(1.0, 0.25, 0.25, vertices, triangles);// , { 0, 0, 0 }, 90.0, { 1, 0, 0 });
 		sim.rigid_bodies.add_constraint_motor(wall, drum, { 0, 0, 0 }, Eigen::Vector3d::UnitY(), 50.0, 0.75 * 3.14, /*delay*/0.01);
 		sim.rigid_bodies.add_to_output_group("drum", drum);
+		sim.rigid_bodies.disable_collisions(wall, drum);
 	}
 
 	// Cloth
 	const double friction = 1.0;
 	const double scale = 0.34;
-	const int n_cloths = 8;// 8;
+	const int n_cloths = 1;// 8;
 	const double spacing = 0.025;
 	const int cloth_resolution = 100;// 100;
 	std::vector<Eigen::Vector3d> vertices;

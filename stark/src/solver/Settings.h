@@ -49,7 +49,6 @@ namespace stark
 			int max_line_search_iterations = 10;
 			double line_search_multiplier = 0.5;
 
-			double cg_tol = 1e-12;
 			double cg_max_iterations_multiplier = 1.0;
 
 			bool use_direct_linear_solve = false;
