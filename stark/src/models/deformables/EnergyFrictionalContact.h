@@ -55,11 +55,9 @@ namespace stark::models
 		/* Methods */
 		EnergyFrictionalContact(const spPointDynamics dyn, const spRigidBodies rb);
 		void declare(Stark& stark);
-
-		The following are wrong because they only work for deformables
-		void add_points(Id& id);
-		void add_edges_and_points(Id& id, const std::vector<std::array<int, 2>>& edges);
-		void add_triangles_edges_and_points(Id& id, const std::vector<std::array<int, 3>>& triangles);
+		void add_points(Id& id, const int n_points, const int offset);
+		void add_edges_and_points(Id& id, const std::vector<std::array<int, 2>>& edges, const int n_points, const int offset);
+		void add_triangles_edges_and_points(Id& id, const std::vector<std::array<int, 3>>& triangles, const int n_points, const int offset);
 		
 
 	private:

@@ -23,17 +23,15 @@ void stark::models::EnergyFrictionalContact::declare(Stark& stark)
 	this->_energies_friction_rb_deformables(stark);
 }
 
-void stark::models::EnergyFrictionalContact::add_points(Id& id)
+void stark::models::EnergyFrictionalContact::add_points(Id& id, const int n_points, const int offset)
 {
 	// Points
-	const int n_points = this->dyn->size(id);
 	std::vector<std::array<int, 1>> points(n_points);
 	for (int i = 0; i < n_points; i++) {
 		points[i] = { i };
 	}
 
 	// Add
-	const int offset = this->dyn->get_begin(id);
 	const int local_idx = this->points.append(points, offset);
 	this->edges.append_empty();
 	this->triangles.append_empty();
@@ -42,17 +40,15 @@ void stark::models::EnergyFrictionalContact::add_points(Id& id)
 	id.set_local_idx("EnergyFrictionalContact", local_idx);
 }
 
-void stark::models::EnergyFrictionalContact::add_edges_and_points(Id& id, const std::vector<std::array<int, 2>>& edges)
+void stark::models::EnergyFrictionalContact::add_edges_and_points(Id& id, const std::vector<std::array<int, 2>>& edges, const int n_points, const int offset)
 {
 	// Points
-	const int n_points = this->dyn->size(id);
 	std::vector<std::array<int, 1>> points(n_points);
 	for (int i = 0; i < n_points; i++) {
 		points[i] = { i };
 	}
 
 	// Add
-	const int offset = this->dyn->get_begin(id);
 	const int local_idx = this->points.append(points, offset);
 	this->edges.append(edges, offset);
 	this->triangles.append_empty();
@@ -61,10 +57,9 @@ void stark::models::EnergyFrictionalContact::add_edges_and_points(Id& id, const 
 	id.set_local_idx("EnergyFrictionalContact", local_idx);
 }
 
-void stark::models::EnergyFrictionalContact::add_triangles_edges_and_points(Id& id, const std::vector<std::array<int, 3>>& triangles)
+void stark::models::EnergyFrictionalContact::add_triangles_edges_and_points(Id& id, const std::vector<std::array<int, 3>>& triangles, const int n_points, const int offset)
 {
 	// Points
-	const int n_points = this->dyn->size(id);
 	std::vector<std::array<int, 1>> points(n_points);
 	for (int i = 0; i < n_points; i++) {
 		points[i] = { i };
@@ -75,7 +70,6 @@ void stark::models::EnergyFrictionalContact::add_triangles_edges_and_points(Id& 
 	utils::find_edges_from_simplices(edges, triangles, n_points);
 	
 	// Add
-	const int offset = this->dyn->get_begin(id);
 	const int local_idx = this->points.append(points, offset);
 	this->edges.append(edges, offset);
 	this->triangles.append(triangles, offset);

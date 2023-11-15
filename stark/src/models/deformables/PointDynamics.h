@@ -22,11 +22,15 @@ namespace stark::models
 		symx::DoF dof;
 
 		/* Methods */
-		PointDynamics(Stark& sim);
-		Id add(std::vector<Eigen::Vector3d>& x, std::vector<Eigen::Vector3d>& v = std::vector<Eigen::Vector3d>());
+		PointDynamics(Stark& stark);
+		Id add(const std::vector<Eigen::Vector3d>& x, const std::vector<Eigen::Vector3d>& v = std::vector<Eigen::Vector3d>());
 		int get_begin(const Id& id) const;
 		int size(const Id& id) const;
 		int size() const;
+
+	private:
+		void _before_time_step(Stark& stark);
+		void _after_time_step(Stark& stark);
 	};
 	using spPointDynamics = std::shared_ptr<PointDynamics>;
 }
