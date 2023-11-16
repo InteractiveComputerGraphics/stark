@@ -3,7 +3,7 @@ stark repo TODO
 
 Oct unification
 ---------------
-	NEXT: Implement the whole Shells front end
+	* casserts really suck because the debugger can't get there! Replace them.
 
 	* CG forcing sequence
 	* RigidBodies should have different collision and render meshes.

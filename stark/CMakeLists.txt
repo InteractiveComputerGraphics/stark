@@ -101,6 +101,7 @@ set(UTILS_FILES
 	src/utils/Logger.h
 	src/utils/Console.cpp
 	src/utils/Console.h
+	src/utils/Mesh.h
 	src/utils/mesh_utils.h
 	src/utils/mesh_utils.cpp
 	src/utils/mesh_generators.cpp

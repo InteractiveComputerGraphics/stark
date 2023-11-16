@@ -147,7 +147,12 @@ namespace stark::utils
 	template<typename T>
 	inline int IntervalVector<T>::get_n_sets() const
 	{
-		return (int)this->offsets.size() - 1;
+		if (this->offsets.size() == 0) {
+			return 0;
+		}
+		else {
+			return (int)this->offsets.size() - 1;
+		}
 	}
 	template<typename T>
 	inline int IntervalVector<T>::get_set_size(const int set_id) const

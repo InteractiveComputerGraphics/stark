@@ -24,17 +24,17 @@ namespace stark::models
 		/* Definitions */
 		struct Material
 		{
-			double density;
-			double inertia_damping;
-			double strain_young_modulus;
-			double strain_poisson_ratio;
-			double strain_damping;
-			double strain_limit;
-			double strain_limit_stiffness;
-			double bending_stiffness;
-			double bending_damping;
-			double bending_cutoff_angle_deg;
-			static Material cotton();
+			double density = 0.0;
+			double inertia_damping = 0.0;
+			double strain_young_modulus = 0.0;
+			double strain_poisson_ratio = 0.0;
+			double strain_damping = 0.0;
+			double strain_limit = 0.0;
+			double strain_limit_stiffness = 0.0;
+			double bending_stiffness = 0.0;
+			double bending_damping = 0.0;
+			double bending_cutoff_angle_deg = std::numeric_limits<double>::max();
+			static Material towel();
 		};
 
 		/* Methods */

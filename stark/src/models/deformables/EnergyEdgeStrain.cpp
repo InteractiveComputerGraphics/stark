@@ -46,7 +46,7 @@ stark::models::EnergyEdgeStrain::EnergyEdgeStrain(Stark& stark, spPointDynamics 
 }
 void stark::models::EnergyEdgeStrain::add(Id& id, const std::vector<std::array<int, 2>>& edges, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping, const std::string label)
 {
-	const int group = this->labels.size();
+	const int group = (int)this->labels.size();
 
 	this->strain_stiffness.push_back(strain_stiffness);
 	this->strain_limiting_start.push_back(strain_limiting_start);

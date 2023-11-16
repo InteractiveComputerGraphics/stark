@@ -10,7 +10,7 @@ void hanging_cloth()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "strain_damping_100";
 	settings.output.output_directory = BASE_PATH + "/hanging_cloth";
-	 settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
 	settings.contact.collisions_enabled = false;

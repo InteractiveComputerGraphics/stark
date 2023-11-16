@@ -50,6 +50,16 @@ void stark::models::Shells::add_to_group(const std::string label, Id& id)
 	this->output_groups.add_to_group(label, id.get_local_idx("Shells"));
 }
 
+bool stark::models::Shells::is_empty() const
+{
+	return this->get_n_objects() == 0;
+}
+
+int stark::models::Shells::get_n_objects() const
+{
+	return (int)this->global_indices.size();
+}
+
 void stark::models::Shells::_write_frame(Stark& stark)
 {
 	if (this->is_empty()) { return; }
@@ -87,4 +97,18 @@ void stark::models::Shells::_write_frame(Stark& stark)
 		auto [vertices, triangles] = concatenate_meshes(all_local_indices);
 		utils::write_VTK(stark.get_vtk_path("shells"), vertices, triangles, stark.settings.output.calculate_smooth_normals);
 	}
+}
+
+stark::models::Shells::Material stark::models::Shells::Material::towel()
+{
+	Material material;
+	material.density = 0.2;
+	material.inertia_damping = 2.0;
+	material.strain_young_modulus = 100.0;
+	material.strain_poisson_ratio = 0.3;
+	material.strain_limit = 0.1;
+	material.strain_limit_stiffness = 1.0;
+	material.bending_stiffness = 5e-6;
+	material.bending_damping = 0.2;
+	return material;
 }

@@ -7,6 +7,25 @@ stark::models::PointDynamics::PointDynamics(Stark& stark)
 	stark.callbacks.after_time_step.push_back([&]() { this->_after_time_step(stark); });
 }
 
+stark::models::Id stark::models::PointDynamics::add(const std::vector<Eigen::Vector3d>& x, const std::vector<Eigen::Vector3d>& v)
+{
+	std::vector<Eigen::Vector3d> zero(x.size(), Eigen::Vector3d::Zero());
+	const std::vector<Eigen::Vector3d>& v_ = (v.size() != 0) ? v : zero;
+	
+	if (x.size() != v_.size()) {
+		std::cout << "stark error: PointDynamics::add() x and v must be of same length." << std::endl;
+		exit(-1);
+	}
+
+	const int glob_idx = this->X.append(x);
+	this->x0.append(x);
+	this->x1.append(x);
+	this->v0.append(v_);
+	this->v1.append(v_);
+	this->a.append(zero);
+	return Id(PhysicalSystem::Deformables, glob_idx);
+}
+
 int stark::models::PointDynamics::get_begin(const Id& id) const
 {
 	assert(id.get_physical_system() == PhysicalSystem::Deformables && "PointDynamics only works with Ids of type 'Deformables'");

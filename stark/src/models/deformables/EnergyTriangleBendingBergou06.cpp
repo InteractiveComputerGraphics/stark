@@ -36,7 +36,7 @@ stark::models::EnergyTriangleBendingBergou06::EnergyTriangleBendingBergou06(Star
 }
 void stark::models::EnergyTriangleBendingBergou06::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double stiffness, const double damping, const double cutoff_angle_deg, const std::string label)
 {
-	const int group = this->labels.size();
+	const int group = (int)this->labels.size();
 
 	this->stiffness.push_back(stiffness);
 	this->damping.push_back(damping);

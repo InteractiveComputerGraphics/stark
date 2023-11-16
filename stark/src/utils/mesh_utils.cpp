@@ -207,6 +207,12 @@ void stark::utils::generate_triangular_grid(std::vector<Eigen::Vector3d>& out_ve
 		}
 	}
 }
+stark::utils::Mesh<3> stark::utils::generate_triangular_grid(const Eigen::Vector2d& bottom, const Eigen::Vector2d& top, const std::array<int, 2>& n_quads_per_dim, const bool randomize, const double z)
+{
+	Mesh<3> mesh;
+	generate_triangular_grid(mesh.vertices, mesh.conn, bottom, top, n_quads_per_dim, randomize, z);
+	return mesh;
+}
 std::array<int, 2> stark::utils::generate_triangular_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, const double x_length, const double y_length, const int n_short_side, const bool randomize, const double z)
 {
 	int nx = 0;
@@ -336,6 +342,12 @@ void stark::utils::generate_tet_grid(std::vector<Eigen::Vector3d>& out_vertices,
 			}
 		}
 	}
+}
+stark::utils::Mesh<4> stark::utils::generate_tet_grid(const Eigen::Vector3d& bottom, const Eigen::Vector3d& top, const std::array<int, 3>& n_quads_per_dim)
+{
+	Mesh<4> mesh;
+	generate_tet_grid(mesh.vertices, mesh.conn, bottom, top, n_quads_per_dim);
+	return mesh;
 }
 void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const bool generate_normals)
 {

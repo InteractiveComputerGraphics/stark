@@ -45,7 +45,7 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(Stark& stark, spPointD
 }
 void stark::models::EnergyTriangleStrain::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double young_modulus, const double poisson_ratio, const std::string label)
 {
-	const int group = this->labels.size();
+	const int group = (int)this->labels.size();
 
 	this->young_modulus.push_back(young_modulus);
 	this->poisson_ratio.push_back(poisson_ratio);

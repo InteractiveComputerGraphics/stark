@@ -15,8 +15,8 @@ stark::models::EnergyPointInertia::EnergyPointInertia(Stark& stark, const spPoin
 			symx::Vector x0 = energy.make_vector(dyn.x0.data, node["glob"]);
 			symx::Vector v0 = energy.make_vector(dyn.v0.data, node["glob"]);
 			symx::Vector a = energy.make_vector(dyn.a.data, node["glob"]);
-			symx::Scalar volume = energy.make_scalar(this->lumped_volume.data, node["loc"]);
-			symx::Scalar density = energy.make_scalar(this->density, node["obj"]);
+			symx::Scalar volume = energy.make_scalar(this->lumped_volume.data, node["idx"]);
+			symx::Scalar density = energy.make_scalar(this->density, node["idx"]);
 			symx::Scalar inertial_damping = energy.make_scalar(this->inertial_damping, node["obj"]);
 			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 			symx::Vector gravity = energy.make_vector(stark.settings.simulation.gravity);
