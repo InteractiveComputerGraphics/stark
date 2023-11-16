@@ -25,12 +25,12 @@ namespace stark::utils
 		void clear();
 		int append(const std::vector<T>& input);
 		int append_empty();
-		//void update(const int set_id, const std::vector<T>& input);
+		void update(const int set_id, const std::vector<T>& input);
 
 		template<typename T_It>
 		int append(const T_It begin, const T_It end);
-		//template<typename T_It>
-		//void update(const int set_id, const T_It begin, const T_It end);
+		template<typename T_It>
+		void update(const int set_id, const T_It begin, const T_It end);
 		void reserve(const int n);
 
 		// Getters
@@ -106,29 +106,24 @@ namespace stark::utils
 
 		return glob;
 	}
-	//template<typename T>
-	//inline void IntervalVector<T>::update(const int set_id, const std::vector<T>& input)
-	//{
-	//	this->_assert_existing_set(set_id);
-	//	this->update(set_id, input.begin(), input.end());
-	//}
-	//template<typename T>
-	//template<typename T_It>
-	//inline void IntervalVector<T>::update(const int set_id, const T_It begin, const T_It end)
-	//{
-	//	this->_assert_existing_set(set_id);
-
-	//	// Data
-	//	//// PERFORMANCE: could be done in a single loop if necessary
-	//	this->data.erase(this->data.begin() + this->get_begin(set_id), this->data.begin() + this->get_end(set_id));
-	//	this->data.insert(this->data.begin() + this->get_begin(set_id), begin, end);
-
-	//	// Offsets
-	//	const int n_diff = (int)std::distance(begin, end) - this->get_set_size(set_id);
-	//	for (int set_i = set_id + 1; set_i < (int)this->offsets.size(); set_i++) {
-	//		this->offsets[set_i] += n_diff;
-	//	}
-	//}
+	template<typename T>
+	inline void IntervalVector<T>::update(const int set_id, const std::vector<T>& input)
+	{
+		this->_assert_existing_set(set_id);
+		this->update(set_id, input.begin(), input.end());
+	}
+	template<typename T>
+	template<typename T_It>
+	inline void IntervalVector<T>::update(const int set_id, const T_It begin, const T_It end)
+	{
+		this->_assert_existing_set(set_id);
+		const int n_diff = (int)std::distance(begin, end) - this->get_set_size(set_id);
+		if (n_diff != 0) {
+			std::cout << "IntervalVector error: can't .update() with a different size than the original one." << std::endl;
+			exit(-1);
+		}
+		std::copy(begin, end, this->get_begin_ptr(set_id));
+	}
 	template<typename T>
 	inline void IntervalVector<T>::clear()
 	{

@@ -7,7 +7,6 @@ stark::models::EnergyEdgeStrain::EnergyEdgeStrain(spPointDynamics dyn)
 	: dyn(dyn)
 {
 }
-
 void stark::models::EnergyEdgeStrain::declare(Stark& stark)
 {
 	stark.global_energy.add_energy("EnergyEdgeStrain", this->conn,
@@ -48,8 +47,7 @@ void stark::models::EnergyEdgeStrain::declare(Stark& stark)
 		}
 	);
 }
-
-int stark::models::EnergyEdgeStrain::add(const int obj_idx, const std::vector<std::array<int, 2>>& edges, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping, const std::string label)
+void stark::models::EnergyEdgeStrain::add(Id& id, const std::vector<std::array<int, 2>>& edges, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping, const std::string label)
 {
 	const int group = this->labels.size();
 
@@ -64,7 +62,7 @@ int stark::models::EnergyEdgeStrain::add(const int obj_idx, const std::vector<st
 
 		// Connectivity
 		const std::array<int, 2>& conn = edges[tri_i];
-		const std::array<int, 2> conn_glob = this->dyn->X.get_global_indices(obj_idx, conn);
+		const std::array<int, 2> conn_glob = this->dyn->X.get_global_indices(id.get_global_idx(), conn);
 		this->conn.numbered_push_back({ group, conn_glob[0], conn_glob[1] });
 
 		// Fetch coordinates
@@ -75,13 +73,13 @@ int stark::models::EnergyEdgeStrain::add(const int obj_idx, const std::vector<st
 		this->rest_length.push_back((A - B).norm());
 	}
 
-	return group;
+	id.set_local_idx("EnergyEdgeStrain", group);
 }
-
-void stark::models::EnergyEdgeStrain::set_parameters(const int id, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping)
+void stark::models::EnergyEdgeStrain::set_parameters(Id& id, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping)
 {
-	this->strain_stiffness[id] = strain_stiffness;
-	this->strain_limiting_start[id] = strain_limiting_start;
-	this->strain_limiting_stiffness[id] = strain_limiting_stiffness;
-	this->strain_damping[id] = strain_damping;
+	const int local_idx = id.get_local_idx("EnergyEdgeStrain");
+	this->strain_stiffness[local_idx] = strain_stiffness;
+	this->strain_limiting_start[local_idx] = strain_limiting_start;
+	this->strain_limiting_stiffness[local_idx] = strain_limiting_stiffness;
+	this->strain_damping[local_idx] = strain_damping;
 }

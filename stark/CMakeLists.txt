@@ -32,8 +32,6 @@ set(SOLVER_FILES
 	include/stark
 	src/solver/Settings.cpp
 	src/solver/Settings.h
-	src/solver/MeshWriter.cpp
-	src/solver/MeshWriter.h
 	src/solver/Callbacks.h
 	src/solver/AdaptiveParameter.cpp
 	src/solver/AdaptiveParameter.h
@@ -97,6 +95,8 @@ set(MODELS_FILES
 	src/models/deformables/contact_and_friction_data.h
 	src/models/deformables/EnergyFrictionalContact.h
 	src/models/deformables/EnergyFrictionalContact.cpp
+	src/models/deformables/MeshOutputGroups.h
+	src/models/deformables/MeshOutputGroups.cpp
 	)
 
 set(UTILS_FILES

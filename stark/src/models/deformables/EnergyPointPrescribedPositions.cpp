@@ -7,7 +7,6 @@ stark::models::EnergyPointPrescribedPositions::EnergyPointPrescribedPositions(sp
 	: dyn(dyn)
 {
 }
-
 void stark::models::EnergyPointPrescribedPositions::declare(Stark& stark)
 {
 	// Update BC in case the user has changed them
@@ -33,19 +32,24 @@ void stark::models::EnergyPointPrescribedPositions::declare(Stark& stark)
 		}
 	);
 }
-
-std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::EnergyPointPrescribedPositions::add_group(const int obj_idx, const std::string label)
+std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::EnergyPointPrescribedPositions::create_group(Id& id, const std::string label)
 {
-	this->bc_source.emplace_back(obj_idx, label);
+	if (id.get_physical_system() != PhysicalSystem::Deformables) {
+		std::cout << "Stark error: EnergyPointPrescribedPositions only works with PhysicalSystem::Deformables." << std::endl;
+		exit(-1);
+	}
+	this->bc_source.emplace_back(id.get_global_idx(), label);
 	return this->bc_source.back();
 }
-
-std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::EnergyPointPrescribedPositions::add_group_with_transformation(const int obj_idx, const std::string label)
+std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::EnergyPointPrescribedPositions::create_group_with_transformation(Id& id, const std::string label)
 {
-	this->bc_transform_source.emplace_back(obj_idx, label);
+	if (id.get_physical_system() != PhysicalSystem::Deformables) {
+		std::cout << "Stark error: EnergyPointPrescribedPositions only works with PhysicalSystem::Deformables." << std::endl;
+		exit(-1);
+	}
+	this->bc_transform_source.emplace_back(id.get_global_idx(), label);
 	return this->bc_transform_source.back();
 }
-
 void stark::models::EnergyPointPrescribedPositions::_before_time_step(Stark& stark)
 {
 	this->conn.clear();

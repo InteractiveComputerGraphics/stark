@@ -7,6 +7,7 @@
 
 #include "../../solver/Energy.h"
 #include "../../solver/Stark.h"
+#include "Id.h"
 #include "PointDynamics.h"
 
 namespace stark::models
@@ -28,8 +29,8 @@ namespace stark::models
 		/* Methods */
 		EnergyEdgeStrain(spPointDynamics dyn);
 		void declare(Stark& stark);
-		int add(const int obj_idx, const std::vector<std::array<int, 2>>& edges, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping, const std::string label = "");
-		void set_parameters(const int id, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping);
+		void add(Id& id, const std::vector<std::array<int, 2>>& edges, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping, const std::string label = "");
+		void set_parameters(Id& id, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping);
 	};
 	using spEnergyEdgeStrain = std::shared_ptr<EnergyEdgeStrain>;
 }

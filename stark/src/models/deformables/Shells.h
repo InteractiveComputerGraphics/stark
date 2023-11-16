@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../solver/Stark.h"
-#include "../../solver/MeshWriter.h"
+#include "MeshOutputGroups.h"
 #include "Id.h"
 #include "interval_types.h"
 #include "PointDynamics.h"
@@ -22,22 +22,20 @@ namespace stark::models
 	{
 	public:
 		/* Definitions */
-		enum class MaterialPresets { Cloth };
-
-		/* Fields */
-		spPointDynamics dyn;
-		spEnergyPointInertia inertia;
-		spEnergyPointPrescribedPositions prescribed_positions;
-		spEnergyTriangleStrain strain;
-		spEnergyTriangleBendingBergou06 bending_bergou;
-		spEnergyEdgeStrain edge_strain_limiting_and_damping;
-		spEnergyFrictionalContact contact;
-		std::vector<int> global_indices;
-		
-		// Output
-		MeshWriter mesh_writer;
-		std::vector<std::vector<std::array<int, 3>>> input_triangles;
-		std::vector<std::string, std::vector<int>> labeled_groups;  // {label: global_idx}
+		struct Material
+		{
+			double density;
+			double inertia_damping;
+			double strain_young_modulus;
+			double strain_poisson_ratio;
+			double strain_damping;
+			double strain_limit;
+			double strain_limit_stiffness;
+			double bending_stiffness;
+			double bending_damping;
+			double bending_cutoff_angle_deg;
+			static Material cotton();
+		};
 
 		/* Methods */
 		Shells(
@@ -51,10 +49,28 @@ namespace stark::models
 			spEnergyFrictionalContact contact
 		);
 
-		Id add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const MaterialPresets material = MaterialPresets::Cloth);
+		Id add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const Material material);
+		std::shared_ptr<PrescribedPointGroup> create_prescribed_positions_group(Id& id, const std::string label = "");
+		std::shared_ptr<PrescribedPointGroupWithTransformation> create_prescribed_positions_group_with_transformation(Id& id, const std::string label = "");
 		bool is_empty() const;
+		int get_n_objects() const;
 
 	private:
+		/* Fields */
+		spPointDynamics dyn;
+		spEnergyPointInertia inertia;
+		spEnergyPointPrescribedPositions prescribed_positions;
+		spEnergyTriangleStrain strain;
+		spEnergyTriangleBendingBergou06 bending_bergou;
+		spEnergyEdgeStrain edge_strain_limiting_and_damping;
+		spEnergyFrictionalContact contact;
+		std::vector<int> global_indices;
+
+		// Output
+		MeshOutputGroups output_groups;  // local_indices
+		std::vector<std::vector<std::array<int, 3>>> input_triangles;
+
+		// Stark callbaks
 		void _write_frame(Stark& stark);
 	};
 }

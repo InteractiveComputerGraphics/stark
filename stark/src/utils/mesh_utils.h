@@ -29,6 +29,8 @@ namespace stark::utils
 	//// Topology
 	template<std::size_t N>
 	void find_edges_from_simplices(std::vector<std::array<int, 2>>& out_edges, const std::vector<std::array<int, N>>& simplices, const int n_nodes);
+	template<std::size_t N>
+	std::vector<std::array<int, 2>> find_edges_from_simplices(const std::vector<std::array<int, N>>& simplices, const int n_nodes);
 	void find_node_node_map_simplex(std::vector<std::vector<int>>& output, const int32_t* connectivity, const int32_t n_simplices, const int32_t n_nodes_per_simplex, const int32_t n_nodes);
 	void find_internal_angles(std::vector<std::array<int, 4>>& internal_edges, const std::vector<std::array<int, 3>>& triangles, const int n_nodes);
 
@@ -64,5 +66,12 @@ namespace stark::utils
 		std::sort(out_edges.begin(), out_edges.end(), [&](const std::array<int, 2>& a, const std::array<int, 2>& b) { return a[0] * n_nodes + a[1] < b[0] * n_nodes + b[1]; });
 		auto end_unique = std::unique(out_edges.begin(), out_edges.end());
 		out_edges.erase(end_unique, out_edges.end());
+	}
+	template<std::size_t N>
+	std::vector<std::array<int, 2>> find_edges_from_simplices(const std::vector<std::array<int, N>>& simplices, const int n_nodes)
+	{
+		std::vector<std::array<int, 2>> output;
+		find_edges_from_simplices(output, simplices, n_nodes);
+		return output;
 	}
 }

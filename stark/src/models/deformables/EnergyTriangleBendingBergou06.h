@@ -7,6 +7,7 @@
 
 #include "../../solver/Energy.h"
 #include "../../solver/Stark.h"
+#include "Id.h"
 #include "PointDynamics.h"
 
 namespace stark::models
@@ -27,8 +28,8 @@ namespace stark::models
 		/* Methods */
 		EnergyTriangleBendingBergou06(spPointDynamics dyn);
 		void declare(Stark& stark);
-		int add(const int obj_idx, const std::vector<std::array<int, 3>>& triangles, const double stiffness, const double damping, const double cutoff_angle_deg, const std::string label = "");
-		void set_parameters(const int id, const double stiffness, const double damping);
+		void add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double stiffness, const double damping, const double cutoff_angle_deg, const std::string label = "");
+		void set_parameters(Id& id, const double stiffness, const double damping);
 	};
 	using spEnergyTriangleBendingBergou06 = std::shared_ptr<EnergyTriangleBendingBergou06>;
 }

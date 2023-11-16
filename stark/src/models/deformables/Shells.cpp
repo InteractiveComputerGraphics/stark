@@ -13,63 +13,67 @@ stark::models::Shells::Shells(
 	spEnergyFrictionalContact contact)
 	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions), strain(strain), bending_bergou(bending_bergou), edge_strain_limiting_and_damping(edge_strain_limiting_and_damping), contact(contact)
 {
-
+	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
 }
 
-stark::models::Id stark::models::Shells::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const MaterialPresets material)
+stark::models::Id stark::models::Shells::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const Material material)
 {
 	Id id = this->dyn->add(vertices);
 	const int size = this->dyn->size(id);
 	const int offset = this->dyn->get_begin(id);
+
+	this->inertia->add(id, triangles, material.density, material.inertia_damping);
+	this->strain->add(id, triangles, material.strain_young_modulus, material.strain_poisson_ratio);
+	this->bending_bergou->add(id, triangles, material.bending_stiffness, material.bending_stiffness, material.bending_cutoff_angle_deg);
+	this->edge_strain_limiting_and_damping->add(id, utils::find_edges_from_simplices(triangles, size), /* strain_stiffness */ 0.0, material.strain_limit, material.strain_limit_stiffness, material.strain_damping);
 	this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
-	
-	// MeshWriter
+}
+
+std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::Shells::create_prescribed_positions_group(Id& id, const std::string label)
+{
+	return this->prescribed_positions->create_group(id, label);
+}
+
+std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::Shells::create_prescribed_positions_group_with_transformation(Id& id, const std::string label)
+{
+	return this->prescribed_positions->create_group_with_transformation(id, label);
 }
 
 void stark::models::Shells::_write_frame(Stark& stark)
 {
 	if (this->is_empty()) { return; }
 
-	if (this->labeled_groups.size() == 0) {
-
-	}
-	else {
-		// NAIVE VERSION
+	auto concatenate_meshes = [&](const std::vector<int>& local_indices)
+	{
 		std::vector<Eigen::Vector3d> vertices;
 		std::vector<std::array<int, 3>> triangles;
-		for (int local_obj_idx = 0; local_obj_idx < (int)this->global_indices.size(); local_obj_idx++) {
-			const int glob_obj_idx = this->global_indices[local_obj_idx];
-			const int base_idx = (int)vertices.size();
-			vertices.insert(vertices.end(), this->dyn->x1.get_begin_ptr(glob_obj_idx), this->dyn->x1.get_end_ptr(glob_obj_idx));
-
-			for (const std::array<int, 3>&tri : this->input_triangles[local_obj_idx]) {
-				triangles.push_back({ tri[0] + base_idx, tri[1] + base_idx, tri[2] + base_idx });
+		for (const int local_idx : local_indices) {
+			const int global_idx = this->global_indices[local_idx];
+			const int offset = (int)vertices.size();
+			vertices.insert(vertices.end(), this->dyn->x1.get_begin_ptr(global_idx), this->dyn->x1.get_end_ptr(global_idx));
+			for (const std::array<int, 3>&tri : this->input_triangles[local_idx]) {
+				triangles.push_back({ tri[0] + offset, tri[1] + offset, tri[2] + offset });
 			}
 		}
-		utils::write_VTK(stark.get_vtk_path("cloth"), vertices, triangles, stark.settings.output.calculate_smooth_normals);
+		return std::pair{ vertices, triangles };
+	};
 
-		// SIMPLE MANAGER
-		// -> This would go when adding a cloth
-		this->mesh_writer.add_triangles(
-			[&](const int local_idx) { return { this->dyn->x1.get_begin_ptr(this->global_indices[local_idx]), this->dyn->x1.get_end_ptr(this->global_indices[local_idx]) }; },
-			[&](const int local_idx) { return { this->input_triangles[local_idx].begin(), this->input_triangles[local_idx].end() }; });
-		// Yes, it is only what it needs. But the execution order becomes really convoluted. This is called from somewhere and the pointers are get from somewhere else...
-		
-
-		// Instead of lambdas, we can be explicit here (old style)
-		this->mesh_writer.clear();
-		
-		for (int local_obj_idx = 0; local_obj_idx < (int)this->global_indices.size(); local_obj_idx++) {
-			const int glob_obj_idx = this->global_indices[local_obj_idx];
-
-			this->mesh_writer.add_triangles(
-				this->dyn->x1.get_begin_ptr(glob_obj_idx),
-				this->dyn->x1.get_end_ptr(glob_obj_idx),
-				this->input_triangles[local_obj_idx].begin(),
-				this->input_triangles[local_obj_idx].end()
-			);
+	// Export groups
+	if (this->output_groups.size() == 0) {
+		for (auto it : this->output_groups.groups) {
+			const std::string label = it.first;
+			const std::unordered_set<int> group = it.second;
+			auto [vertices, triangles] = concatenate_meshes(std::vector<int>(group.begin(), group.end()));
+			utils::write_VTK(stark.get_vtk_path("shells_" + label), vertices, triangles, stark.settings.output.calculate_smooth_normals);
 		}
-		
-		this->mesh_writer.write();
+	}
+
+	// Default: everything goes into the same .vtk
+	else {
+
+		std::vector<int> all_local_indices(this->get_n_objects());
+		std::iota(all_local_indices.begin(), all_local_indices.end(), 0);
+		auto [vertices, triangles] = concatenate_meshes(all_local_indices);
+		utils::write_VTK(stark.get_vtk_path("shells"), vertices, triangles, stark.settings.output.calculate_smooth_normals);
 	}
 }

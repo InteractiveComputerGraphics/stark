@@ -8,7 +8,6 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(spPointDynamics dyn)
 	: dyn(dyn)
 {
 }
-
 void stark::models::EnergyTriangleStrain::declare(Stark& stark)
 {
 	stark.global_energy.add_energy("EnergyTriangleStrain", this->conn,
@@ -47,8 +46,7 @@ void stark::models::EnergyTriangleStrain::declare(Stark& stark)
 		}
 	);
 }
-
-int stark::models::EnergyTriangleStrain::add(const int obj_idx, const std::vector<std::array<int, 3>>& triangles, const double young_modulus, const double poisson_ratio, const std::string label)
+void stark::models::EnergyTriangleStrain::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double young_modulus, const double poisson_ratio, const std::string label)
 {
 	const int group = this->labels.size();
 
@@ -61,7 +59,7 @@ int stark::models::EnergyTriangleStrain::add(const int obj_idx, const std::vecto
 
 		// Connectivity
 		const std::array<int, 3>& conn = triangles[tri_i];
-		const std::array<int, 3> conn_glob = this->dyn->X.get_global_indices(obj_idx, conn);
+		const std::array<int, 3> conn_glob = this->dyn->X.get_global_indices(id.get_global_idx(), conn);
 		this->conn.numbered_push_back({ group, conn_glob[0], conn_glob[1], conn_glob[2] });
 
 		// Fetch coordinates
@@ -94,11 +92,11 @@ int stark::models::EnergyTriangleStrain::add(const int obj_idx, const std::vecto
 		this->DXinv.push_back({DXinv(0, 0), DXinv(0, 1), DXinv(1, 0), DXinv(1, 1)});
 	}
 
-	return group;
+	id.set_local_idx("EnergyTriangleStrain", group);
 }
 
-void stark::models::EnergyTriangleStrain::set_parameters(const int id, const double young_modulus, const double poisson_ratio)
+void stark::models::EnergyTriangleStrain::set_parameters(Id& id, const double young_modulus, const double poisson_ratio)
 {
-	this->young_modulus[id] = young_modulus;
-	this->poisson_ratio[id] = poisson_ratio;
+	this->young_modulus[id.get_local_idx("EnergyTriangleStrain")] = young_modulus;
+	this->poisson_ratio[id.get_local_idx("EnergyTriangleStrain")] = poisson_ratio;
 }

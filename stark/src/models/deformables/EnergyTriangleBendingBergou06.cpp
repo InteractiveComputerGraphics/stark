@@ -38,7 +38,7 @@ void stark::models::EnergyTriangleBendingBergou06::declare(Stark& stark)
 		}
 	);
 }
-int stark::models::EnergyTriangleBendingBergou06::add(const int obj_idx, const std::vector<std::array<int, 3>>& triangles, const double stiffness, const double damping, const double cutoff_angle_deg, const std::string label)
+void stark::models::EnergyTriangleBendingBergou06::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double stiffness, const double damping, const double cutoff_angle_deg, const std::string label)
 {
 	const int group = this->labels.size();
 
@@ -49,7 +49,7 @@ int stark::models::EnergyTriangleBendingBergou06::add(const int obj_idx, const s
 
 	// Find internal_angles (dihedral) connectivity
 	std::vector<std::array<int, 4>> internal_angles;
-	utils::find_internal_angles(internal_angles, triangles, this->dyn->X.get_set_size(obj_idx));
+	utils::find_internal_angles(internal_angles, triangles, this->dyn->X.get_set_size(id.get_global_idx()));
 
 	// Definitions
 	auto cotTheta = [](const Eigen::Vector3d& v, const Eigen::Vector3d& w) {
@@ -64,7 +64,7 @@ int stark::models::EnergyTriangleBendingBergou06::add(const int obj_idx, const s
 
 		// Connectivity
 		const std::array<int, 4>& conn = internal_angles[internal_angle_i];
-		const std::array<int, 4> conn_glob = this->dyn->X.get_global_indices(obj_idx, conn);
+		const std::array<int, 4> conn_glob = this->dyn->X.get_global_indices(id.get_global_idx(), conn);
 		this->conn.numbered_push_back({ group, conn_glob[0], conn_glob[1], conn_glob[2], conn_glob[3] });
 
 		// Fetch coordinates and compute edges
@@ -102,10 +102,10 @@ int stark::models::EnergyTriangleBendingBergou06::add(const int obj_idx, const s
 		});
 	}
 
-	return group;
+	id.set_local_idx("EnergyTriangleBendingBergou06", group);
 }
-void stark::models::EnergyTriangleBendingBergou06::set_parameters(const int id, const double stiffness, const double damping)
+void stark::models::EnergyTriangleBendingBergou06::set_parameters(Id& id, const double stiffness, const double damping)
 {
-	this->stiffness[id] = stiffness;
-	this->damping[id] = damping;
+	this->stiffness[id.get_local_idx("EnergyTriangleBendingBergou06")] = stiffness;
+	this->damping[id.get_local_idx("EnergyTriangleBendingBergou06")] = damping;
 }

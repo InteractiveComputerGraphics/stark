@@ -8,8 +8,10 @@
 #include "../../solver/Energy.h"
 #include "../../solver/Stark.h"
 #include "PointDynamics.h"
+#include "Id.h"
 #include "PrescribedPointGroup.h"
 #include "PrescribedPointGroupWithTransformation.h"
+
 
 namespace stark::models
 {
@@ -31,8 +33,8 @@ namespace stark::models
 		/* Methods */
 		EnergyPointPrescribedPositions(spPointDynamics dyn);
 		void declare(Stark& stark);
-		std::shared_ptr<PrescribedPointGroup> add_group(const int obj_idx, const std::string label = "");
-		std::shared_ptr<PrescribedPointGroupWithTransformation> add_group_with_transformation(const int obj_idx, const std::string label = "");
+		std::shared_ptr<PrescribedPointGroup> create_group(Id& id, const std::string label = "");
+		std::shared_ptr<PrescribedPointGroupWithTransformation> create_group_with_transformation(Id& id, const std::string label = "");
 
 	private:
 		void _before_time_step(Stark& stark);
