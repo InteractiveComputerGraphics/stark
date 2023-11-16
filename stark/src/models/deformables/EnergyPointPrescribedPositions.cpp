@@ -3,11 +3,8 @@
 #include "../time_integration.h"
 
 
-stark::models::EnergyPointPrescribedPositions::EnergyPointPrescribedPositions(spPointDynamics dyn)
+stark::models::EnergyPointPrescribedPositions::EnergyPointPrescribedPositions(Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
-{
-}
-void stark::models::EnergyPointPrescribedPositions::declare(Stark& stark)
 {
 	// Update BC in case the user has changed them
 	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step(stark); });

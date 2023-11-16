@@ -5,15 +5,13 @@
 
 #include <Eigen/Dense>
 
-#include "../../solver/Energy.h"
 #include "../../solver/Stark.h"
 #include "Id.h"
 #include "PointDynamics.h"
 
 namespace stark::models
 {
-	class EnergyEdgeStrain :
-		public Energy
+	class EnergyEdgeStrain
 	{
 	public:
 		/* Fields */
@@ -27,8 +25,7 @@ namespace stark::models
 		std::vector<std::string> labels;  // per group
 
 		/* Methods */
-		EnergyEdgeStrain(spPointDynamics dyn);
-		void declare(Stark& stark);
+		EnergyEdgeStrain(Stark& stark, spPointDynamics dyn);
 		void add(Id& id, const std::vector<std::array<int, 2>>& edges, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping, const std::string label = "");
 		void set_parameters(Id& id, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping);
 	};

@@ -3,12 +3,8 @@
 #include "../time_integration.h"
 #include "../../utils/mesh_utils.h"
 
-stark::models::EnergyTriangleBendingBergou06::EnergyTriangleBendingBergou06(spPointDynamics dyn)
+stark::models::EnergyTriangleBendingBergou06::EnergyTriangleBendingBergou06(Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
-{
-}
-
-void stark::models::EnergyTriangleBendingBergou06::declare(Stark& stark)
 {
 	stark.global_energy.add_energy("EnergyTriangleBergou06", this->conn,
 		[&](symx::Energy& energy, symx::Element& conn)

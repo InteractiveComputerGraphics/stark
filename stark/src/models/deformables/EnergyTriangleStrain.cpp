@@ -4,11 +4,8 @@
 #include "../../utils/mesh_utils.h"
 
 
-stark::models::EnergyTriangleStrain::EnergyTriangleStrain(spPointDynamics dyn)
+stark::models::EnergyTriangleStrain::EnergyTriangleStrain(Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
-{
-}
-void stark::models::EnergyTriangleStrain::declare(Stark& stark)
 {
 	stark.global_energy.add_energy("EnergyTriangleStrain", this->conn,
 		[&](symx::Energy& energy, symx::Element& conn)

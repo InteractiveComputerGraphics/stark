@@ -3,11 +3,8 @@
 #include "../time_integration.h"
 #include "../../utils/mesh_utils.h"
 
-stark::models::EnergyEdgeStrain::EnergyEdgeStrain(spPointDynamics dyn)
+stark::models::EnergyEdgeStrain::EnergyEdgeStrain(Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
-{
-}
-void stark::models::EnergyEdgeStrain::declare(Stark& stark)
 {
 	stark.global_energy.add_energy("EnergyEdgeStrain", this->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
@@ -30,7 +27,7 @@ void stark::models::EnergyEdgeStrain::declare(Stark& stark)
 			// Strain
 			symx::Scalar l = (x1[0] - x1[1]).norm();
 			symx::Scalar dl = l - rest_length;
-			symx::Scalar E_s = 0.5*strain_stiffness*dl.powN(2);
+			symx::Scalar E_s = 0.5 * strain_stiffness * dl.powN(2);
 
 			// Strain limiting
 			symx::Scalar dl_over_limit = dl - strain_limiting_start * rest_length;

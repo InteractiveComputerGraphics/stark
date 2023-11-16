@@ -6,7 +6,8 @@
 #include "../../utils/mesh_utils.h"
 
 
-void stark::models::EnergyFrictionalContact::declare(Stark& stark)
+stark::models::EnergyFrictionalContact::EnergyFrictionalContact(Stark& stark, const spPointDynamics dyn, const spRigidBodies rb)
+	: dyn(dyn), rb(rb)
 {
 	// Callbacks
 	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step__update_friction_contacts(stark); });
@@ -21,6 +22,7 @@ void stark::models::EnergyFrictionalContact::declare(Stark& stark)
 	this->_energies_friction_deformables(stark);
 	this->_energies_friction_rb(stark);
 	this->_energies_friction_rb_deformables(stark);
+
 }
 
 void stark::models::EnergyFrictionalContact::add_points(Id& id, const int n_points, const int offset)

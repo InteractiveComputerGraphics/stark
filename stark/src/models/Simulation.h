@@ -6,6 +6,8 @@
 #include "DeformableSolids.h"
 #include "Interactions.h"
 
+#include "deformables/Shells.h"
+
 namespace stark::models
 {
 	class Simulation
@@ -16,6 +18,8 @@ namespace stark::models
 		DeformableSolids deformables;
 		RigidBodies rigid_bodies;
 		Interactions interactions;
+
+		spShells shells;
 
 		Simulation(const Settings& settings);
 	};

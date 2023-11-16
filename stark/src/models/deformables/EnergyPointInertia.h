@@ -10,8 +10,7 @@
 
 namespace stark::models
 {
-	class EnergyPointInertia :
-		public Energy
+	class EnergyPointInertia
 	{
 	public:
 		/* Fields */
@@ -23,8 +22,7 @@ namespace stark::models
 		std::vector<std::string> labels;  // per obj
 
 		/* Methods */
-		EnergyPointInertia(const spPointDynamics dyn);
-		void declare(Stark& stark);
+		EnergyPointInertia(Stark& stark, const spPointDynamics dyn);
 		void add(Id& id, const std::vector<double>& lumped_volume, const double density, const double inertial_damping, const std::string label = "");
 		void add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double density, const double inertial_damping, const std::string label = "");
 		void add(Id& id, const std::vector<std::array<int, 4>>& tets, const double density, const double inertial_damping, const std::string label = "");

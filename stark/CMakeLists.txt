@@ -37,7 +37,6 @@ set(SOLVER_FILES
 	src/solver/AdaptiveParameter.h
 	src/solver/NewtonsMethod.cpp
 	src/solver/NewtonsMethod.h
-	src/solver/Energy.h
 	src/solver/Stark.cpp
 	src/solver/Stark.h
 	)

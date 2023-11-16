@@ -7,7 +7,6 @@
 #include <symx>
 #include <TriangleMeshCollisionDetection>
 
-#include "../../solver/Energy.h"
 #include "../../solver/Stark.h"
 #include "../../utils/unordered_array_set_and_map.h"
 #include "Id.h"
@@ -20,8 +19,7 @@ namespace stark::models
 	enum class IPCBarrierType { Log, Cubic };
 	enum class IPCFrictionType { C0, C1 };
 
-	class EnergyFrictionalContact :
-		public Energy
+	class EnergyFrictionalContact
 	{
 	public:
 		/* Fields */
@@ -53,8 +51,7 @@ namespace stark::models
 
 
 		/* Methods */
-		EnergyFrictionalContact(const spPointDynamics dyn, const spRigidBodies rb);
-		void declare(Stark& stark);
+		EnergyFrictionalContact(Stark& stark, const spPointDynamics dyn, const spRigidBodies rb);
 		void add_points(Id& id, const int n_points, const int offset);
 		void add_edges_and_points(Id& id, const std::vector<std::array<int, 2>>& edges, const int n_points, const int offset);
 		void add_triangles_edges_and_points(Id& id, const std::vector<std::array<int, 3>>& triangles, const int n_points, const int offset);

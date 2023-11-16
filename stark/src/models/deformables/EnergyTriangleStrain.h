@@ -5,15 +5,13 @@
 
 #include <Eigen/Dense>
 
-#include "../../solver/Energy.h"
 #include "../../solver/Stark.h"
 #include "Id.h"
 #include "PointDynamics.h"
 
 namespace stark::models
 {
-	class EnergyTriangleStrain :
-		public Energy
+	class EnergyTriangleStrain
 	{
 	public:
 		/* Fields */
@@ -26,8 +24,7 @@ namespace stark::models
 		std::vector<std::string> labels;  // per group
 
 		/* Methods */
-		EnergyTriangleStrain(spPointDynamics dyn);
-		void declare(Stark& stark);
+		EnergyTriangleStrain(Stark& stark, spPointDynamics dyn);
 		void add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double young_modulus, const double poisson_ratio, const std::string label = "");
 		void set_parameters(Id& id, const double young_modulus, const double poisson_ratio);
 	};

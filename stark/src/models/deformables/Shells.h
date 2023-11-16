@@ -52,6 +52,7 @@ namespace stark::models
 		Id add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const Material material);
 		std::shared_ptr<PrescribedPointGroup> create_prescribed_positions_group(Id& id, const std::string label = "");
 		std::shared_ptr<PrescribedPointGroupWithTransformation> create_prescribed_positions_group_with_transformation(Id& id, const std::string label = "");
+		void add_to_group(const std::string label, Id& id);
 		bool is_empty() const;
 		int get_n_objects() const;
 
@@ -73,4 +74,5 @@ namespace stark::models
 		// Stark callbaks
 		void _write_frame(Stark& stark);
 	};
+	using spShells = std::shared_ptr<Shells>;
 }

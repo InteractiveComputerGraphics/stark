@@ -5,7 +5,6 @@
 
 #include <Eigen/Dense>
 
-#include "../../solver/Energy.h"
 #include "../../solver/Stark.h"
 #include "PointDynamics.h"
 #include "Id.h"
@@ -15,8 +14,7 @@
 
 namespace stark::models
 {
-	class EnergyPointPrescribedPositions :
-		public Energy
+	class EnergyPointPrescribedPositions
 	{
 	public:
 		/* Fields */
@@ -31,8 +29,7 @@ namespace stark::models
 		std::vector<std::shared_ptr<PrescribedPointGroupWithTransformation>> bc_transform_source;
 
 		/* Methods */
-		EnergyPointPrescribedPositions(spPointDynamics dyn);
-		void declare(Stark& stark);
+		EnergyPointPrescribedPositions(Stark& stark, spPointDynamics dyn);
 		std::shared_ptr<PrescribedPointGroup> create_group(Id& id, const std::string label = "");
 		std::shared_ptr<PrescribedPointGroupWithTransformation> create_group_with_transformation(Id& id, const std::string label = "");
 

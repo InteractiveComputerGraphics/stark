@@ -19,6 +19,8 @@ stark::models::Shells::Shells(
 stark::models::Id stark::models::Shells::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const Material material)
 {
 	Id id = this->dyn->add(vertices);
+	const int shell_id = (int)this->global_indices.size();
+	this->global_indices.push_back(id.get_global_idx());
 	const int size = this->dyn->size(id);
 	const int offset = this->dyn->get_begin(id);
 
@@ -27,6 +29,9 @@ stark::models::Id stark::models::Shells::add(const std::vector<Eigen::Vector3d>&
 	this->bending_bergou->add(id, triangles, material.bending_stiffness, material.bending_stiffness, material.bending_cutoff_angle_deg);
 	this->edge_strain_limiting_and_damping->add(id, utils::find_edges_from_simplices(triangles, size), /* strain_stiffness */ 0.0, material.strain_limit, material.strain_limit_stiffness, material.strain_damping);
 	this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
+
+	id.set_local_idx("Shells", shell_id);
+	return id;
 }
 
 std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::Shells::create_prescribed_positions_group(Id& id, const std::string label)
@@ -37,6 +42,11 @@ std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::Shells::crea
 std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::Shells::create_prescribed_positions_group_with_transformation(Id& id, const std::string label)
 {
 	return this->prescribed_positions->create_group_with_transformation(id, label);
+}
+
+void stark::models::Shells::add_to_group(const std::string label, Id& id)
+{
+	this->output_groups.add_to_group(label, id.get_local_idx("Shells"));
 }
 
 void stark::models::Shells::_write_frame(Stark& stark)
