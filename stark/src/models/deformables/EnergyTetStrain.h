@@ -5,14 +5,12 @@
 
 #include <Eigen/Dense>
 
-#include "../../solver/Energy.h"
 #include "../../solver/Stark.h"
 #include "PointDynamics.h"
 
 namespace stark::models
 {
-	class EnergyTetStrain :
-		public Energy
+	class EnergyTetStrain
 	{
 	public:
 		/* Fields */
@@ -25,8 +23,7 @@ namespace stark::models
 		std::vector<std::string> labels;  // per group
 
 		/* Methods */
-		EnergyTetStrain(spPointDynamics dyn);
-		void declare(Stark& stark);
+		EnergyTetStrain(Stark& stark, spPointDynamics dyn);
 		int add(const int obj_idx, const std::vector<std::array<int, 4>>& tets, const double young_modulus, const double poisson_ratio, const std::string label = "");
 		void set_parameters(const int id, const double young_modulus, const double poisson_ratio);
 	};

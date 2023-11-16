@@ -9,9 +9,10 @@ stark::models::Shells::Shells(
 	spEnergyPointPrescribedPositions prescribed_positions, 
 	spEnergyTriangleStrain strain, 
 	spEnergyTriangleBendingBergou06 bending_bergou, 
-	spEnergyEdgeStrain edge_strain_limiting_and_damping,
-	spEnergyFrictionalContact contact)
-	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions), strain(strain), bending_bergou(bending_bergou), edge_strain_limiting_and_damping(edge_strain_limiting_and_damping), contact(contact)
+	spEnergyEdgeStrain edge_strain_limiting_and_damping
+	//spEnergyFrictionalContact contact
+)
+	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions), strain(strain), bending_bergou(bending_bergou), edge_strain_limiting_and_damping(edge_strain_limiting_and_damping)//, contact(contact)
 {
 	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
 }
@@ -28,7 +29,7 @@ stark::models::Id stark::models::Shells::add(const std::vector<Eigen::Vector3d>&
 	this->strain->add(id, triangles, material.strain_young_modulus, material.strain_poisson_ratio);
 	this->bending_bergou->add(id, triangles, material.bending_stiffness, material.bending_stiffness, material.bending_cutoff_angle_deg);
 	this->edge_strain_limiting_and_damping->add(id, utils::find_edges_from_simplices(triangles, size), /* strain_stiffness */ 0.0, material.strain_limit, material.strain_limit_stiffness, material.strain_damping);
-	this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
+	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
 
 	id.set_local_idx("Shells", shell_id);
 	return id;

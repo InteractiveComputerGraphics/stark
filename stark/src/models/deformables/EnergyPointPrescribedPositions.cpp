@@ -35,7 +35,8 @@ std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::EnergyPointP
 		std::cout << "Stark error: EnergyPointPrescribedPositions only works with PhysicalSystem::Deformables." << std::endl;
 		exit(-1);
 	}
-	this->bc_source.emplace_back(id.get_global_idx(), label);
+	auto bc = std::make_shared<PrescribedPointGroup>(id.get_global_idx(), label);
+	this->bc_source.push_back(bc);
 	return this->bc_source.back();
 }
 std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::EnergyPointPrescribedPositions::create_group_with_transformation(Id& id, const std::string label)
@@ -44,7 +45,8 @@ std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::mo
 		std::cout << "Stark error: EnergyPointPrescribedPositions only works with PhysicalSystem::Deformables." << std::endl;
 		exit(-1);
 	}
-	this->bc_transform_source.emplace_back(id.get_global_idx(), label);
+	auto bc = std::make_shared<PrescribedPointGroupWithTransformation>(id.get_global_idx(), label);
+	this->bc_transform_source.push_back(bc);
 	return this->bc_transform_source.back();
 }
 void stark::models::EnergyPointPrescribedPositions::_before_time_step(Stark& stark)

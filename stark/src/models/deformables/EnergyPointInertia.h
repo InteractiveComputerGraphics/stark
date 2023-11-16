@@ -3,7 +3,6 @@
 #include <vector>
 #include <string>
 
-#include "../../solver/Energy.h"
 #include "../../solver/Stark.h"
 #include "Id.h"
 #include "PointDynamics.h"

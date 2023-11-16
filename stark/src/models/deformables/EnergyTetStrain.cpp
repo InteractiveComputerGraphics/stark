@@ -4,12 +4,8 @@
 #include "../../utils/mesh_utils.h"
 
 
-stark::models::EnergyTetStrain::EnergyTetStrain(spPointDynamics dyn)
+stark::models::EnergyTetStrain::EnergyTetStrain(Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
-{
-}
-
-void stark::models::EnergyTetStrain::declare(Stark& stark)
 {
 	stark.global_energy.add_energy("EnergyTetStrain", this->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
@@ -42,16 +38,15 @@ void stark::models::EnergyTetStrain::declare(Stark& stark)
 			symx::Scalar detF = F.det();
 			symx::Scalar Ic = F.frobenius_norm_sq();
 			symx::Scalar alpha = 1.0 + mu_ / lambda_ - mu_ / (4.0 * lambda_);
-			symx::Scalar energy_density = 0.5*mu_*(Ic - 3.0) + 0.5*lambda_*(detF - alpha).powN(2) - 0.5*mu_*symx::log(Ic + 1.0);
+			symx::Scalar energy_density = 0.5 * mu_ * (Ic - 3.0) + 0.5 * lambda_ * (detF - alpha).powN(2) - 0.5 * mu_ * symx::log(Ic + 1.0);
 			symx::Scalar Energy = energy_density * tet_rest_volume;
 			energy.set(Energy);
 		}
 	);
 }
-
 int stark::models::EnergyTetStrain::add(const int obj_idx, const std::vector<std::array<int, 4>>& tets, const double young_modulus, const double poisson_ratio, const std::string label)
 {
-	const int group = this->labels.size();
+	const int group = (int)this->labels.size();
 
 	this->young_modulus.push_back(young_modulus);
 	this->poisson_ratio.push_back(poisson_ratio);

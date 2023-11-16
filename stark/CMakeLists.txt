@@ -50,29 +50,27 @@ set(MODELS_FILES
 	src/models/friction_geometry.cpp
 	src/models/time_integration.h
 	src/models/time_integration.cpp
-	src/models/rigidbody_transformations.h
-	src/models/rigidbody_transformations.cpp
-	src/models/TriangleMeshContacts.h
-	src/models/TriangleMeshFriction.h
-	src/models/Cloth.h
-	src/models/Cloth.cpp
-	src/models/DeformableSolids.h
-	src/models/DeformableSolids.cpp
-	src/models/RigidBodies.h
-	src/models/RigidBodies.cpp
-	src/models/RigidBodyContacts.h
-	src/models/RigidBodyFriction.h
-	src/models/Interactions.h
-	src/models/Interactions.cpp
-	src/models/RB_Deformable_Contacts.h
-	src/models/RB_Deformable_Friction.h
+	#src/models/rigidbody_transformations.h
+	#src/models/rigidbody_transformations.cpp
+	#src/models/TriangleMeshContacts.h
+	#src/models/TriangleMeshFriction.h
+	#src/models/Cloth.h
+	#src/models/Cloth.cpp
+	#src/models/DeformableSolids.h
+	#src/models/DeformableSolids.cpp
+	#src/models/RigidBodies.h
+	#src/models/RigidBodies.cpp
+	#src/models/RigidBodyContacts.h
+	#src/models/RigidBodyFriction.h
+	#src/models/Interactions.h
+	#src/models/Interactions.cpp
+	#src/models/RB_Deformable_Contacts.h
+	#src/models/RB_Deformable_Friction.h
 	src/models/deformables/interval_types.h
 	src/models/deformables/Id.h
 	src/models/deformables/Id.cpp
 	src/models/deformables/PointDynamics.h
 	src/models/deformables/PointDynamics.cpp
-	src/models/deformables/Deformables.h
-	src/models/deformables/Deformables.cpp
 	src/models/deformables/Shells.h
 	src/models/deformables/Shells.cpp
 	src/models/deformables/PrescribedPointGroup.h
