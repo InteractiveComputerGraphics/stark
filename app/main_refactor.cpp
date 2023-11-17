@@ -26,7 +26,13 @@ int main()
 	// Cloth
 	const int n = 10;
 	auto [vertices, triangles] = stark::utils::generate_triangular_grid({ -0.5, -0.5 }, { 0.5, 0.5 }, { n, n });
-	const stark::models::Id cloth_id = simulation.shells->add(vertices, triangles, stark::models::Shells::Material::towel());
+	auto id = simulation.shells->add(vertices, triangles, stark::models::Shells::Material::towel());
+	
+	// BC
+	auto bc = simulation.shells->create_prescribed_positions_group_with_transformation(id);
+	bc->add_vertex(0);
+	bc->add_vertex(n);
 
+	// Run
 	simulation.stark.run();
 }

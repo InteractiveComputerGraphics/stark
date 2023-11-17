@@ -26,9 +26,9 @@ namespace stark::models
 		void set_time_bounds(const double begin, const double end);
 		void set_linear_velocity(const Eigen::Vector3d& v);
 		void set_angular_velocity(const Eigen::Vector3d& w, const Eigen::Vector3d& rotation_center);
-		void add(const int loc_idx);
-		void add_from_range(const int loc_idx_begin, const int loc_idx_end);
-		void add_from_aabb(const std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& center, const Eigen::Vector3d& size);
+		void add_vertex(const int loc_idx);
+		void add_vertices_from_range(const int loc_idx_begin, const int loc_idx_end);
+		void add_vertices_from_aabb(const std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& center, const Eigen::Vector3d& size);
 		Eigen::Vector3d get_transformed(const Eigen::Vector3d& rest_position, const double sim_time);
 
 		int size() const;
@@ -38,7 +38,7 @@ namespace stark::models
 		int get_obj_idx() const;
 
 	private:
-		double stiffness = 1e6;
+		double stiffness = 1e3;
 		const int obj_idx;
 		std::string label;
 		std::vector<int> loc_indices;
@@ -46,8 +46,8 @@ namespace stark::models
 		// Transformation
 		double t_begin = 0;
 		double t_end = std::numeric_limits<double>::max();
-		Eigen::Vector3d linear_velocity;
-		Eigen::Vector3d angular_velocity;
-		Eigen::Vector3d rotation_center;
+		Eigen::Vector3d linear_velocity = Eigen::Vector3d::Zero();
+		Eigen::Vector3d angular_velocity = Eigen::Vector3d::Zero();
+		Eigen::Vector3d rotation_center = Eigen::Vector3d::Zero();
 	};
 }

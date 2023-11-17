@@ -64,7 +64,7 @@ void stark::models::EnergyPointPrescribedPositions::_before_time_step(Stark& sta
 		const int obj = bc->get_obj_idx();
 		for (int i = 0; i < bc->size(); i++) {
 			const int loc_idx = bc->get_point_idx(i);
-			const Eigen::Vector3d& target = bc->get_target_position(i);
+			const Eigen::Vector3d target = bc->get_target_position(i);
 			const int glob_idx = this->dyn->X.get_global_index(obj, loc_idx);
 			this->conn.numbered_push_back({ glob_idx, group_idx });
 			this->target_positions.push_back(target);
@@ -81,7 +81,7 @@ void stark::models::EnergyPointPrescribedPositions::_before_time_step(Stark& sta
 			const int loc_idx = bc->get_point_idx(i);
 			const int glob_idx = this->dyn->X.get_global_index(obj, loc_idx);
 			const Eigen::Vector3d& X = this->dyn->X[glob_idx];
-			const Eigen::Vector3d& target = bc->get_transformed(X, stark.current_time);
+			const Eigen::Vector3d target = bc->get_transformed(X, stark.current_time);
 			this->conn.numbered_push_back({ glob_idx, group_idx });
 			this->target_positions.push_back(target);
 		}

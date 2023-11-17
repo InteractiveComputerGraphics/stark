@@ -15,7 +15,7 @@ void stark::models::PrescribedPointGroup::set_stiffness(const double stiffness)
 {
 	this->stiffness = stiffness;
 }
-void stark::models::PrescribedPointGroup::add(const int loc_idx, const Eigen::Vector3d& target_position)
+void stark::models::PrescribedPointGroup::add_vertex(const int loc_idx, const Eigen::Vector3d& target_position)
 {
 	this->loc_indices.push_back(loc_idx);
 	this->target_positions.push_back(target_position);

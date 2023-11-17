@@ -32,24 +32,24 @@ void stark::models::PrescribedPointGroupWithTransformation::set_angular_velocity
 	this->rotation_center = rotation_center;
 }
 
-void stark::models::PrescribedPointGroupWithTransformation::add(const int loc_idx)
+void stark::models::PrescribedPointGroupWithTransformation::add_vertex(const int loc_idx)
 {
 	this->loc_indices.push_back(loc_idx);
 }
 
-void stark::models::PrescribedPointGroupWithTransformation::add_from_range(const int loc_idx_begin, const int loc_idx_end)
+void stark::models::PrescribedPointGroupWithTransformation::add_vertices_from_range(const int loc_idx_begin, const int loc_idx_end)
 {
 	for (int i = loc_idx_begin; i < loc_idx_end; i++) {
-		this->add(i);
+		this->add_vertex(i);
 	}
 }
 
-void stark::models::PrescribedPointGroupWithTransformation::add_from_aabb(const std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& center, const Eigen::Vector3d& size)
+void stark::models::PrescribedPointGroupWithTransformation::add_vertices_from_aabb(const std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& center, const Eigen::Vector3d& size)
 {
 	const Eigen::AlignedBox3d aabb = Eigen::AlignedBox3d(center - 0.5 * size, center + 0.5 * size);
 	for (int i = 0; i < (int)points.size(); i++) {
 		if (aabb.contains(points[i])) {
-			this->add(i);
+			this->add_vertex(i);
 		}
 	}
 }

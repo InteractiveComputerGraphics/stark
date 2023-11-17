@@ -23,7 +23,7 @@ namespace stark::models
 
 		void clear();
 		void set_stiffness(const double stiffness);
-		void add(const int loc_idx, const Eigen::Vector3d& target_position);
+		void add_vertex(const int loc_idx, const Eigen::Vector3d& target_position);
 		void set_target_position(const int i, const Eigen::Vector3d& target_position);
 		const Eigen::Vector3d& get_target_position(const int i) const;
 
@@ -34,7 +34,7 @@ namespace stark::models
 		int get_obj_idx() const;
 
 	private:
-		double stiffness = 1e6;
+		double stiffness = 1e3;
 		const int obj_idx;
 		std::string label;
 		std::vector<int> loc_indices;

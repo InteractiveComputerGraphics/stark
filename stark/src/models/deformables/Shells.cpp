@@ -46,7 +46,7 @@ std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::mo
 	return this->prescribed_positions->create_group_with_transformation(id, label);
 }
 
-void stark::models::Shells::add_to_group(const std::string label, Id& id)
+void stark::models::Shells::add_to_output_label(const std::string label, Id& id)
 {
 	this->output_groups.add_to_group(label, id.get_local_idx("Shells"));
 }
