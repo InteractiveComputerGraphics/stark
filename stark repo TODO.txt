@@ -4,8 +4,10 @@ stark repo TODO
 Oct unification
 ---------------
 	* casserts really suck because the debugger can't get there! Replace them.
+	* All boxes should be center + side. Not bottom and top.
+		Shell should have .add_grid_mesh() and just place it with a default transformation to avoid the unnecessary lines above.
+	* Correct and verify edge potentials to work well with young modulus, volume integral and consistent damping.
 
-	* CG forcing sequence
 	* RigidBodies should have different collision and render meshes.
 	* `stark.settings.contact.friction_displacement_perturbation` is hardcoded now
 

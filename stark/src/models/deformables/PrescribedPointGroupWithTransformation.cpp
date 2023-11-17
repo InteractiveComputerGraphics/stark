@@ -1,7 +1,7 @@
 #include "PrescribedPointGroupWithTransformation.h"
 
-stark::models::PrescribedPointGroupWithTransformation::PrescribedPointGroupWithTransformation(const int obj_idx, const std::string label)
-	: obj_idx(obj_idx), label(label)
+stark::models::PrescribedPointGroupWithTransformation::PrescribedPointGroupWithTransformation(const spPointDynamics& dyn, const Id& id, const std::string label)
+	: dyn(dyn), obj_idx(id.get_global_idx()), label(label)
 {
 }
 
@@ -44,19 +44,28 @@ void stark::models::PrescribedPointGroupWithTransformation::add_vertices_from_ra
 	}
 }
 
-void stark::models::PrescribedPointGroupWithTransformation::add_vertices_from_aabb(const std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& center, const Eigen::Vector3d& size)
+void stark::models::PrescribedPointGroupWithTransformation::add_vertices_in_aabb(const Eigen::Vector3d& center, const double size, const bool at_rest_pose)
 {
+	this->add_vertices_in_aabb(center, { size, size, size }, at_rest_pose);
+}
+
+void stark::models::PrescribedPointGroupWithTransformation::add_vertices_in_aabb(const Eigen::Vector3d& center, const Eigen::Vector3d& size, const bool at_rest_pose)
+{
+	const IntervalVector<Eigen::Vector3d> x = (at_rest_pose) ? this->dyn->X : this->dyn->x1;
 	const Eigen::AlignedBox3d aabb = Eigen::AlignedBox3d(center - 0.5 * size, center + 0.5 * size);
-	for (int i = 0; i < (int)points.size(); i++) {
-		if (aabb.contains(points[i])) {
-			this->add_vertex(i);
+
+	const int begin = this->dyn->X.get_begin(this->obj_idx);
+	const int end = this->dyn->X.get_end(this->obj_idx);
+	for (int i = begin; i < end; i++) {
+		if (aabb.contains(x[i])) {
+			this->add_vertex(i - begin);
 		}
 	}
 }
 
 Eigen::Vector3d stark::models::PrescribedPointGroupWithTransformation::get_transformed(const Eigen::Vector3d& rest_position, const double sim_time)
 {
-	const double dt = std::min(std::max(0.0, sim_time - this->t_begin), 1.0);
+	const double dt = std::min(std::max(0.0, sim_time - this->t_begin), this->t_end);
 	Eigen::Vector3d linear_displacement = this->linear_velocity * dt;
 	Eigen::AngleAxisd rotation(dt * this->angular_velocity.norm(), this->angular_velocity.normalized());
 	Eigen::Vector3d angular_displacement = this->rotation_center + rotation * (rest_position - this->rotation_center) - rest_position;

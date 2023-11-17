@@ -4,6 +4,8 @@
 
 #include <Eigen/Dense>
 
+#include "PointDynamics.h"
+
 namespace stark::models
 {
 	/*
@@ -19,7 +21,7 @@ namespace stark::models
 	class PrescribedPointGroupWithTransformation
 	{
 	public:
-		PrescribedPointGroupWithTransformation(const int obj_idx, const std::string label);
+		PrescribedPointGroupWithTransformation(const spPointDynamics& dyn, const Id& id, const std::string label = "");
 
 		void clear();
 		void set_stiffness(const double stiffness);
@@ -28,7 +30,8 @@ namespace stark::models
 		void set_angular_velocity(const Eigen::Vector3d& w, const Eigen::Vector3d& rotation_center);
 		void add_vertex(const int loc_idx);
 		void add_vertices_from_range(const int loc_idx_begin, const int loc_idx_end);
-		void add_vertices_from_aabb(const std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& center, const Eigen::Vector3d& size);
+		void add_vertices_in_aabb(const Eigen::Vector3d& center, const double size, const bool at_rest_pose = true);
+		void add_vertices_in_aabb(const Eigen::Vector3d& center, const Eigen::Vector3d& size, const bool at_rest_pose = true);
 		Eigen::Vector3d get_transformed(const Eigen::Vector3d& rest_position, const double sim_time);
 
 		int size() const;
@@ -38,6 +41,7 @@ namespace stark::models
 		int get_obj_idx() const;
 
 	private:
+		const spPointDynamics& dyn;
 		double stiffness = 1e3;
 		const int obj_idx;
 		std::string label;

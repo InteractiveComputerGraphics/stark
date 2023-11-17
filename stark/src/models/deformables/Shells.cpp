@@ -29,7 +29,7 @@ stark::models::Id stark::models::Shells::add(const std::vector<Eigen::Vector3d>&
 	this->inertia->add(id, triangles, material.area_density, material.inertia_damping);
 	this->strain->add(id, triangles, material.thickness, material.strain_young_modulus, material.strain_poisson_ratio);
 	this->bending_bergou->add(id, triangles, material.bending_stiffness, material.bending_stiffness, material.bending_cutoff_angle_deg);
-	//this->edge_strain_limiting_and_damping->add(id, utils::find_edges_from_simplices(triangles, size), /* strain_stiffness */ 0.0, material.strain_limit, material.strain_limit_stiffness, material.strain_damping);
+	this->edge_strain_limiting_and_damping->add(id, utils::find_edges_from_simplices(triangles, size), /* strain_stiffness */ 0.0, material.strain_limit, material.strain_limit_stiffness, material.strain_damping);
 	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
 
 	id.set_local_idx("Shells", shell_id);
@@ -108,7 +108,8 @@ stark::models::Shells::Material stark::models::Shells::Material::towel()
 	material.strain_young_modulus = 1.56e4;
 	material.strain_poisson_ratio = 0.3;
 	material.strain_limit = 0.1;
-	material.strain_limit_stiffness = 1.0;
+	material.strain_limit_stiffness = 1e3;
+	material.strain_damping = 0.2;
 	material.bending_stiffness = 5e-6;
 	material.bending_damping = 0.2;
 	return material;
