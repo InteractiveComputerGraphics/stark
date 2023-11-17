@@ -134,7 +134,6 @@ std::string stark::Settings::as_string() const
 	out += "\n         max_newton_iterations: " + std::to_string(this->newton.max_newton_iterations);
 	out += "\n         max_line_search_iterations: " + std::to_string(this->newton.max_line_search_iterations);
 	out += "\n         line_search_multiplier: " + fmt::format("{:f}", this->newton.line_search_multiplier);
-	out += "\n         cg_tol: " + fmt::format("{:.1e}", this->newton.cg_tol);
 	out += "\n         cg_max_iterations_multiplier: " + fmt::format("{:f}", this->newton.cg_max_iterations_multiplier);
 	out += "\n         use_direct_linear_solve: " + to_string(this->newton.use_direct_linear_solve);
 	out += "\n         project_to_PD: " + to_string(this->newton.project_to_PD);
