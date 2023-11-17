@@ -24,11 +24,12 @@ stark::models::Id stark::models::Shells::add(const std::vector<Eigen::Vector3d>&
 	this->global_indices.push_back(id.get_global_idx());
 	const int size = this->dyn->size(id);
 	const int offset = this->dyn->get_begin(id);
+	this->input_triangles.push_back(triangles);
 
 	this->inertia->add(id, triangles, material.density, material.inertia_damping);
-	this->strain->add(id, triangles, material.strain_young_modulus, material.strain_poisson_ratio);
-	this->bending_bergou->add(id, triangles, material.bending_stiffness, material.bending_stiffness, material.bending_cutoff_angle_deg);
-	this->edge_strain_limiting_and_damping->add(id, utils::find_edges_from_simplices(triangles, size), /* strain_stiffness */ 0.0, material.strain_limit, material.strain_limit_stiffness, material.strain_damping);
+	//this->strain->add(id, triangles, material.strain_young_modulus, material.strain_poisson_ratio);
+	//this->bending_bergou->add(id, triangles, material.bending_stiffness, material.bending_stiffness, material.bending_cutoff_angle_deg);
+	//this->edge_strain_limiting_and_damping->add(id, utils::find_edges_from_simplices(triangles, size), /* strain_stiffness */ 0.0, material.strain_limit, material.strain_limit_stiffness, material.strain_damping);
 	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
 
 	id.set_local_idx("Shells", shell_id);
@@ -80,7 +81,7 @@ void stark::models::Shells::_write_frame(Stark& stark)
 	};
 
 	// Export groups
-	if (this->output_groups.size() == 0) {
+	if (this->output_groups.size() > 0) {
 		for (auto it : this->output_groups.groups) {
 			const std::string label = it.first;
 			const std::unordered_set<int> group = it.second;
@@ -91,7 +92,6 @@ void stark::models::Shells::_write_frame(Stark& stark)
 
 	// Default: everything goes into the same .vtk
 	else {
-
 		std::vector<int> all_local_indices(this->get_n_objects());
 		std::iota(all_local_indices.begin(), all_local_indices.end(), 0);
 		auto [vertices, triangles] = concatenate_meshes(all_local_indices);

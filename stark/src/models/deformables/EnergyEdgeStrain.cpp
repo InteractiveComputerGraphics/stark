@@ -55,10 +55,10 @@ void stark::models::EnergyEdgeStrain::add(Id& id, const std::vector<std::array<i
 	this->labels.push_back(label);
 
 	// Initialize structures
-	for (int tri_i = 0; tri_i < (int)edges.size(); tri_i++) {
+	for (int edge_i = 0; edge_i < (int)edges.size(); edge_i++) {
 
 		// Connectivity
-		const std::array<int, 2>& conn = edges[tri_i];
+		const std::array<int, 2>& conn = edges[edge_i];
 		const std::array<int, 2> conn_glob = this->dyn->X.get_global_indices(id.get_global_idx(), conn);
 		this->conn.numbered_push_back({ group, conn_glob[0], conn_glob[1] });
 

@@ -142,7 +142,7 @@ namespace stark::utils
 	template<typename T>
 	inline int IntervalVector<T>::size() const
 	{
-		return (int)this->size();
+		return (int)this->data.size();
 	}
 	template<typename T>
 	inline int IntervalVector<T>::get_n_sets() const

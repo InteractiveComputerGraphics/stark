@@ -31,11 +31,13 @@ namespace symx
 	private:
 		struct SymbolArrayMap
 		{
-			int connectivity_index = -1;
-			int stride = -1;
-			int offset = -1;  // Coordinate for vectors
+			int32_t connectivity_index = -1;
+			int32_t stride = -1;
+			int32_t offset = -1;  // Coordinate for vectors
+			int32_t current_size = -1;  // for debug
 			const INPUT_FLOAT* array_begin = nullptr;
 			std::function<const INPUT_FLOAT*()> data = nullptr;
+			std::function<int32_t()> size = nullptr;  // array size for debug purposes
 		};
 
 	public:
@@ -97,17 +99,17 @@ namespace symx
 		void set_vector(const Vector& vector, ARRAY& arr);
 
 		// Set Scalars
-		void set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data);
+		void set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size);
 		template<typename ARRAY>
 		void set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, ARRAY& arr);
 
 		// Set Vectors
-		void set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data);
+		void set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size);
 		template<typename ARRAY>
 		void set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, ARRAY& arr);
 
 		// Set Matrices
-		void set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data);
+		void set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size);
 		template<typename ARRAY>
 		void set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, ARRAY& arr);
 
@@ -244,7 +246,7 @@ namespace symx
 		this->non_summation_symbols_idx.push_back(symbol.get_symbol_idx());
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT*()> data)
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT*()> data, std::function<int32_t()> size)
 	{
 		if (scalars.size() != indices.size()) {
 			std::cout << "symx error: CompiledInLoop.set_scalars() got mistmatched sized scalars and indices vectors for instance with name \"" + this->name + "\"" << std::endl;
@@ -259,6 +261,7 @@ namespace symx
 
 			SymbolArrayMap map;
 			map.data = data;
+			map.size = size;
 			map.connectivity_index = idx.idx;
 			map.stride = 1;
 			map.offset = 0;
@@ -270,7 +273,7 @@ namespace symx
 	template<typename ARRAY>
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, ARRAY& arr)
 	{
-		this->set_scalars(scalars, indices, l2data_double(arr));
+		this->set_scalars(scalars, indices, l2data_double(arr), l2count_double(arr));
 	}
 	
 
@@ -296,7 +299,7 @@ namespace symx
 		this->set_vector(vector, l2data_double(arr));
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT*()> data)
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT*()> data, std::function<int32_t()> size)
 	{
 		if (vectors.size() != indices.size()) {
 			std::cout << "symx error: CompiledInLoop.set_vectors() got mistmatched sized vectors and indices vectors for instance with name \"" + this->name + "\"" << std::endl;
@@ -312,6 +315,7 @@ namespace symx
 			for (int j = 0; j < vector.size(); j++) {
 				SymbolArrayMap map;
 				map.data = data;
+				map.size = size;
 				map.connectivity_index = idx.idx;
 				map.stride = vector.size();
 				map.offset = j;
@@ -324,12 +328,12 @@ namespace symx
 	template<typename ARRAY>
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, ARRAY& arr)
 	{
-		this->set_vectors(vectors, indices, l2data_double(arr));
+		this->set_vectors(vectors, indices, l2data_double(arr), l2count_double(arr));
 	}
 	
 
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT*()> data)
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT*()> data, std::function<int32_t()> size)
 	{
 		if (matrices.size() != indices.size()) {
 			std::cout << "symx error: CompiledInLoop.set_matrices() got mistmatched sized vectors and indices vectors for instance with name \"" + this->name + "\"" << std::endl;
@@ -341,13 +345,13 @@ namespace symx
 		for (size_t i = 0; i < n; i++) {
 			values.push_back(Vector(matrices[i].vals));  // Set the values of the matrix as a vector
 		}
-		this->set_vectors(values, indices, data);
+		this->set_vectors(values, indices, data, size);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	template<typename ARRAY>
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, ARRAY& arr)
 	{
-		this->set_matrices(matrices, indices, l2data_double(arr));
+		this->set_matrices(matrices, indices, l2data_double(arr), l2count_double(arr));
 	}
 	
 
@@ -393,21 +397,37 @@ namespace symx
 		using UNDERLYING_FLOAT = UNDERLYING_TYPE<COMPILED_FLOAT>;
 		constexpr int N_SIMD = get_n_items_in_simd<COMPILED_FLOAT>();
 
+		auto symbol_number_as_str = [&](const int i) { return std::to_string(i) + "/" + std::to_string((int)this->symbol_array_map.size() - 1); };
+
 		// Init
 		this->thread_compiled_timing.reset(n_threads);
 
-		// Update connectivity and pointers
+		// Update connectivity, pointers and sizes
+		const int n_symbols = (int)this->symbol_array_map.size();
 		const int32_t n_elements = this->connectivity_n_elements();
 		if (n_elements == 0) { return; } // Early exit
 		const int32_t* connectivity_data = this->connectivity_data();
-		for (SymbolArrayMap& map : this->symbol_array_map) {
+		for (int symbol_i = 0; symbol_i < n_symbols; symbol_i++) {
+			SymbolArrayMap& map = this->symbol_array_map[symbol_i];
 			if (map.data == nullptr) {
-				std::cout << "symx error: CompiledInLoop::run() found a symbol that were not set for instance with name \"" + this->name + "\"" << std::endl;
+				std::cout << "symx error: CompiledInLoop::run() symbol " << symbol_number_as_str(symbol_i) << " without pointer lambda for instance with name \"" + this->name + "\"" << std::endl;
 				exit(-1);
 			}
 			map.array_begin = map.data();
+
+			if (map.stride == 0) {  // Fixed (non-indexed) symbol
+				map.current_size = map.offset + 1;
+			}
+			else {  // Indexed symbol
+				if (map.size == nullptr) {
+					std::cout << "symx error: CompiledInLoop::run() symbol " << symbol_number_as_str(symbol_i) << " without size lambda for instance with name \"" + this->name + "\"" << std::endl;
+					exit(-1);
+				}
+				map.current_size = map.size();
+			}
+
 			if (map.connectivity_index >= this->connectivity_stride) {
-				std::cout << "symx error: CompiledInLoop::run() found a connectivity index larger than the connectivity stride for instance with name \"" + this->name + "\"" << std::endl;
+				std::cout << "symx error: CompiledInLoop::run() symbol " << symbol_number_as_str(symbol_i) << " with a connectivity index larger than the connectivity stride for instance with name \"" + this->name + "\"" << std::endl;
 				exit(-1);
 			}
 		}
@@ -464,11 +484,17 @@ namespace symx
 					SymbolArrayMap& map = this->symbol_array_map[symbol_i];
 					const int32_t loc_idx = loc_conn[map.connectivity_index];
 					const int32_t value_idx = loc_idx * map.stride + map.offset;
+
+					if (value_idx >= map.current_size) {
+						std::cout << "symx error: index out of bounds for symbol " << symbol_number_as_str(symbol_i) << " for instance with name \"" + this->name + "\"" << std::endl;
+						exit(-1);
+					}
+
 					input_scalar[N_SIMD * symbol_i + i] = static_cast<UNDERLYING_FLOAT>(map.array_begin[value_idx]);
 
 					if (check_for_NaNs) {
 						if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
-							std::cout << ("symx error: NaN found in CompiledInLoop::run() in the input " + std::to_string(symbol_i)) + " for instance with name \"" + this->name + "\"" << std::endl;
+							std::cout << "symx error: NaN found in CompiledInLoop::run() in the input " << symbol_number_as_str(symbol_i) << " for instance with name \"" + this->name + "\"" << std::endl;
 							exit(-1);
 						}
 					}
@@ -502,7 +528,7 @@ namespace symx
 
 							if (check_for_NaNs) {
 								if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
-									std::cout << ("symx error: NaN found in CompiledInLoop::run() in the input " + std::to_string(symbol_i)) + " for instance with name \"" + this->name + "\"" << std::endl;
+									std::cout << "symx error: NaN found in CompiledInLoop::run() in the input " << symbol_number_as_str(symbol_i) << " for instance with name \"" + this->name + "\"" << std::endl;
 									exit(-1);
 								}
 							}

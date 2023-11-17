@@ -52,17 +52,17 @@ namespace symx
 		void set_vector(const Vector& vector, ARRAY& arr);
 
 		// Set Scalars
-		void set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data);
+		void set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size);
 		template<typename ARRAY>
 		void set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, ARRAY& arr);
 
 		// Set Vectors
-		void set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data);
+		void set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size);
 		template<typename ARRAY>
 		void set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, ARRAY& arr);
 
 		// Set Matrices
-		void set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data);
+		void set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size);
 		template<typename ARRAY>
 		void set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, ARRAY& arr);
 
@@ -218,11 +218,11 @@ namespace symx
 		this->hE.set_vector(vector, arr);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data)
+	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size)
 	{
-		this->E.set_scalars(scalars, indices, data);
-		this->dE.set_scalars(scalars, indices, data);
-		this->hE.set_scalars(scalars, indices, data);
+		this->E.set_scalars(scalars, indices, data, size);
+		this->dE.set_scalars(scalars, indices, data, size);
+		this->hE.set_scalars(scalars, indices, data, size);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	template<typename ARRAY>
@@ -233,11 +233,11 @@ namespace symx
 		this->hE.set_scalars(scalars, indices, arr);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data)
+	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size)
 	{
-		this->E.set_vectors(vectors, indices, data);
-		this->dE.set_vectors(vectors, indices, data);
-		this->hE.set_vectors(vectors, indices, data);
+		this->E.set_vectors(vectors, indices, data, size);
+		this->dE.set_vectors(vectors, indices, data, size);
+		this->hE.set_vectors(vectors, indices, data, size);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	template<typename ARRAY>
@@ -248,11 +248,11 @@ namespace symx
 		this->hE.set_vectors(vectors, indices, arr);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data)
+	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size)
 	{
-		this->E.set_matrices(matrices, indices, data);
-		this->dE.set_matrices(matrices, indices, data);
-		this->hE.set_matrices(matrices, indices, data);
+		this->E.set_matrices(matrices, indices, data, size);
+		this->dE.set_matrices(matrices, indices, data, size);
+		this->hE.set_matrices(matrices, indices, data, size);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	template<typename ARRAY>

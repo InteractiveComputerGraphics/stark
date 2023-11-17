@@ -83,12 +83,12 @@ symx::Scalar symx::Energy::make_scalar(const double& scalar, const std::string n
 {
 	return this->make_scalar(l2data_double(scalar), name);
 }
-symx::Scalar symx::Energy::make_scalar(std::function<const double*()> data, const Index& idx, const std::string name)
+symx::Scalar symx::Energy::make_scalar(std::function<const double*()> data, std::function<int32_t()> size, const Index& idx, const std::string name)
 {
 	Scalar scalar = this->sws.make_scalar(this->_get_symbol_name(name));
-	this->compiled_derivatives.set_scalars({ scalar }, { idx }, data);
-	this->compiled_derivatives_d.set_scalars({ scalar }, { idx }, data);
-	this->compiled_condition.set_scalars({ scalar }, { idx }, data);
+	this->compiled_derivatives.set_scalars({ scalar }, { idx }, data, size);
+	this->compiled_derivatives_d.set_scalars({ scalar }, { idx }, data, size);
+	this->compiled_condition.set_scalars({ scalar }, { idx }, data, size);
 	return scalar;
 }
 symx::Vector symx::Energy::make_vector(std::function<const double* ()> data, const int32_t stride, const std::string name)
@@ -99,17 +99,17 @@ symx::Vector symx::Energy::make_vector(std::function<const double* ()> data, con
 	this->compiled_condition.set_vector(vector, data);
 	return vector;
 }
-symx::Vector symx::Energy::make_vector(std::function<const double*()> data, const int32_t stride, const Index& idx, const std::string name)
+symx::Vector symx::Energy::make_vector(std::function<const double*()> data, std::function<int32_t()> size, const int32_t stride, const Index& idx, const std::string name)
 {
 	Vector vector = this->sws.make_vector(this->_get_symbol_name(name), stride);
-	this->compiled_derivatives.set_vectors({ vector }, { idx }, data);
-	this->compiled_derivatives_d.set_vectors({ vector }, { idx }, data);
-	this->compiled_condition.set_vectors({ vector }, { idx }, data);
+	this->compiled_derivatives.set_vectors({ vector }, { idx }, data, size);
+	this->compiled_derivatives_d.set_vectors({ vector }, { idx }, data, size);
+	this->compiled_condition.set_vectors({ vector }, { idx }, data, size);
 	return vector;
 }
-symx::Vector symx::Energy::make_dof_vector(const DoF& dof, std::function<const double* ()> data, const int32_t stride, const Index& idx, const std::string name)
+symx::Vector symx::Energy::make_dof_vector(const DoF& dof, std::function<const double* ()> data, std::function<int32_t()> size, const int32_t stride, const Index& idx, const std::string name)
 {
-	symx::Vector vector = this->make_vector(data, stride, idx, name);
+	symx::Vector vector = this->make_vector(data, size, stride, idx, name);
 	assert(vector.size() == 3);
 	this->dof_block_global_index.push_back({ dof.idx, idx.idx });
 	for (int i = 0; i < vector.size(); i++) {
@@ -117,30 +117,30 @@ symx::Vector symx::Energy::make_dof_vector(const DoF& dof, std::function<const d
 	}
 	return vector;
 }
-std::vector<symx::Vector> symx::Energy::make_vectors(std::function<const double* ()> data, const int32_t stride, const std::vector<Index>& indices, const std::string name)
+std::vector<symx::Vector> symx::Energy::make_vectors(std::function<const double* ()> data, std::function<int32_t()> size, const int32_t stride, const std::vector<Index>& indices, const std::string name)
 {
 	const std::string name_ = this->_get_symbol_name(name);
 	std::vector<Vector> vectors;
 	for (size_t i = 0; i < indices.size(); i++) {
-		vectors.push_back(this->make_vector(data, stride, indices[i], name_ + std::to_string(i)));
+		vectors.push_back(this->make_vector(data, size, stride, indices[i], name_ + std::to_string(i)));
 	}
 	return vectors;
 }
-std::vector<symx::Vector> symx::Energy::make_dof_vectors(const DoF& dof, std::function<const double* ()> data, const int32_t stride, const std::vector<Index>& indices, const std::string name)
+std::vector<symx::Vector> symx::Energy::make_dof_vectors(const DoF& dof, std::function<const double* ()> data, std::function<int32_t()> size, const int32_t stride, const std::vector<Index>& indices, const std::string name)
 {
 	const std::string name_ = this->_get_symbol_name(name);
 	std::vector<Vector> vectors;
 	for (size_t i = 0; i < indices.size(); i++) {
-		vectors.push_back(this->make_dof_vector(dof, data, stride, indices[i], name_ + std::to_string(i)));
+		vectors.push_back(this->make_dof_vector(dof, data, size, stride, indices[i], name_ + std::to_string(i)));
 	}
 	return vectors;
 }
-symx::Matrix symx::Energy::make_matrix(std::function<const double* ()> data, const std::array<int, 2> shape, const Index& idx, const std::string name)
+symx::Matrix symx::Energy::make_matrix(std::function<const double* ()> data, std::function<int32_t()> size, const std::array<int, 2> shape, const Index& idx, const std::string name)
 {
 	Matrix matrix = this->sws.make_matrix(this->_get_symbol_name(name), shape);
-	this->compiled_derivatives.set_matrices({ matrix }, { idx }, data);
-	this->compiled_derivatives_d.set_matrices({ matrix }, { idx }, data);
-	this->compiled_condition.set_matrices({ matrix }, { idx }, data);
+	this->compiled_derivatives.set_matrices({ matrix }, { idx }, data, size);
+	this->compiled_derivatives_d.set_matrices({ matrix }, { idx }, data, size);
+	this->compiled_condition.set_matrices({ matrix }, { idx }, data, size);
 	return matrix;
 }
 
