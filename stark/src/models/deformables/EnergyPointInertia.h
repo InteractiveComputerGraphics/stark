@@ -23,8 +23,8 @@ namespace stark::models
 		/* Methods */
 		EnergyPointInertia(Stark& stark, const spPointDynamics dyn);
 		void add(Id& id, const std::vector<double>& lumped_volume, const double density, const double inertial_damping, const std::string label = "");
-		void add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double density, const double inertial_damping, const std::string label = "");
-		void add(Id& id, const std::vector<std::array<int, 4>>& tets, const double density, const double inertial_damping, const std::string label = "");
+		void add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double area_density, const double inertial_damping, const std::string label = "");
+		void add(Id& id, const std::vector<std::array<int, 4>>& tets, const double volume_density, const double inertial_damping, const std::string label = "");
 		void update(Id& id, const std::vector<double>& lumped_volume, const double density, const double inertial_damping);
 	};
 	using spEnergyPointInertia = std::shared_ptr<EnergyPointInertia>;

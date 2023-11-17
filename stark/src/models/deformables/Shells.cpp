@@ -26,8 +26,8 @@ stark::models::Id stark::models::Shells::add(const std::vector<Eigen::Vector3d>&
 	const int offset = this->dyn->get_begin(id);
 	this->input_triangles.push_back(triangles);
 
-	this->inertia->add(id, triangles, material.density, material.inertia_damping);
-	//this->strain->add(id, triangles, material.strain_young_modulus, material.strain_poisson_ratio);
+	this->inertia->add(id, triangles, material.area_density, material.inertia_damping);
+	this->strain->add(id, triangles, material.thickness, material.strain_young_modulus, material.strain_poisson_ratio);
 	//this->bending_bergou->add(id, triangles, material.bending_stiffness, material.bending_stiffness, material.bending_cutoff_angle_deg);
 	//this->edge_strain_limiting_and_damping->add(id, utils::find_edges_from_simplices(triangles, size), /* strain_stiffness */ 0.0, material.strain_limit, material.strain_limit_stiffness, material.strain_damping);
 	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
@@ -102,9 +102,10 @@ void stark::models::Shells::_write_frame(Stark& stark)
 stark::models::Shells::Material stark::models::Shells::Material::towel()
 {
 	Material material;
-	material.density = 0.2;
+	material.area_density = 0.2;
+	material.thickness = 3.2e-3;
 	material.inertia_damping = 2.0;
-	material.strain_young_modulus = 100.0;
+	material.strain_young_modulus = 1.56e4;
 	material.strain_poisson_ratio = 0.3;
 	material.strain_limit = 0.1;
 	material.strain_limit_stiffness = 1.0;

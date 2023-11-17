@@ -18,6 +18,7 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(Stark& stark, spPointD
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, triangle);
 			symx::Matrix DXinv = energy.make_matrix(this->DXinv, { 2, 2 }, conn["idx"]);
 			symx::Scalar rest_area = energy.make_scalar(this->triangle_area_rest, conn["idx"]);
+			symx::Scalar thickness = energy.make_scalar(this->thickness, conn["group"]);
 			symx::Scalar E = energy.make_scalar(this->young_modulus, conn["group"]);
 			symx::Scalar nu = energy.make_scalar(this->poisson_ratio, conn["group"]);
 			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
@@ -37,18 +38,19 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(Stark& stark, spPointD
 			symx::Scalar J = area / rest_area;
 			symx::Scalar Ic = C.trace();
 			symx::Scalar logJ = symx::log(J);
-			symx::Scalar energy_density = 0.5 * mu * (Ic - 3.0) - mu * logJ + 0.5 * lambda * logJ.powN(2);
-			symx::Scalar Energy = area * energy_density;
+			symx::Scalar energy_density = 0.5*mu*(Ic - 2.0) - mu*logJ + 0.5*lambda*logJ.powN(2);
+			symx::Scalar Energy = thickness * rest_area * energy_density;
 			energy.set(Energy);
 		}
 	);
 }
-void stark::models::EnergyTriangleStrain::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double young_modulus, const double poisson_ratio, const std::string label)
+void stark::models::EnergyTriangleStrain::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double thickness, const double young_modulus, const double poisson_ratio, const std::string label)
 {
 	const int group = (int)this->labels.size();
 
 	this->young_modulus.push_back(young_modulus);
 	this->poisson_ratio.push_back(poisson_ratio);
+	this->thickness.push_back(thickness);
 	this->labels.push_back(label);
 
 	// Initialize structures

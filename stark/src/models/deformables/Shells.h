@@ -24,7 +24,8 @@ namespace stark::models
 		/* Definitions */
 		struct Material
 		{
-			double density = 0.0;
+			double area_density = 0.0;
+			double thickness = 0.0;
 			double inertia_damping = 0.0;
 			double strain_young_modulus = 0.0;
 			double strain_poisson_ratio = 0.0;

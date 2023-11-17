@@ -53,7 +53,7 @@ void stark::models::EnergyPointInertia::add(Id& id, const std::vector<double>& l
 
 	id.set_local_idx("EnergyPointInertia", group);
 }
-void stark::models::EnergyPointInertia::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double density, const double inertial_damping, const std::string label)
+void stark::models::EnergyPointInertia::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double area_density, const double inertial_damping, const std::string label)
 {
 	const int n = this->dyn->size(id);
 	std::vector<double> lumped_volume(n, 0.0);
@@ -73,9 +73,9 @@ void stark::models::EnergyPointInertia::add(Id& id, const std::vector<std::array
 		lumped_volume[conn_glob[1]] += lumped;
 		lumped_volume[conn_glob[2]] += lumped;
 	}
-	this->add(id, lumped_volume, density, inertial_damping, label);
+	this->add(id, lumped_volume, area_density, inertial_damping, label);
 }
-void stark::models::EnergyPointInertia::add(Id& id, const std::vector<std::array<int, 4>>& tets, const double density, const double inertial_damping, const std::string label)
+void stark::models::EnergyPointInertia::add(Id& id, const std::vector<std::array<int, 4>>& tets, const double volume_density, const double inertial_damping, const std::string label)
 {
 	const int n = this->dyn->size(id);
 	std::vector<double> lumped_volume(n, 0.0);
@@ -97,7 +97,7 @@ void stark::models::EnergyPointInertia::add(Id& id, const std::vector<std::array
 		lumped_volume[conn_glob[2]] += lumped;
 		lumped_volume[conn_glob[3]] += lumped;
 	}
-	this->add(id, lumped_volume, density, inertial_damping, label);
+	this->add(id, lumped_volume, volume_density, inertial_damping, label);
 }
 void stark::models::EnergyPointInertia::update(Id& id, const std::vector<double>& lumped_volume, const double density, const double inertial_damping)
 {
