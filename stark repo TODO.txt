@@ -246,8 +246,11 @@ Debug
 
 Specific to energies
 --------------------
-	Cloth
-		* Stable neohookean for cloth
+	Strain limiting and damping
+		* Using edge for strain limiting and damping has serious downsides:
+			- Adds a lot of runtime (cloth is twice as slow (no friction))
+			- Strain limiting is very aligned with the stretch direction and not at all perpendicularly
+		* I think the solution might be to use triangle/tet corot for cloth/volumetric
 	
 	Rigid Bodies
 		* Reusable symx functions to return primitive constraint energies.

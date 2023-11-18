@@ -14,7 +14,7 @@ int main()
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
-	settings.execution.end_simulation_time = 10.0;
+	settings.execution.end_simulation_time = 5.0;
 	settings.contact.collisions_enabled = false;
 	settings.contact.friction_enabled = false;
 
@@ -25,7 +25,7 @@ int main()
 
 	// Cloth
 	const double l = 0.5;
-	const int n = 400;
+	const int n = 100;
 	auto [vertices, triangles] = stark::utils::generate_triangular_grid({ -l, -l }, { l, l }, { n, n });
 	auto material = stark::models::Shells::Material::towel();
 	//material.area_density = 3.0;
