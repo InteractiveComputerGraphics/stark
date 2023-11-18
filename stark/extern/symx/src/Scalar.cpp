@@ -283,11 +283,35 @@ void symx::Scalar::get_checksum(picosha2::hash256_one_by_one& hasher)
 	std::array<char, sizeof(std::array<int32_t, 4>)>* expr_bytes = reinterpret_cast<std::array<char, sizeof(std::array<int32_t, 4>)>*>(&expr_ints);
 	hasher.process(expr_bytes->begin(), expr_bytes->end());
 
-	if (is_operation(this->expr.type)) {
+	if (is_operation(this->expr.type) || this->expr.type == ExprType::Branch) {
 		this->left().get_checksum(hasher);
 		if (this->has_right()) {
 			this->right().get_checksum(hasher);
 		}
+	}
+	else if (this->expr.type == ExprType::Symbol) {
+		const std::string label = this->get_name();
+		std::vector<char> bytes(label.begin(), label.end());
+		hasher.process(bytes.begin(), bytes.end());
+	}
+	else if (this->expr.type == ExprType::Zero || this->expr.type == ExprType::One || this->expr.type == ExprType::ConstantFloat) {
+		double value = 0.0;
+		switch (this->expr.type)
+		{
+			case ExprType::Zero:
+				value = 0.0;
+				break;
+			case ExprType::One:
+				value = 1.0;
+				break;
+			case ExprType::ConstantFloat:
+				value = unpack_double(this->expr.a, this->expr.b);
+				break;
+			default:
+				break;
+		}
+		std::array<char, sizeof(double)>* bytes = reinterpret_cast<std::array<char, sizeof(double)>*>(&value);
+		hasher.process(bytes->begin(), bytes->end());
 	}
 }
 symx::Scalar symx::Scalar::left() const
