@@ -21,6 +21,8 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(Stark& stark, spPointD
 			symx::Scalar thickness = energy.make_scalar(this->thickness, conn["group"]);
 			symx::Scalar E = energy.make_scalar(this->young_modulus, conn["group"]);
 			symx::Scalar nu = energy.make_scalar(this->poisson_ratio, conn["group"]);
+			symx::Scalar strain_limit = energy.make_scalar(this->strain_limit, conn["group"]);
+			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, conn["group"]);
 			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
 			// Time integration
@@ -39,18 +41,26 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(Stark& stark, spPointD
 			symx::Scalar Ic = C.trace();
 			symx::Scalar logJ = symx::log(J);
 			symx::Scalar energy_density = 0.5*mu*(Ic - 2.0) - mu*logJ + 0.5*lambda*logJ.powN(2);
-			symx::Scalar Energy = thickness * rest_area * energy_density;
-			energy.set(Energy);
+			symx::Scalar E_elasticity = thickness * rest_area * energy_density;
+
+			// Strain limiting
+			symx::Scalar s1 = symx::sqrt(C.singular_values_2x2()[0]);
+			symx::Scalar dl = s1 - (strain_limit + 1.0);
+			symx::Scalar E_sl = symx::branch(dl > 0.0, rest_area * strain_limiting_stiffness * dl.powN(3), 0.0);
+
+			energy.set(E_elasticity + E_sl);
 		}
 	);
 }
-void stark::models::EnergyTriangleStrain::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double thickness, const double young_modulus, const double poisson_ratio, const std::string label)
+void stark::models::EnergyTriangleStrain::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double thickness, const double young_modulus, const double poisson_ratio, const double strain_limit, const double strain_limiting_stiffness, const std::string label)
 {
 	const int group = (int)this->labels.size();
 
+	this->thickness.push_back(thickness);
 	this->young_modulus.push_back(young_modulus);
 	this->poisson_ratio.push_back(poisson_ratio);
-	this->thickness.push_back(thickness);
+	this->strain_limit.push_back(strain_limit);
+	this->strain_limiting_stiffness.push_back(strain_limiting_stiffness);
 	this->labels.push_back(label);
 
 	// Initialize structures
@@ -94,8 +104,10 @@ void stark::models::EnergyTriangleStrain::add(Id& id, const std::vector<std::arr
 	id.set_local_idx("EnergyTriangleStrain", group);
 }
 
-void stark::models::EnergyTriangleStrain::set_parameters(Id& id, const double young_modulus, const double poisson_ratio)
+void stark::models::EnergyTriangleStrain::set_parameters(Id& id, const double young_modulus, const double poisson_ratio, const double strain_limit, const double strain_limiting_stiffness)
 {
 	this->young_modulus[id.get_local_idx("EnergyTriangleStrain")] = young_modulus;
 	this->poisson_ratio[id.get_local_idx("EnergyTriangleStrain")] = poisson_ratio;
+	this->strain_limit[id.get_local_idx("EnergyTriangleStrain")] = strain_limit;
+	this->strain_limiting_stiffness[id.get_local_idx("EnergyTriangleStrain")] = strain_limiting_stiffness;
 }

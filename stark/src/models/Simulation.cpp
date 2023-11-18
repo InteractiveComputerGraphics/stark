@@ -17,7 +17,7 @@ stark::models::Simulation::Simulation(const Settings& settings)
 	auto energy_point_prescribed_positions = std::make_shared<EnergyPointPrescribedPositions>(this->stark, point_dynamics);
 	
 	//// Edge
-	auto energy_edge_strain = std::make_shared<EnergyEdgeStrain>(this->stark, point_dynamics);
+	//auto energy_edge_strain = std::make_shared<EnergyEdgeStrain>(this->stark, point_dynamics);
 
 	//// Triangle
 	auto energy_triangle_strain = std::make_shared<EnergyTriangleStrain>(this->stark, point_dynamics);
@@ -34,8 +34,7 @@ stark::models::Simulation::Simulation(const Settings& settings)
 		energy_point_inertia,
 		energy_point_prescribed_positions,
 		energy_triangle_strain,
-		energy_triangle_bending_bergou06,
-		energy_edge_strain
+		energy_triangle_bending_bergou06
 		//energy_frictional_contact
 		);
 }

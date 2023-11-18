@@ -6,16 +6,17 @@ Oct unification
 	* casserts really suck because the debugger can't get there! Replace them.
 	* All boxes should be center + side. Not bottom and top.
 		Shell should have .add_grid_mesh() and just place it with a default transformation to avoid the unnecessary lines above.
-	* Correct and verify edge potentials to work well with young modulus, volume integral and consistent damping.
 	* Specialized corot triangle and tet damping is better as otherwise with edge we are adding unintentional "anisotropic" effects.
+
+	* Check consistency:
+		- All forms of damping
+		- All forms of strain limiting
+		- Edge potentials
 
 	* RigidBodies should have different collision and render meshes.
 	* `stark.settings.contact.friction_displacement_perturbation` is hardcoded now
 
-	* I am massively overthinking how to make this design to work by "setting" a complicated energy, which is NOT the task and likely impossible
-	* DO NOT SUPPORT ADAPTIVITY.
-		Things are declared once, and cannot be updated or removed.
-		
+	
 	* We have many different index types. Do I want to hard-type them? GroupId, ObjId...
 
 	* PrescribedPositions
@@ -247,9 +248,9 @@ Debug
 Specific to energies
 --------------------
 	Strain limiting and damping
-		* Using edge for strain limiting and damping has serious downsides:
-			- Adds a lot of runtime (cloth is twice as slow (no friction))
-			- Strain limiting is very aligned with the stretch direction and not at all perpendicularly
+		* Can I formulate damping from the vertex velocities and the deformation gradient?
+			I can also use finite differences as dF/dt = (F+ - F-)/dt.
+			Surely I have the analytic form, and I don't need that.
 		* I think the solution might be to use triangle/tet corot for cloth/volumetric
 	
 	Rigid Bodies
