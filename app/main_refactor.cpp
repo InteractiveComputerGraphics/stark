@@ -25,7 +25,7 @@ int main()
 
 	// Cloth
 	const double l = 0.5;
-	const int n = 50;
+	const int n = 400;
 	auto [vertices, triangles] = stark::utils::generate_triangular_grid({ -l, -l }, { l, l }, { n, n });
 	auto material = stark::models::Shells::Material::towel();
 	//material.area_density = 3.0;
@@ -39,15 +39,13 @@ int main()
 
 	auto bcl = simulation.shells->create_prescribed_positions_group_with_transformation(id);
 	bcl ->add_vertices_in_aabb({ -l, 0.0, 0.0 }, { 0.001, 1.0, 1.0 });
-	//bcl->set_linear_velocity(-Eigen::Vector3d::UnitX());
-	bcl->set_angular_velocity(-10.0*Eigen::Vector3d::UnitX(), Eigen::Vector3d::Zero());
+	bcl->set_linear_velocity(-Eigen::Vector3d::UnitX());
+	//bcl->set_angular_velocity(-10.0*Eigen::Vector3d::UnitX(), Eigen::Vector3d::Zero());
 
 	auto bcr = simulation.shells->create_prescribed_positions_group_with_transformation(id);
 	bcr->add_vertices_in_aabb({ l, 0.0, 0.0 }, { 0.001, 1.0, 1.0 });
-	//bcr->set_linear_velocity(Eigen::Vector3d::UnitX());
-	bcr->set_angular_velocity(10.0*Eigen::Vector3d::UnitX(), Eigen::Vector3d::Zero());
-
-
+	bcr->set_linear_velocity(Eigen::Vector3d::UnitX());
+	//bcr->set_angular_velocity(10.0*Eigen::Vector3d::UnitX(), Eigen::Vector3d::Zero());
 
 	// Run
 	simulation.stark.run();

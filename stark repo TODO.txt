@@ -7,6 +7,7 @@ Oct unification
 	* All boxes should be center + side. Not bottom and top.
 		Shell should have .add_grid_mesh() and just place it with a default transformation to avoid the unnecessary lines above.
 	* Correct and verify edge potentials to work well with young modulus, volume integral and consistent damping.
+	* Specialized corot triangle and tet damping is better as otherwise with edge we are adding unintentional "anisotropic" effects.
 
 	* RigidBodies should have different collision and render meshes.
 	* `stark.settings.contact.friction_displacement_perturbation` is hardcoded now
@@ -140,6 +141,9 @@ Low priority
 			Consider adding MKL as an optional dependency to speedup projections and CG.
 		* Collision dection could be improved by Verlet lists and to a lesser extent octree parallelization.
 		* Regardless of minimization technique, there is an optimal time step size and collision stiffness that we should try to track.
+	* Perfomance analysis. It's definitely not linear and we should have a better understanding.
+		Large simulations are definitely much slower. Because CG. But because run out of cache? Super linear number of iterations?
+		We can't make the solution faster if we don't know what, when and how the current solution is slow.
 	* Versatile Boundary Conditions is a very important part of the simulation but it is hard.
 		I would like to support independent nodes, volume selectors, rigid transformations, activating/deactivating....
 	* Can we take a std::shared_ptr<> to Settings so the user can more intuitively edit it?
