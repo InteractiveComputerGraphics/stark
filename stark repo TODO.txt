@@ -3,33 +3,35 @@ stark repo TODO
 
 Oct unification
 ---------------
+	* RigidBodies, Rods
+	* Attachments
+
+	* Inherit DeformableSolids to pass BC and other setters/getters
+	* PrescribedPositions stiffness is completely inconsistent across surface and volumes.
+		Multiply by thickness or sth
 	* casserts really suck because the debugger can't get there! Replace them.
 	* All boxes should be center + side. Not bottom and top.
 		Shell should have .add_grid_mesh() and just place it with a default transformation to avoid the unnecessary lines above.
-	* Specialized corot triangle and tet damping is better as otherwise with edge we are adding unintentional "anisotropic" effects.
-
-	* Check consistency:
-		- All forms of damping
-		- All forms of strain limiting
-		- Edge potentials
-
+	* Something is broken when loading an energy that has recently changed.
 	* RigidBodies should have different collision and render meshes.
 	* `stark.settings.contact.friction_displacement_perturbation` is hardcoded now
-
-	
 	* We have many different index types. Do I want to hard-type them? GroupId, ObjId...
-
+		- Some functions are very confusing (volumetric._write_frame())
 	* PrescribedPositions
 		- Offer common lambdas uses cases (distance from line, plane... inside box, sphere...)
-
 	* Work with IntervalVector in PointDynamics for now but consider splitting it into one `Interval` and multiple `std::vector`
 	* `Settings` has things that really should not go into the core. Some stuff has to be placed outside. 
 		Maybe I can add custom entries ?
-	* Need to resolve:
-		- User adding and updating (handlers)
-		- Initialization of sim data
-	* Tests:
-		- Adaptivity. Lot's of questionable update functions everywhere!
+		
+		
+	* Modelling:
+		- Specialized corot triangle and tet damping is better as otherwise with edge we are adding unintentional "anisotropic" effects.
+		- Check consistency:
+			+ All forms of damping
+			+ All forms of strain limiting
+			+ Edge potentials
+	
+	
 
 High priority
 -------------
@@ -37,10 +39,7 @@ High priority
 		Nocedal 169.
 		When using the negative gradient descend, use the existing Hessian to compute
 			a newton step in that direction: d.T*H*d * dx = -d.T*g
-	* Cloth strain wrong? " 0.5*mu*(Ic - 3.0)"  ->  -3.0 or 2.0 ???
 	* Lambdas to log the parameters of each system
-	* Clean up the default strain limiting
-	* Why luxo sim is sensitive to kc in the first time step?
 	* Output the gradient norm of each constraint to see the amount of force in the sim
 		- How to deal with torque?
 	* Blacklists in the intersection detection between cloth and rb are generating wrong results

@@ -44,7 +44,7 @@ stark::models::EnergyTetStrain::EnergyTetStrain(Stark& stark, spPointDynamics dy
 		}
 	);
 }
-int stark::models::EnergyTetStrain::add(const int obj_idx, const std::vector<std::array<int, 4>>& tets, const double young_modulus, const double poisson_ratio, const std::string label)
+void stark::models::EnergyTetStrain::add(Id& id, const std::vector<std::array<int, 4>>& tets, const double young_modulus, const double poisson_ratio, const std::string label)
 {
 	const int group = (int)this->labels.size();
 
@@ -57,7 +57,7 @@ int stark::models::EnergyTetStrain::add(const int obj_idx, const std::vector<std
 
 		// Connectivity
 		const std::array<int, 4>& conn = tets[tet_i];
-		const std::array<int, 4> conn_glob = this->dyn->X.get_global_indices(obj_idx, conn);
+		const std::array<int, 4> conn_glob = this->dyn->X.get_global_indices(id.get_global_idx(), conn);
 		this->conn.numbered_push_back({ group, conn_glob[0], conn_glob[1], conn_glob[2], conn_glob[3] });
 
 		// Fetch coordinates
@@ -83,7 +83,7 @@ int stark::models::EnergyTetStrain::add(const int obj_idx, const std::vector<std
 		);
 	}
 
-	return group;
+	id.set_local_idx("EnergyTetStrain", group);
 }
 
 void stark::models::EnergyTetStrain::set_parameters(const int id, const double young_modulus, const double poisson_ratio)

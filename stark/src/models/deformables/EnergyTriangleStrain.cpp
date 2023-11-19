@@ -46,7 +46,7 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(Stark& stark, spPointD
 			// Strain limiting
 			symx::Scalar s1 = symx::sqrt(C.singular_values_2x2()[0]);
 			symx::Scalar dl = s1 - (strain_limit + 1.0);
-			symx::Scalar E_sl = symx::branch(dl > 0.0, rest_area * strain_limiting_stiffness * dl.powN(3), 0.0);
+			symx::Scalar E_sl = symx::branch(dl > 0.0, thickness * rest_area * strain_limiting_stiffness * dl.powN(3)/3.0, 0.0);
 
 			energy.set(E_elasticity + E_sl);
 		}

@@ -1,8 +1,8 @@
-#include "Shells.h"
+#include "SurfaceDeformableSolids.h"
 
 #include "../../utils/mesh_utils.h"
 
-stark::models::Shells::Shells(
+stark::models::SurfaceDeformableSolids::SurfaceDeformableSolids(
 	Stark& stark, 
 	spPointDynamics dyn, 
 	spEnergyPointInertia inertia, 
@@ -16,7 +16,7 @@ stark::models::Shells::Shells(
 	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
 }
 
-stark::models::Id stark::models::Shells::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const Material material)
+stark::models::Id stark::models::SurfaceDeformableSolids::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const SurfaceMaterial& material)
 {
 	Id id = this->dyn->add(vertices);
 	const int shell_id = (int)this->global_indices.size();
@@ -40,36 +40,36 @@ stark::models::Id stark::models::Shells::add(const std::vector<Eigen::Vector3d>&
 		material.bending_cutoff_angle_deg);
 	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
 
-	id.set_local_idx("Shells", shell_id);
+	id.set_local_idx("SurfaceDeformableSolids", shell_id);
 	return id;
 }
 
-std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::Shells::create_prescribed_positions_group(Id& id, const std::string label)
+std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::SurfaceDeformableSolids::create_prescribed_positions_group(Id& id, const std::string label)
 {
 	return this->prescribed_positions->create_group(id, label);
 }
 
-std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::Shells::create_prescribed_positions_group_with_transformation(Id& id, const std::string label)
+std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::SurfaceDeformableSolids::create_prescribed_positions_group_with_transformation(Id& id, const std::string label)
 {
 	return this->prescribed_positions->create_group_with_transformation(id, label);
 }
 
-void stark::models::Shells::add_to_output_label(const std::string label, Id& id)
+void stark::models::SurfaceDeformableSolids::add_to_output_label(const std::string label, Id& id)
 {
-	this->output_groups.add_to_group(label, id.get_local_idx("Shells"));
+	this->output_groups.add_to_group(label, id.get_local_idx("SurfaceDeformableSolids"));
 }
 
-bool stark::models::Shells::is_empty() const
+bool stark::models::SurfaceDeformableSolids::is_empty() const
 {
 	return this->get_n_objects() == 0;
 }
 
-int stark::models::Shells::get_n_objects() const
+int stark::models::SurfaceDeformableSolids::get_n_objects() const
 {
 	return (int)this->global_indices.size();
 }
 
-void stark::models::Shells::_write_frame(Stark& stark)
+void stark::models::SurfaceDeformableSolids::_write_frame(Stark& stark)
 {
 	if (this->is_empty()) { return; }
 
@@ -107,16 +107,16 @@ void stark::models::Shells::_write_frame(Stark& stark)
 	}
 }
 
-stark::models::Shells::Material stark::models::Shells::Material::towel()
+stark::models::SurfaceMaterial stark::models::SurfaceMaterial::towel()
 {
-	Material material;
+	SurfaceMaterial material;
 	material.area_density = 0.2;
 	material.thickness = 3.2e-3;
 	material.inertia_damping = 2.0;
-	material.strain_young_modulus = 1.56e4;
+	material.strain_young_modulus = 1e3; // 1.56e4;
 	material.strain_poisson_ratio = 0.3;
 	material.strain_limit = 0.1;
-	material.strain_limit_stiffness = 1e3;
+	material.strain_limit_stiffness = 1e5;
 	//material.strain_damping = 0.2;
 	material.bending_stiffness = 5e-6;
 	//material.bending_damping = 0.2;

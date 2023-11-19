@@ -71,8 +71,10 @@ set(MODELS_FILES
 	src/models/deformables/Id.cpp
 	src/models/deformables/PointDynamics.h
 	src/models/deformables/PointDynamics.cpp
-	src/models/deformables/Shells.h
-	src/models/deformables/Shells.cpp
+	src/models/deformables/SurfaceDeformableSolids.h
+	src/models/deformables/SurfaceDeformableSolids.cpp
+	src/models/deformables/VolumetricDeformableSolids.h
+	src/models/deformables/VolumetricDeformableSolids.cpp
 	src/models/deformables/PrescribedPointGroup.h
 	src/models/deformables/PrescribedPointGroup.cpp
 	src/models/deformables/PrescribedPointGroupWithTransformation.h

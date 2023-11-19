@@ -2,7 +2,8 @@
 
 #include "../solver/Stark.h"
 
-#include "deformables/Shells.h"
+#include "deformables/SurfaceDeformableSolids.h"
+#include "deformables/VolumetricDeformableSolids.h"
 
 namespace stark::models
 {
@@ -10,7 +11,8 @@ namespace stark::models
 	{
 	public:
 		Stark stark;
-		spShells shells;
+		spSurfaceDeformableSolids surfaces;
+		spVolumetricDeformableSolids volumes;
 
 		Simulation(const Settings& settings);
 	};

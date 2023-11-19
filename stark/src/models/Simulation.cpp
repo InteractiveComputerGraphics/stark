@@ -1,7 +1,5 @@
 #include "Simulation.h"
 
-#include "deformables/Shells.h"
-//#include "RigidBodies.h"
 
 
 stark::models::Simulation::Simulation(const Settings& settings)
@@ -22,19 +20,30 @@ stark::models::Simulation::Simulation(const Settings& settings)
 	//// Triangle
 	auto energy_triangle_strain = std::make_shared<EnergyTriangleStrain>(this->stark, point_dynamics);
 	auto energy_triangle_bending_bergou06 = std::make_shared<EnergyTriangleBendingBergou06>(this->stark, point_dynamics);
+
+	//// Tet
+	auto energy_tet_strain = std::make_shared<EnergyTetStrain>(this->stark, point_dynamics);
 	
 	//// Other
 	//auto energy_frictional_contact = std::make_shared<EnergyFrictionalContact>(this->stark, point_dynamics, rb);
 
 
 	// Physical Systems
-	this->shells = std::make_shared<Shells>(
+	this->surfaces = std::make_shared<SurfaceDeformableSolids>(
 		this->stark,
 		point_dynamics,
 		energy_point_inertia,
 		energy_point_prescribed_positions,
 		energy_triangle_strain,
 		energy_triangle_bending_bergou06
+		//energy_frictional_contact
+		);
+	this->volumes = std::make_shared<VolumetricDeformableSolids>(
+		this->stark,
+		point_dynamics,
+		energy_point_inertia,
+		energy_point_prescribed_positions,
+		energy_tet_strain
 		//energy_frictional_contact
 		);
 }

@@ -7,6 +7,7 @@
 
 #include "../../solver/Stark.h"
 #include "PointDynamics.h"
+#include "Id.h"
 
 namespace stark::models
 {
@@ -24,7 +25,7 @@ namespace stark::models
 
 		/* Methods */
 		EnergyTetStrain(Stark& stark, spPointDynamics dyn);
-		int add(const int obj_idx, const std::vector<std::array<int, 4>>& tets, const double young_modulus, const double poisson_ratio, const std::string label = "");
+		void add(Id& id, const std::vector<std::array<int, 4>>& tets, const double young_modulus, const double poisson_ratio, const std::string label = "");
 		void set_parameters(const int id, const double young_modulus, const double poisson_ratio);
 	};
 	using spEnergyTetStrain = std::shared_ptr<EnergyTetStrain>;
