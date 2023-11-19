@@ -447,6 +447,34 @@ void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Ve
 	}
 }
 
+void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 2>>& edges)
+{
+	vtkio::VTKFile vtk_file;
+
+	if (vertices.size() == 0) {
+		vtk_file.write_empty(path);
+	}
+	else {
+		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.set_cells_from_twice_indexable(edges, vtkio::CellType::Line);
+		vtk_file.write(path);
+	}
+}
+
+void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Vector3d>& vertices)
+{
+	vtkio::VTKFile vtk_file;
+
+	if (vertices.size() == 0) {
+		vtk_file.write_empty(path);
+	}
+	else {
+		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.set_cells_as_particles(vertices.size());
+		vtk_file.write(path);
+	}
+}
+
 std::vector<int> stark::utils::vertices_in_AABB(const std::vector<Eigen::Vector3d>& vertices, const Eigen::Vector3d& bottom, const Eigen::Vector3d& top)
 {
 	std::vector<int> indices;

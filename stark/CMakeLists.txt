@@ -77,6 +77,8 @@ set(MODELS_FILES
 	src/models/deformables/VolumetricDeformableSolids.cpp
 	src/models/deformables/PrescribedPointGroup.h
 	src/models/deformables/PrescribedPointGroup.cpp
+	src/models/deformables/OneDimensionalDeformableSolids.h
+	src/models/deformables/OneDimensionalDeformableSolids.cpp
 	src/models/deformables/PrescribedPointGroupWithTransformation.h
 	src/models/deformables/PrescribedPointGroupWithTransformation.cpp
 	src/models/deformables/EnergyPointInertia.h

@@ -2,6 +2,7 @@
 
 #include "../solver/Stark.h"
 
+#include "deformables/OneDimensionalDeformableSolids.h"
 #include "deformables/SurfaceDeformableSolids.h"
 #include "deformables/VolumetricDeformableSolids.h"
 
@@ -11,6 +12,7 @@ namespace stark::models
 	{
 	public:
 		Stark stark;
+		spOneDimensionalDeformableSolids lines;
 		spSurfaceDeformableSolids surfaces;
 		spVolumetricDeformableSolids volumes;
 

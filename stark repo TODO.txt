@@ -7,6 +7,8 @@ Oct unification
 	* Attachments
 
 	* Inherit DeformableSolids to pass BC and other setters/getters
+	* Consistent naming for Energies, PhysicalSystems and user interface
+	* Consistency in tools being passed by reference or with output or both
 	* PrescribedPositions stiffness is completely inconsistent across surface and volumes.
 		Multiply by thickness or sth
 	* casserts really suck because the debugger can't get there! Replace them.
@@ -22,15 +24,21 @@ Oct unification
 	* Work with IntervalVector in PointDynamics for now but consider splitting it into one `Interval` and multiple `std::vector`
 	* `Settings` has things that really should not go into the core. Some stuff has to be placed outside. 
 		Maybe I can add custom entries ?
-		
+		It should also be a pointer so the user can change it. Right now it's confusing.
+	* Clean up files and Cmake
+	* Check the output frames for code duplicities
 		
 	* Modelling:
+		- Add twisting to rods
 		- Specialized corot triangle and tet damping is better as otherwise with edge we are adding unintentional "anisotropic" effects.
 		- Check consistency:
 			+ All forms of damping
 			+ All forms of strain limiting
 			+ Edge potentials
-	
+		- Scale the parametrization of effects so it is easy to understand.
+			I have to give 1e6 strain damping to the rods to have an effect...
+		- The stiffness of strain limiting is very annoying. It is very scene dependent and it kills CG.
+			- It is 
 	
 
 High priority

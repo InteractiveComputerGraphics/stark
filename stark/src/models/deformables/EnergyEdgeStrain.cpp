@@ -14,8 +14,9 @@ stark::models::EnergyEdgeStrain::EnergyEdgeStrain(Stark& stark, spPointDynamics 
 			// Create symbols
 			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dyn->dof, this->dyn->v1.data, edge);
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, edge);
-			symx::Scalar strain_stiffness = energy.make_scalar(this->strain_stiffness, conn["group"]);
-			symx::Scalar strain_limiting_start = energy.make_scalar(this->strain_limiting_start, conn["group"]);
+			symx::Scalar young_modulus = energy.make_scalar(this->young_modulus, conn["group"]);
+			symx::Scalar section_area = energy.make_scalar(this->section_area, conn["group"]);
+			symx::Scalar strain_limit = energy.make_scalar(this->strain_limit, conn["group"]);
 			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, conn["group"]);
 			symx::Scalar strain_damping = energy.make_scalar(this->strain_damping, conn["group"]);
 			symx::Scalar rest_length = energy.make_scalar(this->rest_length, conn["idx"]);
@@ -25,18 +26,20 @@ stark::models::EnergyEdgeStrain::EnergyEdgeStrain(Stark& stark, spPointDynamics 
 			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
 
 			// Strain
+			symx::Scalar volume = section_area * rest_length;
 			symx::Scalar l = (x1[0] - x1[1]).norm();
-			symx::Scalar dl = l - rest_length;
-			symx::Scalar E_s = 0.5 * strain_stiffness * dl.powN(2);
+			symx::Scalar e = (l - rest_length)/rest_length;
+			symx::Scalar E_s = volume * young_modulus * e.powN(2)/2.0;
 
 			// Strain limiting
-			symx::Scalar dl_over_limit = dl - strain_limiting_start * rest_length;
-			symx::Scalar E_sl_ = strain_limiting_stiffness * dl_over_limit.powN(3) / 3.0;
-			symx::Scalar E_sl = symx::branch(dl_over_limit > 0.0, E_sl_, 0.0);
+			symx::Scalar e_over_limit = e - strain_limit;
+			symx::Scalar E_sl_ = volume * strain_limiting_stiffness * e_over_limit.powN(3) / 3.0;
+			symx::Scalar E_sl = symx::branch(e_over_limit > 0.0, E_sl_, 0.0);
 
 			// Strain damping
 			symx::Scalar l0 = (x0[1] - x0[0]).norm();
-			symx::Scalar E_d = 0.5 * dt * strain_damping * ((l - l0) / dt).powN(2);
+			symx::Scalar e0 = (l0 - rest_length)/rest_length;
+			symx::Scalar E_d = volume * dt * strain_damping * ((e - e0) / dt).powN(2) / 2.0;
 
 			// Total
 			symx::Scalar E = E_s + E_sl + E_d;
@@ -44,12 +47,13 @@ stark::models::EnergyEdgeStrain::EnergyEdgeStrain(Stark& stark, spPointDynamics 
 		}
 	);
 }
-void stark::models::EnergyEdgeStrain::add(Id& id, const std::vector<std::array<int, 2>>& edges, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping, const std::string label)
+void stark::models::EnergyEdgeStrain::add(Id& id, const std::vector<std::array<int, 2>>& edges, const double section_radius, const double young_modulus, const double strain_limit, const double strain_limiting_stiffness, const double strain_damping, const std::string label)
 {
 	const int group = (int)this->labels.size();
 
-	this->strain_stiffness.push_back(strain_stiffness);
-	this->strain_limiting_start.push_back(strain_limiting_start);
+	this->section_area.push_back(utils::PI * std::pow(section_radius, 2));
+	this->young_modulus.push_back(young_modulus);
+	this->strain_limit.push_back(strain_limit);
 	this->strain_limiting_stiffness.push_back(strain_limiting_stiffness);
 	this->strain_damping.push_back(strain_damping);
 	this->labels.push_back(label);
@@ -72,11 +76,11 @@ void stark::models::EnergyEdgeStrain::add(Id& id, const std::vector<std::array<i
 
 	id.set_local_idx("EnergyEdgeStrain", group);
 }
-void stark::models::EnergyEdgeStrain::set_parameters(Id& id, const double strain_stiffness, const double strain_limiting_start, const double strain_limiting_stiffness, const double strain_damping)
+void stark::models::EnergyEdgeStrain::set_parameters(Id& id, const double young_modulus, const double strain_limit, const double strain_limiting_stiffness, const double strain_damping)
 {
 	const int local_idx = id.get_local_idx("EnergyEdgeStrain");
-	this->strain_stiffness[local_idx] = strain_stiffness;
-	this->strain_limiting_start[local_idx] = strain_limiting_start;
+	this->young_modulus[local_idx] = young_modulus;
+	this->strain_limit[local_idx] = strain_limit;
 	this->strain_limiting_stiffness[local_idx] = strain_limiting_stiffness;
 	this->strain_damping[local_idx] = strain_damping;
 }

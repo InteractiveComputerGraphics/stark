@@ -14,5 +14,5 @@ void stark::MeshOutputGroups::add_to_group(const std::string label, const std::v
 
 int stark::MeshOutputGroups::size() const
 {
-	return this->groups.size();
+	return (int)this->groups.size();
 }

@@ -53,6 +53,26 @@ void stark::models::EnergyPointInertia::add(Id& id, const std::vector<double>& l
 
 	id.set_local_idx("EnergyPointInertia", group);
 }
+void stark::models::EnergyPointInertia::add(Id& id, const std::vector<std::array<int, 2>>& edges, const double line_density, const double inertial_damping, const std::string label)
+{
+	const int n = this->dyn->size(id);
+	std::vector<double> lumped_volume(n, 0.0);
+	for (int edge_i = 0; edge_i < (int)edges.size(); edge_i++) {
+
+		// Connectivity
+		const std::array<int, 2>& conn = edges[edge_i];
+		const std::array<int, 2> conn_glob = this->dyn->X.get_global_indices(id.get_global_idx(), conn);
+
+		// Fetch coordinates
+		const Eigen::Vector3d& A = this->dyn->X[conn_glob[0]];
+		const Eigen::Vector3d& B = this->dyn->X[conn_glob[1]];
+
+		const double lumped = (A - B).norm()/2.0;
+		lumped_volume[conn_glob[0]] += lumped;
+		lumped_volume[conn_glob[1]] += lumped;
+	}
+	this->add(id, lumped_volume, line_density, inertial_damping, label);
+}
 void stark::models::EnergyPointInertia::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double area_density, const double inertial_damping, const std::string label)
 {
 	const int n = this->dyn->size(id);
