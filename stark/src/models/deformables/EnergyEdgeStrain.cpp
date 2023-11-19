@@ -39,7 +39,7 @@ stark::models::EnergyEdgeStrain::EnergyEdgeStrain(Stark& stark, spPointDynamics 
 			// Strain damping
 			symx::Scalar l0 = (x0[1] - x0[0]).norm();
 			symx::Scalar e0 = (l0 - rest_length)/rest_length;
-			symx::Scalar E_d = volume * dt * strain_damping * ((e - e0) / dt).powN(2) / 2.0;
+			symx::Scalar E_d = dt * strain_damping * ((e - e0) / dt).powN(2) / 2.0;
 
 			// Total
 			symx::Scalar E = E_s + E_sl + E_d;

@@ -25,12 +25,11 @@ void net()
 
 	// Cloth
 	const double l = 0.5;
-	const int n = 100;
+	const int n = 10;
 	auto [vertices, triangles] = stark::utils::generate_triangular_grid({ -l, -l }, { l, l }, { n, n });
 	auto edges = stark::utils::find_edges_from_simplices(triangles, (int)vertices.size());
 	auto material = stark::models::OneDimensionalMaterial::sticky_goo();
-	material.inertia_damping = 1.0;
-	//material.strain_damping = 100000.0;
+	material.strain_damping = 0.1;
 	auto id = simulation.lines->add(vertices, edges, material);
 
 	// BC
