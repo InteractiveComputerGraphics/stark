@@ -58,8 +58,16 @@ set(MODELS_FILES
 	#src/models/Cloth.cpp
 	#src/models/DeformableSolids.h
 	#src/models/DeformableSolids.cpp
-	#src/models/RigidBodies.h
-	#src/models/RigidBodies.cpp
+	src/models/RigidBodies.h
+	src/models/RigidBodies.cpp
+	src/models/RigidBodyDynamics.h
+	src/models/RigidBodyDynamics.cpp
+	src/models/EnergyRigidBodyInertia.h
+	src/models/EnergyRigidBodyInertia.cpp
+	src/models/EnergyRigidBodyConstraints.h
+	src/models/EnergyRigidBodyConstraints.cpp
+	src/models/RigidBodyConstraints.h
+	src/models/RigidBodyConstraints.cpp
 	#src/models/RigidBodyContacts.h
 	#src/models/RigidBodyFriction.h
 	#src/models/Interactions.h
@@ -121,6 +129,7 @@ set(UTILS_FILES
 	src/utils/linear_system.h
 	src/utils/MultiMesh/IntervalVector.h
 	src/utils/MultiMesh/IntervalConnectivity.h
+	src/utils/MultiMesh/MultiMesh_.h
 	)
 
 # Create lireary

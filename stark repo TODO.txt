@@ -5,9 +5,12 @@ Oct unification
 ---------------
 	* RigidBodies, Rods
 	* Attachments
+	
+	* RigidBody export in two modes: Full meshes (like until now) or just transformations
 
 	* Inherit DeformableSolids to pass BC and other setters/getters
 	* Consistent naming for Energies, PhysicalSystems and user interface
+		DynamicsPoints, DynamicsRigidBodies...
 	* Consistency in tools being passed by reference or with output or both
 	* PrescribedPositions stiffness is completely inconsistent across surface and volumes.
 		Multiply by thickness or sth

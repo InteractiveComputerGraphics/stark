@@ -1,5 +1,7 @@
 #include "PointDynamics.h"
 
+#include "../time_integration.h"
+
 stark::models::PointDynamics::PointDynamics(Stark& stark)
 {
 	this->dof = stark.global_energy.add_dof_array(this->v1.data, "PointDynamics.v1");
@@ -54,7 +56,7 @@ void stark::models::PointDynamics::_after_time_step(Stark& stark)
 	// Set final positions with solved velocities
 	const double dt = stark.settings.simulation.adaptive_time_step.value;
 	for (int i = 0; i < this->size(); i++) {
-		this->x1[i] = this->x0[i] + dt*this->v1[i];
+		this->x1[i] = time_integration(this->x0[i], this->v1[i], dt);
 	}
 
 	// x0 <- x1
