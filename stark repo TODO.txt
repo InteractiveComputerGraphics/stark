@@ -184,6 +184,7 @@ Low priority
 	* Better support for AMR. explicit .update(mesh_id) functions so I can track when to recompute stuff.
 	* Rigid bodies should output standar format poses for easy integration in other softwares.
 	* Friction makes everything too slow. Implement fixed-branched friction energies.
+	* Tunable heavier cloth borders for added realism (sewed folds).
 
 		
 Convergence improvements

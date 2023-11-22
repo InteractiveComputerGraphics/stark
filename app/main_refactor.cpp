@@ -74,7 +74,7 @@ void hanging_cloth()
 
 	// Cloth
 	const double l = 0.5;
-	const int n = 100;
+	const int n = 50;
 	auto [vertices, triangles] = stark::utils::generate_triangular_grid({ -l, -l }, { l, l }, { n, n });
 	auto material = stark::models::SurfaceMaterial::towel();
 	//material.area_density = 3.0;
@@ -87,7 +87,7 @@ void hanging_cloth()
 	if (true) {
 		auto bc = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
 		bc->add_vertices_in_aabb({ -l, -l, 0.0 }, 0.001);
-		bc->add_vertices_in_aabb({ l, l, 0.0 }, 0.001);
+		bc->add_vertices_in_aabb({ -l, l, 0.0 }, 0.001);
 	}
 	else {
 		auto bcl = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
@@ -167,7 +167,7 @@ void rubber_block()
 
 int main()
 {
-	//hanging_cloth();
+	hanging_cloth();
 	//rubber_block();
-	net();
+	//net();
 }
