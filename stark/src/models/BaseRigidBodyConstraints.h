@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <array>
+#include <memory>
 
 #include <Eigen/Dense>
 #include <symx>
@@ -17,6 +18,9 @@ namespace stark::models
 				- local/relative: with respect to the local frame of reference of an object
 				- direction: general direction withuot a starting point
 				- axes: point and direction
+
+			Notes:
+				- is_active is 1.0 if true and -1.0 if false
 		*/
 
 		/*
@@ -29,6 +33,15 @@ namespace stark::models
 			std::vector<Eigen::Vector3d> target_glob;
 			std::vector<double> stiffness;
 			std::vector<double> is_active;
+			inline int add(int rb, const Eigen::Vector3d& loc, const Eigen::Vector3d& target_glob, double stiffness)
+			{
+				this->conn.numbered_push_back({rb});
+				this->loc.push_back(loc);
+				this->target_glob.push_back(target_glob);
+				this->stiffness.push_back(stiffness);
+				this->is_active.push_back(1.0);
+				return (int)this->is_active.size() - 1;
+			}
 		};
 
 		/*
@@ -41,6 +54,15 @@ namespace stark::models
 			std::vector<Eigen::Vector3d> b_loc;
 			std::vector<double> stiffness;
 			std::vector<double> is_active;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double stiffness)
+			{
+				this->conn.numbered_push_back({ rb_a, rb_b });
+				this->a_loc.push_back(a_loc);
+				this->b_loc.push_back(b_loc);
+				this->stiffness.push_back(stiffness);
+				this->is_active.push_back(1.0);
+				return (int)this->is_active.size() - 1;
+			}
 		};
 
 		/*
@@ -53,6 +75,15 @@ namespace stark::models
 			std::vector<Eigen::Vector3d> db_loc;
 			std::vector<double> stiffness;
 			std::vector<double> is_active;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double stiffness)
+			{
+				this->conn.numbered_push_back({ rb_a, rb_b });
+				this->da_loc.push_back(da_loc);
+				this->db_loc.push_back(db_loc);
+				this->stiffness.push_back(stiffness);
+				this->is_active.push_back(1.0);
+				return (int)this->is_active.size() - 1;
+			}
 		};
 
 		/*
@@ -66,6 +97,16 @@ namespace stark::models
 			std::vector<Eigen::Vector3d> b_loc;
 			std::vector<double> stiffness;
 			std::vector<double> is_active;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& b_loc, double stiffness)
+			{
+				this->conn.numbered_push_back({ rb_a, rb_b });
+				this->a_loc.push_back(a_loc);
+				this->da_loc.push_back(da_loc);
+				this->b_loc.push_back(b_loc);
+				this->stiffness.push_back(stiffness);
+				this->is_active.push_back(1.0);
+				return (int)this->is_active.size() - 1;
+			}
 		};
 
 		/*
@@ -80,6 +121,17 @@ namespace stark::models
 			std::vector<double> damping;
 			std::vector<double> stiffness;
 			std::vector<double> is_active;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double rest_length, double stiffness, double damping)
+			{
+				this->conn.numbered_push_back({ rb_a, rb_b });
+				this->a_loc.push_back(a_loc);
+				this->b_loc.push_back(b_loc);
+				this->rest_length.push_back(rest_length);
+				this->stiffness.push_back(stiffness);
+				this->damping.push_back(damping);
+				this->is_active.push_back(1.0);
+				return (int)this->is_active.size() - 1;
+			}
 		};
 
 		/*
@@ -94,6 +146,17 @@ namespace stark::models
 			std::vector<double> max_length;
 			std::vector<double> stiffness;
 			std::vector<double> is_active;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double min_length, double max_length, double stiffness)
+			{
+				this->conn.numbered_push_back({ rb_a, rb_b });
+				this->a_loc.push_back(a_loc);
+				this->b_loc.push_back(b_loc);
+				this->min_length.push_back(min_length);
+				this->max_length.push_back(max_length);
+				this->stiffness.push_back(stiffness);
+				this->is_active.push_back(1.0);
+				return (int)this->is_active.size() - 1;
+			}
 		};
 
 		/*
@@ -107,6 +170,16 @@ namespace stark::models
 			std::vector<double> admissible_dot;
 			std::vector<double> stiffness;
 			std::vector<double> is_active;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double admissible_dot, double stiffness)
+			{
+				this->conn.numbered_push_back({ rb_a, rb_b });
+				this->da_loc.push_back(da_loc);
+				this->db_loc.push_back(db_loc);
+				this->admissible_dot.push_back(admissible_dot);
+				this->stiffness.push_back(stiffness);
+				this->is_active.push_back(1.0);
+				return (int)this->is_active.size() - 1;
+			}
 		};
 
 		/*
@@ -120,6 +193,15 @@ namespace stark::models
 			std::vector<double> max_force;
 			std::vector<double> delay;
 			std::vector<double> is_active;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, double target_v, double max_force, double delay)
+			{
+				this->conn.numbered_push_back({ rb_a, rb_b });
+				this->da_loc.push_back(da_loc);
+				this->target_v.push_back(target_v);
+				this->max_force.push_back(max_force);
+				this->is_active.push_back(1.0);
+				return (int)this->is_active.size() - 1;
+			}
 		};
 
 		/*
@@ -133,18 +215,43 @@ namespace stark::models
 			std::vector<double> max_torque;
 			std::vector<double> delay;
 			std::vector<double> is_active;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, double target_w, double max_torque, double delay)
+			{
+				this->conn.numbered_push_back({ rb_a, rb_b });
+				this->da_loc.push_back(da_loc);
+				this->target_w.push_back(target_w);
+				this->max_torque.push_back(max_torque);
+				this->delay.push_back(delay);
+				this->is_active.push_back(1.0);
+				return (int)this->is_active.size() - 1;
+			}
 		};
 
 
 		/* ===========================================   FIELDS   =========================================== */
-		AnchorPoints anchor_points;
-		BallJoints ball_joints;
-		RelativeDirectionLocks relative_direction_locks;
-		PointOnAxisConstraints point_on_axis_constraints;
-		DampedSprings damped_springs;
-		DistanceLimits distance_limits;
-		AngleLimits angle_limits;
-		RelativeLinearVelocityMotors relative_linear_velocity_motors;
-		RelativeAngularVelocityMotors relative_angular_velocity_motors;
+		std::shared_ptr<AnchorPoints> anchor_points;
+		std::shared_ptr<BallJoints> ball_joints;
+		std::shared_ptr<RelativeDirectionLocks> relative_direction_locks;
+		std::shared_ptr<PointOnAxisConstraints> point_on_axis_constraints;
+		std::shared_ptr<DampedSprings> damped_springs;
+		std::shared_ptr<DistanceLimits> distance_limits;
+		std::shared_ptr<AngleLimits> angle_limits;
+		std::shared_ptr<RelativeLinearVelocityMotors> relative_linear_velocity_motors;
+		std::shared_ptr<RelativeAngularVelocityMotors> relative_angular_velocity_motors;
+
+
+		/* ===========================================   METHODS   =========================================== */
+		BaseRigidBodyConstraints()
+		{
+			this->anchor_points = std::make_shared<AnchorPoints>();
+			this->ball_joints = std::make_shared<BallJoints>();
+			this->relative_direction_locks = std::make_shared<RelativeDirectionLocks>();
+			this->point_on_axis_constraints = std::make_shared<PointOnAxisConstraints>();
+			this->distance_limits = std::make_shared<DampedSprings>();
+			this->distance_limits = std::make_shared<DistanceLimits>();
+			this->angle_limits = std::make_shared<AngleLimits>();
+			this->relative_linear_velocity_motors = std::make_shared<RelativeLinearVelocityMotors>();
+			this->relative_angular_velocity_motors = std::make_shared<RelativeAngularVelocityMotors>();
+		};
 	};
 }

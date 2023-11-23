@@ -36,6 +36,8 @@ namespace stark::models
 		};
 
 		/* Fields */
+		int left_wheel_idx;
+		// ...
 
 		/* Methods */
 		FourWheelsVehicleRigidBodySystem(Stark& stark, const Template& vehicle_template);

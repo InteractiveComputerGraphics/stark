@@ -9,6 +9,14 @@
 #include "friction_geometry.h"
 #include "rigidbody_transformations.h"
 
+stark::models::RigidBodies::RigidBodies(Stark& stark, spRigidBodyDynamics dyn)
+	: dyn(dyn)
+{
+	this->energy_inertia = std::make_shared<EnergyRigidBodyInertia>(stark, dyn);
+	this->energy_constraints = std::make_shared<EnergyRigidBodyConstraints>(stark, dyn);
+}
+
+
 void stark::models::RigidBodies::init(Stark& sim)
 {
 	// Logger
@@ -376,113 +384,6 @@ const tmcd::ProximityResults& stark::models::RigidBodies::_run_proximity_detecti
 	return this->pd.run(sim.settings.contact.dhat);
 }
 
-void stark::models::RigidBodies::_before_time_step(Stark& sim)
-{
-	if (this->is_empty()) { return; }
-
-	// Inertia
-	const int n = this->get_n_bodies();
-	this->conn_inertia.resize(n);
-	this->J0_glob.resize(n);
-	this->J0_inv_glob.resize(n);
-	for (int i = 0; i < n; i++) {
-		this->conn_inertia[i] = { i };
-		const Eigen::Matrix3d J = local_to_global_matrix(this->J_loc[i], this->R0[i]);
-		this->J0_glob[i] = {
-			J(0, 0), J(0, 1), J(0, 2),
-			J(1, 0), J(1, 1), J(1, 2),
-			J(2, 0), J(2, 1), J(2, 2),
-		};
-		const Eigen::Matrix3d J_inv = J.inverse();
-		this->J0_inv_glob[i] = {
-			J_inv(0, 0), J_inv(0, 1), J_inv(0, 2),
-			J_inv(1, 0), J_inv(1, 1), J_inv(1, 2),
-			J_inv(2, 0), J_inv(2, 1), J_inv(2, 2),
-		};
-	}
-
-	// Quaternions
-	this->q0_.resize(n);
-	for (int i = 0; i < n; i++) {
-		Eigen::Quaterniond& q = this->q0[i];
-		this->q0_[i] = { q.w(), q.x(), q.y(), q.z() };
-	}
-
-	// Active friction points at x0 for this time step
-	this->_update_friction_contacts(sim);
-
-	// Set next time velocities estimation to zero to avoid invalid state outside of the minimzer
-	std::fill(this->v1.begin(), this->v1.end(), Eigen::Vector3d::Zero());
-	std::fill(this->w1.begin(), this->w1.end(), Eigen::Vector3d::Zero());
-}
-void stark::models::RigidBodies::_after_time_step(Stark& sim)
-{
-	if (this->is_empty()) { return; }
-
-	const double dt = sim.settings.simulation.adaptive_time_step.value;
-
-	// Set final positions with solved velocities
-	for (int i = 0; i < this->get_n_bodies(); i++) {
-		this->t1[i] = time_integration(this->t0[i], this->v1[i], dt);
-		this->q1[i] = quat_time_integration(this->q0[i], this->w1[i], dt);
-		this->R1[i] = this->q1[i].toRotationMatrix();
-	}
-
-	// x0 <- x1
-	this->t0 = this->t1;
-	this->q0 = this->q1;
-	this->R0 = this->R1;
-	this->v0 = this->v1;
-	this->w0 = this->w1;
-
-	// Log constraints
-	this->constraint_logger.append_to_series("time", sim.current_time);
-	this->constraint_logger.append_to_series("frame", sim.current_frame);
-	for (int i = 0; i < (int)this->constraints.sliders.conn.size(); i++) {
-		const int a = this->constraints.sliders.conn[i][1];
-		const int b = this->constraints.sliders.conn[i][2];
-		const double k = this->constraints.sliders.spring_stiffness[i];
-		const double l_rest = this->constraints.sliders.rest_length[i];
-		const Eigen::Vector3d p = local_to_global_point(this->constraints.sliders.loc_a[i], this->R1[a], this->t1[a]);
-		const Eigen::Vector3d q = local_to_global_point(this->constraints.sliders.loc_b[i], this->R1[b], this->t1[b]);
-
-		const double l = (p - q).norm();
-		const double f =  k*(l / l_rest - 1.0);
-		this->constraint_logger.append_to_series("slider_" + std::to_string(i), f);
-	}
-	for (int i = 0; i < (int)this->constraints.motors.conn.size(); i++) {
-		const int a = this->constraints.motors.conn[i][1];
-		const int b = this->constraints.motors.conn[i][2];
-		const double max_torque = this->constraints.motors.max_torque[i];
-		const double target_w = this->constraints.motors.target_w[i];
-		const double delay = this->constraints.motors.delay[i];
-		const Eigen::Vector3d da = local_to_global_direction(this->constraints.motors.loc_da[i], this->R1[a]);
-		const Eigen::Vector3d& w1a = this->w1[a];
-		const Eigen::Vector3d& w1b = this->w1[b];
-
-		const double k = max_torque/delay;
-		const double eps = max_torque/(2.0*k);
-		const double dw = target_w - da.dot(w1b - w1a);
-		const double torque = std::max(0.0, (dw < delay) ? k*dw : max_torque);
-		this->constraint_logger.append_to_series("motor_" + std::to_string(i), torque);
-	}
-	for (int i = 0; i < (int)this->constraints.parallel_gripper.conn.size(); i++) {
-		const int a = this->constraints.parallel_gripper.conn[i][1];
-		const int b = this->constraints.parallel_gripper.conn[i][2];
-		const double max_force = this->constraints.parallel_gripper.max_force[i];
-		const double target_v = this->constraints.parallel_gripper.target_v[i];
-		const double delay = this->constraints.parallel_gripper.delay[i];
-		const Eigen::Vector3d da = local_to_global_direction(this->constraints.parallel_gripper.loc_da[i], this->R1[a]);
-		const Eigen::Vector3d& v1a = this->v1[a];
-		const Eigen::Vector3d& v1b = this->v1[b];
-
-		const double k = max_force /delay;
-		const double eps = max_force /(2.0*k);
-		const double dv = target_v - da.dot(v1b - v1a);
-		const double f = std::max(0.0, (dv < delay) ? k*dv : max_force);
-		this->constraint_logger.append_to_series("parallel_gripper_" + std::to_string(i), f);
-	}
-}
 void stark::models::RigidBodies::_write_frame(Stark& sim)
 {
 	if (this->is_empty()) { return; }
