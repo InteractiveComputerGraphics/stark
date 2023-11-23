@@ -66,8 +66,9 @@ set(MODELS_FILES
 	src/models/EnergyRigidBodyInertia.cpp
 	src/models/EnergyRigidBodyConstraints.h
 	src/models/EnergyRigidBodyConstraints.cpp
-	src/models/RigidBodyConstraints.h
-	src/models/RigidBodyConstraints.cpp
+	src/models/BaseRigidBodyConstraints.h
+	src/models/DerivedRigidBodyConstraints.h
+	src/models/FourWheelsVehicleRigidBodySystem.h
 	#src/models/RigidBodyContacts.h
 	#src/models/RigidBodyFriction.h
 	#src/models/Interactions.h

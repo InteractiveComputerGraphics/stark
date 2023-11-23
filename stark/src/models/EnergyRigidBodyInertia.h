@@ -25,4 +25,5 @@ namespace stark::models
         // Stark callbacks
         void _before_time_step(Stark& stark);
 	};
+    using spEnergyRigidBodyInertia = std::shared_ptr<EnergyRigidBodyInertia>;
 }

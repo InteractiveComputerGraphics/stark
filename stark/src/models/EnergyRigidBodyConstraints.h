@@ -18,11 +18,12 @@ namespace stark::models
         std::vector<std::array<double, 9>> J0_inv_glob;  // Inverse inertia tensor local coordinates
 
         /* Methods */
-        EnergyRigidBodyInertia(Stark& stark, const spRigidBodyDynamics dyn);
+        EnergyRigidBodyConstraints(Stark& stark, const spRigidBodyDynamics dyn);
         void add(const double mass, const Eigen::Matrix3d& inertia_loc, const double linear_damping, const double angular_damping);
 
     private:
         // Stark callbacks
         void _before_time_step(Stark& stark);
 	};
+    using spEnergyRigidBodyInertia = std::shared_ptr<EnergyRigidBodyConstraints>;
 }
