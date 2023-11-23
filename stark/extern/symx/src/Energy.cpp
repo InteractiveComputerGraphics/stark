@@ -109,6 +109,15 @@ symx::Vector symx::Energy::make_vector(std::function<const double*()> data, std:
 }
 symx::Vector symx::Energy::make_dof_vector(const DoF& dof, std::function<const double* ()> data, std::function<int32_t()> size, const int32_t stride, const Index& idx, const std::string name)
 {
+	// Check that this dof has not been created yet
+	for (const auto& dof_block : this->dof_block_global_index) {
+		if (dof_block.dof_set == dof.idx && dof_block.conn_idx == idx.idx) {
+			std::cout << "symx error: Energy::make_dof_vector() tried to create a symbol for a DoF that already exists for energy " + this->name << std::endl;
+			exit(-1);
+		}
+	}
+
+	// Create the vector and declare the DoF
 	symx::Vector vector = this->make_vector(data, size, stride, idx, name);
 	assert(vector.size() == 3);
 	this->dof_block_global_index.push_back({ dof.idx, idx.idx });

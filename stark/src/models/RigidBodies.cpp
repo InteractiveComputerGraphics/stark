@@ -989,15 +989,15 @@ void stark::models::RigidBodies::_energies_mechanical(Stark& sim)
 			symx::Vector q0a = energy.make_vector(this->q0_, conn["a"]);
 			symx::Vector da = integrate_loc_direction(da_loc, q0a, w1a, dt);
 
-			// Constraint (Analogous to C1 friction)
-			// Important: derivatives wrt "positions", therefore needed chain rule and resulted in added product by dt
-			symx::Scalar k = max_torque/delay;
-			symx::Scalar eps = max_torque/(2.0*k);
-			symx::Scalar dw = target_w - da.dot(w1b - w1a);
-			symx::Scalar E_l = 0.5*k*dw.powN(2)*dt;
-			symx::Scalar E_r = max_torque*(dw - eps)*dt;
-			symx::Scalar E = symx::branch(dw < delay, E_l, E_r);
-			energy.set_with_condition(E, dw > 0.0);
+				// Constraint (Analogous to C1 friction)
+				// Important: derivatives wrt "positions", therefore needed chain rule and resulted in added product by dt
+				symx::Scalar k = max_torque/delay;
+				symx::Scalar eps = max_torque/(2.0*k);
+				symx::Scalar dw = target_w - da.dot(w1b - w1a);
+				symx::Scalar E_l = 0.5*k*dw.powN(2)*dt;
+				symx::Scalar E_r = max_torque*(dw - eps)*dt;
+				symx::Scalar E = symx::branch(dw < delay, E_l, E_r);
+				energy.set_with_condition(E, dw > 0.0);
 		}
 	);
 

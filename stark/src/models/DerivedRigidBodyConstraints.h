@@ -28,6 +28,16 @@ namespace stark::models
 		};
 
 		/*
+		*	Disables relative displacement but allows relative rotation around a local axis.
+		*	Could also be named "AxisLock"
+		*/
+		struct BallJointWithConeLimits
+		{
+			std::vector<int> ball_joint_idx;
+			std::vector<int> cone_direction_constraint_idx;
+		};
+
+		/*
 		*	Disables relative displacement or rotation between two objects.
 		*/
 		struct WeldJoints
