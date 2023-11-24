@@ -13,10 +13,19 @@ namespace stark::models
 	public:
         EnergyRigidBodyConstraints(Stark& stark, const spRigidBodyDynamics dyn);
 
-    private:
         /* Fields */
         const spRigidBodyDynamics dyn;
-        std::shared_ptr<BaseRigidBodyConstraints> constraints;
+
+		// Constraint containers
+		std::shared_ptr<BaseRigidBodyConstraints::AnchorPoints> anchor_points;
+		std::shared_ptr<BaseRigidBodyConstraints::BallJoints> ball_joints;
+		std::shared_ptr<BaseRigidBodyConstraints::RelativeDirectionLocks> relative_direction_locks;
+		std::shared_ptr<BaseRigidBodyConstraints::PointOnAxisConstraints> point_on_axis_constraints;
+		std::shared_ptr<BaseRigidBodyConstraints::DampedSprings> damped_springs;
+		std::shared_ptr<BaseRigidBodyConstraints::DistanceLimits> distance_limits;
+		std::shared_ptr<BaseRigidBodyConstraints::AngleLimits> angle_limits;
+		std::shared_ptr<BaseRigidBodyConstraints::RelativeLinearVelocityMotors> relative_linear_velocity_motors;
+		std::shared_ptr<BaseRigidBodyConstraints::RelativeAngularVelocityMotors> relative_angular_velocity_motors;
 
         /* Methods */
         symx::Scalar _set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt);

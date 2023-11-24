@@ -38,33 +38,7 @@ namespace stark::models
 
 		/* Methods */
 		RigidBodyDynamics(Stark& stark);
-		Id add(const double mass, const Eigen::Matrix3d& inertia_loc);
-		Id add_and_transform(const double mass, const Eigen::Matrix3d& inertia_loc, const Eigen::Vector3d& displacement = { 0, 0, 0 }, const double rotate_deg = 0.0, const Eigen::Vector3d& rotation_axis = { 0, 0, 1 });
-
-		void set_translation(const Id& id, const Eigen::Vector3d& translation);
-		void add_displacement(const Id& id, const Eigen::Vector3d& displacement);
-		void set_rotation(const Id& id, const Eigen::Quaterniond& q);
-		void set_rotation(const Id& id, const double& angle_deg, const Eigen::Vector3d& axis);
-		void add_rotation(const Id& id, const Eigen::Quaterniond& q);
-		void add_rotation(const Id& id, const double& angle_deg, const Eigen::Vector3d& axis);
-		void set_velocity(const Id& id, const Eigen::Vector3d& vel_glob_coords);
-		void add_velocity(const Id& id, const Eigen::Vector3d& vel_glob_coords);
-		void set_angular_velocity(const Id& id, const Eigen::Vector3d& angular_vel_glob_coords);
-		void add_angular_velocity(const Id& id, const Eigen::Vector3d& angular_vel_glob_coords);
-		void add_force_at(const Id& id, const Eigen::Vector3d& force_glob_coords, const Eigen::Vector3d& application_point_glob_coords);
-		void set_force_at_centroid(const Id& id, const Eigen::Vector3d& force_glob_coords);
-		void add_force_at_centroid(const Id& id, const Eigen::Vector3d& force_glob_coords);
-		void set_torque(const Id& id, const Eigen::Vector3d& torque_glob_coords);
-		void add_torque(const Id& id, const Eigen::Vector3d& torque_glob_coords);
-		void set_acceleration(const Id& id, const Eigen::Vector3d& acc_glob_coords);
-		void add_acceleration(const Id& id, const Eigen::Vector3d& acc_glob_coords);
-		void set_angular_acceleration(const Id& id, const Eigen::Vector3d& ang_acc_glob_coords);
-		void add_angular_acceleration(const Id& id, const Eigen::Vector3d& ang_acc_glob_coords);
-
-		Eigen::Vector3d get_point_in_global_coordinates(const Id& id, const Eigen::Vector3d& p);
-		int get_n_bodies() const;
-		bool is_empty() const;
-		bool is_body_declared(const Id& id) const;
+		int add(const double mass, const Eigen::Matrix3d& inertia_loc, const Eigen::Vector3d& displacement = { 0, 0, 0 }, const double rotate_deg = 0.0, const Eigen::Vector3d& rotation_axis = { 0, 0, 1 });
 
 	private:
 		void _before_time_step(Stark& stark);

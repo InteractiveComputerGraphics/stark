@@ -9,49 +9,31 @@ stark::models::Simulation::Simulation(const Settings& settings)
 	spPointDynamics point_dynamics = std::make_shared<PointDynamics>(this->stark);
 	//spRigidBodies rb = std::make_shared<RigidBodies>(this->stark);
 
-	// Energies
-	//// Point
+	// Common energies
 	auto energy_point_inertia = std::make_shared<EnergyPointInertia>(this->stark, point_dynamics);
 	auto energy_point_prescribed_positions = std::make_shared<EnergyPointPrescribedPositions>(this->stark, point_dynamics);
-	
-	//// Edge
-	auto energy_edge_strain = std::make_shared<EnergyEdgeStrain>(this->stark, point_dynamics);
-
-	//// Triangle
-	auto energy_triangle_strain = std::make_shared<EnergyTriangleStrain>(this->stark, point_dynamics);
-	auto energy_triangle_bending_bergou06 = std::make_shared<EnergyTriangleBendingBergou06>(this->stark, point_dynamics);
-
-	//// Tet
-	auto energy_tet_strain = std::make_shared<EnergyTetStrain>(this->stark, point_dynamics);
-	
-	//// Other
 	//auto energy_frictional_contact = std::make_shared<EnergyFrictionalContact>(this->stark, point_dynamics, rb);
-
 
 	// Physical Systems
 	this->lines = std::make_shared<OneDimensionalDeformableSolids>(
 		this->stark,
 		point_dynamics,
 		energy_point_inertia,
-		energy_point_prescribed_positions,
-		energy_edge_strain
+		energy_point_prescribed_positions
 		//energy_frictional_contact
 		);
 	this->surfaces = std::make_shared<SurfaceDeformableSolids>(
 		this->stark,
 		point_dynamics,
 		energy_point_inertia,
-		energy_point_prescribed_positions,
-		energy_triangle_strain,
-		energy_triangle_bending_bergou06
+		energy_point_prescribed_positions
 		//energy_frictional_contact
 		);
 	this->volumes = std::make_shared<VolumetricDeformableSolids>(
 		this->stark,
 		point_dynamics,
 		energy_point_inertia,
-		energy_point_prescribed_positions,
-		energy_tet_strain
+		energy_point_prescribed_positions
 		//energy_frictional_contact
 		);
 }

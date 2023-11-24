@@ -226,32 +226,5 @@ namespace stark::models
 				return (int)this->is_active.size() - 1;
 			}
 		};
-
-
-		/* ===========================================   FIELDS   =========================================== */
-		std::shared_ptr<AnchorPoints> anchor_points;
-		std::shared_ptr<BallJoints> ball_joints;
-		std::shared_ptr<RelativeDirectionLocks> relative_direction_locks;
-		std::shared_ptr<PointOnAxisConstraints> point_on_axis_constraints;
-		std::shared_ptr<DampedSprings> damped_springs;
-		std::shared_ptr<DistanceLimits> distance_limits;
-		std::shared_ptr<AngleLimits> angle_limits;
-		std::shared_ptr<RelativeLinearVelocityMotors> relative_linear_velocity_motors;
-		std::shared_ptr<RelativeAngularVelocityMotors> relative_angular_velocity_motors;
-
-
-		/* ===========================================   METHODS   =========================================== */
-		BaseRigidBodyConstraints()
-		{
-			this->anchor_points = std::make_shared<AnchorPoints>();
-			this->ball_joints = std::make_shared<BallJoints>();
-			this->relative_direction_locks = std::make_shared<RelativeDirectionLocks>();
-			this->point_on_axis_constraints = std::make_shared<PointOnAxisConstraints>();
-			this->distance_limits = std::make_shared<DampedSprings>();
-			this->distance_limits = std::make_shared<DistanceLimits>();
-			this->angle_limits = std::make_shared<AngleLimits>();
-			this->relative_linear_velocity_motors = std::make_shared<RelativeLinearVelocityMotors>();
-			this->relative_angular_velocity_motors = std::make_shared<RelativeAngularVelocityMotors>();
-		};
 	};
 }

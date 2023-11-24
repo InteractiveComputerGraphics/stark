@@ -6,13 +6,15 @@ stark::models::OneDimensionalDeformableSolids::OneDimensionalDeformableSolids(
 	Stark& stark, 
 	spPointDynamics dyn, 
 	spEnergyPointInertia inertia, 
-	spEnergyPointPrescribedPositions prescribed_positions, 
-	spEnergyEdgeStrain strain
+	spEnergyPointPrescribedPositions prescribed_positions
 	//spEnergyFrictionalContact contact
 )
-	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions), strain(strain) //, contact(contact)
+	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions) //, contact(contact)
 {
 	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
+
+	// Init specific energies
+	this->strain = std::make_shared<EnergyEdgeStrain>(stark, dyn);
 }
 
 stark::models::Id stark::models::OneDimensionalDeformableSolids::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 2>>& edges, const OneDimensionalMaterial& material)

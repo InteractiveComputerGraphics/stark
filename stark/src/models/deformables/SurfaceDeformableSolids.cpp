@@ -6,14 +6,15 @@ stark::models::SurfaceDeformableSolids::SurfaceDeformableSolids(
 	Stark& stark, 
 	spPointDynamics dyn, 
 	spEnergyPointInertia inertia, 
-	spEnergyPointPrescribedPositions prescribed_positions, 
-	spEnergyTriangleStrain strain, 
-	spEnergyTriangleBendingBergou06 bending_bergou
+	spEnergyPointPrescribedPositions prescribed_positions
 	//spEnergyFrictionalContact contact
 )
-	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions), strain(strain), bending_bergou(bending_bergou) //, contact(contact)
+	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions) //, contact(contact)
 {
 	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
+
+	this->strain = std::make_shared<EnergyTriangleStrain>(stark, dyn);
+	this->bending_bergou = std::make_shared<EnergyTriangleBendingBergou06>(stark, dyn);
 }
 
 stark::models::Id stark::models::SurfaceDeformableSolids::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const SurfaceMaterial& material)

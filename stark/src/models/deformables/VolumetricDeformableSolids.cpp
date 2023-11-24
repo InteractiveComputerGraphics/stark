@@ -6,13 +6,13 @@ stark::models::VolumetricDeformableSolids::VolumetricDeformableSolids(
 	Stark& stark, 
 	spPointDynamics dyn, 
 	spEnergyPointInertia inertia, 
-	spEnergyPointPrescribedPositions prescribed_positions, 
-	spEnergyTetStrain strain
+	spEnergyPointPrescribedPositions prescribed_positions
 	//spEnergyFrictionalContact contact
 )
-	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions), strain(strain) //, contact(contact)
+	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions) //, contact(contact)
 {
 	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
+	this->strain = std::make_shared<EnergyTetStrain>(stark, dyn);
 }
 
 stark::models::Id stark::models::VolumetricDeformableSolids::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 4>>& tets, const VolumeMaterial& material)

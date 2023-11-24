@@ -8,6 +8,23 @@ Oct unification
 	
 	* RigidBody export in two modes: Full meshes (like until now) or just transformations
 
+	* Separate internals and UI using namespaces.
+		namespace stark { class RigidBodyHandler {}; }
+		namespace stark::models { class EnergyRigidBodyInertia {}; }
+		
+		-> Classify in folders appropriately.
+		
+	* Reintroduce the constraint logger
+	* It really might not be a bad idea to have a RB class to
+			rb.get_mass()
+		and things like that... Maybe that is the way to get rid of the Id weirdness.
+	* Document/refactor Id:
+		- While for deformables there is a distinction between local and global, for rigid bodies there is not.
+			- Also, "local" and "global" is a bit unfortunate.
+		- Maybe I should get rid of it as a global thing and have actual different types for Deformables and other PS
+			`DeformableId`, `RigidBodyId`... and they are specialised.
+			I think it is completely fine to specialize interaction energies in the interface for the type combinations.
+			Overall this is worse for the user and perhaps more clear internally (?)
 	* Inherit DeformableSolids to pass BC and other setters/getters
 	* Consistent naming for Energies, PhysicalSystems and user interface
 		DynamicsPoints, DynamicsRigidBodies...

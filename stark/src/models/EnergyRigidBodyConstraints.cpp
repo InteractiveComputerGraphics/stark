@@ -6,12 +6,23 @@
 stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& stark, const spRigidBodyDynamics dyn)
 	: dyn(dyn)
 {
-	this->constraints = std::make_shared<BaseRigidBodyConstraints>();
+	// Constraint containers initialization
+	this->anchor_points = std::make_shared<BaseRigidBodyConstraints::AnchorPoints>();
+	this->ball_joints = std::make_shared<BaseRigidBodyConstraints::BallJoints>();
+	this->relative_direction_locks = std::make_shared<BaseRigidBodyConstraints::RelativeDirectionLocks>();
+	this->point_on_axis_constraints = std::make_shared<BaseRigidBodyConstraints::PointOnAxisConstraints>();
+	this->distance_limits = std::make_shared<BaseRigidBodyConstraints::DampedSprings>();
+	this->distance_limits = std::make_shared<BaseRigidBodyConstraints::DistanceLimits>();
+	this->angle_limits = std::make_shared<BaseRigidBodyConstraints::AngleLimits>();
+	this->relative_linear_velocity_motors = std::make_shared<BaseRigidBodyConstraints::RelativeLinearVelocityMotors>();
+	this->relative_angular_velocity_motors = std::make_shared<BaseRigidBodyConstraints::RelativeAngularVelocityMotors>();
 
-	stark.global_energy.add_energy("rb_constraint_anchor_point", this->constraints->anchor_points->conn,
+
+	// Energy declarations
+	stark.global_energy.add_energy("rb_constraint_anchor_point", this->anchor_points->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->constraints->anchor_points;
+			auto& data = this->anchor_points;
 
 			symx::Vector loc = energy.make_vector(data->loc, conn["idx"]);
 			symx::Vector target_glob = energy.make_vector(data->target_glob, conn["idx"]);
@@ -24,10 +35,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_ball_joint", this->constraints->ball_joints->conn,
+	stark.global_energy.add_energy("rb_constraint_ball_joint", this->ball_joints->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->constraints->ball_joints;
+			auto& data = this->ball_joints;
 
 			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
 			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
@@ -41,10 +52,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_relative_direction_lock", this->constraints->relative_direction_locks->conn,
+	stark.global_energy.add_energy("rb_constraint_relative_direction_lock", this->relative_direction_locks->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->constraints->relative_direction_locks;
+			auto& data = this->relative_direction_locks;
 
 			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
 			symx::Vector db_loc = energy.make_vector(data->db_loc, conn["idx"]);
@@ -58,10 +69,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_point_on_axis", this->constraints->point_on_axis_constraints->conn,
+	stark.global_energy.add_energy("rb_constraint_point_on_axis", this->point_on_axis_constraints->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->constraints->point_on_axis_constraints;
+			auto& data = this->point_on_axis_constraints;
 
 			symx::Vector a_loc = energy.make_vector(data->da_loc, conn["idx"]);
 			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
@@ -76,10 +87,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_angle_limits", this->constraints->angle_limits->conn,
+	stark.global_energy.add_energy("rb_constraint_angle_limits", this->angle_limits->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->constraints->angle_limits;
+			auto& data = this->angle_limits;
 
 			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
 			symx::Vector db_loc = energy.make_vector(data->db_loc, conn["idx"]);
@@ -97,10 +108,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_damped_spring", this->constraints->damped_springs->conn,
+	stark.global_energy.add_energy("rb_constraint_damped_spring", this->damped_springs->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->constraints->damped_springs;
+			auto& data = this->damped_springs;
 
 			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
 			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
@@ -124,10 +135,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_distance_limits", this->constraints->distance_limits->conn,
+	stark.global_energy.add_energy("rb_constraint_distance_limits", this->distance_limits->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->constraints->distance_limits;
+			auto& data = this->distance_limits;
 
 			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
 			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
@@ -146,10 +157,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_relative_linear_velocity_motors", this->constraints->relative_linear_velocity_motors->conn,
+	stark.global_energy.add_energy("rb_constraint_relative_linear_velocity_motors", this->relative_linear_velocity_motors->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->constraints->relative_linear_velocity_motors;
+			auto& data = this->relative_linear_velocity_motors;
 
 			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
 			symx::Scalar target_v = energy.make_scalar(data->target_v, conn["idx"]);
@@ -168,10 +179,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_relative_angular_velocity_motors", this->constraints->relative_angular_velocity_motors->conn,
+	stark.global_energy.add_energy("rb_constraint_relative_angular_velocity_motors", this->relative_angular_velocity_motors->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->constraints->relative_angular_velocity_motors;
+			auto& data = this->relative_angular_velocity_motors;
 
 			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
 			symx::Scalar target_w = energy.make_scalar(data->target_w, conn["idx"]);

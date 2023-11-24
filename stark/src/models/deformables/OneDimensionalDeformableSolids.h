@@ -38,8 +38,7 @@ namespace stark::models
 			Stark& stark,
 			spPointDynamics dyn, 
 			spEnergyPointInertia inertia,
-			spEnergyPointPrescribedPositions prescribed_positions,
-			spEnergyEdgeStrain strain
+			spEnergyPointPrescribedPositions prescribed_positions
 			//spEnergyFrictionalContact contact
 		);
 
