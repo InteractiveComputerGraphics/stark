@@ -36,6 +36,9 @@ void rb()
 	simulation.rigidbodies->add_constraint_anchor_point(box0, { -0.05, -0.05, -0.05 });
 	simulation.rigidbodies->add_constraint_ball_joint(box0, box1, { 0.05, 0.05, 0.05 });
 
+	// Misc
+	simulation.rigidbodies->write_collision_meshes(true);
+
 	// Run
 	simulation.stark.run();
 }

@@ -249,7 +249,6 @@ namespace stark::models
 		inline RigidBodyHandler get_body_b() { return this->rb_b; };
 		inline BallJointHandler get_ball_joint() { return this->ball_joint; };
 		inline RelativeDirectionLockHandler get_relative_direction_lock() { return this->relative_direction_lock; };
-
 		inline void enable(bool activation)
 		{
 			this->ball_joint.enable(activation);
@@ -262,24 +261,131 @@ namespace stark::models
 	private:
 		HingeJointHandler hinge_joint;
 		AngleLimitHandler angle_limit;
-	public:
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
 
+	public:
+		HingeJointWithLimitsHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, HingeJointHandler hinge_joint, AngleLimitHandler angle_limit)
+			: rb_a(rb_a), rb_b(rb_b), hinge_joint(hinge_joint), angle_limit(angle_limit) {};
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
+		inline HingeJointHandler get_hinge_joint() { return this->hinge_joint; };
+		inline AngleLimitHandler get_angle_limit() { return this->angle_limit; };
+		inline void enable(bool activation)
+		{
+			this->hinge_joint.enable(activation);
+			this->angle_limit.enable(activation);
+		};
 	};
 
-
-	class SpringWithLimits {};
-	
-	// Parallel Gripper, hydraulic press. Positive velocity for expansion.
-	class PrismaticPress 
+	class SpringWithLimitsHandler
 	{
 	private:
-		RelativeLinearVelocityMotorHandler linear_motor;
+		DampedSpringHandler spring;
+		DistanceLimitHandler distance_limit;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
+
+	public:
+		SpringWithLimitsHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, DampedSpringHandler spring, DistanceLimitHandler distance_limit)
+			: rb_a(rb_a), rb_b(rb_b), spring(spring), distance_limit(distance_limit) {};
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
+		inline DampedSpringHandler get_spring() { return this->spring; };
+		inline DistanceLimitHandler get_distance_limit() { return this->distance_limit; };
+		inline void enable(bool activation)
+		{
+			this->spring.enable(activation);
+			this->distance_limit.enable(activation);
+		};
+	};
+	
+	class SliderHandler
+	{
+	private:
 		PointOnAxisConstraintHandler point_on_axis;
 		RelativeDirectionLockHandler relative_direction_lock;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
 
+	public:
+		SliderHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, PointOnAxisConstraintHandler point_on_axis, RelativeDirectionLockHandler relative_direction_lock)
+			: rb_a(rb_a), rb_b(rb_b), point_on_axis(point_on_axis), relative_direction_lock(relative_direction_lock) {};
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
+		inline PointOnAxisConstraintHandler get_point_on_axis() { return this->point_on_axis; };
+		inline RelativeDirectionLockHandler get_relative_direction_lock() { return this->relative_direction_lock; };
+		inline void enable(bool activation)
+		{
+			this->point_on_axis.enable(activation);
+			this->relative_direction_lock.enable(activation);
+		};
+	};
+	
+	class PrismaticSliderHandler
+	{
+	private:
+		SliderHandler slider;
+		RelativeDirectionLockHandler relative_direction_lock;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
 
+	public:
+		PrismaticSliderHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, SliderHandler slider, RelativeDirectionLockHandler relative_direction_lock)
+			: rb_a(rb_a), rb_b(rb_b), slider(slider), relative_direction_lock(relative_direction_lock) {};
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
+		inline SliderHandler get_slider() { return this->slider; };
+		inline RelativeDirectionLockHandler get_relative_direction_lock() { return this->relative_direction_lock; };
+		inline void enable(bool activation)
+		{
+			this->slider.enable(activation);
+			this->relative_direction_lock.enable(activation);
+		};
+	};
+	
+	class HingeWithMotorHandler
+	{
+	private:
+		HingeJointHandler hinge;
+		RelativeAngularVelocityMotorHandler motor;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
+
+	public:
+		HingeWithMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, HingeJointHandler hinge, RelativeAngularVelocityMotorHandler motor)
+			: rb_a(rb_a), rb_b(rb_b), hinge(hinge), motor(motor) {};
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
+		inline HingeJointHandler get_hinge_joint() { return this->hinge; };
+		inline RelativeAngularVelocityMotorHandler get_motor() { return this->motor; };
+		inline void enable(bool activation)
+		{
+			this->hinge.enable(activation);
+			this->motor.enable(activation);
+		};
 	};
 
+	// Parallel Gripper, hydraulic press. Positive velocity for expansion.
+	class PrismaticPressHandler
+	{
+	private:
+		PrismaticSliderHandler prismatic_slider;
+		RelativeLinearVelocityMotorHandler motor;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
 
-
+	public:
+		PrismaticPressHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, PrismaticSliderHandler prismatic_slider, RelativeLinearVelocityMotorHandler motor)
+			: rb_a(rb_a), rb_b(rb_b), prismatic_slider(prismatic_slider), motor(motor) {};
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
+		inline PrismaticSliderHandler get_prismatic_slider() { return this->prismatic_slider; };
+		inline RelativeLinearVelocityMotorHandler get_motor() { return this->motor; };
+		inline void enable(bool activation)
+		{
+			this->prismatic_slider.enable(activation);
+			this->motor.enable(activation);
+		};
+	};
 }

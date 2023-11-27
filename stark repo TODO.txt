@@ -18,6 +18,7 @@ Oct unification
 		Right now is a reference that is used during the simulation (e.g. write_frame) and could theoretically become invalid.
 	* I need to clarify where things are initialized, who owns who, etc...
 	* Inertia tensor should not be in utils. Probably we need a stark::rigidbody namespace
+	* Should I drop the "Handler" at the end of each constraint?
 		
 	* Reintroduce the constraint logger
 	* It really might not be a bad idea to have a RB class to
