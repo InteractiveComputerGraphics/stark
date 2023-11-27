@@ -9,11 +9,14 @@ stark::models::RigidBodies::RigidBodies(Stark& stark, spRigidBodyDynamics dyn)
 
 stark::models::RigidBodyHandler stark::models::RigidBodies::add(const double mass, const Eigen::Matrix3d& inertia_local, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis)
 {
-	const int idx = this->rb->dyn->add(displacement, rotate_deg, rotation_axis);
+	const int idx = this->rb->dyn->add();
 	this->rb->inertia->add(mass, inertia_local, 0.0, 0.0);
 	this->rb->collision_meshes.push_back(utils::Mesh<3>());
 	this->rb->render_meshes.push_back(utils::Mesh<3>());
-	return RigidBodyHandler(this->rb, idx);
+	auto body = RigidBodyHandler(this->rb, idx);
+	body.set_translation(displacement);
+	body.set_rotation(rotate_deg, rotation_axis);
+	return body;
 }
 stark::models::RigidBodyHandler stark::models::RigidBodies::add_sphere(const double mass, const double radius, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis, const int subdivisions)
 {

@@ -26,11 +26,11 @@ namespace stark::models
 		RigidBodies(Stark& stark, spRigidBodyDynamics dyn);
 
 		// Add rigid bodies
-		RigidBodyHandler add(const double mass, const Eigen::Matrix3d& inertia_local, const Eigen::Vector3d& displacement = { 0, 0, 0 }, const double rotate_deg = 0.0, const Eigen::Vector3d& rotation_axis = { 0, 0, 1 });
-		RigidBodyHandler add_sphere(const double mass, const double radius, const Eigen::Vector3d& displacement = { 0, 0, 0 }, const double rotate_deg = 0.0, const Eigen::Vector3d& rotation_axis = { 0, 0, 1 }, const int subdivisions = 2);
-		RigidBodyHandler add_box(const double mass, const Eigen::Vector3d& size, const Eigen::Vector3d& displacement = { 0, 0, 0 }, const double rotate_deg = 0.0, const Eigen::Vector3d& rotation_axis = { 0, 0, 1 });
-		RigidBodyHandler add_cylinder(const double mass, const double radius, const double full_height, const Eigen::Vector3d& displacement = { 0, 0, 0 }, const double rotate_deg = 0.0, const Eigen::Vector3d& rotation_axis = { 0, 0, 1 }, const int slices = 16, const int stacks = 1);
-		RigidBodyHandler add_torus(const double mass, const double outer_radius, const double inner_radius, const Eigen::Vector3d& displacement = { 0, 0, 0 }, const double rotate_deg = 0.0, const Eigen::Vector3d& rotation_axis = { 0, 0, 1 }, const int slices = 16, const int stacks = 32);
+		RigidBodyHandler add(const double mass, const Eigen::Matrix3d& inertia_local);
+		RigidBodyHandler add_sphere(const double mass, const double radius, const int subdivisions = 2);
+		RigidBodyHandler add_box(const double mass, const Eigen::Vector3d& size);
+		RigidBodyHandler add_cylinder(const double mass, const double radius, const double full_height, const int slices = 16, const int stacks = 1);
+		RigidBodyHandler add_torus(const double mass, const double outer_radius, const double inner_radius, const int slices = 16, const int stacks = 32);
 
 		// Add constraints
 		AnchorPointHandler add_constraint_anchor_point(const RigidBodyHandler& body, const Eigen::Vector3d& p_glob, double stiffness_per_kg = 1e6);
