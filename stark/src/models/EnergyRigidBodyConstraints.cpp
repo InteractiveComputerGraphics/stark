@@ -29,7 +29,7 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
 
-			symx::Vector glob = this->_get_x1(energy, stark, conn["a"], loc);
+			symx::Vector glob = this->_get_x1(energy, stark, conn["rb"], loc);
 			symx::Scalar E = 0.5 * stiffness * (target_glob - glob).squared_norm();
 			energy.set_with_condition(E, is_active > 0.0);
 		}
@@ -167,8 +167,8 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 			symx::Scalar max_force = energy.make_scalar(data->max_force, conn["idx"]);
 			symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Vector va1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["a"]);
-			symx::Vector vb1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["b"]);
+			symx::Vector va1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["a"]);
+			symx::Vector vb1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["b"]);
 			symx::Vector wa1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["a"]);
 			symx::Vector qa0 = energy.make_vector(this->dyn->q0_, conn["a"]);
 			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);

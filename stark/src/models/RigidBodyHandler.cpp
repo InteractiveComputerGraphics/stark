@@ -33,6 +33,24 @@ stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::set_local_iner
 	this->rb->inertia->J_loc[this->idx] = inertia_tensor;
 	return (*this);
 }
+double stark::models::RigidBodyHandler::get_linear_damping() const
+{
+	return this->rb->inertia->linear_damping[this->idx];
+}
+stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::set_linear_damping(double damping)
+{
+	this->rb->inertia->linear_damping[this->idx] = damping;
+	return (*this);
+}
+double stark::models::RigidBodyHandler::get_angular_damping() const
+{
+	return this->rb->inertia->angular_damping[this->idx];
+}
+stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::set_angular_damping(double damping)
+{
+	this->rb->inertia->angular_damping[this->idx] = damping;
+	return (*this);
+}
 Eigen::Vector3d stark::models::RigidBodyHandler::get_translation() const
 {
 	return this->rb->dyn->t1[this->idx];

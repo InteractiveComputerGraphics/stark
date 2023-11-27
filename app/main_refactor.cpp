@@ -23,13 +23,20 @@ void rb()
 
 	stark::models::Simulation simulation(settings);
 
-	// RB
-	auto box = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 });
+	// Objects
+	auto box0 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
+		.set_linear_damping(1.0);
+	auto box1 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
+		.set_linear_damping(1.0)
+		.add_displacement({ 0.1, 0, 0 });
+
+	// Constraints
+	simulation.rigidbodies->add_constraint_anchor_point(box0, { -0.05, -0.05, -0.05 });
+	simulation.rigidbodies->add_constraint_ball_joint(box0, box1, { 0.05, 0.05, 0.05 });
 
 	// Run
 	simulation.stark.run();
 }
-
 void net()
 {
 	stark::Settings settings = stark::Settings();
@@ -78,7 +85,6 @@ void net()
 	// Run
 	simulation.stark.run();
 }
-
 void hanging_cloth()
 {
 	stark::Settings settings = stark::Settings();
@@ -129,7 +135,6 @@ void hanging_cloth()
 	// Run
 	simulation.stark.run();
 }
-
 void rubber_block()
 {
 	stark::Settings settings = stark::Settings();

@@ -23,6 +23,12 @@ namespace stark::models
 		Eigen::Matrix3d get_global_inertia_tensor() const;
 		RigidBodyHandler& set_local_inertia_tensor(const Eigen::Matrix3d& inertia_tensor);
 
+		double get_linear_damping() const;
+		RigidBodyHandler& set_linear_damping(double damping);
+
+		double get_angular_damping() const;
+		RigidBodyHandler& set_angular_damping(double damping);
+
 		Eigen::Vector3d get_translation() const;
 		RigidBodyHandler& set_translation(const Eigen::Vector3d& translation);
 		RigidBodyHandler& add_displacement(const Eigen::Vector3d& displacement);
