@@ -1,5 +1,8 @@
 #include "RigidBodiesInternal.h"
 
+#include "rigidbody_transformations.h"
+#include "../utils/mesh_utils.h"
+
 stark::models::RigidBodiesInternal::RigidBodiesInternal(Stark& stark, spRigidBodyDynamics dyn)
 	: dyn(dyn)
 {
@@ -9,56 +12,74 @@ stark::models::RigidBodiesInternal::RigidBodiesInternal(Stark& stark, spRigidBod
 	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
 }
 
-//void stark::models::RigidBodies::_write_frame(Stark& sim)
-//{
-//	if (this->is_empty()) { return; }
-//	this->constraint_logger.save_to_disk();
-//	if (!this->write_VTK) { return; }
-//
-//	if (this->output_labeled_groups.size() > 0) {
-//		for (const auto& pair : this->output_labeled_groups) {
-//			const std::string& label = pair.first;
-//			const std::vector<int>& rb_indices = pair.second;
-//
-//			std::vector<Eigen::Vector3d> glob_vertices;
-//			std::vector<std::array<int, 3>> triangles;
-//			for (const int rb_i : rb_indices) {
-//				const Eigen::Matrix3d& R = this->R1[rb_i];
-//				const Eigen::Vector3d& t = this->t1[rb_i];
-//
-//				const std::array<int, 2> v_range = this->collision_mesh.get_vertices_range(rb_i);
-//				const int idx_offset = (int)glob_vertices.size() - v_range[0];
-//				for (int vertex_i = v_range[0]; vertex_i < v_range[1]; vertex_i++) {
-//					const Eigen::Vector3d p = local_to_global_point(this->collision_mesh.vertices[vertex_i], R, t);
-//					glob_vertices.push_back(p);
-//				}
-//
-//				const std::array<int, 2> e_range = this->collision_mesh.get_elements_range(rb_i);
-//				for (int tri_i = e_range[0]; tri_i < e_range[1]; tri_i++) {
-//					const std::array<int, 3>& tri = this->collision_mesh.connectivity[tri_i];
-//					triangles.push_back({ tri[0] + idx_offset, tri[1] + idx_offset, tri[2] + idx_offset });
-//				}
-//			}
-//			if (label.size() == 0) {
-//				utils::write_VTK(sim.get_vtk_path("rb"), glob_vertices, triangles, false);
-//			}
-//			else {
-//				utils::write_VTK(sim.get_vtk_path("rb_" + label), glob_vertices, triangles, false);
-//			}
-//		}
-//	}
-//	else {
-//		std::vector<Eigen::Vector3d> glob_vertices(this->collision_mesh.get_n_vertices());
-//		for (int rb_i = 0; rb_i < this->collision_mesh.get_n_meshes(); rb_i++) {
-//			const Eigen::Matrix3d& R = this->R1[rb_i];
-//			const Eigen::Vector3d& t = this->t1[rb_i];
-//
-//			const std::array<int, 2> range = this->collision_mesh.get_vertices_range(rb_i);
-//			for (int vertex_i = range[0]; vertex_i < range[1]; vertex_i++) {
-//				const Eigen::Vector3d p = local_to_global_point(this->collision_mesh.vertices[vertex_i], R, t);
-//				glob_vertices[vertex_i] = p;
-//			}
-//		}
-//		utils::write_VTK(sim.get_vtk_path("rb"), glob_vertices, this->collision_mesh.connectivity, false);
-//	}
-//}
+void stark::models::RigidBodiesInternal::_write_frame(Stark& stark)
+{
+	if (this->dyn->get_n_bodies() == 0) { return; }
+
+	auto concatenate_meshes = [&](const std::vector<int>& bodies, const bool collision_mesh)
+	{
+		std::vector<Eigen::Vector3d> vertices;
+		std::vector<std::array<int, 3>> triangles;
+		for (const int body_idx : bodies) {
+			const int offset = (int)vertices.size();
+			const utils::Mesh<3>& mesh = (collision_mesh) ? this->collision_meshes[body_idx] : this->render_meshes[body_idx];
+
+			const Eigen::Matrix3d& R = this->dyn->R1[body_idx];
+			const Eigen::Vector3d& t = this->dyn->t1[body_idx];
+			for (const Eigen::Vector3d& p : mesh.vertices) {
+				vertices.push_back(local_to_global_point(p, R, t));
+			}
+			for (const std::array<int, 3>& triangle : mesh.conn) {
+				triangles.push_back({ triangle[0] + offset, triangle[1] + offset, triangle[2] + offset });
+			}
+		}
+		return std::pair{ vertices, triangles };
+	};
+
+	// Export groups
+	if (this->output_groups.size() > 0) {
+		for (auto it : this->output_groups.groups) {
+			const std::string label = it.first;
+			const std::unordered_set<int> group = it.second;
+
+			if (this->write_render_mesh) {
+				auto [vertices, triangles] = concatenate_meshes(std::vector<int>(group.begin(), group.end()), false);
+				utils::write_VTK(stark.get_vtk_path("rb_"), vertices, triangles, false);
+			}
+			if (this->write_collision_mesh) {
+				auto [vertices, triangles] = concatenate_meshes(std::vector<int>(group.begin(), group.end()), true);
+				utils::write_VTK(stark.get_vtk_path("rb_col_"), vertices, triangles, false);
+			}
+		}
+	}
+
+	// Default: everything goes into the same .vtk
+	else {
+		std::vector<int> all_local_indices(this->dyn->get_n_bodies());
+		std::iota(all_local_indices.begin(), all_local_indices.end(), 0);
+
+		if (this->write_render_mesh) {
+			auto [vertices, triangles] = concatenate_meshes(all_local_indices, false);
+			utils::write_VTK(stark.get_vtk_path("rb_"), vertices, triangles, false);
+		}
+		if (this->write_collision_mesh) {
+			auto [vertices, triangles] = concatenate_meshes(all_local_indices, true);
+			utils::write_VTK(stark.get_vtk_path("rb_col_"), vertices, triangles, false);
+		}
+	}
+
+	// Transformation sequences
+	for (auto& seq : this->transformation_sequences) {
+		const int idx = seq.body_idx;
+		
+		for (int i = 0; i < 3; i++) {
+			seq.logger.append_to_series("translation", this->dyn->t1[idx][i]);
+		}
+
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				seq.logger.append_to_series("rotation", this->dyn->R1[idx](i, j));
+			}
+		}
+	}
+}

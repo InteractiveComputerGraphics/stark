@@ -50,8 +50,8 @@ set(MODELS_FILES
 	src/models/friction_geometry.cpp
 	src/models/time_integration.h
 	src/models/time_integration.cpp
-	#src/models/rigidbody_transformations.h
-	#src/models/rigidbody_transformations.cpp
+	src/models/rigidbody_transformations.h
+	src/models/rigidbody_transformations.cpp
 	#src/models/TriangleMeshContacts.h
 	#src/models/TriangleMeshFriction.h
 	#src/models/Cloth.h

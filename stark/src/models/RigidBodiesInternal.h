@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 #include <memory>
 
 #include "../solver/Stark.h"
@@ -17,6 +18,13 @@ namespace stark::models
 	class RigidBodiesInternal
 	{
 	public:
+		struct SequenceWriter
+		{
+			int body_idx;
+			std::string label;
+			utils::Logger logger;
+		};
+
 		/* Fields */
 		spRigidBodyDynamics dyn;
 		spEnergyRigidBodyInertia inertia;
@@ -27,10 +35,10 @@ namespace stark::models
 		std::vector<utils::Mesh<3>> render_meshes;  // Always stays at rest positions
 
 		// Output
+		std::vector<SequenceWriter> transformation_sequences;
 		MeshOutputGroups output_groups;  // local_indices
 		bool write_render_mesh = true;
 		bool write_collision_mesh = false;
-		bool write_transformation_sequences = false;
 
 		/* Methods */
 		RigidBodiesInternal(Stark& stark, spRigidBodyDynamics dyn);

@@ -5,6 +5,31 @@
 #include "paths.h"
 
 
+void rb()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "rb";
+	settings.output.output_directory = OUTPUT_PATH + "/rb";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
+	settings.execution.end_simulation_time = 5.0;
+	settings.contact.collisions_enabled = false;
+	settings.contact.friction_enabled = false;
+
+	settings.debug.symx_check_for_NaNs = true;
+	//settings.newton.project_to_PD = true;
+	//settings.newton.use_direct_linear_solve = true;
+	//settings.newton.max_line_search_iterations = 1000;
+
+	stark::models::Simulation simulation(settings);
+
+	// RB
+	auto box = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 });
+
+	// Run
+	simulation.stark.run();
+}
+
 void net()
 {
 	stark::Settings settings = stark::Settings();
@@ -167,7 +192,8 @@ void rubber_block()
 
 int main()
 {
-	hanging_cloth();
+	//hanging_cloth();
 	//rubber_block();
 	//net();
+	rb();
 }

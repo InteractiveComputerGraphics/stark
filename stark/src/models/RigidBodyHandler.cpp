@@ -205,11 +205,6 @@ Eigen::Matrix3d stark::models::RigidBodyHandler::global_to_local_matrix(const Ei
 	return stark::models::global_to_local_matrix(A, this->rb->dyn->R1[this->idx]);
 }
 
-stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::add_to_output_label(const std::string label)
-{
-	this->rb->output_groups.add_to_group(label, this->idx);
-	return (*this);
-}
 stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::set_collision_mesh(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles)
 {
 	this->rb->collision_meshes[this->idx].vertices = vertices;
@@ -220,5 +215,17 @@ stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::set_render_mes
 {
 	this->rb->render_meshes[this->idx].vertices = vertices;
 	this->rb->render_meshes[this->idx].conn = triangles;
+	return (*this);
+}
+stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::add_to_output_label(const std::string label)
+{
+	this->rb->output_groups.add_to_group(label, this->idx);
+	return (*this);
+}
+stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::enable_writing_transformation_sequence(const std::string label)
+{
+	this->rb->transformation_sequences.push_back({});
+	this->rb->transformation_sequences.back().body_idx = this->index();
+	this->rb->transformation_sequences.back().label = label;
 	return (*this);
 }
