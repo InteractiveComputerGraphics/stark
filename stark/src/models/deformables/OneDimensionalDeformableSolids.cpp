@@ -94,8 +94,8 @@ void stark::models::OneDimensionalDeformableSolids::_write_frame(Stark& stark)
 			const std::string label = it.first;
 			const std::unordered_set<int> group = it.second;
 			auto [vertices, edges] = concatenate_meshes(std::vector<int>(group.begin(), group.end()));
-			//utils::write_VTK(stark.get_vtk_path("line_" + label), vertices, edges);
-			utils::write_VTK(stark.get_vtk_path("line_" + label), vertices);
+			//utils::write_VTK(stark.get_frame_path("line_" + label) + ".vtk", vertices, edges);
+			utils::write_VTK(stark.get_frame_path("line_" + label) + ".vtk", vertices);
 		}
 	}
 
@@ -104,8 +104,8 @@ void stark::models::OneDimensionalDeformableSolids::_write_frame(Stark& stark)
 		std::vector<int> all_local_indices(this->get_n_objects());
 		std::iota(all_local_indices.begin(), all_local_indices.end(), 0);
 		auto [vertices, edges] = concatenate_meshes(all_local_indices);
-		//utils::write_VTK(stark.get_vtk_path("line_"), vertices);
-		utils::write_VTK(stark.get_vtk_path("line_"), vertices);
+		//utils::write_VTK(stark.get_frame_path("line_") + ".vtk", vertices);
+		utils::write_VTK(stark.get_frame_path("line_") + ".vtk", vertices);
 	}
 }
 

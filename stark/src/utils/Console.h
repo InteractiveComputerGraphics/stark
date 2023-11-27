@@ -32,7 +32,7 @@ namespace stark::utils
 		void initialize(const std::string path, const Verbosity verbosity, const OutputTo output_to);
 
 		void set_path(const std::string path);
-		std::string get_path() const;
+		std::string get_frame_path() const;
 		void set_verbosity(const Verbosity verbosity);
 		void set_output_target(const OutputTo output_to);
 		void print(const std::string& msg, const Verbosity verbosity);

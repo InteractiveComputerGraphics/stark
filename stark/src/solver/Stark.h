@@ -33,7 +33,7 @@ namespace stark
 		Stark(const Settings& settings);
 		bool run_one_step();
 		bool run(std::function<void()> callback = nullptr);
-		std::string get_vtk_path(std::string name) const;
+		std::string get_frame_path(std::string name) const;
 
 	private:
 		/* Fields */

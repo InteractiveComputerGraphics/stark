@@ -44,11 +44,11 @@ void stark::models::RigidBodiesInternal::_write_frame(Stark& stark)
 
 			if (this->write_render_mesh) {
 				auto [vertices, triangles] = concatenate_meshes(std::vector<int>(group.begin(), group.end()), false);
-				utils::write_VTK(stark.get_vtk_path("rb_"), vertices, triangles, false);
+				utils::write_VTK(stark.get_frame_path("rb_" + label) + ".vtk", vertices, triangles, false);
 			}
 			if (this->write_collision_mesh) {
 				auto [vertices, triangles] = concatenate_meshes(std::vector<int>(group.begin(), group.end()), true);
-				utils::write_VTK(stark.get_vtk_path("rb_col_"), vertices, triangles, false);
+				utils::write_VTK(stark.get_frame_path("rb_col_" + label) + ".vtk", vertices, triangles, false);
 			}
 		}
 	}
@@ -60,11 +60,11 @@ void stark::models::RigidBodiesInternal::_write_frame(Stark& stark)
 
 		if (this->write_render_mesh) {
 			auto [vertices, triangles] = concatenate_meshes(all_local_indices, false);
-			utils::write_VTK(stark.get_vtk_path("rb_"), vertices, triangles, false);
+			utils::write_VTK(stark.get_frame_path("rb_") + ".vtk", vertices, triangles, false);
 		}
 		if (this->write_collision_mesh) {
 			auto [vertices, triangles] = concatenate_meshes(all_local_indices, true);
-			utils::write_VTK(stark.get_vtk_path("rb_col_"), vertices, triangles, false);
+			utils::write_VTK(stark.get_frame_path("rb_col_") + ".vtk", vertices, triangles, false);
 		}
 	}
 
@@ -81,5 +81,7 @@ void stark::models::RigidBodiesInternal::_write_frame(Stark& stark)
 				seq.logger.append_to_series("rotation", this->dyn->R1[idx](i, j));
 			}
 		}
+
+		seq.logger.save_to_disk(stark.settings.output.output_directory + "/" + stark.settings.output.simulation_name + "_rb_" + seq.label + ".rbseq");
 	}
 }

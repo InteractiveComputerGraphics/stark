@@ -25,10 +25,12 @@ void rb()
 
 	// Objects
 	auto box0 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
-		.set_linear_damping(1.0);
+		.set_linear_damping(1.0)
+		.enable_writing_transformation_sequence("box0");
 	auto box1 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 		.set_linear_damping(1.0)
-		.add_displacement({ 0.1, 0, 0 });
+		.add_displacement({ 0.1, 0, 0 })
+		.enable_writing_transformation_sequence("box1");
 
 	// Constraints
 	simulation.rigidbodies->add_constraint_anchor_point(box0, { -0.05, -0.05, -0.05 });

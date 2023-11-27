@@ -151,9 +151,9 @@ bool stark::Stark::run_one_step()
 		return true;
 	}
 }
-std::string stark::Stark::get_vtk_path(std::string name) const
+std::string stark::Stark::get_frame_path(std::string name) const
 {
-	return this->settings.output.output_directory + "/" + this->settings.output.simulation_name + "_" + name + "_" + std::to_string(this->current_frame) + ".vtk";
+	return this->settings.output.output_directory + "/" + this->settings.output.simulation_name + "_" + name + "_" + std::to_string(this->current_frame);
 }
 
 void stark::Stark::_initialize()

@@ -15,7 +15,7 @@ void stark::utils::Console::initialize(const std::string path, const Verbosity v
 void stark::utils::Console::set_path(const std::string path)
 {
 }
-std::string stark::utils::Console::get_path() const
+std::string stark::utils::Console::get_frame_path() const
 {
 	return this->path;
 }

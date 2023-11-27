@@ -100,7 +100,7 @@ void stark::models::VolumetricDeformableSolids::_write_frame(Stark& stark)
 			const std::string label = it.first;
 			const std::unordered_set<int> group = it.second;
 			auto [vertices, triangles] = concatenate_meshes(std::vector<int>(group.begin(), group.end()));
-			utils::write_VTK(stark.get_vtk_path("volume_" + label), vertices, triangles, stark.settings.output.calculate_smooth_normals);
+			utils::write_VTK(stark.get_frame_path("volume_" + label) + ".vtk", vertices, triangles, stark.settings.output.calculate_smooth_normals);
 		}
 	}
 
@@ -109,7 +109,7 @@ void stark::models::VolumetricDeformableSolids::_write_frame(Stark& stark)
 		std::vector<int> all_local_indices(this->get_n_objects());
 		std::iota(all_local_indices.begin(), all_local_indices.end(), 0);
 		auto [vertices, triangles] = concatenate_meshes(all_local_indices);
-		utils::write_VTK(stark.get_vtk_path("volume_"), vertices, triangles, stark.settings.output.calculate_smooth_normals);
+		utils::write_VTK(stark.get_frame_path("volume_") + ".vtk", vertices, triangles, stark.settings.output.calculate_smooth_normals);
 	}
 }
 
