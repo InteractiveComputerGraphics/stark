@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "../solver/Stark.h"
-#include "../utils/MultiMesh/MultiMesh_.h"
 #include "deformables/MeshOutputGroups.h"
 #include "../utils/mesh_generators.h"
 #include "../utils/inertia_tensors.h"
@@ -11,7 +10,6 @@
 #include "RigidBodyDynamics.h"
 #include "EnergyRigidBodyInertia.h"
 #include "EnergyRigidBodyConstraints.h"
-#include "rigidbody_constraints_ui.h"
 
 
 namespace stark::models
@@ -19,6 +17,7 @@ namespace stark::models
 	class RigidBodiesInternal
 	{
 	public:
+		/* Fields */
 		spRigidBodyDynamics dyn;
 		spEnergyRigidBodyInertia inertia;
 		spEnergyRigidBodyConstraints constraints;
@@ -33,6 +32,7 @@ namespace stark::models
 		bool write_collision_mesh = false;
 		bool write_transformation_sequences = false;
 
+		/* Methods */
 		RigidBodiesInternal(Stark& stark, spRigidBodyDynamics dyn);
 
 	private:

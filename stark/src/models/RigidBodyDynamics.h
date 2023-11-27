@@ -4,10 +4,8 @@
 #include <memory>
 
 #include <Eigen/Dense>
-#include <symx>
 
 #include "../solver/Stark.h"
-#include "deformables/Id.h"
 
 
 namespace stark::models

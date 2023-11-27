@@ -3,7 +3,7 @@
 #include "rigidbody_transformations.h"
 #include "distances.h"
 
-stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& stark, const spRigidBodyDynamics dyn)
+stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& stark, spRigidBodyDynamics dyn)
 	: dyn(dyn)
 {
 	// Constraint containers initialization
@@ -11,7 +11,7 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 	this->ball_joints = std::make_shared<BaseRigidBodyConstraints::BallJoints>();
 	this->relative_direction_locks = std::make_shared<BaseRigidBodyConstraints::RelativeDirectionLocks>();
 	this->point_on_axis = std::make_shared<BaseRigidBodyConstraints::PointOnAxis>();
-	this->distance_limits = std::make_shared<BaseRigidBodyConstraints::DampedSprings>();
+	this->damped_springs = std::make_shared<BaseRigidBodyConstraints::DampedSprings>();
 	this->distance_limits = std::make_shared<BaseRigidBodyConstraints::DistanceLimits>();
 	this->angle_limits = std::make_shared<BaseRigidBodyConstraints::AngleLimits>();
 	this->relative_linear_velocity_motors = std::make_shared<BaseRigidBodyConstraints::RelativeLinearVelocityMotors>();
@@ -205,7 +205,7 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 }
 
 
-symx::Scalar stark::models::EnergyRigidBodyConstraints::_set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt)
+void stark::models::EnergyRigidBodyConstraints::_set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt)
 {
 	// Constraint (Analogous to C1 friction)
 	// Important: derivatives wrt "positions", therefore needed chain rule and resulted in added product by dt

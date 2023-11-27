@@ -11,10 +11,10 @@ namespace stark::models
 	class EnergyRigidBodyConstraints
 	{
 	public:
-        EnergyRigidBodyConstraints(Stark& stark, const spRigidBodyDynamics dyn);
+        EnergyRigidBodyConstraints(Stark& stark, spRigidBodyDynamics dyn);
 
         /* Fields */
-        const spRigidBodyDynamics dyn;
+        spRigidBodyDynamics dyn;
 
 		// Constraint containers
 		std::shared_ptr<BaseRigidBodyConstraints::AnchorPoints> anchor_points;
@@ -28,7 +28,7 @@ namespace stark::models
 		std::shared_ptr<BaseRigidBodyConstraints::RelativeAngularVelocityMotors> relative_angular_velocity_motors;
 
         /* Methods */
-        symx::Scalar _set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt);
+        void _set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt);
 
         symx::Vector _get_x1(symx::Energy& energy, const Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc);
         symx::Vector _get_d1(symx::Energy& energy, const Stark& stark, const symx::Index& rb_idx, const symx::Vector& d_loc);

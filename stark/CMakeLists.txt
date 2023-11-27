@@ -108,8 +108,8 @@ set(MODELS_FILES
 	src/models/deformables/EnergyTetStrain.h
 	src/models/deformables/EnergyTetStrain.cpp
 	src/models/deformables/contact_and_friction_data.h
-	src/models/deformables/EnergyFrictionalContact.h
-	src/models/deformables/EnergyFrictionalContact.cpp
+	#src/models/deformables/EnergyFrictionalContact.h
+	#src/models/deformables/EnergyFrictionalContact.cpp
 	src/models/deformables/MeshOutputGroups.h
 	src/models/deformables/MeshOutputGroups.cpp
 	)

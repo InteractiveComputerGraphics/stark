@@ -1,13 +1,12 @@
 #include "Simulation.h"
 
 
-
 stark::models::Simulation::Simulation(const Settings& settings)
 	: stark(settings)
 {
 	// Base definitions
 	spPointDynamics point_dynamics = std::make_shared<PointDynamics>(this->stark);
-	//spRigidBodies rb = std::make_shared<RigidBodies>(this->stark);
+	spRigidBodyDynamics rb_dynamics = std::make_shared<RigidBodyDynamics>(this->stark);
 
 	// Common energies
 	auto energy_point_inertia = std::make_shared<EnergyPointInertia>(this->stark, point_dynamics);
@@ -35,5 +34,9 @@ stark::models::Simulation::Simulation(const Settings& settings)
 		energy_point_inertia,
 		energy_point_prescribed_positions
 		//energy_frictional_contact
+		);
+	this->rigidbodies = std::make_shared<RigidBodies>(
+		this->stark,
+		rb_dynamics
 		);
 }

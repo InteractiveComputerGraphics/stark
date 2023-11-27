@@ -6,7 +6,7 @@
 #include "../../utils/mesh_utils.h"
 
 
-stark::models::EnergyFrictionalContact::EnergyFrictionalContact(Stark& stark, const spPointDynamics dyn, const spRigidBodies rb)
+stark::models::EnergyFrictionalContact::EnergyFrictionalContact(Stark& stark, const spPointDynamics dyn, const spRigidBodyDynamics rb)
 	: dyn(dyn), rb(rb)
 {
 	// Callbacks

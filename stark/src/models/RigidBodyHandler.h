@@ -2,6 +2,7 @@
 
 #include "RigidBodiesInternal.h"
 
+
 namespace stark::models
 {
 	class RigidBodyHandler
@@ -16,11 +17,11 @@ namespace stark::models
 		int index() const;
 
 		double get_mass() const;
-		RigidBodyHandler set_mass(double mass);
+		RigidBodyHandler& set_mass(double mass);
 
 		Eigen::Matrix3d get_local_inertia_tensor() const;
 		Eigen::Matrix3d get_global_inertia_tensor() const;
-		RigidBodyHandler& set_local_inertia_tensor(const Eigen::Vector3d& inertia_tensor);
+		RigidBodyHandler& set_local_inertia_tensor(const Eigen::Matrix3d& inertia_tensor);
 
 		Eigen::Vector3d get_translation() const;
 		RigidBodyHandler& set_translation(const Eigen::Vector3d& translation);

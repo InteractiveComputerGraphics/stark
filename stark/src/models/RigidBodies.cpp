@@ -7,21 +7,18 @@ stark::models::RigidBodies::RigidBodies(Stark& stark, spRigidBodyDynamics dyn)
 	this->rb = std::make_shared<RigidBodiesInternal>(stark, dyn);
 }
 
-stark::models::RigidBodyHandler stark::models::RigidBodies::add(const double mass, const Eigen::Matrix3d& inertia_local, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis)
+stark::models::RigidBodyHandler stark::models::RigidBodies::add(const double mass, const Eigen::Matrix3d& inertia_local)
 {
 	const int idx = this->rb->dyn->add();
 	this->rb->inertia->add(mass, inertia_local, 0.0, 0.0);
 	this->rb->collision_meshes.push_back(utils::Mesh<3>());
 	this->rb->render_meshes.push_back(utils::Mesh<3>());
-	auto body = RigidBodyHandler(this->rb, idx);
-	body.set_translation(displacement);
-	body.set_rotation(rotate_deg, rotation_axis);
-	return body;
+	return RigidBodyHandler(this->rb, idx);
 }
-stark::models::RigidBodyHandler stark::models::RigidBodies::add_sphere(const double mass, const double radius, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis, const int subdivisions)
+stark::models::RigidBodyHandler stark::models::RigidBodies::add_sphere(const double mass, const double radius, const int subdivisions)
 {
 	const Eigen::Matrix3d inertia_local = utils::inertia_tensor_sphere(mass, radius);
-	auto body = this->add(mass, inertia_local, displacement, rotate_deg, rotation_axis);
+	auto body = this->add(mass, inertia_local);
 	
 	const utils::Mesh m = utils::make_sphere(radius, subdivisions);
 	body.set_collision_mesh(m.vertices, m.conn);
@@ -29,10 +26,10 @@ stark::models::RigidBodyHandler stark::models::RigidBodies::add_sphere(const dou
 	
 	return body;
 }
-stark::models::RigidBodyHandler stark::models::RigidBodies::add_box(const double mass, const Eigen::Vector3d& size, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis)
+stark::models::RigidBodyHandler stark::models::RigidBodies::add_box(const double mass, const Eigen::Vector3d& size)
 {
 	const Eigen::Matrix3d inertia_local = utils::inertia_tensor_box(mass, size);
-	auto body = this->add(mass, inertia_local, displacement, rotate_deg, rotation_axis);
+	auto body = this->add(mass, inertia_local);
 
 	const utils::Mesh m = utils::make_box(size);
 	body.set_collision_mesh(m.vertices, m.conn);
@@ -40,10 +37,10 @@ stark::models::RigidBodyHandler stark::models::RigidBodies::add_box(const double
 
 	return body;
 }
-stark::models::RigidBodyHandler stark::models::RigidBodies::add_cylinder(const double mass, const double radius, const double full_height, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis, const int slices, const int stacks)
+stark::models::RigidBodyHandler stark::models::RigidBodies::add_cylinder(const double mass, const double radius, const double full_height, const int slices, const int stacks)
 {
 	const Eigen::Matrix3d inertia_local = utils::inertia_tensor_cylinder(mass, radius, full_height);
-	auto body = this->add(mass, inertia_local, displacement, rotate_deg, rotation_axis);
+	auto body = this->add(mass, inertia_local);
 
 	const utils::Mesh m = utils::make_cylinder(radius, full_height, slices, stacks);
 	body.set_collision_mesh(m.vertices, m.conn);
@@ -51,10 +48,10 @@ stark::models::RigidBodyHandler stark::models::RigidBodies::add_cylinder(const d
 
 	return body;
 }
-stark::models::RigidBodyHandler stark::models::RigidBodies::add_torus(const double mass, const double outer_radius, const double inner_radius, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis, const int slices, const int stacks)
+stark::models::RigidBodyHandler stark::models::RigidBodies::add_torus(const double mass, const double outer_radius, const double inner_radius, const int slices, const int stacks)
 {
 	const Eigen::Matrix3d inertia_local = utils::inertia_tensor_torus(mass, outer_radius, inner_radius);
-	auto body = this->add(mass, inertia_local, displacement, rotate_deg, rotation_axis);
+	auto body = this->add(mass, inertia_local);
 
 	const utils::Mesh m = utils::make_torus(outer_radius, inner_radius, slices, stacks);
 	body.set_collision_mesh(m.vertices, m.conn);

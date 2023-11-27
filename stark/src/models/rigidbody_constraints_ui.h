@@ -3,6 +3,8 @@
 #include "BaseRigidBodyConstraints.h"
 #include "RigidBodyHandler.h"
 
+#include "../utils/mesh_utils.h"
+
 namespace stark::models
 {
 

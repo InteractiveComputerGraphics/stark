@@ -11,7 +11,7 @@
 #include "../../utils/unordered_array_set_and_map.h"
 #include "Id.h"
 #include "PointDynamics.h"
-#include "../RigidBodies.h"
+#include "../RigidBodyDynamics.h"
 #include "contact_and_friction_data.h"
 
 namespace stark::models
@@ -24,7 +24,7 @@ namespace stark::models
 	public:
 		/* Fields */
 		const spPointDynamics dyn;
-		const spRigidBodies rb;
+		const spRigidBodyDynamics rb;
 		utils::unordered_array_map<int, 2, double> pair_coulombs_mu; // uses local_idx
 		std::vector<std::array<int, 2>> disabled_collision_pairs; // uses local_idx
 		std::vector<std::string> labels;  // per group
@@ -51,7 +51,7 @@ namespace stark::models
 
 
 		/* Methods */
-		EnergyFrictionalContact(Stark& stark, const spPointDynamics dyn, const spRigidBodies rb);
+		EnergyFrictionalContact(Stark& stark, const spPointDynamics dyn, const spRigidBodyDynamics rb);
 		void add_points(Id& id, const int n_points, const int offset);
 		void add_edges_and_points(Id& id, const std::vector<std::array<int, 2>>& edges, const int n_points, const int offset);
 		void add_triangles_edges_and_points(Id& id, const std::vector<std::array<int, 3>>& triangles, const int n_points, const int offset);

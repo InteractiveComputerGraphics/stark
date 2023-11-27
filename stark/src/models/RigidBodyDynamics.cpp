@@ -1,7 +1,5 @@
 #include "RigidBodyDynamics.h"
 
-#include <string>
-
 #include "rigidbody_transformations.h"
 #include "time_integration.h"
 #include "../utils/mesh_utils.h"
@@ -15,7 +13,7 @@ stark::models::RigidBodyDynamics::RigidBodyDynamics(Stark& stark)
 	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step(stark); });
 	stark.callbacks.after_time_step.push_back([&]() { this->_after_time_step(stark); });
 }
-stark::models::Id stark::models::RigidBodyDynamics::add(const double mass, const Eigen::Matrix3d & inertia_loc)
+int stark::models::RigidBodyDynamics::add()
 {
 	this->t0.push_back(Eigen::Vector3d::Zero());
 	this->t1.push_back(Eigen::Vector3d::Zero());
@@ -32,20 +30,15 @@ stark::models::Id stark::models::RigidBodyDynamics::add(const double mass, const
 	this->force.push_back(Eigen::Vector3d::Zero());
 	this->torque.push_back(Eigen::Vector3d::Zero());
 
-	return Id(PhysicalSystem::RigidBodies, this->t0.size() - 1);
+	return (int)this->t0.size() - 1;
 }
-stark::models::Id stark::models::RigidBodyDynamics::add_and_transform(const double mass, const Eigen::Matrix3d& inertia_loc, const Eigen::Vector3d& displacement, const double rotate_deg, const Eigen::Vector3d& rotation_axis)
+int stark::models::RigidBodyDynamics::get_n_bodies() const
 {
-	const Id id = this->add(mass, inertia_loc);
-	this->add_rotation(id, rotate_deg, rotation_axis);
-	this->add_displacement(id, displacement);
-	return id;
+	return (int)this->t0.size();
 }
 
 void stark::models::RigidBodyDynamics::_before_time_step(Stark& stark)
 {
-	if (this->is_empty()) { return; }
-
 	// Quaternions
 	this->q0_.resize(this->q0.size());
 	for (int i = 0; i < (int)this->q0.size(); i++) {
@@ -59,8 +52,6 @@ void stark::models::RigidBodyDynamics::_before_time_step(Stark& stark)
 }
 void stark::models::RigidBodyDynamics::_after_time_step(Stark& stark)
 {
-	if (this->is_empty()) { return; }
-
 	const double dt = stark.settings.simulation.adaptive_time_step.value;
 
 	// Set final positions with solved velocities

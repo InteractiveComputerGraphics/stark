@@ -2,7 +2,7 @@
 
 #include "rigidbody_transformations.h"
 
-stark::models::EnergyRigidBodyInertia::EnergyRigidBodyInertia(Stark& stark, const spRigidBodyDynamics dyn)
+stark::models::EnergyRigidBodyInertia::EnergyRigidBodyInertia(Stark& stark, spRigidBodyDynamics dyn)
 	: dyn(dyn)
 {
 	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step(stark); });

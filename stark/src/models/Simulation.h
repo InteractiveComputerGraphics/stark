@@ -5,6 +5,7 @@
 #include "deformables/OneDimensionalDeformableSolids.h"
 #include "deformables/SurfaceDeformableSolids.h"
 #include "deformables/VolumetricDeformableSolids.h"
+#include "RigidBodies.h"
 
 namespace stark::models
 {
@@ -15,6 +16,7 @@ namespace stark::models
 		spOneDimensionalDeformableSolids lines;
 		spSurfaceDeformableSolids surfaces;
 		spVolumetricDeformableSolids volumes;
+		spRigidBodies rigidbodies;
 
 		Simulation(const Settings& settings);
 	};
