@@ -89,7 +89,7 @@ namespace stark::models
 		/*
 		*	Enforces a point on a object to move along a relative direction of another object.
 		*/
-		struct PointOnAxisConstraints
+		struct PointOnAxis
 		{
 			symx::LabelledConnectivity<3> conn{ { "idx", "a", "b" } };
 			std::vector<Eigen::Vector3d> a_loc;

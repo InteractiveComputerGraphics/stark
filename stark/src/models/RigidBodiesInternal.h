@@ -8,7 +8,6 @@
 #include "../utils/mesh_generators.h"
 #include "../utils/inertia_tensors.h"
 
-#include "deformables/Id.h"
 #include "RigidBodyDynamics.h"
 #include "EnergyRigidBodyInertia.h"
 #include "EnergyRigidBodyConstraints.h"
@@ -17,8 +16,9 @@
 
 namespace stark::models
 {
-	struct RigidBodiesData
+	class RigidBodiesInternal
 	{
+	public:
 		spRigidBodyDynamics dyn;
 		spEnergyRigidBodyInertia inertia;
 		spEnergyRigidBodyConstraints constraints;
@@ -33,8 +33,11 @@ namespace stark::models
 		bool write_collision_mesh = false;
 		bool write_transformation_sequences = false;
 
-		RigidBodiesData(spRigidBodyDynamics dyn, spEnergyRigidBodyInertia inertia, spEnergyRigidBodyConstraints constraints)
-			: dyn(dyn), inertia(inertia), constraints(constraints) {};
+		RigidBodiesInternal(Stark& stark, spRigidBodyDynamics dyn);
+
+	private:
+		// Stark callbacks
+		void _write_frame(Stark& stark);
 	};
-	using spRigidBodiesData = std::shared_ptr<RigidBodiesData>;
+	using spRigidBodiesInternal = std::shared_ptr<RigidBodiesInternal>;
 }

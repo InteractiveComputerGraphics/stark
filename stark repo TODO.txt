@@ -14,6 +14,11 @@ Oct unification
 		
 		-> Classify in folders appropriately.
 		
+	* In this current design, Stark should also be a shared pointer.
+		Right now is a reference that is used during the simulation (e.g. write_frame) and could theoretically become invalid.
+	* I need to clarify where things are initialized, who owns who, etc...
+	* Inertia tensor should not be in utils. Probably we need a stark::rigidbody namespace
+		
 	* Reintroduce the constraint logger
 	* It really might not be a bad idea to have a RB class to
 			rb.get_mass()

@@ -58,7 +58,8 @@ set(MODELS_FILES
 	#src/models/Cloth.cpp
 	#src/models/DeformableSolids.h
 	#src/models/DeformableSolids.cpp
-	src/models/RigidBodiesData.h
+	src/models/RigidBodiesInternal.h
+	src/models/RigidBodiesInternal.cpp
 	src/models/RigidBodies.h
 	src/models/RigidBodies.cpp
 	src/models/RigidBodyDynamics.h

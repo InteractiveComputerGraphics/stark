@@ -20,7 +20,7 @@ namespace stark::models
 		std::shared_ptr<BaseRigidBodyConstraints::AnchorPoints> anchor_points;
 		std::shared_ptr<BaseRigidBodyConstraints::BallJoints> ball_joints;
 		std::shared_ptr<BaseRigidBodyConstraints::RelativeDirectionLocks> relative_direction_locks;
-		std::shared_ptr<BaseRigidBodyConstraints::PointOnAxisConstraints> point_on_axis_constraints;
+		std::shared_ptr<BaseRigidBodyConstraints::PointOnAxis> point_on_axis;
 		std::shared_ptr<BaseRigidBodyConstraints::DampedSprings> damped_springs;
 		std::shared_ptr<BaseRigidBodyConstraints::DistanceLimits> distance_limits;
 		std::shared_ptr<BaseRigidBodyConstraints::AngleLimits> angle_limits;

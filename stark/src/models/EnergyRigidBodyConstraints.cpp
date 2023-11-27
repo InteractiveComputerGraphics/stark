@@ -10,7 +10,7 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 	this->anchor_points = std::make_shared<BaseRigidBodyConstraints::AnchorPoints>();
 	this->ball_joints = std::make_shared<BaseRigidBodyConstraints::BallJoints>();
 	this->relative_direction_locks = std::make_shared<BaseRigidBodyConstraints::RelativeDirectionLocks>();
-	this->point_on_axis_constraints = std::make_shared<BaseRigidBodyConstraints::PointOnAxisConstraints>();
+	this->point_on_axis = std::make_shared<BaseRigidBodyConstraints::PointOnAxis>();
 	this->distance_limits = std::make_shared<BaseRigidBodyConstraints::DampedSprings>();
 	this->distance_limits = std::make_shared<BaseRigidBodyConstraints::DistanceLimits>();
 	this->angle_limits = std::make_shared<BaseRigidBodyConstraints::AngleLimits>();
@@ -69,10 +69,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_point_on_axis", this->point_on_axis_constraints->conn,
+	stark.global_energy.add_energy("rb_constraint_point_on_axis", this->point_on_axis->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->point_on_axis_constraints;
+			auto& data = this->point_on_axis;
 
 			symx::Vector a_loc = energy.make_vector(data->da_loc, conn["idx"]);
 			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);

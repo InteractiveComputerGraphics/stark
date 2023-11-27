@@ -38,7 +38,8 @@ namespace stark::models
 
 		/* Methods */
 		RigidBodyDynamics(Stark& stark);
-		int add(const double mass, const Eigen::Matrix3d& inertia_loc, const Eigen::Vector3d& displacement = { 0, 0, 0 }, const double rotate_deg = 0.0, const Eigen::Vector3d& rotation_axis = { 0, 0, 1 });
+		int add(const Eigen::Vector3d& displacement = { 0, 0, 0 }, const double rotate_deg = 0.0, const Eigen::Vector3d& rotation_axis = { 0, 0, 1 });
+		int get_n_bodies() const;
 
 	private:
 		void _before_time_step(Stark& stark);
