@@ -3,6 +3,7 @@
 #include <stark>
 
 #include "paths.h"
+#include "rb_constraint_test_scenes.h"
 
 
 void rb()
@@ -205,5 +206,7 @@ int main()
 	//hanging_cloth();
 	//rubber_block();
 	//net();
-	rb();
+	//rb();
+
+	rb_constraints_ball_joint();
 }

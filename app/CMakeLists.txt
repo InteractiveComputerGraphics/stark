@@ -30,6 +30,8 @@ set(SOURCE_FILES
     #gripper.h
     #main.cpp
     main_refactor.cpp
+    rb_constraint_test_scenes.cpp
+    rb_constraint_test_scenes.h
 	)
 
 # Create executable    
