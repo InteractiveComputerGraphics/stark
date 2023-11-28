@@ -4,7 +4,7 @@
 #include "../../utils/mesh_utils.h"
 
 
-stark::models::EnergyTetStrain::EnergyTetStrain(Stark& stark, spPointDynamics dyn)
+stark::models::EnergyTetStrain::EnergyTetStrain(stark::core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
 {
 	stark.global_energy.add_energy("EnergyTetStrain", this->conn,

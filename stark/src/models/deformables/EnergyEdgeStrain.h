@@ -5,7 +5,7 @@
 
 #include <Eigen/Dense>
 
-#include "../../solver/Stark.h"
+#include "../../core/Stark.h"
 #include "Id.h"
 #include "PointDynamics.h"
 
@@ -26,7 +26,7 @@ namespace stark::models
 		std::vector<std::string> labels;  // per group
 
 		/* Methods */
-		EnergyEdgeStrain(Stark& stark, spPointDynamics dyn);
+		EnergyEdgeStrain(stark::core::Stark& stark, spPointDynamics dyn);
 		void add(Id& id, const std::vector<std::array<int, 2>>& edges, const double section_radius, const double young_modulus, const double strain_limit, const double strain_limiting_stiffness, const double strain_damping, const std::string label = "");
 		void set_parameters(Id& id, const double young_modulus, const double strain_limit, const double strain_limiting_stiffness, const double strain_damping);
 	};

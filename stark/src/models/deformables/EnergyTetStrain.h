@@ -5,7 +5,7 @@
 
 #include <Eigen/Dense>
 
-#include "../../solver/Stark.h"
+#include "../../core/Stark.h"
 #include "PointDynamics.h"
 #include "Id.h"
 
@@ -24,7 +24,7 @@ namespace stark::models
 		std::vector<std::string> labels;  // per group
 
 		/* Methods */
-		EnergyTetStrain(Stark& stark, spPointDynamics dyn);
+		EnergyTetStrain(stark::core::Stark& stark, spPointDynamics dyn);
 		void add(Id& id, const std::vector<std::array<int, 4>>& tets, const double young_modulus, const double poisson_ratio, const std::string label = "");
 		void set_parameters(const int id, const double young_modulus, const double poisson_ratio);
 	};

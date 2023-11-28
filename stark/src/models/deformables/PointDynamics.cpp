@@ -2,7 +2,7 @@
 
 #include "../time_integration.h"
 
-stark::models::PointDynamics::PointDynamics(Stark& stark)
+stark::models::PointDynamics::PointDynamics(stark::core::Stark& stark)
 {
 	this->dof = stark.global_energy.add_dof_array(this->v1.data, "PointDynamics.v1");
 	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step(stark); });
@@ -45,13 +45,13 @@ int stark::models::PointDynamics::size() const
 	return this->X.size();
 }
 
-void stark::models::PointDynamics::_before_time_step(Stark& stark)
+void stark::models::PointDynamics::_before_time_step(stark::core::Stark& stark)
 {
 	// Set next time velocities estimation to zero to avoid invalid state outside of the minimzer
 	std::fill(this->v1.data.begin(), this->v1.data.end(), Eigen::Vector3d::Zero());
 }
 
-void stark::models::PointDynamics::_after_time_step(Stark& stark)
+void stark::models::PointDynamics::_after_time_step(stark::core::Stark& stark)
 {
 	// Set final positions with solved velocities
 	const double dt = stark.settings.simulation.adaptive_time_step.value;

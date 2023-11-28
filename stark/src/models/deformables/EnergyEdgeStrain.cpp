@@ -3,7 +3,7 @@
 #include "../time_integration.h"
 #include "../../utils/mesh_utils.h"
 
-stark::models::EnergyEdgeStrain::EnergyEdgeStrain(Stark& stark, spPointDynamics dyn)
+stark::models::EnergyEdgeStrain::EnergyEdgeStrain(stark::core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
 {
 	stark.global_energy.add_energy("EnergyEdgeStrain", this->conn,

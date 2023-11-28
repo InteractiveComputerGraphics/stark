@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "../../solver/Stark.h"
+#include "../../core/Stark.h"
 #include "Id.h"
 #include "PointDynamics.h"
 
@@ -21,7 +21,7 @@ namespace stark::models
 		std::vector<std::string> labels;  // per obj
 
 		/* Methods */
-		EnergyPointInertia(Stark& stark, const spPointDynamics dyn);
+		EnergyPointInertia(stark::core::Stark& stark, const spPointDynamics dyn);
 		void add(Id& id, const std::vector<double>& lumped_volume, const double density, const double inertial_damping, const std::string label = "");
 		void add(Id& id, const std::vector<std::array<int, 2>>& edges, const double line_density, const double inertial_damping, const std::string label = "");
 		void add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double area_density, const double inertial_damping, const std::string label = "");

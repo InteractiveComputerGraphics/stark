@@ -3,14 +3,11 @@ stark repo TODO
 
 Oct unification
 ---------------
-	* RigidBodies, Rods
 	* Attachments
 	
-	* RigidBody export in two modes: Full meshes (like until now) or just transformations
-
 	* Separate internals and UI using namespaces.
 		namespace stark { class RigidBodyHandler {}; }
-		namespace stark::models { class EnergyRigidBodyInertia {}; }
+		namespace stark::core { class EnergyRigidBodyInertia {}; }
 		
 		-> Classify in folders appropriately.
 		
@@ -22,6 +19,18 @@ Oct unification
 	
 	* SymX doesnt recompile if the source array changes `this->dyn->da` to `this->dyn->a`
 		-> I need a SymX recompile flag for Stark
+	* Disable exporting smooth normals.
+		Blender can do it by itself. We don't care about Paraview.
+	
+	* Fix all header includes. Compile on linux.
+	* Fix warnings from Eigen and par_shapes.
+	
+	* Architecture
+		- core is a weird mix. General and specific.
+		- Settings is wrong as some things (contact) have been moved.
+			-> shared_ptr
+		- Check if all the ~"find_node_node_map_simplex" are necessary
+	
 		
 	* Reintroduce the constraint logger
 	* It really might not be a bad idea to have a RB class to

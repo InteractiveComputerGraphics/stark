@@ -3,7 +3,7 @@
 #include "../../utils/mesh_utils.h"
 
 stark::models::VolumetricDeformableSolids::VolumetricDeformableSolids(
-	Stark& stark, 
+	stark::core::Stark& stark, 
 	spPointDynamics dyn, 
 	spEnergyPointInertia inertia, 
 	spEnergyPointPrescribedPositions prescribed_positions
@@ -69,7 +69,7 @@ int stark::models::VolumetricDeformableSolids::get_n_objects() const
 	return (int)this->global_indices.size();
 }
 
-void stark::models::VolumetricDeformableSolids::_write_frame(Stark& stark)
+void stark::models::VolumetricDeformableSolids::_write_frame(stark::core::Stark& stark)
 {
 	if (this->is_empty()) { return; }
 

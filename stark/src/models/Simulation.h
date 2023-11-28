@@ -1,23 +1,24 @@
 #pragma once
 
-#include "../solver/Stark.h"
+#include "../core/Stark.h"
 
 #include "deformables/OneDimensionalDeformableSolids.h"
 #include "deformables/SurfaceDeformableSolids.h"
 #include "deformables/VolumetricDeformableSolids.h"
-#include "RigidBodies.h"
+#include "rigidbodies/RigidBodies.h"
+
 
 namespace stark::models
 {
 	class Simulation
 	{
 	public:
-		Stark stark;
+		core::Stark stark;
 		spOneDimensionalDeformableSolids lines;
 		spSurfaceDeformableSolids surfaces;
 		spVolumetricDeformableSolids volumes;
 		spRigidBodies rigidbodies;
 
-		Simulation(const Settings& settings);
+		Simulation(const core::Settings& settings);
 	};
 }

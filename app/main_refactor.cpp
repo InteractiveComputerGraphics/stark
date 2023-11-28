@@ -12,7 +12,7 @@ void rb()
 	settings.output.simulation_name = "rb";
 	settings.output.output_directory = OUTPUT_PATH + "/rb";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
 	settings.contact.collisions_enabled = false;
 	settings.contact.friction_enabled = false;
@@ -22,13 +22,13 @@ void rb()
 	//settings.newton.use_direct_linear_solve = true;
 	//settings.newton.max_line_search_iterations = 1000;
 
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
 	// Objects
-	auto box0 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
+	stark::RigidBodyHandler box0 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 		.set_linear_damping(1.0)
 		.enable_writing_transformation_sequence("box0");
-	auto box1 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
+	stark::RigidBodyHandler box1 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 		.set_linear_damping(1.0)
 		.add_displacement({ 0.1, 0, 0 })
 		.enable_writing_transformation_sequence("box1");
@@ -49,7 +49,7 @@ void net()
 	settings.output.simulation_name = "net";
 	settings.output.output_directory = OUTPUT_PATH + "/net";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
 	settings.contact.collisions_enabled = false;
 	settings.contact.friction_enabled = false;
@@ -97,7 +97,7 @@ void hanging_cloth()
 	settings.output.simulation_name = "hanging_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
 	settings.contact.collisions_enabled = false;
 	settings.contact.friction_enabled = false;
@@ -147,7 +147,7 @@ void rubber_block()
 	settings.output.simulation_name = "rubber_block";
 	settings.output.output_directory = OUTPUT_PATH + "/rubber_block";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.adaptive_time_step.set(0.0, 0.02, 0.02);
 	settings.contact.collisions_enabled = false;

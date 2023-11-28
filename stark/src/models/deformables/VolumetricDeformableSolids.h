@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../../solver/Stark.h"
-#include "MeshOutputGroups.h"
+#include "../../core/Stark.h"
+#include "../MeshOutputGroups.h"
 #include "Id.h"
-#include "interval_types.h"
+#include "../IntervalVector.h"
 #include "PointDynamics.h"
 #include "EnergyPointInertia.h"
 #include "EnergyPointPrescribedPositions.h"
@@ -35,7 +35,7 @@ namespace stark::models
 
 		/* Methods */
 		VolumetricDeformableSolids(
-			Stark& stark,
+			stark::core::Stark& stark,
 			spPointDynamics dyn, 
 			spEnergyPointInertia inertia,
 			spEnergyPointPrescribedPositions prescribed_positions
@@ -64,7 +64,7 @@ namespace stark::models
 		std::vector<std::vector<int>> triangle_to_tet_node_maps;
 
 		// Stark callbaks
-		void _write_frame(Stark& stark);
+		void _write_frame(stark::core::Stark& stark);
 	};
 	using spVolumetricDeformableSolids = std::shared_ptr<VolumetricDeformableSolids>;
 }

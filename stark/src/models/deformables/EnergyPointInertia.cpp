@@ -2,7 +2,7 @@
 
 #include "../../utils/mesh_utils.h"
 
-stark::models::EnergyPointInertia::EnergyPointInertia(Stark& stark, const spPointDynamics dyn)
+stark::models::EnergyPointInertia::EnergyPointInertia(stark::core::Stark& stark, const spPointDynamics dyn)
 	: dyn(dyn)
 {
 	stark.global_energy.add_energy("EnergyPointInertia", this->conn,

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../../solver/Stark.h"
-#include "MeshOutputGroups.h"
+#include "../../core/Stark.h"
+#include "../IntervalVector.h"
+#include "../MeshOutputGroups.h"
 #include "Id.h"
-#include "interval_types.h"
 #include "PointDynamics.h"
 #include "EnergyPointInertia.h"
 #include "EnergyPointPrescribedPositions.h"
@@ -40,7 +40,7 @@ namespace stark::models
 
 		/* Methods */
 		SurfaceDeformableSolids(
-			Stark& stark,
+			stark::core::Stark& stark,
 			spPointDynamics dyn, 
 			spEnergyPointInertia inertia,
 			spEnergyPointPrescribedPositions prescribed_positions
@@ -69,7 +69,7 @@ namespace stark::models
 		std::vector<std::vector<std::array<int, 3>>> input_triangles;
 
 		// Stark callbaks
-		void _write_frame(Stark& stark);
+		void _write_frame(stark::core::Stark& stark);
 	};
 	using spSurfaceDeformableSolids = std::shared_ptr<SurfaceDeformableSolids>;
 }

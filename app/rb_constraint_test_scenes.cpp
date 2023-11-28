@@ -10,7 +10,7 @@ void template_sim(std::string name, std::function<void(stark::models::Simulation
 	settings.output.simulation_name = name;
 	settings.output.output_directory = OUTPUT_PATH + "/rb_constraints";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.output.console_verbosity = stark::Verbosity::TimeSteps;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
 	settings.contact.collisions_enabled = false;
 	settings.contact.friction_enabled = false;

@@ -3,7 +3,7 @@
 #include "../time_integration.h"
 
 
-stark::models::EnergyPointPrescribedPositions::EnergyPointPrescribedPositions(Stark& stark, spPointDynamics dyn)
+stark::models::EnergyPointPrescribedPositions::EnergyPointPrescribedPositions(stark::core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
 {
 	// Update BC in case the user has changed them
@@ -49,7 +49,7 @@ std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::mo
 	this->bc_transform_source.push_back(bc);
 	return this->bc_transform_source.back();
 }
-void stark::models::EnergyPointPrescribedPositions::_before_time_step(Stark& stark)
+void stark::models::EnergyPointPrescribedPositions::_before_time_step(stark::core::Stark& stark)
 {
 	this->conn.clear();
 	this->target_positions.clear();

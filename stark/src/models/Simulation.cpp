@@ -1,7 +1,7 @@
 #include "Simulation.h"
 
 
-stark::models::Simulation::Simulation(const Settings& settings)
+stark::models::Simulation::Simulation(const core::Settings& settings)
 	: stark(settings)
 {
 	// Base definitions

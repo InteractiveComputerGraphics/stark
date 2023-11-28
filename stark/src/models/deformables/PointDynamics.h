@@ -2,9 +2,9 @@
 #include <memory>
 #include <cassert>
 
-#include "../../solver/Stark.h"
+#include "../../core/Stark.h"
+#include "../IntervalVector.h"
 #include "Id.h"
-#include "interval_types.h"
 
 
 namespace stark::models
@@ -22,15 +22,15 @@ namespace stark::models
 		symx::DoF dof;
 
 		/* Methods */
-		PointDynamics(Stark& stark);
+		PointDynamics(stark::core::Stark& stark);
 		Id add(const std::vector<Eigen::Vector3d>& x, const std::vector<Eigen::Vector3d>& v = std::vector<Eigen::Vector3d>());
 		int get_begin(const Id& id) const;
 		int size(const Id& id) const;
 		int size() const;
 
 	private:
-		void _before_time_step(Stark& stark);
-		void _after_time_step(Stark& stark);
+		void _before_time_step(stark::core::Stark& stark);
+		void _after_time_step(stark::core::Stark& stark);
 	};
 	using spPointDynamics = std::shared_ptr<PointDynamics>;
 }
