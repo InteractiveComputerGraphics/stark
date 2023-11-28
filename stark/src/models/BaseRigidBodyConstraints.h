@@ -57,8 +57,8 @@ namespace stark::models
 			inline int add(int rb, const Eigen::Vector3d& d_loc, const Eigen::Vector3d& target_d_glob, double stiffness)
 			{
 				this->conn.numbered_push_back({rb});
-				this->d_loc.push_back(d_loc);
-				this->target_d_glob.push_back(target_d_glob);
+				this->d_loc.push_back(d_loc.normalized());
+				this->target_d_glob.push_back(target_d_glob.normalized());
 				this->stiffness.push_back(stiffness);
 				this->is_active.push_back(1.0);
 				return (int)this->is_active.size() - 1;
@@ -99,8 +99,8 @@ namespace stark::models
 			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double stiffness)
 			{
 				this->conn.numbered_push_back({ rb_a, rb_b });
-				this->da_loc.push_back(da_loc);
-				this->db_loc.push_back(db_loc);
+				this->da_loc.push_back(da_loc.normalized());
+				this->db_loc.push_back(db_loc.normalized());
 				this->stiffness.push_back(stiffness);
 				this->is_active.push_back(1.0);
 				return (int)this->is_active.size() - 1;
@@ -122,7 +122,7 @@ namespace stark::models
 			{
 				this->conn.numbered_push_back({ rb_a, rb_b });
 				this->a_loc.push_back(a_loc);
-				this->da_loc.push_back(da_loc);
+				this->da_loc.push_back(da_loc.normalized());
 				this->b_loc.push_back(b_loc);
 				this->stiffness.push_back(stiffness);
 				this->is_active.push_back(1.0);
@@ -194,8 +194,8 @@ namespace stark::models
 			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double admissible_dot, double stiffness)
 			{
 				this->conn.numbered_push_back({ rb_a, rb_b });
-				this->da_loc.push_back(da_loc);
-				this->db_loc.push_back(db_loc);
+				this->da_loc.push_back(da_loc.normalized());
+				this->db_loc.push_back(db_loc.normalized());
 				this->admissible_dot.push_back(admissible_dot);
 				this->stiffness.push_back(stiffness);
 				this->is_active.push_back(1.0);
@@ -217,9 +217,10 @@ namespace stark::models
 			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, double target_v, double max_force, double delay)
 			{
 				this->conn.numbered_push_back({ rb_a, rb_b });
-				this->da_loc.push_back(da_loc);
+				this->da_loc.push_back(da_loc.normalized());
 				this->target_v.push_back(target_v);
 				this->max_force.push_back(max_force);
+				this->delay.push_back(delay);
 				this->is_active.push_back(1.0);
 				return (int)this->is_active.size() - 1;
 			}
@@ -239,7 +240,7 @@ namespace stark::models
 			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, double target_w, double max_torque, double delay)
 			{
 				this->conn.numbered_push_back({ rb_a, rb_b });
-				this->da_loc.push_back(da_loc);
+				this->da_loc.push_back(da_loc.normalized());
 				this->target_w.push_back(target_w);
 				this->max_torque.push_back(max_torque);
 				this->delay.push_back(delay);

@@ -91,7 +91,7 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 		{
 			auto& data = this->point_on_axis;
 
-			symx::Vector a_loc = energy.make_vector(data->da_loc, conn["idx"]);
+			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
 			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
 			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
@@ -192,7 +192,7 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 
 			symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
 			symx::Scalar v = da1.dot(vb1 - va1);
-			this->_set_c1_controller_energy(energy, v, target_v, max_force, delay, dt);
+			this->_set_c1_controller_energy(energy, v, target_v, max_force, delay, dt, is_active);
 		}
 	);
 
@@ -213,26 +213,22 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 
 			symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
 			symx::Scalar w = da1.dot(wb1 - wa1);
-			this->_set_c1_controller_energy(energy, w, target_w, max_torque, delay, dt);
+			this->_set_c1_controller_energy(energy, w, target_w, max_torque, delay, dt, is_active);
 		}
 	);
-
-
-
 }
 
-
-void stark::models::EnergyRigidBodyConstraints::_set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt)
+void stark::models::EnergyRigidBodyConstraints::_set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt, const symx::Scalar& is_active)
 {
 	// Constraint (Analogous to C1 friction)
 	// Important: derivatives wrt "positions", therefore needed chain rule and resulted in added product by dt
 	symx::Scalar k = max_force / delay;
 	symx::Scalar eps = max_force / (2.0 * k);
-	symx::Scalar dw = target_v - v;
-	symx::Scalar E_l = 0.5 * k * dw.powN(2) * dt;
-	symx::Scalar E_r = max_force * (dw - eps) * dt;
-	symx::Scalar E = symx::branch(dw < delay, E_l, E_r);
-	energy.set_with_condition(E, dw > 0.0);
+	symx::Scalar dv = symx::sqrt((target_v - v).powN(2));
+	symx::Scalar E_l = 0.5 * k * dv.powN(2) * dt;
+	symx::Scalar E_r = max_force * (dv - eps) * dt;
+	symx::Scalar E = symx::branch(dv < delay, E_l, E_r);
+	energy.set_with_condition(E, is_active > 0.0);
 }
 
 /* =================================================================================================== */

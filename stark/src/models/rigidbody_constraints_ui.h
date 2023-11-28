@@ -28,7 +28,7 @@ namespace stark::models
 		inline void set_global_target_point(Eigen::Vector3d& x) { this->constraints->target_glob[this->idx] = x; };
 		inline void set_local_point(Eigen::Vector3d& x) { this->constraints->loc[this->idx] = x; };
 		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = activation; };
+		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
 	};
 
 	class AbsoluteDirectionLockHandler
@@ -48,7 +48,7 @@ namespace stark::models
 		inline void set_global_target_direction(Eigen::Vector3d& x) { this->constraints->target_d_glob[this->idx] = x; };
 		inline void set_local_direction(Eigen::Vector3d& x) { this->constraints->d_loc[this->idx] = x; };
 		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = activation; };
+		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
 	};
 
 	class BallJointHandler
@@ -71,7 +71,7 @@ namespace stark::models
 		inline void set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; };
 		inline void set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; };
 		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = activation; };
+		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
 	};
 
 	class RelativeDirectionLockHandler
@@ -94,7 +94,7 @@ namespace stark::models
 		inline void set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; };
 		inline void set_local_direction_body_b(const Eigen::Vector3d& d) const { this->constraints->db_loc[this->idx] = d; };
 		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = activation; };
+		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
 	};
 
 	class PointOnAxisConstraintHandler
@@ -119,7 +119,7 @@ namespace stark::models
 		inline void set_local_direction_body_a(const Eigen::Vector3d& d) { this->constraints->da_loc[this->idx] = d; };
 		inline void set_local_point_body_b(const Eigen::Vector3d& x) { this->constraints->b_loc[this->idx] = x; };
 		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = activation; };
+		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
 	};
 
 	class DampedSpringHandler
@@ -146,7 +146,7 @@ namespace stark::models
 		inline void set_rest_length(double length) { this->constraints->rest_length[this->idx] = length; };
 		inline void set_damping(double damping) { this->constraints->damping[this->idx] = damping; };
 		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = activation; };
+		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
 	};
 
 	class DistanceLimitHandler
@@ -173,7 +173,7 @@ namespace stark::models
 		inline void set_min_length(double length) { this->constraints->min_length[this->idx] = length; };
 		inline void set_max_length(double length) { this->constraints->max_length[this->idx] = length; };
 		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = activation; };
+		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
 	};
 
 	class AngleLimitHandler
@@ -198,7 +198,7 @@ namespace stark::models
 		inline void set_local_direction_body_b(const Eigen::Vector3d& x) { this->constraints->db_loc[this->idx] = x; };
 		inline void set_limit_angle_deg(double angle) { this->constraints->admissible_dot[this->idx] = std::cos(utils::deg2rad(angle)); };
 		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = activation; };
+		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
 	};
 
 	class RelativeLinearVelocityMotorHandler
@@ -223,7 +223,7 @@ namespace stark::models
 		inline void set_target_velocity(double velocity) { this->constraints->target_v[this->idx] = velocity; };
 		inline void set_max_force(double force) { this->constraints->max_force[this->idx] = force; };
 		inline void set_delay(double delay) { this->constraints->delay[this->idx] = delay; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = activation; };
+		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
 	};
 
 	class RelativeAngularVelocityMotorHandler
@@ -247,7 +247,7 @@ namespace stark::models
 		inline void set_target_angular_velocity(double velocity) { this->constraints->target_w[this->idx] = velocity; };
 		inline void set_max_torque(double torque) { this->constraints->max_torque[this->idx] = torque; };
 		inline void set_delay(double delay) { this->constraints->delay[this->idx] = delay; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = activation; };
+		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
 	};
 
 
@@ -387,7 +387,7 @@ namespace stark::models
 		};
 	};
 	
-	class HingeWithMotorHandler
+	class MotorHandler
 	{
 	private:
 		HingeJointHandler hinge;
@@ -396,7 +396,7 @@ namespace stark::models
 		RigidBodyHandler rb_b;
 
 	public:
-		HingeWithMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, HingeJointHandler hinge, RelativeAngularVelocityMotorHandler motor)
+		MotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, HingeJointHandler hinge, RelativeAngularVelocityMotorHandler motor)
 			: rb_a(rb_a), rb_b(rb_b), hinge(hinge), motor(motor) {};
 		inline RigidBodyHandler get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler get_body_b() { return this->rb_b; };

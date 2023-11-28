@@ -19,6 +19,9 @@ Oct unification
 	* I need to clarify where things are initialized, who owns who, etc...
 	* Inertia tensor should not be in utils. Probably we need a stark::rigidbody namespace
 	* Should I drop the "Handler" at the end of each constraint?
+	
+	* SymX doesnt recompile if the source array changes `this->dyn->da` to `this->dyn->a`
+		-> I need a SymX recompile flag for Stark
 		
 	* Reintroduce the constraint logger
 	* It really might not be a bad idea to have a RB class to

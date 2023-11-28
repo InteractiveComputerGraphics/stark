@@ -29,7 +29,7 @@ namespace stark::models
 		std::shared_ptr<BaseRigidBodyConstraints::RelativeAngularVelocityMotors> relative_angular_velocity_motors;
 
         /* Methods */
-        void _set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt);
+        void _set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt, const symx::Scalar& is_active);
 
         symx::Vector _get_x1(symx::Energy& energy, const Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc);
         symx::Vector _get_d1(symx::Energy& energy, const Stark& stark, const symx::Index& rb_idx, const symx::Vector& d_loc);
