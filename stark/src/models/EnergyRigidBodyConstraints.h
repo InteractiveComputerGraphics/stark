@@ -18,6 +18,7 @@ namespace stark::models
 
 		// Constraint containers
 		std::shared_ptr<BaseRigidBodyConstraints::AnchorPoints> anchor_points;
+		std::shared_ptr<BaseRigidBodyConstraints::AbsoluteDirectionLocks> absolute_direction_locks;
 		std::shared_ptr<BaseRigidBodyConstraints::BallJoints> ball_joints;
 		std::shared_ptr<BaseRigidBodyConstraints::RelativeDirectionLocks> relative_direction_locks;
 		std::shared_ptr<BaseRigidBodyConstraints::PointOnAxis> point_on_axis;

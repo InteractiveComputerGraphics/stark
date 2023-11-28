@@ -8,6 +8,7 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 {
 	// Constraint containers initialization
 	this->anchor_points = std::make_shared<BaseRigidBodyConstraints::AnchorPoints>();
+	this->absolute_direction_locks = std::make_shared<BaseRigidBodyConstraints::AbsoluteDirectionLocks>();
 	this->ball_joints = std::make_shared<BaseRigidBodyConstraints::BallJoints>();
 	this->relative_direction_locks = std::make_shared<BaseRigidBodyConstraints::RelativeDirectionLocks>();
 	this->point_on_axis = std::make_shared<BaseRigidBodyConstraints::PointOnAxis>();
@@ -31,6 +32,22 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(Stark& sta
 
 			symx::Vector glob = this->_get_x1(energy, stark, conn["rb"], loc);
 			symx::Scalar E = 0.5 * stiffness * (target_glob - glob).squared_norm();
+			energy.set_with_condition(E, is_active > 0.0);
+		}
+	);
+
+	stark.global_energy.add_energy("rb_constraint_absolute_direction_lock", this->absolute_direction_locks->conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto& data = this->absolute_direction_locks;
+
+			symx::Vector d_loc = energy.make_vector(data->d_loc, conn["idx"]);
+			symx::Vector target_d_glob = energy.make_vector(data->target_d_glob, conn["idx"]);
+			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
+			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+
+			symx::Vector d_glob = this->_get_d1(energy, stark, conn["rb"], d_loc);
+			symx::Scalar E = 0.5 * stiffness * (target_d_glob - d_glob).squared_norm();
 			energy.set_with_condition(E, is_active > 0.0);
 		}
 	);

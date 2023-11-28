@@ -38,6 +38,7 @@ namespace stark::models
 		// Add constraints
 		//// Base
 		AnchorPointHandler add_constraint_anchor_point(const RigidBodyHandler& body, const Eigen::Vector3d& p_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
+		AbsoluteDirectionLockHandler add_constraint_absolute_direction_lock(const RigidBodyHandler& body, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
 		BallJointHandler add_constraint_ball_joint(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
 		RelativeDirectionLockHandler add_constraint_relative_direction_lock(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
 		PointOnAxisConstraintHandler add_constraint_point_on_axis(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, const Eigen::Vector3d& p_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
@@ -48,6 +49,7 @@ namespace stark::models
 		RelativeAngularVelocityMotorHandler add_relative_angular_velocity_motor(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double target_w, double max_torque, double delay = 0.01);
 		
 		//// Derived
+		FixedConstraintHandler add_constraint_fixed(const RigidBodyHandler& body, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
 		HingeJointHandler add_constraint_hinge(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
 		HingeJointWithLimitsHandler add_constraint_hinge_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double admissible_angle_deg, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
 		SliderHandler add_constraint_slider(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);

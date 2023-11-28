@@ -19,14 +19,34 @@ namespace stark::models
 		RigidBodyHandler rb;
 
 	public:
-		AnchorPointHandler(RigidBodyHandler rb, std::shared_ptr<BaseRigidBodyConstraints::AnchorPoints> contraints, int idx) 
+		AnchorPointHandler(RigidBodyHandler rb, std::shared_ptr<BaseRigidBodyConstraints::AnchorPoints> constraints, int idx) 
 			: rb(rb), constraints(constraints), idx(idx) {};
-		inline RigidBodyHandler get_rb() { return this->rb; };
-		inline Eigen::Vector3d get_global_point() const { return this->constraints->target_glob[this->idx]; };
+		inline RigidBodyHandler get_body() { return this->rb; };
+		inline Eigen::Vector3d get_global_target_point() const { return this->constraints->target_glob[this->idx]; };
 		inline Eigen::Vector3d get_local_point() const { return this->constraints->loc[this->idx]; };
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
-		inline void set_global_point(Eigen::Vector3d& x) { this->constraints->target_glob[this->idx] = x; };
+		inline void set_global_target_point(Eigen::Vector3d& x) { this->constraints->target_glob[this->idx] = x; };
 		inline void set_local_point(Eigen::Vector3d& x) { this->constraints->loc[this->idx] = x; };
+		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
+		inline void enable(bool activation) { this->constraints->is_active[this->idx] = activation; };
+	};
+
+	class AbsoluteDirectionLockHandler
+	{
+	private:
+		std::shared_ptr<BaseRigidBodyConstraints::AbsoluteDirectionLocks> constraints;
+		int idx = -1;
+		RigidBodyHandler rb;
+
+	public:
+		AbsoluteDirectionLockHandler(RigidBodyHandler rb, std::shared_ptr<BaseRigidBodyConstraints::AbsoluteDirectionLocks> constraints, int idx)
+			: rb(rb), constraints(constraints), idx(idx) {};
+		inline RigidBodyHandler get_body() { return this->rb; };
+		inline Eigen::Vector3d get_global_target_direction() const { return this->constraints->target_d_glob[this->idx]; };
+		inline Eigen::Vector3d get_local_direction() const { return this->constraints->d_loc[this->idx]; };
+		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
+		inline void set_global_target_direction(Eigen::Vector3d& x) { this->constraints->target_d_glob[this->idx] = x; };
+		inline void set_local_direction(Eigen::Vector3d& x) { this->constraints->d_loc[this->idx] = x; };
 		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
 		inline void enable(bool activation) { this->constraints->is_active[this->idx] = activation; };
 	};
@@ -40,7 +60,7 @@ namespace stark::models
 		RigidBodyHandler rb_b;
 
 	public:
-		BallJointHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::BallJoints> contraints, int idx) 
+		BallJointHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::BallJoints> constraints, int idx) 
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) {};
 		inline RigidBodyHandler get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler get_body_b() { return this->rb_b; };
@@ -63,7 +83,7 @@ namespace stark::models
 		RigidBodyHandler rb_b;
 
 	public:
-		RelativeDirectionLockHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::RelativeDirectionLocks> contraints, int idx) 
+		RelativeDirectionLockHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::RelativeDirectionLocks> constraints, int idx) 
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) {};
 		inline RigidBodyHandler get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler get_body_b() { return this->rb_b; };
@@ -234,6 +254,29 @@ namespace stark::models
 	/* ============================================================================================= */
 	/* ===================================  DERIVED CONSTRAINTS  =================================== */
 	/* ============================================================================================= */
+	class FixedConstraintHandler
+	{
+	private:
+		AnchorPointHandler anchor_point;
+		AbsoluteDirectionLockHandler z_lock;
+		AbsoluteDirectionLockHandler x_lock;
+		RigidBodyHandler rb;
+
+	public:
+		FixedConstraintHandler(RigidBodyHandler rb, AnchorPointHandler anchor_point, AbsoluteDirectionLockHandler z_lock, AbsoluteDirectionLockHandler x_lock)
+			: rb(rb), anchor_point(anchor_point), z_lock(z_lock), x_lock(x_lock) {};
+		inline RigidBodyHandler get_body() { return this->rb; };
+		inline AnchorPointHandler get_anchor_point() { return this->anchor_point; };
+		inline AbsoluteDirectionLockHandler get_z_lock() { return this->z_lock; };
+		inline AbsoluteDirectionLockHandler get_x_lock() { return this->x_lock; };
+		inline void enable(bool activation)
+		{
+			this->anchor_point.enable(activation);
+			this->z_lock.enable(activation);
+			this->x_lock.enable(activation);
+		};
+	};
+
 	class HingeJointHandler
 	{
 	private:

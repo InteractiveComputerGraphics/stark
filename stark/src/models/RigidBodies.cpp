@@ -80,6 +80,16 @@ stark::models::AnchorPointHandler stark::models::RigidBodies::add_constraint_anc
 	);
 	return AnchorPointHandler(body, this->rb->constraints->anchor_points, idx);
 }
+stark::models::AbsoluteDirectionLockHandler stark::models::RigidBodies::add_constraint_absolute_direction_lock(const RigidBodyHandler& body, const Eigen::Vector3d& d_glob, double stiffness_per_kg)
+{
+	const int idx = this->rb->constraints->absolute_direction_locks->add(
+		body.index(),
+		body.global_to_local_direction(d_glob),
+		d_glob,
+		stiffness_per_kg * body.get_mass()
+	);
+	return AbsoluteDirectionLockHandler(body, this->rb->constraints->absolute_direction_locks, idx);
+}
 stark::models::BallJointHandler stark::models::RigidBodies::add_constraint_ball_joint(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, double stiffness_per_kg)
 {
 	const int idx = this->rb->constraints->ball_joints->add(
@@ -175,6 +185,13 @@ stark::models::RelativeAngularVelocityMotorHandler stark::models::RigidBodies::a
 		delay
 	);
 	return RelativeAngularVelocityMotorHandler(body_a, body_b, this->rb->constraints->relative_angular_velocity_motors, idx);
+}
+stark::models::FixedConstraintHandler stark::models::RigidBodies::add_constraint_fixed(const RigidBodyHandler& body, double stiffness_per_kg)
+{
+	auto anchor_point = this->add_constraint_anchor_point(body, body.get_translation(), stiffness_per_kg);
+	auto z_lock = this->add_constraint_absolute_direction_lock(body, Eigen::Vector3d::UnitZ(), stiffness_per_kg);
+	auto x_lock = this->add_constraint_absolute_direction_lock(body, Eigen::Vector3d::UnitX(), stiffness_per_kg);
+	return FixedConstraintHandler(body, anchor_point, z_lock, x_lock);
 }
 stark::models::HingeJointHandler stark::models::RigidBodies::add_constraint_hinge(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness_per_kg)
 {

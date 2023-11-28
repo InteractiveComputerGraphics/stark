@@ -45,6 +45,27 @@ namespace stark::models
 		};
 
 		/*
+		*	Forces the a local direction on an object to be aligned to a global direction.
+		*/
+		struct AbsoluteDirectionLocks
+		{
+			symx::LabelledConnectivity<2> conn{ { "idx", "rb" } };
+			std::vector<Eigen::Vector3d> d_loc;
+			std::vector<Eigen::Vector3d> target_d_glob;
+			std::vector<double> stiffness;
+			std::vector<double> is_active;
+			inline int add(int rb, const Eigen::Vector3d& d_loc, const Eigen::Vector3d& target_d_glob, double stiffness)
+			{
+				this->conn.numbered_push_back({rb});
+				this->d_loc.push_back(d_loc);
+				this->target_d_glob.push_back(target_d_glob);
+				this->stiffness.push_back(stiffness);
+				this->is_active.push_back(1.0);
+				return (int)this->is_active.size() - 1;
+			}
+		};
+
+		/*
 		*	Disables absolute displacement of a point in a an object.
 		*/
 		struct BallJoints
