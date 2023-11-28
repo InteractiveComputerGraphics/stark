@@ -70,6 +70,11 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(symx OpenMP::OpenMP_CXX)
 endif()
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	## libdl (shared object loading)
+	target_link_libraries(symx dl)
+endif()
+
 ## Eigen
 target_include_directories(symx PUBLIC ${EIGEN3_INCLUDE_DIR})
 

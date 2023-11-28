@@ -24,6 +24,7 @@ Oct unification
 	
 	* Fix all header includes. Compile on linux.
 	* Fix warnings from Eigen and par_shapes.
+	* Make sure all compiles in many OS as possible.
 	
 	* Architecture
 		- core is a weird mix. General and specific.
