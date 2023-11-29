@@ -310,6 +310,10 @@ bool stark::models::EnergyRigidBodyConstraints::_is_converged_state_valid(core::
 
 void stark::models::EnergyRigidBodyConstraints::_after_time_step(core::Stark& stark)
 {
+	// Note: Adaptive soft decrease is not done because we would need a base stiffness value.
+	//		 Otherwise, all contraints are too soft all the time unless they are permanently stressed.
+	//		 An aditional parameters puts pressure back to the user in terms of parametrization, which is not worth it.
+
 	constexpr double SOFT_MULTIPLIER = 1.05;
 	constexpr double SOFT_CAP = 0.75;
 	const double dt = stark.settings.simulation.adaptive_time_step.value;

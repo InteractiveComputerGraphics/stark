@@ -103,7 +103,7 @@ void hanging_cloth()
 	settings.contact.friction_enabled = false;
 
 	settings.debug.symx_check_for_NaNs = true;
-	//settings.newton.project_to_PD = true;
+	settings.newton.project_to_PD = true;
 	//settings.newton.use_direct_linear_solve = true;
 	//settings.newton.max_line_search_iterations = 1000;
 

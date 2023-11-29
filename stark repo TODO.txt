@@ -5,6 +5,7 @@ Oct unification
 ---------------
 	* Attachments
 	
+	* BlockedSparseMatrix is an old version!
 	* Separate internals and UI using namespaces.
 		namespace stark { class RigidBodyHandler {}; }
 		namespace stark::core { class EnergyRigidBodyInertia {}; }
