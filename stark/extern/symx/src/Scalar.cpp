@@ -235,6 +235,36 @@ symx::Scalar symx::Scalar::tan() const
 		return Scalar(this->expressions.add_operation(ExprType::Tan, this->expr_id, -1), this->expressions);
 	}
 }
+symx::Scalar symx::Scalar::asin() const
+{
+	const Scalar& u = (*this);
+	if (u.is_zero()) {
+		return this->get_zero();
+	}
+	else {
+		return Scalar(this->expressions.add_operation(ExprType::ArcSin, this->expr_id, -1), this->expressions);
+	}
+}
+symx::Scalar symx::Scalar::acos() const
+{
+	const Scalar& u = (*this);
+	if (u.is_one()) {
+		return this->get_zero();
+	}
+	else {
+		return Scalar(this->expressions.add_operation(ExprType::ArcCos, this->expr_id, -1), this->expressions);
+	}
+}
+symx::Scalar symx::Scalar::atan() const
+{
+	const Scalar& u = (*this);
+	if (u.is_zero()) {
+		return this->get_zero();
+	}
+	else {
+		return Scalar(this->expressions.add_operation(ExprType::ArcTan, this->expr_id, -1), this->expressions);
+	}
+}
 symx::Scalar symx::Scalar::inv() const
 {
 	const Scalar& u = (*this);
@@ -454,6 +484,18 @@ symx::Scalar symx::cos(const Scalar& scalar)
 symx::Scalar symx::tan(const Scalar& scalar)
 {
 	return scalar.tan();
+}
+symx::Scalar symx::asin(const Scalar& scalar)
+{
+	return scalar.asin();
+}
+symx::Scalar symx::acos(const Scalar& scalar)
+{
+	return scalar.acos();
+}
+symx::Scalar symx::atan(const Scalar& scalar)
+{
+	return scalar.atan();
 }
 
 symx::Scalar symx::operator>(const Scalar& a, const Scalar& b)

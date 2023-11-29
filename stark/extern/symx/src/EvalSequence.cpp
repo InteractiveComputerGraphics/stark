@@ -97,6 +97,12 @@ double* symx::EvalSequence::run()
 			this->buffer[op.dst] = std::cos(this->buffer[op.a]); break;
 		case ExprType::Tan:
 			this->buffer[op.dst] = std::tan(this->buffer[op.a]); break;
+		case ExprType::ArcSin:
+			this->buffer[op.dst] = std::asin(this->buffer[op.a]); break;
+		case ExprType::ArcCos:
+			this->buffer[op.dst] = std::acos(this->buffer[op.a]); break;
+		case ExprType::ArcTan:
+			this->buffer[op.dst] = std::atan(this->buffer[op.a]); break;
 	
 		default:
 			break;

@@ -158,6 +158,12 @@ symx::Scalar symx::diff(const Scalar& scalar, const Scalar& wrt)
 			return -sin(u) * du;
 		case ExprType::Tan:
 			return (1.0 + tan(u).powN(2)) * du;
+		case ExprType::ArcSin:
+			return du/(sqrt(1.0 - u.powN(2)));
+		case ExprType::ArcCos:
+			return -du/(sqrt(1.0 - u.powN(2)));
+		case ExprType::ArcTan:
+			return du/(1.0 + u.powN(2));
 
 		default:
 			std::cout << "symx error: Unhandled ExprType found in diff." << std::endl;

@@ -35,11 +35,14 @@ namespace symx
 		Exp = 14, 
 		Sin = 15, 
 		Cos = 16, 
-		Tan = 17
+		Tan = 17,
+		ArcSin = 18,
+		ArcCos = 19,
+		ArcTan = 20
 	};
 	static std::vector<std::string> get_expr_type_labels()
 	{
-		return { "Zero", "One", "Branch", "ConstantInteger", "ConstantFloat", "Symbol", "Add", "Sub", "Mul", "Inv", "PowN", "PowF", "Sqrt", "Log", "Exp", "Sin", "Cos", "Tan" };
+		return { "Zero", "One", "Branch", "ConstantInteger", "ConstantFloat", "Symbol", "Add", "Sub", "Mul", "Inv", "PowN", "PowF", "Sqrt", "Log", "Exp", "Sin", "Cos", "Tan", "ArcSin", "ArcCos", "ArcTan" };
 	}
 	constexpr static bool is_operation(const ExprType& type)
 	{

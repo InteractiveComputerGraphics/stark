@@ -357,6 +357,12 @@ void symx::Compilation::_add_instructions_scalar(std::string& code, Sequence& se
 			code += tab() + type + " " + idx(op.dst) + " = std::cos(" + idx(op.a) + ");\n"; break;
 		case ExprType::Tan:
 			code += tab() + type + " " + idx(op.dst) + " = std::tan(" + idx(op.a) + ");\n"; break;
+		case ExprType::ArcSin:
+			code += tab() + type + " " + idx(op.dst) + " = std::asin(" + idx(op.a) + ");\n"; break;
+		case ExprType::ArcCos:
+			code += tab() + type + " " + idx(op.dst) + " = std::acos(" + idx(op.a) + ");\n"; break;
+		case ExprType::ArcTan:
+			code += tab() + type + " " + idx(op.dst) + " = std::atan(" + idx(op.a) + ");\n"; break;
 		case ExprType::Branch:
 			if (op.is_endif()) {
 				indentation--;
@@ -433,6 +439,15 @@ void symx::Compilation::_add_instructions_simd(std::string& code, Sequence& eval
 		case ExprType::Tan:
 			code += begin_line + idx(op.dst) + " = tan(" + idx(op.a) + ");\n";
 			break;
+		case ExprType::ArcSin:
+			code += begin_line + idx(op.dst) + " = asin(" + idx(op.a) + ");\n";
+			break;
+		case ExprType::ArcCos:
+			code += begin_line + idx(op.dst) + " = acos(" + idx(op.a) + ");\n";
+			break;
+		case ExprType::ArcTan:
+			code += begin_line + idx(op.dst) + " = atan(" + idx(op.a) + ");\n";
+			break;
 		case ExprType::Branch:
 			std::cout << "symx error: Cannot generate SIMD code with banches." << std::endl;
 			exit(-1);
@@ -466,6 +481,9 @@ void symx::Compilation::_add_core_simd_functions(std::string& code, OpType op_ty
 	functions += "__m256d sin(__m256d& a) { __m256d s; double* a_view = reinterpret_cast<double*>(&a); double* s_view = reinterpret_cast<double*>(&s); for (int i = 0; i < 4; i++) { s_view[i] = std::sin(a_view[i]); }; return s; }\n";
 	functions += "__m256d cos(__m256d& a) { __m256d s; double* a_view = reinterpret_cast<double*>(&a); double* s_view = reinterpret_cast<double*>(&s); for (int i = 0; i < 4; i++) { s_view[i] = std::cos(a_view[i]); }; return s; }\n";
 	functions += "__m256d tan(__m256d& a) { __m256d s; double* a_view = reinterpret_cast<double*>(&a); double* s_view = reinterpret_cast<double*>(&s); for (int i = 0; i < 4; i++) { s_view[i] = std::tan(a_view[i]); }; return s; }\n";
+	functions += "__m256d asin(__m256d& a) { __m256d s; double* a_view = reinterpret_cast<double*>(&a); double* s_view = reinterpret_cast<double*>(&s); for (int i = 0; i < 4; i++) { s_view[i] = std::asin(a_view[i]); }; return s; }\n";
+	functions += "__m256d acos(__m256d& a) { __m256d s; double* a_view = reinterpret_cast<double*>(&a); double* s_view = reinterpret_cast<double*>(&s); for (int i = 0; i < 4; i++) { s_view[i] = std::acos(a_view[i]); }; return s; }\n";
+	functions += "__m256d atan(__m256d& a) { __m256d s; double* a_view = reinterpret_cast<double*>(&a); double* s_view = reinterpret_cast<double*>(&s); for (int i = 0; i < 4; i++) { s_view[i] = std::atan(a_view[i]); }; return s; }\n";
 
 	switch (op_type)
 	{

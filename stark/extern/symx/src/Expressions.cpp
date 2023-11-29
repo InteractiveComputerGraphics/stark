@@ -159,6 +159,12 @@ double symx::Expressions::eval(int32_t expr_id)
 		return std::cos(this->eval(expr.a)); break;
 	case ExprType::Tan:
 		return std::tan(this->eval(expr.a)); break;
+	case ExprType::ArcSin:
+		return std::asin(this->eval(expr.a)); break;
+	case ExprType::ArcCos:
+		return std::acos(this->eval(expr.a)); break;
+	case ExprType::ArcTan:
+		return std::atan(this->eval(expr.a)); break;
 
 	case ExprType::Branch:
 		if (this->eval(expr.cond) >= 0) {
