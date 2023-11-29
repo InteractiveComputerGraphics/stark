@@ -235,7 +235,6 @@ void stark::models::EnergyRigidBodyConstraints::_set_c1_controller_energy(symx::
 	energy.set_with_condition(E, is_active > 0.0);
 }
 
-
 symx::Vector stark::models::EnergyRigidBodyConstraints::_get_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc)
 {
 	symx::Vector v1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, rb_idx);
@@ -288,24 +287,12 @@ Eigen::Vector3d stark::models::EnergyRigidBodyConstraints::_get_d1(int rb_idx, c
 
 bool stark::models::EnergyRigidBodyConstraints::_is_converged_state_valid(core::Stark& stark)
 {
-	constexpr double HARD_MULTIPLIER = 2.0;
-	const double dt = stark.settings.simulation.adaptive_time_step.value;
-	bool is_valid = true;
-
-	// Ball joints
-	for (int i = 0; i < (int)this->ball_joints->conn.size(); i++) {
-		auto& data = this->ball_joints;
-		auto [idx, a, b] = data->conn[i];
-		const Eigen::Vector3d a1 = this->_get_x1(a, data->a_loc[idx], dt);
-		const Eigen::Vector3d b1 = this->_get_x1(b, data->b_loc[idx], dt);
-		const double C = (a1 - b1).norm();
-		if (C > data->tolerance_in_m[idx]) {
-			is_valid = false;
-			data->stiffness[idx] *= HARD_MULTIPLIER;
-		}
-	}
-
-	return is_valid;
+	/*
+		Hardens every constraints that has gone beyond the input tolerance.
+		If no constraint needs to be hardened, return true.
+	*/
+	constexpr double hard_multiplier = 2.0;
+	return this->_adjust_constraints_stiffness(stark, 1.0, hard_multiplier);
 }
 
 void stark::models::EnergyRigidBodyConstraints::_after_time_step(core::Stark& stark)
@@ -314,9 +301,43 @@ void stark::models::EnergyRigidBodyConstraints::_after_time_step(core::Stark& st
 	//		 Otherwise, all contraints are too soft all the time unless they are permanently stressed.
 	//		 An aditional parameters puts pressure back to the user in terms of parametrization, which is not worth it.
 
-	constexpr double SOFT_MULTIPLIER = 1.05;
-	constexpr double SOFT_CAP = 0.75;
+	const double soft_multiplier = 1.05;
+	const double constraint_capacity = 0.75;
+	this->_adjust_constraints_stiffness(stark, constraint_capacity, soft_multiplier);
+}
+
+bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(core::Stark& stark, double cap, double multiplier)
+{
 	const double dt = stark.settings.simulation.adaptive_time_step.value;
+	bool is_valid = true;
+
+	// Anchor Points
+	for (int i = 0; i < (int)this->anchor_points->conn.size(); i++) {
+		auto& data = this->anchor_points;
+		auto [idx, a] = data->conn[i];
+		const Eigen::Vector3d p = this->_get_x1(a, data->loc[idx], dt);
+		const Eigen::Vector3d target = data->target_glob[idx];
+		const double C = (p - target).norm();
+		const double tol = data->tolerance[idx];
+		if (C > tol) {
+			is_valid = false;
+			data->stiffness[idx] *= multiplier;
+		}
+	}
+
+	// Absolute Direction Locks
+	for (int i = 0; i < (int)this->absolute_direction_locks->conn.size(); i++) {
+		auto& data = this->absolute_direction_locks;
+		auto [idx, a] = data->conn[i];
+		const Eigen::Vector3d d = this->_get_d1(a, data->d_loc[idx], dt);
+		const Eigen::Vector3d d_target = data->target_d_glob[idx];
+		const double C = (d - d_target).norm();
+		const double tol = data->tolerance[idx];
+		if (C > tol) {
+			is_valid = false;
+			data->stiffness[idx] *= multiplier;
+		}
+	}
 
 	// Ball joints
 	for (int i = 0; i < (int)this->ball_joints->conn.size(); i++) {
@@ -325,8 +346,26 @@ void stark::models::EnergyRigidBodyConstraints::_after_time_step(core::Stark& st
 		const Eigen::Vector3d a1 = this->_get_x1(a, data->a_loc[idx], dt);
 		const Eigen::Vector3d b1 = this->_get_x1(b, data->b_loc[idx], dt);
 		const double C = (a1 - b1).norm();
-		if (C > SOFT_CAP*data->tolerance_in_m[idx]) {
-			data->stiffness[idx] *= SOFT_MULTIPLIER;
+		const double tol = data->tolerance[idx];
+		if (C > tol) {
+			is_valid = false;
+			data->stiffness[idx] *= multiplier;
 		}
 	}
+
+	// Relative Direction Locks
+	for (int i = 0; i < (int)this->relative_direction_locks->conn.size(); i++) {
+		auto& data = this->relative_direction_locks;
+		auto [idx, a, b] = data->conn[i];
+		const Eigen::Vector3d da1 = this->_get_d1(a, data->da_loc[idx], dt);
+		const Eigen::Vector3d db1 = this->_get_d1(b, data->db_loc[idx], dt);
+		const double C = (da1 - db1).norm();
+		const double tol = data->tolerance[idx];
+		if (C > tol) {
+			is_valid = false;
+			data->stiffness[idx] *= multiplier;
+		}
+	}
+
+	return is_valid;
 }

@@ -69,23 +69,25 @@ stark::models::RigidBodyHandler stark::models::RigidBodies::add_torus(const doub
 	return body;
 }
 
-stark::models::AnchorPointHandler stark::models::RigidBodies::add_constraint_anchor_point(const RigidBodyHandler& body, const Eigen::Vector3d& p_glob, double stiffness)
+stark::models::AnchorPointHandler stark::models::RigidBodies::add_constraint_anchor_point(const RigidBodyHandler& body, const Eigen::Vector3d& p_glob, double tolerance_in_m, double stiffness)
 {
 	const int idx = this->rb->constraints->anchor_points->add(
 		body.index(), 
 		body.global_to_local_point(p_glob),
 		p_glob, 
-		stiffness
+		stiffness,
+		tolerance_in_m
 	);
 	return AnchorPointHandler(body, this->rb->constraints->anchor_points, idx);
 }
-stark::models::AbsoluteDirectionLockHandler stark::models::RigidBodies::add_constraint_absolute_direction_lock(const RigidBodyHandler& body, const Eigen::Vector3d& d_glob, double stiffness)
+stark::models::AbsoluteDirectionLockHandler stark::models::RigidBodies::add_constraint_absolute_direction_lock(const RigidBodyHandler& body, const Eigen::Vector3d& d_glob, double tolerance_in_deg, double stiffness)
 {
 	const int idx = this->rb->constraints->absolute_direction_locks->add(
 		body.index(),
 		body.global_to_local_direction(d_glob),
 		d_glob,
-		stiffness
+		stiffness,
+		std::tan(utils::deg2rad(tolerance_in_deg)) // convert to meters which is what is constrained
 	);
 	return AbsoluteDirectionLockHandler(body, this->rb->constraints->absolute_direction_locks, idx);
 }
@@ -101,14 +103,15 @@ stark::models::BallJointHandler stark::models::RigidBodies::add_constraint_ball_
 	);
 	return BallJointHandler(body_a, body_b, this->rb->constraints->ball_joints, idx);
 }
-stark::models::RelativeDirectionLockHandler stark::models::RigidBodies::add_constraint_relative_direction_lock(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double stiffness)
+stark::models::RelativeDirectionLockHandler stark::models::RigidBodies::add_constraint_relative_direction_lock(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double tolerance_in_deg, double stiffness)
 {
 	const int idx = this->rb->constraints->relative_direction_locks->add(
 		body_a.index(),
 		body_b.index(),
 		body_a.global_to_local_direction(d_glob),
 		body_b.global_to_local_direction(d_glob),
-		stiffness
+		stiffness,
+		std::tan(utils::deg2rad(tolerance_in_deg)) // convert to meters which is what is constrained
 	);
 	return RelativeDirectionLockHandler(body_a, body_b, this->rb->constraints->relative_direction_locks, idx);
 }
@@ -186,17 +189,17 @@ stark::models::RelativeAngularVelocityMotorHandler stark::models::RigidBodies::a
 	);
 	return RelativeAngularVelocityMotorHandler(body_a, body_b, this->rb->constraints->relative_angular_velocity_motors, idx);
 }
-stark::models::FixedConstraintHandler stark::models::RigidBodies::add_constraint_fixed(const RigidBodyHandler& body, double stiffness)
+stark::models::FixedConstraintHandler stark::models::RigidBodies::add_constraint_fixed(const RigidBodyHandler& body, double tolerance_in_m, double tolerance_in_deg, double stiffness)
 {
-	auto anchor_point = this->add_constraint_anchor_point(body, body.get_translation(), stiffness);
-	auto z_lock = this->add_constraint_absolute_direction_lock(body, Eigen::Vector3d::UnitZ(), stiffness);
-	auto x_lock = this->add_constraint_absolute_direction_lock(body, Eigen::Vector3d::UnitX(), stiffness);
+	auto anchor_point = this->add_constraint_anchor_point(body, body.get_translation(), tolerance_in_m, stiffness);
+	auto z_lock = this->add_constraint_absolute_direction_lock(body, Eigen::Vector3d::UnitZ(), tolerance_in_deg, stiffness);
+	auto x_lock = this->add_constraint_absolute_direction_lock(body, Eigen::Vector3d::UnitX(), tolerance_in_deg, stiffness);
 	return FixedConstraintHandler(body, anchor_point, z_lock, x_lock);
 }
 stark::models::HingeJointHandler stark::models::RigidBodies::add_constraint_hinge(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness)
 {
 	auto ball_joint = this->add_constraint_ball_joint(body_a, body_b, p_glob, stiffness);
-	auto dir_lock = this->add_constraint_relative_direction_lock(body_a, body_b, d_glob, stiffness);
+	auto dir_lock = this->add_constraint_relative_direction_lock(body_a, body_b, d_glob, tolerance_in_deg, stiffness);
 	return HingeJointHandler(body_a, body_b, ball_joint, dir_lock);
 }
 stark::models::HingeJointWithLimitsHandler stark::models::RigidBodies::add_constraint_hinge_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double admissible_angle_deg, double stiffness)
@@ -210,7 +213,7 @@ stark::models::HingeJointWithLimitsHandler stark::models::RigidBodies::add_const
 stark::models::SliderHandler stark::models::RigidBodies::add_constraint_slider(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness)
 {
 	auto point_on_axis = this->add_constraint_point_on_axis(body_a, body_b, p_glob, d_glob, stiffness);
-	auto dir_lock = this->add_constraint_relative_direction_lock(body_a, body_b, d_glob, stiffness);
+	auto dir_lock = this->add_constraint_relative_direction_lock(body_a, body_b, d_glob, tolerance_in_deg, stiffness);
 	return SliderHandler(body_a, body_b, point_on_axis, dir_lock);
 }
 stark::models::PrismaticSliderHandler stark::models::RigidBodies::add_constraint_prismatic_slider(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness)
@@ -218,7 +221,7 @@ stark::models::PrismaticSliderHandler stark::models::RigidBodies::add_constraint
 	const Eigen::Vector3d u = (d_glob.dot(Eigen::Vector3d::UnitX()) < 0.5) ? d_glob.cross(Eigen::Vector3d::UnitX()) : d_glob.cross(Eigen::Vector3d::UnitY());
 
 	auto slider = this->add_constraint_slider(body_a, body_b, p_glob, d_glob, stiffness);
-	auto dir_lock = this->add_constraint_relative_direction_lock(body_a, body_b, u, stiffness);
+	auto dir_lock = this->add_constraint_relative_direction_lock(body_a, body_b, u, tolerance_in_deg, stiffness);
 	return PrismaticSliderHandler(body_a, body_b, slider, dir_lock);
 }
 stark::models::SpringWithLimitsHandler stark::models::RigidBodies::add_spring_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double min_length, double max_length, double damping, double limit_stiffness_per_kg)

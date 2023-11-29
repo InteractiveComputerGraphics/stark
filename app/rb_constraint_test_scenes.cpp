@@ -40,7 +40,7 @@ void rb_constraints_ball_joint()
 			const double stiffness = 1e6;
 
 			auto prev = box0;
-			const int N = 500;
+			const int N = 100;
 			for (int i = 1; i < N; i++) {
 				auto curr = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 					.set_translation({0.1*i, 0.0, 0.0});

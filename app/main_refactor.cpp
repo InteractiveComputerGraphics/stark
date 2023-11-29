@@ -209,6 +209,5 @@ int main()
 	//rb();
 
 	//rb_constraints_all();
-	//rb_constraints_spring();
-	rb_constraints_ball_joint();
+	rb_constraints_relative_direction_lock();
 }

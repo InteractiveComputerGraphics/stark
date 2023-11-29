@@ -3,9 +3,17 @@ stark repo TODO
 
 Oct unification
 ---------------
+	Tolerances
+		* Probably better to set stiffness and tolerances with setters and not in the function call?
+			I am not sure... The user can ignore the tolerances but they will be aware of them.
+			Hiding them is not a good idea.
+		* Use tolerance in all constraints in the UI
+		* Tolerances to deformables BC
+	
 	* Attachments
 	
 	* BlockedSparseMatrix is an old version!
+	
 	
 	* run_accept_newton_iteration() is a terrible name
 		Clean callbacks and decide for a global strategy
@@ -206,6 +214,7 @@ Low priority
 			Consider adding MKL as an optional dependency to speedup projections and CG.
 		* Collision dection could be improved by Verlet lists and to a lesser extent octree parallelization.
 		* Regardless of minimization technique, there is an optimal time step size and collision stiffness that we should try to track.
+	* Rigid body limits trigger jitters when they suddenly increase.
 	* Perfomance analysis. It's definitely not linear and we should have a better understanding.
 		Large simulations are definitely much slower. Because CG. But because run out of cache? Super linear number of iterations?
 		We can't make the solution faster if we don't know what, when and how the current solution is slow.
