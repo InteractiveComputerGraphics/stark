@@ -8,6 +8,7 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 {
 	// Callbacks
 	stark.callbacks.is_converged_state_valid.push_back([&]() { return this->_is_converged_state_valid(stark); });
+	stark.callbacks.after_time_step.push_back([&]() { this->_after_time_step(stark); });
 
 	// Constraint containers initialization
 	this->anchor_points = std::make_shared<BaseRigidBodyConstraints::AnchorPoints>();
@@ -287,7 +288,7 @@ Eigen::Vector3d stark::models::EnergyRigidBodyConstraints::_get_d1(int rb_idx, c
 
 bool stark::models::EnergyRigidBodyConstraints::_is_converged_state_valid(core::Stark& stark)
 {
-	constexpr double MULTIPLIER = 2.0;
+	constexpr double HARD_MULTIPLIER = 2.0;
 	const double dt = stark.settings.simulation.adaptive_time_step.value;
 	bool is_valid = true;
 
@@ -300,10 +301,28 @@ bool stark::models::EnergyRigidBodyConstraints::_is_converged_state_valid(core::
 		const double C = (a1 - b1).norm();
 		if (C > data->tolerance_in_m[idx]) {
 			is_valid = false;
-			data->stiffness[idx] *= MULTIPLIER;
+			data->stiffness[idx] *= HARD_MULTIPLIER;
 		}
 	}
 
 	return is_valid;
 }
 
+void stark::models::EnergyRigidBodyConstraints::_after_time_step(core::Stark& stark)
+{
+	constexpr double SOFT_MULTIPLIER = 1.05;
+	constexpr double SOFT_CAP = 0.75;
+	const double dt = stark.settings.simulation.adaptive_time_step.value;
+
+	// Ball joints
+	for (int i = 0; i < (int)this->ball_joints->conn.size(); i++) {
+		auto& data = this->ball_joints;
+		auto [idx, a, b] = data->conn[i];
+		const Eigen::Vector3d a1 = this->_get_x1(a, data->a_loc[idx], dt);
+		const Eigen::Vector3d b1 = this->_get_x1(b, data->b_loc[idx], dt);
+		const double C = (a1 - b1).norm();
+		if (C > SOFT_CAP*data->tolerance_in_m[idx]) {
+			data->stiffness[idx] *= SOFT_MULTIPLIER;
+		}
+	}
+}

@@ -208,5 +208,7 @@ int main()
 	//net();
 	//rb();
 
-	rb_constraints_all();
+	//rb_constraints_all();
+	//rb_constraints_spring();
+	rb_constraints_ball_joint();
 }

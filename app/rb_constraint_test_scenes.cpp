@@ -36,16 +36,19 @@ void rb_constraints_ball_joint()
 	template_sim("ball_joint", 
 		[](stark::models::Simulation& sim, stark::models::RigidBodyHandler& box0) 
 		{
+			const double tolerance_in_m = 0.001;
+			const double stiffness = 1e6;
+
 			auto prev = box0;
-			const int N = 10;
+			const int N = 100;
 			for (int i = 1; i < N; i++) {
 				auto curr = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 					.set_translation({0.1*i, 0.0, 0.0});
 				if (i % 2) {
-					sim.rigidbodies->add_constraint_ball_joint(prev, curr, {0.05 + (i-1)*0.1, -0.05, -0.05});
+					sim.rigidbodies->add_constraint_ball_joint(prev, curr, {0.05 + (i-1)*0.1, -0.05, -0.05}, tolerance_in_m, stiffness);
 				}
 				else {
-					sim.rigidbodies->add_constraint_ball_joint(prev, curr, {0.05 + (i-1)*0.1, 0.05, 0.05});
+					sim.rigidbodies->add_constraint_ball_joint(prev, curr, {0.05 + (i-1)*0.1, 0.05, 0.05}, tolerance_in_m, stiffness);
 				}
 				prev = curr;
 			}

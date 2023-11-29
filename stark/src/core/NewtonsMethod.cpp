@@ -206,6 +206,7 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 	}
 
 	if (!callbacks.run_is_converged_state_valid()) {
+		console.print("\n\t\t -> Converged state is not valid.\n", ConsoleVerbosity::TimeSteps);
 		return NewtonError::Restart;
 	}
 

@@ -41,6 +41,7 @@ namespace stark::models
 
 	private:
 		bool _is_converged_state_valid(core::Stark& stark);
+		void _after_time_step(core::Stark& stark);
 	};
     using spEnergyRigidBodyConstraints = std::shared_ptr<EnergyRigidBodyConstraints>;
 }

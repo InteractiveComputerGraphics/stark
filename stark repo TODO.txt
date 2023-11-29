@@ -31,6 +31,13 @@ Oct unification
 			Restarts can be triggered by non-convergence, contacts, too soft constraints...
 			I need to handle this better. Everything should take care of itself except non-convergence
 	
+	* Adaptive constraint stiffness
+		- Input stiffness should be absolute, not per kg.
+			The user can use the .get_mass() themselves.
+		- Soften/harden the constraints softly at the end of every time step.
+			This should also prevent the chain effect
+	
+	
 	* Architecture
 		- core is a weird mix. General and specific.
 		- Settings is wrong as some things (contact) have been moved.

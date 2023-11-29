@@ -16,8 +16,8 @@ namespace stark::models
 	class RigidBodies 
 	{
 	private:
-		constexpr static double DEFAULT_HARD_STIFFNESS_PER_KG = 1e6;
-		constexpr static double DEFAULT_HARD_TOLERANCE_IN_M_PER_KG = 0.001;
+		constexpr static double DEFAULT_HARD_STIFFNESS = 1e6;
+		constexpr static double DEFAULT_HARD_TOLERANCE_IN_M = 0.001;
 
 	public:
 		/* Fields */
@@ -37,27 +37,27 @@ namespace stark::models
 
 		// Add constraints
 		//// Base
-		AnchorPointHandler add_constraint_anchor_point(const RigidBodyHandler& body, const Eigen::Vector3d& p_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
-		AbsoluteDirectionLockHandler add_constraint_absolute_direction_lock(const RigidBodyHandler& body, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
-		BallJointHandler add_constraint_ball_joint(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG, double tolerance_in_m_per_kg = DEFAULT_HARD_TOLERANCE_IN_M_PER_KG);
-		RelativeDirectionLockHandler add_constraint_relative_direction_lock(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
-		PointOnAxisConstraintHandler add_constraint_point_on_axis(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
+		AnchorPointHandler add_constraint_anchor_point(const RigidBodyHandler& body, const Eigen::Vector3d& p_glob, double stiffness = DEFAULT_HARD_STIFFNESS);
+		AbsoluteDirectionLockHandler add_constraint_absolute_direction_lock(const RigidBodyHandler& body, const Eigen::Vector3d& d_glob, double stiffness = DEFAULT_HARD_STIFFNESS);
+		BallJointHandler add_constraint_ball_joint(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M, double stiffness = DEFAULT_HARD_STIFFNESS);
+		RelativeDirectionLockHandler add_constraint_relative_direction_lock(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double stiffness = DEFAULT_HARD_STIFFNESS);
+		PointOnAxisConstraintHandler add_constraint_point_on_axis(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness = DEFAULT_HARD_STIFFNESS);
 		DampedSpringHandler add_spring(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double damping = 0.0);
-		DistanceLimitHandler add_constraint_distance_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double min_length, double max_length, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
-		AngleLimitHandler add_constraint_angle_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double admissible_angle_deg, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
+		DistanceLimitHandler add_constraint_distance_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double min_length, double max_length, double stiffness = DEFAULT_HARD_STIFFNESS);
+		AngleLimitHandler add_constraint_angle_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double admissible_angle_deg, double stiffness = DEFAULT_HARD_STIFFNESS);
 		RelativeLinearVelocityMotorHandler add_relative_linear_velocity_motor(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double target_v, double max_force, double delay = 0.01);
 		RelativeAngularVelocityMotorHandler add_relative_angular_velocity_motor(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double target_w, double max_torque, double delay = 0.01);
 		
 		//// Derived
-		FixedConstraintHandler add_constraint_fixed(const RigidBodyHandler& body, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
-		HingeJointHandler add_constraint_hinge(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
-		HingeJointWithLimitsHandler add_constraint_hinge_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double admissible_angle_deg, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
-		SliderHandler add_constraint_slider(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
-		PrismaticSliderHandler add_constraint_prismatic_slider(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
+		FixedConstraintHandler add_constraint_fixed(const RigidBodyHandler& body, double stiffness = DEFAULT_HARD_STIFFNESS);
+		HingeJointHandler add_constraint_hinge(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness = DEFAULT_HARD_STIFFNESS);
+		HingeJointWithLimitsHandler add_constraint_hinge_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double admissible_angle_deg, double stiffness = DEFAULT_HARD_STIFFNESS);
+		SliderHandler add_constraint_slider(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness = DEFAULT_HARD_STIFFNESS);
+		PrismaticSliderHandler add_constraint_prismatic_slider(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness = DEFAULT_HARD_STIFFNESS);
 		//PrismaticSliderWithLimitsHandler add_constraint_prismatic_slider_with_limits(...);
-		SpringWithLimitsHandler add_spring_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double min_length, double max_length, double damping = 0.0, double limit_stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
-		PrismaticPressHandler add_prismatic_press(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double target_v, double max_force, double delay = 0.01, double slider_stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
-		MotorHandler add_motor(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double target_w, double max_torque, double delay = 0.01, double hinge_stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
+		SpringWithLimitsHandler add_spring_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double min_length, double max_length, double damping = 0.0, double limit_stiffness_per_kg = DEFAULT_HARD_STIFFNESS);
+		PrismaticPressHandler add_prismatic_press(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double target_v, double max_force, double delay = 0.01, double slider_stiffness_per_kg = DEFAULT_HARD_STIFFNESS);
+		MotorHandler add_motor(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double target_w, double max_torque, double delay = 0.01, double hinge_stiffness_per_kg = DEFAULT_HARD_STIFFNESS);
 		//SuspensionHandler add_suspension(...);
 	};
 	using spRigidBodies = std::shared_ptr<RigidBodies>;
