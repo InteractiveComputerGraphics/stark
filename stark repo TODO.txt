@@ -6,6 +6,10 @@ Oct unification
 	* Attachments
 	
 	* BlockedSparseMatrix is an old version!
+	
+	* run_accept_newton_iteration() is a terrible name
+		Clean callbacks and decide for a global strategy
+	
 	* Separate internals and UI using namespaces.
 		namespace stark { class RigidBodyHandler {}; }
 		namespace stark::core { class EnergyRigidBodyInertia {}; }
@@ -106,6 +110,7 @@ High priority
 
 Mid priority
 ------------
+	* SymX still has some low level design problems in eval, hashing...
 	* SymX can't use const data arrays?????
 	* Rigid bodies are very complicated. Probably too complicated to be practical.
 		Just to get the velocity of a contact point is insane.
