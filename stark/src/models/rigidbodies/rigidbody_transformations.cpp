@@ -1,5 +1,7 @@
 #include "rigidbody_transformations.h"
 
+#include "../time_integration.h"
+
 // Eigen
 Eigen::Vector3d stark::models::local_to_global_point(const Eigen::Vector3d& x, const Eigen::Matrix3d& R, const Eigen::Vector3d& translation)
 {
@@ -33,6 +35,20 @@ Eigen::Quaterniond stark::models::quat_time_integration(const Eigen::Quaterniond
 	q_end.coeffs() += 0.5 * dt * (w_ * q_start).coeffs();
 	return q_end.normalized();
 }
+Eigen::Vector3d stark::models::integrate_loc_point(const Eigen::Vector3d& p_loc, const Eigen::Vector3d& t0, const Eigen::Quaterniond& q0, const Eigen::Vector3d& v1, const Eigen::Vector3d& w1, const double& dt)
+{
+	Eigen::Vector3d t1 = time_integration(t0, v1, dt);
+	Eigen::Matrix3d R1 = quat_time_integration(q0, w1, dt).toRotationMatrix();
+	return local_to_global_point(p_loc, R1, t1);
+}
+Eigen::Vector3d stark::models::integrate_loc_direction(const Eigen::Vector3d& d_loc, const Eigen::Quaterniond& q0, const Eigen::Vector3d& w1, const double& dt)
+{
+	Eigen::Matrix3d R1 = quat_time_integration(q0, w1, dt).toRotationMatrix();
+	return local_to_global_direction(d_loc, R1);
+}
+
+
+
 
 // SymX
 symx::Matrix stark::models::quat_to_rotation(const symx::Vector& q)

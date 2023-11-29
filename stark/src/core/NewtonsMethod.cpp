@@ -100,9 +100,9 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 			this->u1 = this->u0 + step * this->du;
 			global_energy.set_dofs(this->u1.data());
 
-			logger.start_timing("is_state_valid");
-			const bool is_valid_state = callbacks.run_is_state_valid();
-			logger.stop_timing_add("is_state_valid");
+			logger.start_timing("is_intermidiate_state_valid");
+			const bool is_valid_state = callbacks.run_is_intermidiate_state_valid();
+			logger.stop_timing_add("is_intermidiate_state_valid");
 
 			if (is_valid_state) {
 				break;
@@ -203,6 +203,10 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 
 		total_line_search_it += line_search_it;
 		logger.stop_timing_add("line_search");
+	}
+
+	if (!callbacks.run_is_converged_state_valid()) {
+		return NewtonError::Restart;
 	}
 
 	console.print("\n\t\t", ConsoleVerbosity::NewtonIterations);

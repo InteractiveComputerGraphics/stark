@@ -17,6 +17,7 @@ namespace stark::models
 	{
 	private:
 		constexpr static double DEFAULT_HARD_STIFFNESS_PER_KG = 1e6;
+		constexpr static double DEFAULT_HARD_TOLERANCE_IN_M_PER_KG = 0.001;
 
 	public:
 		/* Fields */
@@ -38,7 +39,7 @@ namespace stark::models
 		//// Base
 		AnchorPointHandler add_constraint_anchor_point(const RigidBodyHandler& body, const Eigen::Vector3d& p_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
 		AbsoluteDirectionLockHandler add_constraint_absolute_direction_lock(const RigidBodyHandler& body, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
-		BallJointHandler add_constraint_ball_joint(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
+		BallJointHandler add_constraint_ball_joint(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG, double tolerance_in_m_per_kg = DEFAULT_HARD_TOLERANCE_IN_M_PER_KG);
 		RelativeDirectionLockHandler add_constraint_relative_direction_lock(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
 		PointOnAxisConstraintHandler add_constraint_point_on_axis(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double stiffness_per_kg = DEFAULT_HARD_STIFFNESS_PER_KG);
 		DampedSpringHandler add_spring(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double damping = 0.0);

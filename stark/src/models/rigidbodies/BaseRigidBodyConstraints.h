@@ -74,13 +74,15 @@ namespace stark::models
 			std::vector<Eigen::Vector3d> a_loc;
 			std::vector<Eigen::Vector3d> b_loc;
 			std::vector<double> stiffness;
+			std::vector<double> tolerance_in_m;
 			std::vector<double> is_active;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double stiffness)
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double stiffness, double tolerance_in_m)
 			{
 				this->conn.numbered_push_back({ rb_a, rb_b });
 				this->a_loc.push_back(a_loc);
 				this->b_loc.push_back(b_loc);
 				this->stiffness.push_back(stiffness);
+				this->tolerance_in_m.push_back(tolerance_in_m);
 				this->is_active.push_back(1.0);
 				return (int)this->is_active.size() - 1;
 			}

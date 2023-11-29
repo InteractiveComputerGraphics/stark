@@ -89,7 +89,7 @@ bool Stark::run(std::function<void()> callback)
 	}
 	this->console.print(fmt::format("\t before_energy_evaluation: {:.3f} s\n", this->logger.doubles["before_energy_evaluation"]), ConsoleVerbosity::Frames);
 	this->console.print(fmt::format("\t after_energy_evaluation: {:.3f} s\n", this->logger.doubles["after_energy_evaluation"]), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t is_state_valid: {:.3f} s\n", this->logger.doubles["is_state_valid"]), ConsoleVerbosity::Frames);
+	this->console.print(fmt::format("\t is_intermidiate_state_valid: {:.3f} s\n", this->logger.doubles["is_intermidiate_state_valid"]), ConsoleVerbosity::Frames);
 	this->console.print(fmt::format("\t failed steps: {:.3f} s\n", this->logger.doubles["failed_steps"]), ConsoleVerbosity::Frames);
 	return true;
 }
@@ -134,14 +134,17 @@ bool Stark::run_one_step()
 		}
 		else {
 			this->logger.add("failed_steps", runtime);
-			if (err == NewtonError::InvalidConfiguration) {
+			if (err == NewtonError::Restart) {
+				// Do nothing, just restart.
+			}
+			else if (err == NewtonError::InvalidConfiguration) {
 				const bool out_of_bounds = this->settings.contact.adaptive_contact_stiffness.failed_iteration();
 				if (out_of_bounds) {
 					this->console.print(fmt::format("Adaptive contact stiffness out of bounds ({:.e}). Exiting simulation.\n", this->settings.contact.adaptive_contact_stiffness.value), ConsoleVerbosity::Frames);
 					return false;
 				}
 			}
-			else {
+			else {  // All non-converged cases
 				const bool out_of_bounds = this->settings.simulation.adaptive_time_step.failed_iteration();
 				if (out_of_bounds) {
 					this->console.print(fmt::format("Adaptive time step size out of bounds ({:.e}). Exiting simulation.\n", this->settings.simulation.adaptive_time_step.value), ConsoleVerbosity::Frames);

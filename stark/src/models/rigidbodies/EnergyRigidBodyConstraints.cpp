@@ -6,6 +6,9 @@
 stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark& stark, spRigidBodyDynamics dyn)
 	: dyn(dyn)
 {
+	// Callbacks
+	stark.callbacks.is_converged_state_valid.push_back([&]() { return this->_is_converged_state_valid(stark); });
+
 	// Constraint containers initialization
 	this->anchor_points = std::make_shared<BaseRigidBodyConstraints::AnchorPoints>();
 	this->absolute_direction_locks = std::make_shared<BaseRigidBodyConstraints::AbsoluteDirectionLocks>();
@@ -231,9 +234,7 @@ void stark::models::EnergyRigidBodyConstraints::_set_c1_controller_energy(symx::
 	energy.set_with_condition(E, is_active > 0.0);
 }
 
-/* =================================================================================================== */
-/* ===================================  SYMX DATA-SYMBOLS MAPPING  =================================== */
-/* =================================================================================================== */
+
 symx::Vector stark::models::EnergyRigidBodyConstraints::_get_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc)
 {
 	symx::Vector v1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, rb_idx);
@@ -273,5 +274,36 @@ std::array<symx::Vector, 2> stark::models::EnergyRigidBodyConstraints::_get_x0_x
 	symx::Vector x1 = integrate_loc_point(x_loc, t0, q0, v1, w1, dt);
 	symx::Vector x0 = local_to_global_point(x_loc, t0, q0);
 	return { x0, x1 };
+}
+
+Eigen::Vector3d stark::models::EnergyRigidBodyConstraints::_get_x1(int rb_idx, const Eigen::Vector3d& x_loc, double dt)
+{
+	return integrate_loc_point(x_loc, this->dyn->t0[rb_idx], this->dyn->q0[rb_idx], this->dyn->v1[rb_idx], this->dyn->w1[rb_idx], dt);
+}
+Eigen::Vector3d stark::models::EnergyRigidBodyConstraints::_get_d1(int rb_idx, const Eigen::Vector3d& d_loc, double dt)
+{
+	return integrate_loc_direction(d_loc, this->dyn->q0[rb_idx], this->dyn->w1[rb_idx], dt);
+}
+
+bool stark::models::EnergyRigidBodyConstraints::_is_converged_state_valid(core::Stark& stark)
+{
+	constexpr double MULTIPLIER = 2.0;
+	const double dt = stark.settings.simulation.adaptive_time_step.value;
+	bool is_valid = true;
+
+	// Ball joints
+	for (int i = 0; i < (int)this->ball_joints->conn.size(); i++) {
+		auto& data = this->ball_joints;
+		auto [idx, a, b] = data->conn[i];
+		const Eigen::Vector3d a1 = this->_get_x1(a, data->a_loc[idx], dt);
+		const Eigen::Vector3d b1 = this->_get_x1(b, data->b_loc[idx], dt);
+		const double C = (a1 - b1).norm();
+		if (C > data->tolerance_in_m[idx]) {
+			is_valid = false;
+			data->stiffness[idx] *= MULTIPLIER;
+		}
+	}
+
+	return is_valid;
 }
 

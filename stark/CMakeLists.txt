@@ -31,6 +31,7 @@ add_subdirectory(extern/fmt)
 set(CORE_FILES
 	src/core/AdaptiveParameter.cpp
 	src/core/AdaptiveParameter.h
+	src/core/Callbacks.h
 	src/core/Console.cpp
 	src/core/Console.h
 	src/core/include_ui_core.h

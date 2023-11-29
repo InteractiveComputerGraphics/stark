@@ -25,6 +25,11 @@ Oct unification
 	* Fix all header includes. Compile on linux.
 	* Fix warnings from Eigen and par_shapes.
 	* Make sure all compiles in many OS as possible.
+	* Move adaptive contact stiffness into EnergyFrictionalContact.
+		This must be possible without hardcoding it in NewtonsMethod.
+		NewtonsMethod::Error and handling needs to be rewritten.
+			Restarts can be triggered by non-convergence, contacts, too soft constraints...
+			I need to handle this better. Everything should take care of itself except non-convergence
 	
 	* Architecture
 		- core is a weird mix. General and specific.

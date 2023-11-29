@@ -18,6 +18,7 @@ namespace stark::core
 		TooManyCGIterations = 3,
 		InvalidConfiguration = 4,
 		LineSearchDoesntDescend = 5,
+		Restart = 6
 	};
 
 	class NewtonsMethod

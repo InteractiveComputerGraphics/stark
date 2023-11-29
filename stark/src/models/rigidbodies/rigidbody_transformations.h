@@ -17,6 +17,8 @@ namespace stark::models
     Eigen::Matrix3d global_to_local_matrix(const Eigen::Matrix3d& A, const Eigen::Matrix3d& R);
 
     Eigen::Quaterniond quat_time_integration(const Eigen::Quaterniond& q_start, const Eigen::Vector3d& w_glob, const double dt);
+    Eigen::Vector3d integrate_loc_point(const Eigen::Vector3d& p_loc, const Eigen::Vector3d& t0, const Eigen::Quaterniond& q0, const Eigen::Vector3d& v1, const Eigen::Vector3d& w1, const double& dt);
+    Eigen::Vector3d integrate_loc_direction(const Eigen::Vector3d& d_loc, const Eigen::Quaterniond& q0, const Eigen::Vector3d& w1, const double& dt);
 
 
     // SymX

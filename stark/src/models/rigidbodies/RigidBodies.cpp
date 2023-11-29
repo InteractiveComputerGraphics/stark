@@ -91,14 +91,15 @@ stark::models::AbsoluteDirectionLockHandler stark::models::RigidBodies::add_cons
 	);
 	return AbsoluteDirectionLockHandler(body, this->rb->constraints->absolute_direction_locks, idx);
 }
-stark::models::BallJointHandler stark::models::RigidBodies::add_constraint_ball_joint(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, double stiffness_per_kg)
+stark::models::BallJointHandler stark::models::RigidBodies::add_constraint_ball_joint(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, double stiffness_per_kg, double tolerance_in_m_per_kg)
 {
 	const int idx = this->rb->constraints->ball_joints->add(
 		body_a.index(),
 		body_b.index(),
 		body_a.global_to_local_point(p_glob),
 		body_b.global_to_local_point(p_glob),
-		stiffness_per_kg * std::max(body_a.get_mass(), body_b.get_mass())
+		stiffness_per_kg * std::max(body_a.get_mass(), body_b.get_mass()),
+		tolerance_in_m_per_kg * std::max(body_a.get_mass(), body_b.get_mass())
 	);
 	return BallJointHandler(body_a, body_b, this->rb->constraints->ball_joints, idx);
 }

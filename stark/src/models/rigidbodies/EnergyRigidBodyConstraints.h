@@ -11,7 +11,7 @@ namespace stark::models
 	class EnergyRigidBodyConstraints
 	{
 	public:
-        EnergyRigidBodyConstraints(stark::core::Stark& stark, spRigidBodyDynamics dyn);
+        EnergyRigidBodyConstraints(core::Stark& stark, spRigidBodyDynamics dyn);
 
         /* Fields */
         spRigidBodyDynamics dyn;
@@ -35,6 +35,12 @@ namespace stark::models
         symx::Vector _get_d1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& d_loc);
         std::array<symx::Vector, 2> _get_x1_d1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Vector& d_loc);
         std::array<symx::Vector, 2> _get_x0_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc);
+
+        Eigen::Vector3d _get_x1(int rb_idx, const Eigen::Vector3d& x_loc, double dt);
+        Eigen::Vector3d _get_d1(int rb_idx, const Eigen::Vector3d& d_loc, double dt);
+
+	private:
+		bool _is_converged_state_valid(core::Stark& stark);
 	};
     using spEnergyRigidBodyConstraints = std::shared_ptr<EnergyRigidBodyConstraints>;
 }
