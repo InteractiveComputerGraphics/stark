@@ -17,6 +17,7 @@ void template_sim(std::string name, std::function<void(stark::models::Simulation
 	//settings.debug.symx_check_for_NaNs = true;
 	//settings.newton.project_to_PD = true;
 	//settings.newton.use_direct_linear_solve = true;
+	settings.debug.symx_force_compilation = false;
 	stark::models::Simulation simulation(settings);
 
 	// Object

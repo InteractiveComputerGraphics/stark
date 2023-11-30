@@ -22,7 +22,7 @@ void symx::Energy::set_with_condition(const Scalar& expr, const Scalar& cond)
 	this->compiled_derivatives_d.update_connectivity(l2data_int(this->connectivity_after_condition), l2n_elements_int(this->connectivity_after_condition, this->n_items_per_element));
 	this->has_condition = true;
 }
-void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arrays, const bool suppress_compiler_output)
+void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arrays, const bool force_compilation, const bool suppress_compiler_output)
 {
 	if (this->expr == nullptr) {
 		std::cout << "symx::Energy error: Expression not set in energy " << this->name << std::endl;
@@ -35,14 +35,14 @@ void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arra
 
 	this->has_branches = this->expr->has_branch();
 	if (this->has_branches) {
-		this->compiled_derivatives_d.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, /*TODO:*/ 3, suppress_compiler_output);
+		this->compiled_derivatives_d.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, /*TODO:*/ 3, force_compilation, suppress_compiler_output);
 		this->was_cached = this->compiled_derivatives_d.was_cached;
 		this->runtime_codegen = this->compiled_derivatives_d.runtime_codegen;
 		this->runtime_compilation = this->compiled_derivatives_d.runtime_compilation;
 		this->runtime_differentiation = this->compiled_derivatives_d.runtime_differentiation;
 	}
 	else {
-		this->compiled_derivatives.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, /*TODO:*/ 3, suppress_compiler_output);
+		this->compiled_derivatives.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, /*TODO:*/ 3, force_compilation, suppress_compiler_output);
 		this->was_cached = this->compiled_derivatives.was_cached;
 		this->runtime_codegen = this->compiled_derivatives.runtime_codegen;
 		this->runtime_compilation = this->compiled_derivatives.runtime_compilation;
@@ -51,7 +51,14 @@ void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arra
 	this->n_dofs = (int)this->dof_symbols.size();
 
 	if (this->has_condition) {
-		this->compiled_condition.compile({ *this->cond }, this->name + "_cond", this->working_directory, this->cond->get_checksum(), suppress_compiler_output);
+
+		if (force_compilation) {
+			this->compiled_condition.compile({ *this->cond }, this->name + "_cond", this->working_directory, this->cond->get_checksum(), suppress_compiler_output);
+		}
+		else {
+			this->compiled_condition.try_load_otherwise_compile({ *this->cond }, this->name + "_cond", this->working_directory, this->cond->get_checksum(), suppress_compiler_output);
+		}
+
 		this->runtime_codegen += this->compiled_condition.compilation.runtime_codegen;
 		this->runtime_compilation += this->compiled_condition.compilation.runtime_compilation;
 	}

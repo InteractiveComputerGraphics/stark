@@ -66,7 +66,7 @@ namespace symx
 		// When the condition is positive, the energy becomes active
 		void set_with_condition(const Scalar& expr, const Scalar& cond);
 		bool is_expression_set() const;
-		void deferred_init(std::vector<std::function<double* ()>> dof_arrays, const bool suppress_compiler_output);
+		void deferred_init(std::vector<std::function<double* ()>> dof_arrays, const bool force_compilation, const bool suppress_compiler_output);
 		void activate(const bool activate);
 	
 		// Make fixed Scalar

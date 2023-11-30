@@ -72,8 +72,9 @@ namespace symx
 		~CompiledInLoop() = default;
 		CompiledInLoop(const CompiledInLoop&) = delete; // Copying makes unclear who owns the DLL
 		CompiledInLoop(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", bool suppress_compiler_output = true);
-		void compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", bool suppress_compiler_output = true);
 		bool load_if_cached(std::string name, std::string folder, std::string id);
+		void compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", bool suppress_compiler_output = true);
+		void try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", bool suppress_compiler_output = true);
 		bool is_valid();
 		bool was_cached();
 
@@ -164,6 +165,13 @@ namespace symx
 		this->name = name;
 		this->compilation.template compile<COMPILED_FLOAT>(expr, name, folder, id, suppress_compiler_output);
 		this->_init();
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, bool suppress_compiler_output)
+	{
+		if (!this->load_if_cached(name, folder, id)) {
+			this->compile(expr, name, folder, id, suppress_compiler_output);
+		}
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	inline bool CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::load_if_cached(std::string name, std::string folder, std::string id)

@@ -64,7 +64,7 @@ namespace symx
 		template<typename DYNAMIC_VECTOR>  // std::vector<double>, Eigen::VectorXd...
 		DoF add_dof_array(DYNAMIC_VECTOR& arr, std::string label = "");
 
-		std::string compile(std::string working_directory, const int n_threads = -1, bool suppress_compiler_output = true);
+		std::string compile(std::string working_directory, const int n_threads = -1, bool force_compilation = false, bool suppress_compiler_output = true);
 		Assembled evaluate_E(const bool check_for_NaNs = false);
 		Assembled evaluate_E_grad(const bool check_for_NaNs = false);
 		Assembled evaluate_E_grad_hess(const bool check_for_NaNs = false);

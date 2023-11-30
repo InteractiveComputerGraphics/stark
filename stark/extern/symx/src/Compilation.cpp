@@ -48,52 +48,47 @@ symx::Compilation::~Compilation()
 }
 void symx::Compilation::compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, OpType op_type, bool suppress_compiler_output)
 {
-	if (this->load_if_cached(name, folder, id, op_type)) {
-		this->was_cached = true;
-	}
-	else {
-		double t0 = omp_get_wtime();
-		symx::Sequence seq(expr);
-		this->_write_shared_object_code(seq, name, folder, id, op_type);
-		double t1 = omp_get_wtime();
-		this->runtime_codegen = t1 - t0;
+	double t0 = omp_get_wtime();
+	symx::Sequence seq(expr);
+	this->_write_shared_object_code(seq, name, folder, id, op_type);
+	double t1 = omp_get_wtime();
+	this->runtime_codegen = t1 - t0;
 
-		int err = -1;
-		std::string command;
+	int err = -1;
+	std::string command;
 #ifdef _MSC_VER
-		const std::string enable_output = (suppress_compiler_output) ? " >nul 2>nul " : "";
-		command = symx::compiler_command + enable_output;
-		command += " && cd " + folder;
-		command += " && cl " + name + ".cpp /LD /Ox /fp:fast /arch:AVX2 /bigobj" + enable_output;
-		command += " && del " + name + ".exp";
-		command += " && del " + name + ".lib";
-		command += " && del " + name + ".obj";
+	const std::string enable_output = (suppress_compiler_output) ? " >nul 2>nul " : "";
+	command = symx::compiler_command + enable_output;
+	command += " && cd " + folder;
+	command += " && cl " + name + ".cpp /LD /Ox /fp:fast /arch:AVX2 /bigobj" + enable_output;
+	command += " && del " + name + ".exp";
+	command += " && del " + name + ".lib";
+	command += " && del " + name + ".obj";
 #else
-		const std::string enable_output = (suppress_compiler_output) ? " > /dev/null " : "";
-		command += "cd " + folder;
-		command += " ; g++ " + name + ".cpp -shared -O3 -ffast-math -march=native -o " + name + ".so" + enable_output;
+	const std::string enable_output = (suppress_compiler_output) ? " > /dev/null " : "";
+	command += "cd " + folder;
+	command += " ; g++ " + name + ".cpp -shared -O3 -ffast-math -march=native -o " + name + ".so" + enable_output;
 #endif
-		t0 = omp_get_wtime();
+	t0 = omp_get_wtime();
+	err = system(command.c_str());
+
+	// When compiling multiple units in parallel, sometimes it will not run successfully.
+	// Trying it again solves the problem.
+	if (err != 0) {
 		err = system(command.c_str());
-
-		// When compiling multiple units in parallel, sometimes it will not run successfully.
-		// Trying it again solves the problem.
-		if (err != 0) {
-			err = system(command.c_str());
-		}
-		t1 = omp_get_wtime();
-		this->runtime_compilation = t1 - t0;
-
-		if (err != 0) {
-			std::cout << "symx error: Compilation failed for " << name << ". Try not suppressing compilation output to see compiler error." << std::endl;
-			std::cout << "compilation command: " << std::endl << std::endl;
-			std::cout << command << std::endl;
-			exit(-1);
-		}
-
-		bool success = this->load_if_cached(name, folder, id, op_type);
-		this->was_cached = false;
 	}
+	t1 = omp_get_wtime();
+	this->runtime_compilation = t1 - t0;
+
+	if (err != 0) {
+		std::cout << "symx error: Compilation failed for " << name << ". Try not suppressing compilation output to see compiler error." << std::endl;
+		std::cout << "compilation command: " << std::endl << std::endl;
+		std::cout << command << std::endl;
+		exit(-1);
+	}
+
+	bool success = this->load_if_cached(name, folder, id, op_type);
+	this->was_cached = false;
 }
 bool symx::Compilation::load_if_cached(std::string name, std::string folder, std::string id, OpType op_type)
 {
@@ -185,6 +180,13 @@ bool symx::Compilation::load_if_cached(std::string name, std::string folder, std
 		return false;
 	}
 }
+void symx::Compilation::try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, OpType op_type, bool suppress_compiler_output)
+{
+	if (!this->load_if_cached(name, folder, id, op_type)) {
+		this->compile(expr, name, folder, id, op_type, suppress_compiler_output);
+	}
+}
+
 void symx::Compilation::_write_shared_object_code(Sequence& seq, std::string name, std::string folder, std::string id, OpType op_type)
 {
 	std::string code;
