@@ -210,7 +210,7 @@ void rb_constraints_motor()
 		{
 			auto box1 = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 				.set_translation({ 0.2, 0.0, 0.0 });
-			sim.rigidbodies->add_motor(box0, box1, box0.get_translation(), Eigen::Vector3d::UnitY(), -1.0);
+			sim.rigidbodies->add_motor(box0, box1, box0.get_translation(), Eigen::Vector3d::UnitY(), -1.0, 10.0);
 		}
 	);
 }

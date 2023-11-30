@@ -7,7 +7,6 @@
 
 namespace stark::models
 {
-
 	/* ========================================================================================== */
 	/* ===================================  BASE CONSTRAINTS  =================================== */
 	/* ========================================================================================== */
@@ -21,15 +20,27 @@ namespace stark::models
 
 	public:
 		AnchorPointHandler(RigidBodyHandler rb, std::shared_ptr<BaseRigidBodyConstraints::AnchorPoints> constraints, int idx) 
-			: rb(rb), constraints(constraints), idx(idx) {};
+			: rb(rb), constraints(constraints), idx(idx) 
+		{};
+
 		inline RigidBodyHandler get_body() { return this->rb; };
+
 		inline Eigen::Vector3d get_global_target_point() const { return this->constraints->target_glob[this->idx]; };
+		inline auto& set_global_target_point(Eigen::Vector3d& x) { this->constraints->target_glob[this->idx] = x; return (*this); };
+
 		inline Eigen::Vector3d get_local_point() const { return this->constraints->loc[this->idx]; };
+		inline auto& set_local_point(Eigen::Vector3d& x) { this->constraints->loc[this->idx] = x; return (*this); };
+
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
-		inline void set_global_target_point(Eigen::Vector3d& x) { this->constraints->target_glob[this->idx] = x; };
-		inline void set_local_point(Eigen::Vector3d& x) { this->constraints->loc[this->idx] = x; };
-		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
+		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
+
+		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance[this->idx]; };
+		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance[this->idx] = tolerance_in_m; return (*this); };
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
 	class AbsoluteDirectionLockHandler
@@ -41,15 +52,34 @@ namespace stark::models
 
 	public:
 		AbsoluteDirectionLockHandler(RigidBodyHandler rb, std::shared_ptr<BaseRigidBodyConstraints::AbsoluteDirectionLocks> constraints, int idx)
-			: rb(rb), constraints(constraints), idx(idx) {};
+			: rb(rb), constraints(constraints), idx(idx) 
+		{};
+
 		inline RigidBodyHandler get_body() { return this->rb; };
+
 		inline Eigen::Vector3d get_global_target_direction() const { return this->constraints->target_d_glob[this->idx]; };
+		inline auto& set_global_target_direction(Eigen::Vector3d& x) { this->constraints->target_d_glob[this->idx] = x; return (*this); };
+
 		inline Eigen::Vector3d get_local_direction() const { return this->constraints->d_loc[this->idx]; };
+		inline auto& set_local_direction(Eigen::Vector3d& x) { this->constraints->d_loc[this->idx] = x; return (*this); };
+
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
-		inline void set_global_target_direction(Eigen::Vector3d& x) { this->constraints->target_d_glob[this->idx] = x; };
-		inline void set_local_direction(Eigen::Vector3d& x) { this->constraints->d_loc[this->idx] = x; };
-		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
+		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
+
+		inline double get_angle_tolerance_in_deg() const 
+		{ 
+			return utils::rad2deg(std::asin(this->constraints->tolerance[this->idx])); // convert from meters which is what is constrained (lengh of opposite side of triangle)
+		};
+		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg)
+		{ 
+			this->constraints->tolerance[this->idx] = std::sin(utils::deg2rad(tolerance_in_deg)); // convert to meters which is what is constrained (lengh of opposite side of triangle)
+			return (*this);
+		};
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
 	class BallJointHandler
@@ -62,17 +92,28 @@ namespace stark::models
 
 	public:
 		BallJointHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::BallJoints> constraints, int idx) 
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) {};
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
+		{};
+
 		inline RigidBodyHandler get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
-		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
-		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 
-		inline void set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; };
-		inline void set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; };
-		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
+		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
+		inline auto& set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; return (*this); };
+
+		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
+		inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
+
+		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
+		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
+
+		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance[this->idx]; };
+		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance[this->idx] = tolerance_in_m; return (*this); };
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
 	class RelativeDirectionLockHandler
@@ -85,17 +126,35 @@ namespace stark::models
 
 	public:
 		RelativeDirectionLockHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::RelativeDirectionLocks> constraints, int idx) 
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) {};
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
+		{};
+
 		inline RigidBodyHandler get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
-		inline Eigen::Vector3d get_local_direction_body_b() const { return this->constraints->db_loc[this->idx]; };
-		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 
-		inline void set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; };
-		inline void set_local_direction_body_b(const Eigen::Vector3d& d) const { this->constraints->db_loc[this->idx] = d; };
-		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
+		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
+		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
+
+		inline Eigen::Vector3d get_local_direction_body_b() const { return this->constraints->db_loc[this->idx]; };
+		inline auto& set_local_direction_body_b(const Eigen::Vector3d& d) const { this->constraints->db_loc[this->idx] = d; return (*this); };
+
+		inline double get_angle_tolerance_in_deg() const
+		{
+			return utils::rad2deg(std::asin(this->constraints->tolerance[this->idx])); // convert from meters which is what is constrained (lengh of opposite side of triangle)
+		};
+		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg)
+		{
+			this->constraints->tolerance[this->idx] = std::sin(utils::deg2rad(tolerance_in_deg)); // convert to meters which is what is constrained (lengh of opposite side of triangle)
+			return (*this);
+		};
+
+		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
+		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
 	class PointOnAxisConstraintHandler
@@ -108,19 +167,31 @@ namespace stark::models
 
 	public:
 		PointOnAxisConstraintHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::PointOnAxis> constraints, int idx)
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) {};
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
+		{};
+
 		inline RigidBodyHandler get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
-		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
-		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
-		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 
-		inline void set_local_point_body_a(const Eigen::Vector3d& x) { this->constraints->a_loc[this->idx] = x; };
-		inline void set_local_direction_body_a(const Eigen::Vector3d& d) { this->constraints->da_loc[this->idx] = d; };
-		inline void set_local_point_body_b(const Eigen::Vector3d& x) { this->constraints->b_loc[this->idx] = x; };
-		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
+		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
+		inline auto& set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; return (*this); };
+
+		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
+		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
+
+		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
+		inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
+
+		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance[this->idx]; };
+		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance[this->idx] = tolerance_in_m; return (*this); };
+
+		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
+		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
 	class DampedSpringHandler
@@ -133,21 +204,31 @@ namespace stark::models
 
 	public:
 		DampedSpringHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::DampedSprings> constraints, int idx)
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) {};
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
+		{};
+
 		inline RigidBodyHandler get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
-		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
-		inline double get_rest_length() const { return this->constraints->rest_length[this->idx]; };
-		inline double get_damping() const { return this->constraints->damping[this->idx]; };
-		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 
-		inline void set_local_point_body_a(const Eigen::Vector3d& x) { this->constraints->a_loc[this->idx] = x; };
-		inline void set_local_point_body_b(const Eigen::Vector3d& x) { this->constraints->b_loc[this->idx] = x; };
-		inline void set_rest_length(double length) { this->constraints->rest_length[this->idx] = length; };
-		inline void set_damping(double damping) { this->constraints->damping[this->idx] = damping; };
-		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
+		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
+		inline auto& set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; return (*this); };
+
+		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
+		inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
+
+		inline double get_rest_length() const { return this->constraints->rest_length[this->idx]; };
+		inline auto& set_rest_length(double length) { this->constraints->rest_length[this->idx] = length; return (*this); };
+
+		inline double get_damping() const { return this->constraints->damping[this->idx]; };
+		inline auto& set_damping(double damping) { this->constraints->damping[this->idx] = damping; return (*this); };
+
+		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
+		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
 	class DistanceLimitHandler
@@ -160,21 +241,34 @@ namespace stark::models
 
 	public:
 		DistanceLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::DistanceLimits> constraints, int idx)
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) {};
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
+		{};
+
 		inline RigidBodyHandler get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
-		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
-		inline double get_min_length() const { return this->constraints->min_length[this->idx]; };
-		inline double get_max_length() const { return this->constraints->max_length[this->idx]; };
-		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 
-		inline void set_local_point_body_a(const Eigen::Vector3d& x) { this->constraints->a_loc[this->idx] = x; };
-		inline void set_local_point_body_b(const Eigen::Vector3d& x) { this->constraints->b_loc[this->idx] = x; };
-		inline void set_min_length(double length) { this->constraints->min_length[this->idx] = length; };
-		inline void set_max_length(double length) { this->constraints->max_length[this->idx] = length; };
-		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
+		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
+		inline auto& set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; return (*this); };
+
+		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
+		inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
+
+		inline double get_min_length() const { return this->constraints->min_length[this->idx]; };
+		inline auto& set_min_length(double length) { this->constraints->min_length[this->idx] = length; return (*this); };
+
+		inline double get_max_length() const { return this->constraints->max_length[this->idx]; };
+		inline auto& set_max_length(double length) { this->constraints->max_length[this->idx] = length; return (*this); };
+
+		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance[this->idx]; };
+		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance[this->idx] = tolerance_in_m; return (*this); };
+
+		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
+		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
 	class AngleLimitHandler
@@ -187,19 +281,49 @@ namespace stark::models
 
 	public:
 		AngleLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::AngleLimits> constraints, int idx)
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) {};
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
+		{};
+
 		inline RigidBodyHandler get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
-		inline Eigen::Vector3d get_local_direction_body_b() const { return this->constraints->db_loc[this->idx]; };
-		inline double get_limit_angle_deg() const { return utils::rad2deg(std::acos(this->constraints->admissible_dot[this->idx])); };
-		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 
-		inline void set_local_direction_body_a(const Eigen::Vector3d& x) { this->constraints->da_loc[this->idx] = x; };
-		inline void set_local_direction_body_b(const Eigen::Vector3d& x) { this->constraints->db_loc[this->idx] = x; };
-		inline void set_limit_angle_deg(double angle) { this->constraints->admissible_dot[this->idx] = std::cos(utils::deg2rad(angle)); };
-		inline void set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
+		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
+		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
+
+		inline Eigen::Vector3d get_local_direction_body_b() const { return this->constraints->db_loc[this->idx]; };
+		inline auto& set_local_direction_body_b(const Eigen::Vector3d& d) const { this->constraints->db_loc[this->idx] = d; return (*this); };
+
+		inline double get_angle_tolerance_in_deg() const
+		{
+			// The actual tolerance used is the difference between the dot product of the max admissible angle plus the tolerance, minus the dot product of the admissible angle by itself
+			return utils::rad2deg(std::acos(this->constraints->admissible_dot[this->idx] - this->constraints->tolerance[this->idx])) - this->get_limit_angle_in_deg();
+		};
+		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg)
+		{
+			// The actual tolerance used is the difference between the dot product of the max admissible angle plus the tolerance, minus the dot product of the admissible angle by itself
+			this->constraints->tolerance[this->idx] = this->constraints->admissible_dot[this->idx] - std::cos(utils::deg2rad(this->get_limit_angle_in_deg() + tolerance_in_deg));
+			return (*this);
+		};
+
+		inline double get_limit_angle_in_deg() const 
+		{ 
+			return utils::rad2deg(std::acos(this->constraints->admissible_dot[this->idx])); // converts from the dot product of normalized vectors with that angle
+		};
+		inline auto& set_limit_angle_in_deg(double angle) 
+		{ 
+			const double angle_tol = this->get_angle_tolerance_in_deg();
+			this->constraints->admissible_dot[this->idx] = std::cos(utils::deg2rad(angle)); // converts to the dot product of normalized vectors with that angle
+			this->set_angle_tolerance_in_deg(angle_tol);
+			return (*this);
+		};
+
+		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
+		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
 	class RelativeLinearVelocityMotorHandler
@@ -212,19 +336,28 @@ namespace stark::models
 
 	public:
 		RelativeLinearVelocityMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::RelativeLinearVelocityMotors> constraints, int idx) 
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) {};
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
+		{};
+
 		inline RigidBodyHandler get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
-		inline double get_target_velocity() const { return this->constraints->target_v[this->idx]; };
-		inline double get_max_force() const { return this->constraints->max_force[this->idx]; };
-		inline double get_delay() const { return this->constraints->delay[this->idx]; };
 
-		inline void set_local_direction_body_a(const Eigen::Vector3d& x) { this->constraints->da_loc[this->idx] = x; };
-		inline void set_target_velocity(double velocity) { this->constraints->target_v[this->idx] = velocity; };
-		inline void set_max_force(double force) { this->constraints->max_force[this->idx] = force; };
-		inline void set_delay(double delay) { this->constraints->delay[this->idx] = delay; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
+		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
+		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
+
+		inline double get_target_velocity() const { return this->constraints->target_v[this->idx]; };
+		inline auto& set_target_velocity(double velocity) { this->constraints->target_v[this->idx] = velocity; return (*this); };
+
+		inline double get_max_force() const { return this->constraints->max_force[this->idx]; };
+		inline auto& set_max_force(double force) { this->constraints->max_force[this->idx] = force; return (*this); };
+
+		inline double get_delay() const { return this->constraints->delay[this->idx]; };
+		inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
 	class RelativeAngularVelocityMotorHandler
@@ -237,18 +370,28 @@ namespace stark::models
 
 	public:
 		RelativeAngularVelocityMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::RelativeAngularVelocityMotors> constraints, int idx) 
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) {};
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
+		{};
+
 		inline RigidBodyHandler get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline double get_target_angular_velocity() const { return this->constraints->target_w[this->idx]; };
-		inline double get_max_torque() const { return this->constraints->max_torque[this->idx]; };
-		inline double get_delay() const { return this->constraints->delay[this->idx]; };
 
-		inline void set_local_direction_body_a(const Eigen::Vector3d& x) { this->constraints->da_loc[this->idx] = x; };
-		inline void set_target_angular_velocity(double velocity) { this->constraints->target_w[this->idx] = velocity; };
-		inline void set_max_torque(double torque) { this->constraints->max_torque[this->idx] = torque; };
-		inline void set_delay(double delay) { this->constraints->delay[this->idx] = delay; };
-		inline void enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; };
+		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
+		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
+
+		inline double get_target_angular_velocity() const { return this->constraints->target_w[this->idx]; };
+		inline auto& set_target_angular_velocity(double velocity) { this->constraints->target_w[this->idx] = velocity; return (*this); };
+
+		inline double get_max_torque() const { return this->constraints->max_torque[this->idx]; };
+		inline auto& set_max_torque(double torque) { this->constraints->max_torque[this->idx] = torque; return (*this); };
+
+		inline double get_delay() const { return this->constraints->delay[this->idx]; };
+		inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
 
@@ -276,6 +419,7 @@ namespace stark::models
 			this->z_lock.enable(activation);
 			this->x_lock.enable(activation);
 		};
+		inline auto& set_label(std::string label);
 	};
 
 	class HingeJointHandler
@@ -298,6 +442,7 @@ namespace stark::models
 			this->ball_joint.enable(activation);
 			this->relative_direction_lock.enable(activation);
 		};
+		inline auto& set_label(std::string label);
 	};
 
 	class HingeJointWithLimitsHandler
@@ -320,6 +465,7 @@ namespace stark::models
 			this->hinge_joint.enable(activation);
 			this->angle_limit.enable(activation);
 		};
+		inline auto& set_label(std::string label);
 	};
 
 	class SpringWithLimitsHandler
@@ -342,8 +488,9 @@ namespace stark::models
 			this->spring.enable(activation);
 			this->distance_limit.enable(activation);
 		};
+		inline auto& set_label(std::string label);
 	};
-	
+
 	class SliderHandler
 	{
 	private:
@@ -364,8 +511,9 @@ namespace stark::models
 			this->point_on_axis.enable(activation);
 			this->relative_direction_lock.enable(activation);
 		};
+		inline auto& set_label(std::string label);
 	};
-	
+
 	class PrismaticSliderHandler
 	{
 	private:
@@ -386,8 +534,9 @@ namespace stark::models
 			this->slider.enable(activation);
 			this->relative_direction_lock.enable(activation);
 		};
+		inline auto& set_label(std::string label);
 	};
-	
+
 	class MotorHandler
 	{
 	private:
@@ -408,6 +557,7 @@ namespace stark::models
 			this->hinge.enable(activation);
 			this->motor.enable(activation);
 		};
+		inline auto& set_label(std::string label);
 	};
 
 	// Parallel Gripper, hydraulic press. Positive velocity for expansion.
@@ -431,5 +581,6 @@ namespace stark::models
 			this->prismatic_slider.enable(activation);
 			this->motor.enable(activation);
 		};
+		inline auto& set_label(std::string label);
 	};
 }

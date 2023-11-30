@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <vector>
 #include <array>
 #include <memory>
@@ -34,15 +35,18 @@ namespace stark::models
 			std::vector<double> stiffness;
 			std::vector<double> tolerance;
 			std::vector<double> is_active;
-			inline int add(int rb, const Eigen::Vector3d& loc, const Eigen::Vector3d& target_glob, double stiffness, double tolerance)
+			std::vector<std::string> labels;
+			inline int add(int rb, const Eigen::Vector3d& loc, const Eigen::Vector3d& target_glob, double stiffness, double tolerance, std::string label = "")
 			{
+				const int id = (int)this->is_active.size();
 				this->conn.numbered_push_back({rb});
 				this->loc.push_back(loc);
 				this->target_glob.push_back(target_glob);
 				this->stiffness.push_back(stiffness);
 				this->tolerance.push_back(tolerance);
 				this->is_active.push_back(1.0);
-				return (int)this->is_active.size() - 1;
+				this->labels.push_back((label == "") ? std::to_string(id) : label);
+				return id;
 			}
 		};
 
@@ -57,15 +61,18 @@ namespace stark::models
 			std::vector<double> stiffness;
 			std::vector<double> tolerance;
 			std::vector<double> is_active;
-			inline int add(int rb, const Eigen::Vector3d& d_loc, const Eigen::Vector3d& target_d_glob, double stiffness, double tolerance)
+			std::vector<std::string> labels;
+			inline int add(int rb, const Eigen::Vector3d& d_loc, const Eigen::Vector3d& target_d_glob, double stiffness, double tolerance, std::string label = "")
 			{
+				const int id = (int)this->is_active.size();
 				this->conn.numbered_push_back({rb});
 				this->d_loc.push_back(d_loc.normalized());
 				this->target_d_glob.push_back(target_d_glob.normalized());
 				this->stiffness.push_back(stiffness);
 				this->tolerance.push_back(tolerance);
 				this->is_active.push_back(1.0);
-				return (int)this->is_active.size() - 1;
+				this->labels.push_back((label == "") ? std::to_string(id) : label);
+				return id;
 			}
 		};
 
@@ -80,15 +87,18 @@ namespace stark::models
 			std::vector<double> stiffness;
 			std::vector<double> tolerance;
 			std::vector<double> is_active;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double stiffness, double tolerance)
+			std::vector<std::string> labels;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double stiffness, double tolerance, std::string label = "")
 			{
+				const int id = (int)this->is_active.size();
 				this->conn.numbered_push_back({ rb_a, rb_b });
 				this->a_loc.push_back(a_loc);
 				this->b_loc.push_back(b_loc);
 				this->stiffness.push_back(stiffness);
 				this->tolerance.push_back(tolerance);
 				this->is_active.push_back(1.0);
-				return (int)this->is_active.size() - 1;
+				this->labels.push_back((label == "") ? std::to_string(id) : label);
+				return id;
 			}
 		};
 
@@ -103,15 +113,18 @@ namespace stark::models
 			std::vector<double> stiffness;
 			std::vector<double> tolerance;
 			std::vector<double> is_active;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double stiffness, double tolerance)
+			std::vector<std::string> labels;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double stiffness, double tolerance, std::string label = "")
 			{
+				const int id = (int)this->is_active.size();
 				this->conn.numbered_push_back({ rb_a, rb_b });
 				this->da_loc.push_back(da_loc.normalized());
 				this->db_loc.push_back(db_loc.normalized());
 				this->stiffness.push_back(stiffness);
 				this->tolerance.push_back(tolerance);
 				this->is_active.push_back(1.0);
-				return (int)this->is_active.size() - 1;
+				this->labels.push_back((label == "") ? std::to_string(id) : label);
+				return id;
 			}
 		};
 
@@ -127,8 +140,10 @@ namespace stark::models
 			std::vector<double> stiffness;
 			std::vector<double> tolerance;
 			std::vector<double> is_active;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& b_loc, double stiffness, double tolerance)
+			std::vector<std::string> labels;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& b_loc, double stiffness, double tolerance, std::string label = "")
 			{
+				const int id = (int)this->is_active.size();
 				this->conn.numbered_push_back({ rb_a, rb_b });
 				this->a_loc.push_back(a_loc);
 				this->da_loc.push_back(da_loc.normalized());
@@ -136,7 +151,8 @@ namespace stark::models
 				this->stiffness.push_back(stiffness);
 				this->tolerance.push_back(tolerance);
 				this->is_active.push_back(1.0);
-				return (int)this->is_active.size() - 1;
+				this->labels.push_back((label == "") ? std::to_string(id) : label);
+				return id;
 			}
 		};
 
@@ -152,8 +168,10 @@ namespace stark::models
 			std::vector<double> damping;
 			std::vector<double> stiffness;
 			std::vector<double> is_active;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double rest_length, double stiffness, double damping)
+			std::vector<std::string> labels;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double rest_length, double stiffness, double damping, std::string label = "")
 			{
+				const int id = (int)this->is_active.size();
 				this->conn.numbered_push_back({ rb_a, rb_b });
 				this->a_loc.push_back(a_loc);
 				this->b_loc.push_back(b_loc);
@@ -161,7 +179,8 @@ namespace stark::models
 				this->stiffness.push_back(stiffness);
 				this->damping.push_back(damping);
 				this->is_active.push_back(1.0);
-				return (int)this->is_active.size() - 1;
+				this->labels.push_back((label == "") ? std::to_string(id) : label);
+				return id;
 			}
 		};
 
@@ -178,8 +197,10 @@ namespace stark::models
 			std::vector<double> stiffness;
 			std::vector<double> tolerance;
 			std::vector<double> is_active;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double min_length, double max_length, double stiffness, double tolerance)
+			std::vector<std::string> labels;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double min_length, double max_length, double stiffness, double tolerance, std::string label = "")
 			{
+				const int id = (int)this->is_active.size();
 				this->conn.numbered_push_back({ rb_a, rb_b });
 				this->a_loc.push_back(a_loc);
 				this->b_loc.push_back(b_loc);
@@ -188,7 +209,8 @@ namespace stark::models
 				this->stiffness.push_back(stiffness);
 				this->tolerance.push_back(tolerance);
 				this->is_active.push_back(1.0);
-				return (int)this->is_active.size() - 1;
+				this->labels.push_back((label == "") ? std::to_string(id) : label);
+				return id;
 			}
 		};
 
@@ -204,8 +226,10 @@ namespace stark::models
 			std::vector<double> stiffness;
 			std::vector<double> tolerance;
 			std::vector<double> is_active;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double admissible_dot, double stiffness, double tolerance)
+			std::vector<std::string> labels;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double admissible_dot, double stiffness, double tolerance, std::string label = "")
 			{
+				const int id = (int)this->is_active.size();
 				this->conn.numbered_push_back({ rb_a, rb_b });
 				this->da_loc.push_back(da_loc.normalized());
 				this->db_loc.push_back(db_loc.normalized());
@@ -213,7 +237,8 @@ namespace stark::models
 				this->stiffness.push_back(stiffness);
 				this->tolerance.push_back(tolerance);
 				this->is_active.push_back(1.0);
-				return (int)this->is_active.size() - 1;
+				this->labels.push_back((label == "") ? std::to_string(id) : label);
+				return id;
 			}
 		};
 
@@ -228,15 +253,18 @@ namespace stark::models
 			std::vector<double> max_force;
 			std::vector<double> delay;
 			std::vector<double> is_active;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, double target_v, double max_force, double delay)
+			std::vector<std::string> labels;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, double target_v, double max_force, double delay, std::string label = "")
 			{
+				const int id = (int)this->is_active.size();
 				this->conn.numbered_push_back({ rb_a, rb_b });
 				this->da_loc.push_back(da_loc.normalized());
 				this->target_v.push_back(target_v);
 				this->max_force.push_back(max_force);
 				this->delay.push_back(delay);
 				this->is_active.push_back(1.0);
-				return (int)this->is_active.size() - 1;
+				this->labels.push_back((label == "") ? std::to_string(id) : label);
+				return id;
 			}
 		};
 
@@ -251,15 +279,18 @@ namespace stark::models
 			std::vector<double> max_torque;
 			std::vector<double> delay;
 			std::vector<double> is_active;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, double target_w, double max_torque, double delay)
+			std::vector<std::string> labels;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, double target_w, double max_torque, double delay, std::string label = "")
 			{
+				const int id = (int)this->is_active.size();
 				this->conn.numbered_push_back({ rb_a, rb_b });
 				this->da_loc.push_back(da_loc.normalized());
 				this->target_w.push_back(target_w);
 				this->max_torque.push_back(max_torque);
 				this->delay.push_back(delay);
 				this->is_active.push_back(1.0);
-				return (int)this->is_active.size() - 1;
+				this->labels.push_back((label == "") ? std::to_string(id) : label);
+				return id;
 			}
 		};
 	};

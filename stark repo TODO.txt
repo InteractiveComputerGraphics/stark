@@ -4,9 +4,12 @@ stark repo TODO
 Oct unification
 ---------------
 	Tolerances
+		* Test set/get angle limits
+		* Finish setters and getters for derived constraints
 		* Constraints should have labels so we can print which joint, linking which objects, needed to increase stiffness to what and what was the problem.
 		* Tolerances to deformables BC
 		* UI? Or we just keep the values fixed from initialization...
+	
 	
 	* Attachments
 	
@@ -208,7 +211,9 @@ Mid priority
 		Counter-argument: I could also make a mistake by passing the wrong cloth id.
 	* Investigate why it is so hard to simulate a bunch of spheres as triangular objects in a cup.
 	* Pause simulations. Sometimes you want to do something in the cluster and need pausing.
-	
+	* We need extremely good documentation of the C++/Python library and the code.
+		Generate illustrations for everything: Joints, shells...
+		These pictures will get indexed by google and that will bring more people.
 		
 Low priority
 ------------

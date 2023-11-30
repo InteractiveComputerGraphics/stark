@@ -16,18 +16,24 @@ namespace stark::models
 	class RigidBodies 
 	{
 	private:
-		constexpr static double DEFAULT_HARD_STIFFNESS = 1e6;
-		constexpr static double DEFAULT_HARD_TOLERANCE_IN_M = 0.001;
-		constexpr static double DEFAULT_HARD_TOLERANCE_IN_DEG = 1.0;
-
-	public:
 		/* Fields */
 		spRigidBodiesInternal rb;
+		double default_stiffness = 1e6;
+		double default_tolerance_in_m = 0.001;
+		double default_tolerance_in_deg = 1.0;
 
+	public:
 		/* Methods */
 		RigidBodies(stark::core::Stark& stark, spRigidBodyDynamics dyn);
 		void write_render_meshes(bool boolean = true);
 		void write_collision_meshes(bool boolean = true);
+
+		void set_default_constraint_stiffness(double stiffness);
+		void set_default_constraint_distance_tolerance(double tolerance_in_m);
+		void set_default_constraint_angle_tolerance(double tolerance_in_deg);
+		double get_default_constraint_stiffness() const;
+		double get_default_constraint_distance_tolerance() const;
+		double get_default_constraint_angle_tolerance() const;
 
 		// Add rigid bodies
 		RigidBodyHandler add(const double mass, const Eigen::Matrix3d& inertia_local);
@@ -41,37 +47,27 @@ namespace stark::models
 		//// Base
 		AnchorPointHandler add_constraint_anchor_point(
 			const RigidBodyHandler& body, 
-			const Eigen::Vector3d& p_glob, 
-			double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M, 
-			double stiffness = DEFAULT_HARD_STIFFNESS
+			const Eigen::Vector3d& p_glob
 		);
 		AbsoluteDirectionLockHandler add_constraint_absolute_direction_lock(
 			const RigidBodyHandler& body, 
-			const Eigen::Vector3d& d_glob, 
-			double tolerance_in_deg = DEFAULT_HARD_TOLERANCE_IN_DEG, 
-			double stiffness = DEFAULT_HARD_STIFFNESS
+			const Eigen::Vector3d& d_glob
 		);
 		BallJointHandler add_constraint_ball_joint(
 			const RigidBodyHandler& body_a, 
 			const RigidBodyHandler& body_b, 
-			const Eigen::Vector3d& p_glob, 
-			double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M, 
-			double stiffness = DEFAULT_HARD_STIFFNESS
+			const Eigen::Vector3d& p_glob
 		);
 		RelativeDirectionLockHandler add_constraint_relative_direction_lock(
 			const RigidBodyHandler& body_a, 
 			const RigidBodyHandler& body_b, 
-			const Eigen::Vector3d& d_glob,
-			double tolerance_in_deg = DEFAULT_HARD_TOLERANCE_IN_DEG, 
-			double stiffness = DEFAULT_HARD_STIFFNESS
+			const Eigen::Vector3d& d_glob
 		);
 		PointOnAxisConstraintHandler add_constraint_point_on_axis(
 			const RigidBodyHandler& body_a, 
 			const RigidBodyHandler& body_b, 
 			const Eigen::Vector3d& p_glob, 
-			const Eigen::Vector3d& d_glob, 
-			double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M,
-			double stiffness = DEFAULT_HARD_STIFFNESS
+			const Eigen::Vector3d& d_glob
 		);
 		DampedSpringHandler add_spring(
 			const RigidBodyHandler& body_a,
@@ -87,17 +83,13 @@ namespace stark::models
 			const Eigen::Vector3d& a_glob, 
 			const Eigen::Vector3d& b_glob, 
 			double min_length,
-			double max_length, 
-			double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M,
-			double stiffness = DEFAULT_HARD_STIFFNESS
+			double max_length
 		);
 		AngleLimitHandler add_constraint_angle_limits(
 			const RigidBodyHandler& body_a,
 			const RigidBodyHandler& body_b, 
 			const Eigen::Vector3d& d_glob,
-			double admissible_angle_deg, 
-			double tolerance_in_deg = DEFAULT_HARD_TOLERANCE_IN_DEG,
-			double stiffness = DEFAULT_HARD_STIFFNESS
+			double admissible_angle_deg
 		);
 		RelativeLinearVelocityMotorHandler add_relative_linear_velocity_motor(
 			const RigidBodyHandler& body_a, 
@@ -118,45 +110,32 @@ namespace stark::models
 		
 		//// Derived
 		FixedConstraintHandler add_constraint_fixed(
-			const RigidBodyHandler& body, 
-			double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M,
-			double tolerance_in_deg = DEFAULT_HARD_TOLERANCE_IN_DEG, 
-			double stiffness = DEFAULT_HARD_STIFFNESS);
+			const RigidBodyHandler& body
+		);
 		HingeJointHandler add_constraint_hinge(
 			const RigidBodyHandler& body_a, 
 			const RigidBodyHandler& body_b,
 			const Eigen::Vector3d& p_glob, 
-			const Eigen::Vector3d& d_glob, 
-			double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M, 
-			double tolerance_in_deg = DEFAULT_HARD_TOLERANCE_IN_DEG, 
-			double stiffness = DEFAULT_HARD_STIFFNESS);
+			const Eigen::Vector3d& d_glob
+		);
 		HingeJointWithLimitsHandler add_constraint_hinge_with_limits(
 			const RigidBodyHandler& body_a, 
 			const RigidBodyHandler& body_b, 
 			const Eigen::Vector3d& p_glob, 
 			const Eigen::Vector3d& d_glob,
-			double admissible_angle_deg, 
-			double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M, 
-			double tolerance_in_deg = DEFAULT_HARD_TOLERANCE_IN_DEG, 
-			double stiffness = DEFAULT_HARD_STIFFNESS
+			double admissible_angle_deg
 		);
 		SliderHandler add_constraint_slider(
 			const RigidBodyHandler& body_a,
 			const RigidBodyHandler& body_b,
 			const Eigen::Vector3d& p_glob,
-			const Eigen::Vector3d& d_glob,
-			double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M, 
-			double tolerance_in_deg = DEFAULT_HARD_TOLERANCE_IN_DEG,
-			double stiffness = DEFAULT_HARD_STIFFNESS
+			const Eigen::Vector3d& d_glob
 		);
 		PrismaticSliderHandler add_constraint_prismatic_slider(
 			const RigidBodyHandler& body_a,
 			const RigidBodyHandler& body_b,
 			const Eigen::Vector3d& p_glob, 
-			const Eigen::Vector3d& d_glob, 
-			double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M, 
-			double tolerance_in_deg = DEFAULT_HARD_TOLERANCE_IN_DEG, 
-			double stiffness = DEFAULT_HARD_STIFFNESS
+			const Eigen::Vector3d& d_glob
 		);
 		SpringWithLimitsHandler add_spring_with_limits(
 			const RigidBodyHandler& body_a,
@@ -166,9 +145,7 @@ namespace stark::models
 			double stiffness,
 			double min_length,
 			double max_length,
-			double damping = 0.0, 
-			double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M, 
-			double limit_stiffness = DEFAULT_HARD_STIFFNESS
+			double damping = 0.0
 		);
 		PrismaticPressHandler add_prismatic_press(
 			const RigidBodyHandler& body_a, 
@@ -177,10 +154,7 @@ namespace stark::models
 			const Eigen::Vector3d& d_glob, 
 			double target_v,
 			double max_force,
-			double delay = 0.01, 
-			double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M, 
-			double tolerance_in_deg = DEFAULT_HARD_TOLERANCE_IN_DEG, 
-			double slider_stiffness = DEFAULT_HARD_STIFFNESS
+			double delay = 0.01
 		);
 		MotorHandler add_motor(
 			const RigidBodyHandler& body_a, 
@@ -189,10 +163,7 @@ namespace stark::models
 			const Eigen::Vector3d& d_glob, 
 			double target_w, 
 			double max_torque,
-			double delay = 0.01, 
-			double tolerance_in_m = DEFAULT_HARD_TOLERANCE_IN_M, 
-			double tolerance_in_deg = DEFAULT_HARD_TOLERANCE_IN_DEG,
-			double hinge_stiffness = DEFAULT_HARD_STIFFNESS
+			double delay = 0.01
 		);
 	};
 	using spRigidBodies = std::shared_ptr<RigidBodies>;
