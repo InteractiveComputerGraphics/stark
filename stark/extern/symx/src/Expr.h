@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <array>
 #include <cstring>
+#include <cassert>
 
 namespace symx
 {
@@ -18,7 +19,6 @@ namespace symx
 		Branch = 2,
 
 		// Numbers
-		//ConstantInteger = 3,  // Only used for powN
 		ConstantFloat = 4,
 		Symbol = 5,
 
@@ -26,31 +26,35 @@ namespace symx
 		Add = 6,
 		Sub = 7,
 		Mul = 8,
-		//Div = 9,
 		Reciprocal = 9,
 		PowN = 10,
 		PowF = 11,
 		Sqrt = 12,
 		Ln = 13,
-		Exp = 14, 
-		Sin = 15, 
-		Cos = 16, 
+		Exp = 14,
+		Sin = 15,
+		Cos = 16,
 		Tan = 17,
 		ArcSin = 18,
 		ArcCos = 19,
-		ArcTan = 20
+		ArcTan = 20,
+
+		EnumCount = 21 // This entry serves as a marker
 	};
-	static std::vector<std::string> get_expr_type_labels()
-	{
-		return { "Zero", "One", "Branch", "ConstantInteger", "ConstantFloat", "Symbol", "Add", "Sub", "Mul", "Inv", "PowN", "PowF", "Sqrt", "Log", "Exp", "Sin", "Cos", "Tan", "ArcSin", "ArcCos", "ArcTan" };
-	}
 	constexpr static bool is_operation(const ExprType& type)
 	{
-		return static_cast<int32_t>(type) > 5;
+		return static_cast<int32_t>(ExprType::Add) <= static_cast<int32_t>(type)
+			&& static_cast<int32_t>(type) < static_cast<int32_t>(ExprType::EnumCount);
 	}
 	constexpr static int n_expr_types()
 	{
-		return 18;
+		return static_cast<int32_t>(ExprType::EnumCount);
+	}
+	static std::vector<std::string> get_expr_type_labels()
+	{
+		std::vector<std::string> labels = { "Zero", "One", "Branch", "ConstantInteger", "ConstantFloat", "Symbol", "Add", "Sub", "Mul", "Inv", "PowN", "PowF", "Sqrt", "Log", "Exp", "Sin", "Cos", "Tan", "ArcSin", "ArcCos", "ArcTan" };
+		assert(labels.size() == n_expr_types());
+		return labels;
 	}
 
 	struct Expr
