@@ -208,6 +208,6 @@ int main()
 	//net();
 	//rb();
 
-	//rb_constraints_all();
-	rb_constraints_relative_direction_lock();
+	rb_constraints_all();
+	//rb_constraints_angle_limits();
 }

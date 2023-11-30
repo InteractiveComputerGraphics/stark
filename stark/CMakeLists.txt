@@ -110,14 +110,14 @@ set(MODELS_FILES
 	${MODELS_RIGIDBODIES_FILES}
 	#${MODELS_INTERACTIONS_FILES}
 
+	src/models/distances.cpp
+	src/models/distances.h
 	src/models/include_ui_models.h
 	src/models/IntervalVector.h
 	src/models/MeshOutputGroups.cpp
 	src/models/MeshOutputGroups.h
 	src/models/Simulation.cpp
 	src/models/Simulation.h
-	src/models/symx_distances.cpp
-	src/models/symx_distances.h
 	src/models/time_integration.cpp
 	src/models/time_integration.h
 	)

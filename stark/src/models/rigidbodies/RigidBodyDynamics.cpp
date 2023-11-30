@@ -14,6 +14,7 @@ stark::models::RigidBodyDynamics::RigidBodyDynamics(stark::core::Stark& stark)
 }
 int stark::models::RigidBodyDynamics::add()
 {
+	const int id = (int)this->t0.size();
 	this->t0.push_back(Eigen::Vector3d::Zero());
 	this->t1.push_back(Eigen::Vector3d::Zero());
 	this->q0.push_back(Eigen::Quaterniond::Identity());
@@ -28,8 +29,9 @@ int stark::models::RigidBodyDynamics::add()
 	this->aa.push_back(Eigen::Vector3d::Zero());
 	this->force.push_back(Eigen::Vector3d::Zero());
 	this->torque.push_back(Eigen::Vector3d::Zero());
+	this->labels.push_back(std::to_string(id));
 
-	return (int)this->t0.size() - 1;
+	return id;
 }
 int stark::models::RigidBodyDynamics::get_n_bodies() const
 {

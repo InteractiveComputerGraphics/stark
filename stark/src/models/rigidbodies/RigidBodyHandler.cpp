@@ -11,6 +11,15 @@ int stark::models::RigidBodyHandler::index() const
 {
 	return this->idx;
 }
+std::string stark::models::RigidBodyHandler::get_label() const
+{
+	return this->rb->dyn->labels[this->idx];
+}
+stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::set_label(std::string label)
+{
+	this->rb->dyn->labels[this->idx] = label;
+	return (*this);
+}
 double stark::models::RigidBodyHandler::get_mass() const
 {
 	return this->rb->inertia->mass[this->idx];

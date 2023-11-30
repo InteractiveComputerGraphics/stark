@@ -1,7 +1,7 @@
 #include "EnergyRigidBodyConstraints.h"
 
 #include "rigidbody_transformations.h"
-#include "../symx_distances.h"
+#include "../distances.h"
 
 stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark& stark, spRigidBodyDynamics dyn)
 	: dyn(dyn)
@@ -362,6 +362,54 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 		const double C = (da1 - db1).norm();
 		const double tol = data->tolerance[idx];
 		if (C > tol) {
+			is_valid = false;
+			data->stiffness[idx] *= multiplier;
+		}
+	}
+
+	// Point On Axis
+	for (int i = 0; i < (int)this->point_on_axis->conn.size(); i++) {
+		auto& data = this->point_on_axis;
+		auto [idx, a, b] = data->conn[i];
+		const Eigen::Vector3d a1 = this->_get_x1(a, data->a_loc[idx], dt);
+		const Eigen::Vector3d da1 = this->_get_d1(a, data->da_loc[idx], dt);
+		const Eigen::Vector3d b1 = this->_get_x1(b, data->b_loc[idx], dt);
+		const double C = distance_point_line(b1, a1, a1 + da1);
+		const double tol = data->tolerance[idx];
+		if (C > tol) {
+			is_valid = false;
+			data->stiffness[idx] *= multiplier;
+		}
+	}
+
+	// Distance Limits
+	for (int i = 0; i < (int)this->distance_limits->conn.size(); i++) {
+		auto& data = this->distance_limits;
+		auto [idx, a, b] = data->conn[i];
+		const Eigen::Vector3d a1 = this->_get_x1(a, data->a_loc[idx], dt);
+		const Eigen::Vector3d b1 = this->_get_x1(b, data->b_loc[idx], dt);
+		const double& min_distance = data->min_length[idx];
+		const double& max_distance = data->max_length[idx];
+		const double d = (a1 - b1).norm();
+
+		const double tol = data->tolerance[idx];
+		if (d < (min_distance - tol) || (max_distance + tol) < d) {
+			is_valid = false;
+			data->stiffness[idx] *= multiplier;
+		}
+	}
+
+	// Angle Limits
+	for (int i = 0; i < (int)this->angle_limits->conn.size(); i++) {
+		auto& data = this->angle_limits;
+		auto [idx, a, b] = data->conn[i];
+		const Eigen::Vector3d da1 = this->_get_d1(a, data->da_loc[idx], dt);
+		const Eigen::Vector3d db1 = this->_get_d1(b, data->db_loc[idx], dt);
+		const double& admissible_dot = data->admissible_dot[idx];
+		const double dot = da1.dot(db1);
+
+		const double tol = data->tolerance[idx];
+		if (dot < admissible_dot - tol) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
 		}

@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <vector>
 #include <array>
 #include <memory>
@@ -33,6 +34,7 @@ namespace stark::models
 		std::vector<Eigen::Vector3d> torque;  // Torques
 		symx::DoF dof_v;
 		symx::DoF dof_w;
+		std::vector<std::string> labels;
 
 		/* Methods */
 		RigidBodyDynamics(stark::core::Stark& stark);

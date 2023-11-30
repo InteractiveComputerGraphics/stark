@@ -1,8 +1,18 @@
 #pragma once
 #include <symx>
+#include <Eigen/Dense>
 
 namespace stark::models
 {
+	double sq_distance_point_point(const Eigen::Vector3d& p, const Eigen::Vector3d& q);
+	double sq_distance_point_line(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b);
+	double sq_distance_point_plane(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c);
+	double sq_distance_line_line(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& p, const Eigen::Vector3d& q);
+	double distance_point_point(const Eigen::Vector3d& p, const Eigen::Vector3d& q);
+	double distance_point_line(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b);
+	double distance_point_plane(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c);
+	double distance_line_line(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& p, const Eigen::Vector3d& q);
+
 	symx::Scalar sq_distance_point_point(const symx::Vector& p, const symx::Vector& q);
 	symx::Scalar sq_distance_point_line(const symx::Vector& p, const symx::Vector& a, const symx::Vector& b);
 	symx::Scalar sq_distance_point_plane(const symx::Vector& p, const symx::Vector& a, const symx::Vector& b, const symx::Vector& c);
@@ -11,11 +21,4 @@ namespace stark::models
 	symx::Scalar distance_point_line(const symx::Vector& p, const symx::Vector& a, const symx::Vector& b);
 	symx::Scalar distance_point_plane(const symx::Vector& p, const symx::Vector& a, const symx::Vector& b, const symx::Vector& c);
 	symx::Scalar distance_line_line(const symx::Vector& a, const symx::Vector& b, const symx::Vector& p, const symx::Vector& q);
-
-	/*
-		Distance between point p and line (a, b) when:
-			- u_normalized = (b - a).normalized()
-			- r = p - a
-	*/
-	symx::Scalar distance_sq_point_line(const symx::Vector& r, const symx::Vector& u_normalized);
 }

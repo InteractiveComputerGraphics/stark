@@ -37,19 +37,16 @@ void rb_constraints_ball_joint()
 	template_sim("ball_joint", 
 		[](stark::models::Simulation& sim, stark::models::RigidBodyHandler& box0) 
 		{
-			const double tolerance_in_m = 0.001;
-			const double stiffness = 1e6;
-
 			auto prev = box0;
-			const int N = 100;
+			const int N = 10;
 			for (int i = 1; i < N; i++) {
 				auto curr = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 					.set_translation({0.1*i, 0.0, 0.0});
 				if (i % 2) {
-					sim.rigidbodies->add_constraint_ball_joint(prev, curr, {0.05 + (i-1)*0.1, -0.05, -0.05}, tolerance_in_m, stiffness);
+					sim.rigidbodies->add_constraint_ball_joint(prev, curr, {0.05 + (i-1)*0.1, -0.05, -0.05});
 				}
 				else {
-					sim.rigidbodies->add_constraint_ball_joint(prev, curr, {0.05 + (i-1)*0.1, 0.05, 0.05}, tolerance_in_m, stiffness);
+					sim.rigidbodies->add_constraint_ball_joint(prev, curr, {0.05 + (i-1)*0.1, 0.05, 0.05});
 				}
 				prev = curr;
 			}
@@ -99,7 +96,7 @@ void rb_constraints_point_on_axis()
 				prev = curr;
 			}
 
-			sim.rigidbodies->add_constraint_point_on_axis(box0, prev, Eigen::Vector3d::UnitX(), prev.get_translation());
+			sim.rigidbodies->add_constraint_point_on_axis(box0, prev, prev.get_translation(), Eigen::Vector3d::UnitX());
 		}
 	);
 }
@@ -121,7 +118,7 @@ void rb_constraints_distance_limits()
 		{
 			auto box1 = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 				.set_translation({ 0.5, 0.0, 0.0 });
-			sim.rigidbodies->add_constraint_distance_limits(box0, box1, box0.get_translation(), box1.get_translation() - 0.05*Eigen::Vector3d::Ones(), 0.51, 0.8);
+			sim.rigidbodies->add_constraint_distance_limits(box0, box1, box0.get_translation(), box1.get_translation() - 0.05*Eigen::Vector3d::Ones(), 0.44, 0.8);
 		}
 	);
 }
@@ -132,7 +129,7 @@ void rb_constraints_angle_limits()
 		{
 			auto box1 = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 				.set_translation({ 0.5, 0.0, 0.0 });
-			sim.rigidbodies->add_constraint_distance_limits(box0, box1, box0.get_translation(), box1.get_translation() - 0.05*Eigen::Vector3d::Ones(), 0.51, 0.8);
+			sim.rigidbodies->add_constraint_distance_limits(box0, box1, box0.get_translation(), box1.get_translation() - 0.05*Eigen::Vector3d::Ones(), 0.44, 0.8);
 			sim.rigidbodies->add_constraint_angle_limits(box0, box1, Eigen::Vector3d::UnitZ(), 20.0);
 		}
 	);
@@ -190,7 +187,7 @@ void rb_constraints_spring_with_limits()
 		{
 			auto box1 = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 				.set_translation({ 0.1, 0.0, 0.0 });
-			sim.rigidbodies->add_spring_with_limits(box0, box1, box0.get_translation(), box1.get_translation(), 0.2, 0.11, 0.8);
+			sim.rigidbodies->add_spring_with_limits(box0, box1, box0.get_translation(), box1.get_translation(), 0.2, 0.09, 0.8);
 		}
 	);
 }
@@ -213,7 +210,7 @@ void rb_constraints_motor()
 		{
 			auto box1 = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 				.set_translation({ 0.2, 0.0, 0.0 });
-			sim.rigidbodies->add_motor(box0, box1, box0.get_translation(), Eigen::Vector3d::UnitY(), -10.0, 10.0, 0.01);
+			sim.rigidbodies->add_motor(box0, box1, box0.get_translation(), Eigen::Vector3d::UnitY(), -1.0);
 		}
 	);
 }

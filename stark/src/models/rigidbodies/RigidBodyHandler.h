@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RigidBodiesInternal.h"
+#include <fmt/chrono.h>
 
 
 namespace stark::models
@@ -15,6 +16,9 @@ namespace stark::models
 		RigidBodyHandler(spRigidBodiesInternal rb, int idx);
 
 		int index() const;
+
+		std::string get_label() const;
+		RigidBodyHandler& set_label(std::string name);
 
 		double get_mass() const;
 		RigidBodyHandler& set_mass(double mass);

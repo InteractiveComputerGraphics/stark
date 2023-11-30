@@ -4,11 +4,9 @@ stark repo TODO
 Oct unification
 ---------------
 	Tolerances
-		* Probably better to set stiffness and tolerances with setters and not in the function call?
-			I am not sure... The user can ignore the tolerances but they will be aware of them.
-			Hiding them is not a good idea.
-		* Use tolerance in all constraints in the UI
+		* Constraints should have labels so we can print which joint, linking which objects, needed to increase stiffness to what and what was the problem.
 		* Tolerances to deformables BC
+		* UI? Or we just keep the values fixed from initialization...
 	
 	* Attachments
 	
@@ -91,6 +89,11 @@ Oct unification
 		It should also be a pointer so the user can change it. Right now it's confusing.
 	* Clean up files and Cmake
 	* Check the output frames for code duplicities
+	* Sanitize all the UI
+		negative stiffness, tolerances, ...
+	* The whole Stark and SymX must have a public/private sweep. There is so many places users can get when declaring energies...
+		They should only have access to whatever `energy` offers.
+	* SymX uses "get_..." and Stark "make_..." for symbols
 		
 	* Modelling:
 		- Add twisting to rods
