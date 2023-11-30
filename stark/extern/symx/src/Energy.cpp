@@ -160,6 +160,29 @@ symx::Matrix symx::Energy::make_matrix(std::function<const double* ()> data, std
 	return matrix;
 }
 
+symx::Scalar symx::Energy::make_zero()
+{
+	return this->sws.get_zero();
+}
+symx::Scalar symx::Energy::make_one()
+{
+	return this->sws.get_one();
+}
+symx::Vector symx::Energy::make_zero_vector(const int32_t size)
+{
+	return this->sws.get_zero_vector(size);
+}
+symx::Matrix symx::Energy::make_zero_matrix(const std::array<int32_t, 2> shape)
+{
+	return this->sws.get_zero_matrix(shape);
+}
+symx::Matrix symx::Energy::make_identity_matrix(const int32_t size)
+{
+	return this->sws.get_identity_matrix(size);
+}
+
+
+
 void symx::Energy::evaluate_E(Assembly& assembly, const bool runtime_NaN_check)
 {
 	if (!this->is_active) { return; }

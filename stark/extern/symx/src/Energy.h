@@ -126,6 +126,13 @@ namespace symx
 		template<std::size_t STRIDE>
 		Vector make_summation_vector(const std::vector<std::array<double, STRIDE>>& iteration_vectors);
 
+		// Make constants
+		Scalar make_zero();
+		Scalar make_one();
+		Vector make_zero_vector(const int32_t size);
+		Matrix make_zero_matrix(const std::array<int32_t, 2> shape);
+		Matrix make_identity_matrix(const int32_t size);
+
 		// Evaluations
 		void evaluate_E(Assembly& assembly, const bool runtime_NaN_check = false);
 		void evaluate_E_grad(Assembly& assembly, const bool runtime_NaN_check = false);
