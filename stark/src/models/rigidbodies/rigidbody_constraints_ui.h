@@ -7,9 +7,9 @@
 
 namespace stark::models
 {
-	/* ========================================================================================== */
-	/* ===================================  BASE CONSTRAINTS  =================================== */
-	/* ========================================================================================== */
+	/* ================================================================================================================================== */
+	/* =======================================================  BASE CONSTRAINTS  ======================================================= */
+	/* ================================================================================================================================== */
 	
 	class AnchorPointHandler
 	{
@@ -395,9 +395,9 @@ namespace stark::models
 	};
 
 
-	/* ============================================================================================= */
-	/* ===================================  DERIVED CONSTRAINTS  =================================== */
-	/* ============================================================================================= */
+	/* ===================================================================================================================================== */
+	/* =======================================================  DERIVED CONSTRAINTS  ======================================================= */
+	/* ===================================================================================================================================== */
 	class FixedConstraintHandler
 	{
 	private:
@@ -405,6 +405,7 @@ namespace stark::models
 		AbsoluteDirectionLockHandler z_lock;
 		AbsoluteDirectionLockHandler x_lock;
 		RigidBodyHandler rb;
+		std::string label = "";
 
 	public:
 		FixedConstraintHandler(RigidBodyHandler rb, AnchorPointHandler anchor_point, AbsoluteDirectionLockHandler z_lock, AbsoluteDirectionLockHandler x_lock)
@@ -413,13 +414,28 @@ namespace stark::models
 		inline AnchorPointHandler get_anchor_point() { return this->anchor_point; };
 		inline AbsoluteDirectionLockHandler get_z_lock() { return this->z_lock; };
 		inline AbsoluteDirectionLockHandler get_x_lock() { return this->x_lock; };
-		inline void enable(bool activation)
+
+		inline auto& set_stiffness(double stiffness);
+		inline auto& set_distance_tolerance_in_m(double tolerance_in_m);
+		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg);
+
+		inline std::string get_label() const { return this->label; };
+		inline auto& set_label(std::string label) 
+		{ 
+			this->label = label;
+			this->anchor_point.set_label(label + "_anchor_point");
+			this->z_lock.set_label(label + "_z_lock");
+			this->x_lock.set_label(label + "_x_lock");
+			return (*this); 
+		};
+
+		inline auto& enable(bool activation)
 		{
 			this->anchor_point.enable(activation);
 			this->z_lock.enable(activation);
 			this->x_lock.enable(activation);
+			return (*this);
 		};
-		inline auto& set_label(std::string label);
 	};
 
 	class HingeJointHandler
