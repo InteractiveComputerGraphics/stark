@@ -7,11 +7,22 @@
 #include <Eigen/Dense>
 #include <symx>
 
+#include "../../utils/mesh_utils.h"
 
 namespace stark::models
 {
 	struct BaseRigidBodyConstraints
 	{
+		/* ===========================================   HELPERS  =========================================== */
+		inline static double get_angle_deg_from_distance_violation(double violation)
+		{
+			return utils::rad2deg(std::asin(violation));
+		}
+		inline static double get_angle_deg_from_dot(double dot)
+		{
+			return utils::rad2deg(std::acos(dot)); // converts from the dot product of normalized vectors with that angle
+		}
+
 		/* ===========================================   DEFINITIONS  =========================================== */
 		/*
 			Terms:

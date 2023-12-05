@@ -3,6 +3,8 @@
 #include <vector>
 #include <memory>
 
+#include <symx>
+
 #include "RigidBodyDynamics.h"
 #include "BaseRigidBodyConstraints.h"
 
@@ -28,6 +30,10 @@ namespace stark::models
 		std::shared_ptr<BaseRigidBodyConstraints::RelativeLinearVelocityMotors> relative_linear_velocity_motors;
 		std::shared_ptr<BaseRigidBodyConstraints::RelativeAngularVelocityMotors> relative_angular_velocity_motors;
 
+		// Output
+		core::Logger logger;
+
+	private:
         /* Methods */
         void _set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt, const symx::Scalar& is_active);
 
@@ -39,10 +45,11 @@ namespace stark::models
         Eigen::Vector3d _get_x1(int rb_idx, const Eigen::Vector3d& x_loc, double dt);
         Eigen::Vector3d _get_d1(int rb_idx, const Eigen::Vector3d& d_loc, double dt);
 
-	private:
+		// SymX callbacks
 		bool _is_converged_state_valid(core::Stark& stark);
 		void _after_time_step(core::Stark& stark);
-		bool _adjust_constraints_stiffness(core::Stark& stark, double cap, double multiplier);
+		void _write_frame(core::Stark& stark);
+		bool _adjust_constraints_stiffness(core::Stark& stark, double cap, double multiplier, bool log);
 	};
     using spEnergyRigidBodyConstraints = std::shared_ptr<EnergyRigidBodyConstraints>;
 }

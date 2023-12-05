@@ -3,13 +3,32 @@ stark repo TODO
 
 Oct unification
 ---------------
+	Refactor all RB constraints
+		* Each BaseEnergy in it's own file.
+		* Move `symx::Vector _get_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc);`
+			to RigidbodyDynamics
+		* Formulate angle constraints as distance constraints with 1m arm consistently
+		* Proper explanations of the formulations (energy and force)
+		* Safe setters and getters
+		* UI should not contain logic, just lower-level calls
+	
+	Missing constraints
+		Distance constraint
+		Angle constraint
+		Angle constraint with min limit
+		
 	Tolerances
 		* Test set/get angle limits
 		* Finish setters and getters for derived constraints
 		* Constraints should have labels so we can print which joint, linking which objects, needed to increase stiffness to what and what was the problem.
 		* Tolerances to deformables BC
 		* UI? Or we just keep the values fixed from initialization...
-	
+	Constraint logging
+		* Every time step: stiffness, violation, tolerance
+		* Constraint UI should return constraint violations and forces
+		
+	* Constraint formulation is unsafe as data is kept raw and converted to user readable in different places.
+		For instance tolerances and violations to angles, forces, etc..
 	
 	* Attachments
 	

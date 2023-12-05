@@ -1,7 +1,28 @@
 #include "EnergyRigidBodyConstraints.h"
 
+#include <fmt/format.h>
+
+#include "../../utils/mesh_utils.h"
 #include "rigidbody_transformations.h"
 #include "../distances.h"
+
+// Helpers -----------------------------------------------------------------------
+double inf_norm(const Eigen::Vector3d& x)
+{
+	return x.cwiseAbs().maxCoeff();
+}
+template<typename T, typename... Args>
+void log_parameters(stark::core::Logger& logger, const std::string& constraint, const int idx, const std::string& constraint_name, const std::string& param_name, T&& value, Args&&... args) {
+	logger.append_to_series(fmt::format("{} {:d} {} | {}", constraint, idx, constraint_name, param_name), fmt::format("{:.4e}", std::forward<T>(value)));
+	log_parameters(logger, constraint, idx, constraint_name, std::forward<Args>(args)...);
+}
+//template<>
+void log_parameters(stark::core::Logger& logger, const std::string& constraint, const int idx, const std::string& constraint_name) {
+	// Base case for variadic template
+}
+// Helpers -----------------------------------------------------------------------
+
+
 
 stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark& stark, spRigidBodyDynamics dyn)
 	: dyn(dyn)
@@ -9,6 +30,7 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 	// Callbacks
 	stark.callbacks.is_converged_state_valid.push_back([&]() { return this->_is_converged_state_valid(stark); });
 	stark.callbacks.after_time_step.push_back([&]() { this->_after_time_step(stark); });
+	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
 
 	// Constraint containers initialization
 	this->anchor_points = std::make_shared<BaseRigidBodyConstraints::AnchorPoints>();
@@ -292,7 +314,7 @@ bool stark::models::EnergyRigidBodyConstraints::_is_converged_state_valid(core::
 		If no constraint needs to be hardened, return true.
 	*/
 	constexpr double hard_multiplier = 2.0;
-	return this->_adjust_constraints_stiffness(stark, 1.0, hard_multiplier);
+	return this->_adjust_constraints_stiffness(stark, 1.0, hard_multiplier, /*log = */ false);
 }
 
 void stark::models::EnergyRigidBodyConstraints::_after_time_step(core::Stark& stark)
@@ -303,13 +325,26 @@ void stark::models::EnergyRigidBodyConstraints::_after_time_step(core::Stark& st
 
 	const double soft_multiplier = 1.05;
 	const double constraint_capacity = 0.75;
-	this->_adjust_constraints_stiffness(stark, constraint_capacity, soft_multiplier);
+	this->_adjust_constraints_stiffness(stark, constraint_capacity, soft_multiplier, /*log = */ true);
 }
 
-bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(core::Stark& stark, double cap, double multiplier)
+void stark::models::EnergyRigidBodyConstraints::_write_frame(core::Stark& stark)
 {
+	auto& output = stark.settings.output;
+	this->logger.save_to_disk(fmt::format("{}/rigidbody_constraints_logger_{}__{}.txt", output.output_directory, output.simulation_name, output.time_stamp));
+}
+
+bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(core::Stark& stark, double cap, double multiplier, bool log)
+{
+	// Note: Equality vector constraints use component-wise enforcement. We check for inf_norm to detect if any component of the constraint has been violated.
+
 	const double dt = stark.settings.simulation.adaptive_time_step.value;
 	bool is_valid = true;
+
+	if (log) {
+		this->logger.append_to_series("time [s]", stark.current_time);
+		this->logger.append_to_series("frame", stark.current_frame);
+	}
 
 	// Anchor Points
 	for (int i = 0; i < (int)this->anchor_points->conn.size(); i++) {
@@ -317,8 +352,14 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 		auto [idx, a] = data->conn[i];
 		const Eigen::Vector3d p = this->_get_x1(a, data->loc[idx], dt);
 		const Eigen::Vector3d target = data->target_glob[idx];
-		const double C = (p - target).norm();
+		const double C = inf_norm(p - target);
 		const double tol = data->tolerance[idx];
+
+		if (log) {
+			const double f = data->stiffness[idx] * std::abs(C);
+			log_parameters(this->logger, "anchor_point", idx, data->labels[idx], "violation [m]", C, "stiffness [N/m]", data->stiffness[idx], "force [N]", f, "tolerance [m]", tol);
+		}
+
 		if (C > tol) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
@@ -331,8 +372,16 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 		auto [idx, a] = data->conn[i];
 		const Eigen::Vector3d d = this->_get_d1(a, data->d_loc[idx], dt);
 		const Eigen::Vector3d d_target = data->target_d_glob[idx];
-		const double C = (d - d_target).norm();
+		const double C = inf_norm(d - d_target);
 		const double tol = data->tolerance[idx];
+
+		if (log) {
+			const double f = data->stiffness[idx] * std::abs(C);  // force = torque in this case as the leverage is 1m
+			const double angle_deg = BaseRigidBodyConstraints::get_angle_deg_from_distance_violation(C);
+			const double tol_deg = BaseRigidBodyConstraints::get_angle_deg_from_distance_violation(tol);
+			log_parameters(this->logger, "absolute_direction_lock", idx, data->labels[idx], "violation [deg]", angle_deg, "stiffness [N/m2]", data->stiffness[idx], "torque [Nm]", f, "tolerance [deg]", tol_deg);
+		}
+
 		if (C > tol) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
@@ -345,8 +394,14 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 		auto [idx, a, b] = data->conn[i];
 		const Eigen::Vector3d a1 = this->_get_x1(a, data->a_loc[idx], dt);
 		const Eigen::Vector3d b1 = this->_get_x1(b, data->b_loc[idx], dt);
-		const double C = (a1 - b1).norm();
+		const double C = inf_norm(a1 - b1);
 		const double tol = data->tolerance[idx];
+
+		if (log) {
+			const double f = data->stiffness[idx] * std::abs(C);
+			log_parameters(this->logger, "ball_joint", idx, data->labels[idx], "violation [m]", C, "stiffness [N/m]", data->stiffness[idx], "force [N]", f, "tolerance [m]", tol);
+		}
+
 		if (C > tol) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
@@ -359,8 +414,16 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 		auto [idx, a, b] = data->conn[i];
 		const Eigen::Vector3d da1 = this->_get_d1(a, data->da_loc[idx], dt);
 		const Eigen::Vector3d db1 = this->_get_d1(b, data->db_loc[idx], dt);
-		const double C = (da1 - db1).norm();
+		const double C = inf_norm(da1 - db1);
 		const double tol = data->tolerance[idx];
+
+		if (log) {
+			const double f = data->stiffness[idx] * std::abs(C);  // force = torque in this case as the leverage is 1m
+			const double angle_deg = BaseRigidBodyConstraints::get_angle_deg_from_distance_violation(C);
+			const double tol_deg = BaseRigidBodyConstraints::get_angle_deg_from_distance_violation(tol);
+			log_parameters(this->logger, "relative_direction_lock", idx, data->labels[idx], "violation [deg]", angle_deg, "stiffness [N/m2]", data->stiffness[idx], "torque [Nm]", f, "tolerance [deg]", tol_deg);
+		}
+
 		if (C > tol) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
@@ -376,6 +439,12 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 		const Eigen::Vector3d b1 = this->_get_x1(b, data->b_loc[idx], dt);
 		const double C = distance_point_line(b1, a1, a1 + da1);
 		const double tol = data->tolerance[idx];
+
+		if (log) {
+			const double f = data->stiffness[idx] * std::abs(C);
+			log_parameters(this->logger, "point_on_axis", idx, data->labels[idx], "violation [m]", C, "stiffness [N/m]", data->stiffness[idx], "force [N]", f, "tolerance [m]", tol);
+		}
+
 		if (C > tol) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
@@ -391,8 +460,20 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 		const double& min_distance = data->min_length[idx];
 		const double& max_distance = data->max_length[idx];
 		const double d = (a1 - b1).norm();
-
 		const double tol = data->tolerance[idx];
+
+		if (log) {
+			double C = 0.0;
+			if (d < min_distance) {
+				C = min_distance - d;
+			}
+			else if (d > max_distance) {
+				C = d - max_distance;
+			}
+			const double f = data->stiffness[idx] * std::pow(C, 2);
+			log_parameters(this->logger, "distance_limit", idx, data->labels[idx], "violation [m]", C, "stiffness [N/m]", data->stiffness[idx], "force [N]", f, "tolerance [m]", tol);
+		}
+
 		if (d < (min_distance - tol) || (max_distance + tol) < d) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
@@ -413,7 +494,27 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
 		}
+
+		std::cout << "Angle limits not implemented correctly. Waiting for a refactor." << std::endl;
+		exit(-1);
+
+		//if (log) {
+		//	const double C = std::max(0.0, angle_deg - admissible_angle_deg);
+		//	const double f = data->stiffness[idx] * std::pow(C, 2);
+		//	const double angle_deg = BaseRigidBodyConstraints::get_angle_deg_from_dot(dot);
+		//	const double tol_deg = BaseRigidBodyConstraints::get_angle_deg_from_dot(tol);
+		//	log_parameters(this->logger, "distance_limit", idx, data->labels[idx], "violation [m]", C, "stiffness [N/m]", data->stiffness[idx], "force [N]", f, "tolerance [m]", tol);
+		//}
+
+		//if (dot < admissible_dot - tol) {
+		//	is_valid = false;
+		//	data->stiffness[idx] *= multiplier;
+		//}
 	}
+
+
+	// TODO: Log motors
+
 
 	return is_valid;
 }

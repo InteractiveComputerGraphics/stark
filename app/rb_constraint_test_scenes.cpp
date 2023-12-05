@@ -24,7 +24,8 @@ void template_sim(std::string name, std::function<void(stark::models::Simulation
 	auto box0 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 });
 
 	// Constraint
-	simulation.rigidbodies->add_constraint_fixed(box0);
+	simulation.rigidbodies->add_constraint_fixed(box0)
+		.set_label("fixed");
 
 	callback(simulation, box0);
 

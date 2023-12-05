@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 namespace stark::core
@@ -28,10 +28,10 @@ namespace stark::core
 			this->series[label].push_back(std::to_string(v));
 		};
 
-		std::unordered_map<std::string, std::vector<std::string>> series;
-		std::unordered_map<std::string, double> doubles;
-		std::unordered_map<std::string, int> ints;
-		std::unordered_map<std::string, double> t0;
+		std::map<std::string, std::vector<std::string>> series;
+		std::map<std::string, double> doubles;
+		std::map<std::string, int> ints;
+		std::map<std::string, double> t0;
 		std::string path;
 	};
 }
