@@ -80,10 +80,13 @@ set(MODELS_RIGIDBODIES_FILES
 	src/models/rigidbodies/BaseRigidBodyConstraints.h
 	src/models/rigidbodies/EnergyRigidBodyConstraints.cpp
 	src/models/rigidbodies/EnergyRigidBodyConstraints.h
+	src/models/rigidbodies/EnergyRigidBodyConstraint_AnchorPoints.cpp
+	src/models/rigidbodies/EnergyRigidBodyConstraint_AnchorPoints.h
 	src/models/rigidbodies/EnergyRigidBodyInertia.cpp
 	src/models/rigidbodies/EnergyRigidBodyInertia.h
 	src/models/rigidbodies/inertia_tensors.cpp
 	src/models/rigidbodies/inertia_tensors.h
+	src/models/rigidbodies/rigid_body_constraint_utils.h
 	src/models/rigidbodies/RigidBodies.cpp
 	src/models/rigidbodies/RigidBodies.h
 	src/models/rigidbodies/RigidBodiesInternal.cpp

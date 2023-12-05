@@ -41,6 +41,16 @@ namespace stark::models
 		int add();
 		int get_n_bodies() const;
 
+		// Position and direction getters
+		symx::Vector get_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc);
+		symx::Vector get_d1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& d_loc);
+		std::array<symx::Vector, 2> get_x1_d1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Vector& d_loc);
+		std::array<symx::Vector, 2> get_x0_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc);
+
+		Eigen::Vector3d get_x1(int rb_idx, const Eigen::Vector3d& x_loc, double dt);
+		Eigen::Vector3d get_d1(int rb_idx, const Eigen::Vector3d& d_loc, double dt);
+
+
 	private:
 		void _before_time_step(stark::core::Stark& stark);
 		void _after_time_step(stark::core::Stark& stark);

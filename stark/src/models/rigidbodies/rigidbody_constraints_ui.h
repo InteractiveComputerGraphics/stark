@@ -37,6 +37,9 @@ namespace stark::models
 		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance[this->idx]; };
 		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance[this->idx] = tolerance_in_m; return (*this); };
 
+		inline double get_violation() const;
+		inline double get_force() const;
+
 		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
 		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
 

@@ -12,10 +12,32 @@ Oct unification
 		* Safe setters and getters
 		* UI should not contain logic, just lower-level calls
 	
-	Missing constraints
-		Distance constraint
-		Angle constraint
-		Angle constraint with min limit
+	All constraints
+
+		anchor_point
+		distance_to_anchor_point
+		
+		absolute_direction
+		absolute_angle
+		
+		ball_joint
+		distance_constraint
+		
+		relative_direction
+		relative_angle
+		
+		distance_limits
+		
+		angle_limits
+		
+		point_on_axis
+		
+		linear_spring
+		angular_spring
+		linear_velocity_constraint
+		angular_velocity_constraint
+		
+		
 		
 	Tolerances
 		* Test set/get angle limits
