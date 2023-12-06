@@ -59,6 +59,16 @@ namespace stark::models
 				this->labels.push_back((label == "") ? std::to_string(id) : label);
 				return id;
 			}
+			symx::Scalar energy(symx::Scalar& k, symx::Vector& target, symx::Vector& p)
+			{
+				return 0.5 * k * (target - p).squared_norm();  // E = 0.5*k*u.norm()**2
+			}
+			std::array<double, 2> violation_and_force(double k, const Eigen::Vector3d& target, const Eigen::Vector3d& p)
+			{
+				const double C = (target - p).norm();
+				return { C, k * C };
+			}
+
 		};
 
 		/*

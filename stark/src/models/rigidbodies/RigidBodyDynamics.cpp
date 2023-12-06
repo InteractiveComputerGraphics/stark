@@ -10,7 +10,7 @@ stark::models::RigidBodyDynamics::RigidBodyDynamics(stark::core::Stark& stark)
 	this->dof_w = stark.global_energy.add_dof_array(this->w1, "rb_w1");
 
 	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step(stark); });
-	stark.callbacks.after_time_step.push_back([&]() { this->_after_time_step(stark); });
+	stark.callbacks.on_time_step_accepted.push_back([&]() { this->_on_time_step_accepted(stark); });
 }
 int stark::models::RigidBodyDynamics::add()
 {
@@ -51,7 +51,7 @@ void stark::models::RigidBodyDynamics::_before_time_step(stark::core::Stark& sta
 	std::fill(this->v1.begin(), this->v1.end(), Eigen::Vector3d::Zero());
 	std::fill(this->w1.begin(), this->w1.end(), Eigen::Vector3d::Zero());
 }
-void stark::models::RigidBodyDynamics::_after_time_step(stark::core::Stark& stark)
+void stark::models::RigidBodyDynamics::_on_time_step_accepted(stark::core::Stark& stark)
 {
 	const double dt = stark.settings.simulation.adaptive_time_step.value;
 
@@ -71,41 +71,37 @@ void stark::models::RigidBodyDynamics::_after_time_step(stark::core::Stark& star
 }
 
 
-symx::Vector stark::models::RigidBodyDynamics::get_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc)
+symx::Vector stark::models::RigidBodyDynamics::get_x1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Scalar& dt)
 {
 	symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
 	symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
 	symx::Vector t0 = energy.make_vector(this->t0, rb_idx);
 	symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
-	symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 	return integrate_loc_point(x_loc, t0, q0, v1, w1, dt);
 }
-symx::Vector stark::models::RigidBodyDynamics::get_d1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& d_loc)
+symx::Vector stark::models::RigidBodyDynamics::get_d1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& d_loc, const symx::Scalar& dt)
 {
 	symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
 	symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
-	symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 	return integrate_loc_direction(d_loc, q0, w1, dt);
 }
-std::array<symx::Vector, 2> stark::models::RigidBodyDynamics::get_x1_d1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Vector& d_loc)
+std::array<symx::Vector, 2> stark::models::RigidBodyDynamics::get_x1_d1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Vector& d_loc, const symx::Scalar& dt)
 {
 	symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
 	symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
 	symx::Vector t0 = energy.make_vector(this->t0, rb_idx);
 	symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
-	symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
 	symx::Vector x1 = integrate_loc_point(x_loc, t0, q0, v1, w1, dt);
 	symx::Vector d1 = integrate_loc_direction(d_loc, q0, w1, dt);
 	return { x1, d1 };
 }
-std::array<symx::Vector, 2> stark::models::RigidBodyDynamics::get_x0_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc)
+std::array<symx::Vector, 2> stark::models::RigidBodyDynamics::get_x0_x1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Scalar& dt)
 {
 	symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
 	symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
 	symx::Vector t0 = energy.make_vector(this->t0, rb_idx);
 	symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
-	symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
 	symx::Vector x1 = integrate_loc_point(x_loc, t0, q0, v1, w1, dt);
 	symx::Vector x0 = local_to_global_point(x_loc, t0, q0);
@@ -119,4 +115,13 @@ Eigen::Vector3d stark::models::RigidBodyDynamics::get_x1(int rb_idx, const Eigen
 Eigen::Vector3d stark::models::RigidBodyDynamics::get_d1(int rb_idx, const Eigen::Vector3d& d_loc, double dt)
 {
 	return integrate_loc_direction(d_loc, this->q0[rb_idx], this->w1[rb_idx], dt);
+}
+
+Eigen::Vector3d stark::models::RigidBodyDynamics::get_x1(int rb_idx, const Eigen::Vector3d& x_loc)
+{
+	return local_to_global_point(x_loc, this->R1[rb_idx], this->t1[rb_idx]);
+}
+Eigen::Vector3d stark::models::RigidBodyDynamics::get_d1(int rb_idx, const Eigen::Vector3d& d_loc)
+{
+	return local_to_global_direction(d_loc, this->R1[rb_idx]);
 }

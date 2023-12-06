@@ -30,7 +30,7 @@ namespace stark::models
 
 	private:
 		void _before_time_step(stark::core::Stark& stark);
-		void _after_time_step(stark::core::Stark& stark);
+		void _on_time_step_accepted(stark::core::Stark& stark);
 	};
 	using spPointDynamics = std::shared_ptr<PointDynamics>;
 }

@@ -35,6 +35,7 @@ namespace stark::models
 		symx::DoF dof_v;
 		symx::DoF dof_w;
 		std::vector<std::string> labels;
+		bool is_minimization_active = false;  // Tells us whether v1 is the converged state or we are still trying.
 
 		/* Methods */
 		RigidBodyDynamics(stark::core::Stark& stark);
@@ -42,18 +43,22 @@ namespace stark::models
 		int get_n_bodies() const;
 
 		// Position and direction getters
-		symx::Vector get_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc);
-		symx::Vector get_d1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& d_loc);
-		std::array<symx::Vector, 2> get_x1_d1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Vector& d_loc);
-		std::array<symx::Vector, 2> get_x0_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc);
+		//// With time integration (used during minimization)
+		symx::Vector get_x1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Scalar& dt);
+		symx::Vector get_d1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& d_loc, const symx::Scalar& dt);
+		std::array<symx::Vector, 2> get_x1_d1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Vector& d_loc, const symx::Scalar& dt);
+		std::array<symx::Vector, 2> get_x0_x1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Scalar& dt);
 
 		Eigen::Vector3d get_x1(int rb_idx, const Eigen::Vector3d& x_loc, double dt);
 		Eigen::Vector3d get_d1(int rb_idx, const Eigen::Vector3d& d_loc, double dt);
 
+		//// With final positions
+		Eigen::Vector3d get_x1(int rb_idx, const Eigen::Vector3d& x_loc);
+		Eigen::Vector3d get_d1(int rb_idx, const Eigen::Vector3d& d_loc);
 
 	private:
 		void _before_time_step(stark::core::Stark& stark);
-		void _after_time_step(stark::core::Stark& stark);
+		void _on_time_step_accepted(stark::core::Stark& stark);
 	};
 	using spRigidBodyDynamics = std::shared_ptr<RigidBodyDynamics>;
 }

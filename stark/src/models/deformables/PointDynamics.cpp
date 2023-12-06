@@ -6,7 +6,7 @@ stark::models::PointDynamics::PointDynamics(stark::core::Stark& stark)
 {
 	this->dof = stark.global_energy.add_dof_array(this->v1.data, "PointDynamics.v1");
 	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step(stark); });
-	stark.callbacks.after_time_step.push_back([&]() { this->_after_time_step(stark); });
+	stark.callbacks.on_time_step_accepted.push_back([&]() { this->_on_time_step_accepted(stark); });
 }
 
 stark::models::Id stark::models::PointDynamics::add(const std::vector<Eigen::Vector3d>& x, const std::vector<Eigen::Vector3d>& v)
@@ -51,7 +51,7 @@ void stark::models::PointDynamics::_before_time_step(stark::core::Stark& stark)
 	std::fill(this->v1.data.begin(), this->v1.data.end(), Eigen::Vector3d::Zero());
 }
 
-void stark::models::PointDynamics::_after_time_step(stark::core::Stark& stark)
+void stark::models::PointDynamics::_on_time_step_accepted(stark::core::Stark& stark)
 {
 	// Set final positions with solved velocities
 	const double dt = stark.settings.simulation.adaptive_time_step.value;

@@ -17,6 +17,9 @@ namespace stark::models
 
         /* Fields */
         spRigidBodyDynamics dyn;
+		double stiffness_hard_multiplier = 2.0;
+		double stiffness_soft_multiplier = 1.05;
+		double soft_constraint_capacity_hardening_point = 0.75;
 
 		// Constraint containers
 		std::shared_ptr<BaseRigidBodyConstraints::AnchorPoints> anchor_points;
@@ -36,20 +39,12 @@ namespace stark::models
 	private:
         /* Methods */
         void _set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt, const symx::Scalar& is_active);
-
-        symx::Vector _get_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc);
-        symx::Vector _get_d1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& d_loc);
-        std::array<symx::Vector, 2> _get_x1_d1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Vector& d_loc);
-        std::array<symx::Vector, 2> _get_x0_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc);
-
-        Eigen::Vector3d _get_x1(int rb_idx, const Eigen::Vector3d& x_loc, double dt);
-        Eigen::Vector3d _get_d1(int rb_idx, const Eigen::Vector3d& d_loc, double dt);
+		bool _adjust_constraints_stiffness(core::Stark& stark, double cap, double multiplier, bool log);
 
 		// SymX callbacks
 		bool _is_converged_state_valid(core::Stark& stark);
-		void _after_time_step(core::Stark& stark);
+		void _on_time_step_accepted(core::Stark& stark);
 		void _write_frame(core::Stark& stark);
-		bool _adjust_constraints_stiffness(core::Stark& stark, double cap, double multiplier, bool log);
 	};
     using spEnergyRigidBodyConstraints = std::shared_ptr<EnergyRigidBodyConstraints>;
 }

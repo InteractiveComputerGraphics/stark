@@ -1,0 +1,40 @@
+
+
+	before_time_step();
+	while (!converged) {
+		before_energy_evaluation();
+		[H, g] = eval_hess_grad();
+		after_energy_evaluation();
+		du = -H.inv()*g;
+		
+		du = max_allowed_step();
+		while (!run_is_intermidiate_state_valid()) {
+			du *= 0.5;
+		}
+		
+		before_energy_evaluation();
+		[E, g] = eval_E_grad();
+		after_energy_evaluation();
+		
+		if (g.inf_norm() < eps) {
+			break;
+		}
+		
+		while (E > sufficient_descend) {
+			du *= 0.5;
+			before_energy_evaluation();
+			E = eval_E();
+			after_energy_evaluation();
+		}
+	}
+	
+	if (run_is_converged_state_valid()) {
+		run_on_convergence();
+		run_after_time_step();
+		
+		if (time > next_frame_time) {
+			write_frame();
+		}
+	}
+	
+	
