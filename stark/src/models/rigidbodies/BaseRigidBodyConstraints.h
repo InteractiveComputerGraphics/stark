@@ -49,8 +49,7 @@ namespace stark::models
 			std::vector<std::string> labels;
 			inline int add(int rb, const Eigen::Vector3d& loc, const Eigen::Vector3d& target_glob, double stiffness, double tolerance, std::string label = "")
 			{
-				const int id = (int)this->is_active.size();
-				this->conn.numbered_push_back({rb});
+				const int id = this->conn.numbered_push_back({rb});
 				this->loc.push_back(loc);
 				this->target_glob.push_back(target_glob);
 				this->stiffness.push_back(stiffness);
@@ -59,16 +58,49 @@ namespace stark::models
 				this->labels.push_back((label == "") ? std::to_string(id) : label);
 				return id;
 			}
-			symx::Scalar energy(symx::Scalar& k, symx::Vector& target, symx::Vector& p)
+			symx::Scalar energy(const symx::Scalar& k, const symx::Vector& target, const symx::Vector& p) const
 			{
 				return 0.5 * k * (target - p).squared_norm();  // E = 0.5*k*u.norm()**2
 			}
-			std::array<double, 2> violation_and_force(double k, const Eigen::Vector3d& target, const Eigen::Vector3d& p)
+			std::array<double, 2> violation_and_force(double k, const Eigen::Vector3d& target, const Eigen::Vector3d& p) const
 			{
 				const double C = (target - p).norm();
-				return { C, k * C };
+				return { C, k * C };  // { [m], [N] }
 			}
+		};
 
+		/*
+		*	Two points on different objects must be at a certain (non-zero) distance.
+		*/
+		struct DistanceConstraint
+		{
+			symx::LabelledConnectivity<3> conn{ { "idx", "a", "b" } };
+			std::vector<Eigen::Vector3d> a_loc;
+			std::vector<Eigen::Vector3d> b_loc;
+			std::vector<double> stiffness;
+			std::vector<double> tolerance;
+			std::vector<double> is_active;
+			std::vector<std::string> labels;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double stiffness, double tolerance)
+			{
+				const int id = this->conn.numbered_push_back({ rb_a, rb_b });
+				this->a_loc.push_back(a_loc);
+				this->b_loc.push_back(b_loc);
+				this->stiffness.push_back(stiffness);
+				this->tolerance.push_back(tolerance);
+				this->is_active.push_back(1.0);
+				this->labels.push_back("");
+				return id;
+			}
+			symx::Scalar energy(const symx::Scalar& k, const symx::Vector& p, const symx::Vector& q, const symx::Scalar& rest_length) const
+			{
+				return 0.5 * k * ((p - q).norm() - rest_length).powN(2);
+			}
+			std::array<double, 2> violation_and_force(double k, const Eigen::Vector3d& p, const Eigen::Vector3d& q, double rest_length) const
+			{
+				const double C = (p - q).norm() - rest_length;
+				return { C, k * C };  // { [m], [N] }
+			}
 		};
 
 		/*

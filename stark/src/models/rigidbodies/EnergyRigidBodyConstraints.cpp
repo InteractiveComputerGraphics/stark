@@ -42,11 +42,11 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 
 	// Energy declarations
 
-	/*
-	*	A point on a rigid body is constrained to be at a certain global position.
-	*	This is enforced by a penalty to the distance norm.
-	*	It is equivalent to 3 individual distance penalties, one per dimension.
-	*/
+	Do not make a anchor_point, absolute_direction_lock, absolute_angle_constraint...
+	Just make a fixed_constraint directly.
+	Every other constraint is between two objects.
+	Otherwise we have twice the constraints, and code, and documentation...
+
 	stark.global_energy.add_energy("rb_constraint_anchor_point", this->anchor_points->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
@@ -63,6 +63,24 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			energy.set_with_condition(E, is_active > 0.0);
 		}
 	);
+
+	stark.global_energy.add_energy("rb_constraint_distance_constraint", this->ball_joints->conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto& data = this->ball_joints;
+
+			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
+			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
+			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
+			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+
+			symx::Vector a1 = this->_get_x1(energy, stark, conn["a"], a_loc);
+			symx::Vector b1 = this->_get_x1(energy, stark, conn["b"], b_loc);
+			symx::Scalar E = 0.5 * stiffness * (a1 - b1).squared_norm();
+			energy.set_with_condition(E, is_active > 0.0);
+		}
+	);
+
 
 	stark.global_energy.add_energy("rb_constraint_absolute_direction_lock", this->absolute_direction_locks->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
