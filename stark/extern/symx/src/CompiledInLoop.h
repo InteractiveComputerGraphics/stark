@@ -388,7 +388,8 @@ namespace symx
 		this->_resize_symbol_array_map(vector[0]);
 		for (int j = 0; j < summation_stride; j++) {
 			SymbolArrayMap map;
-			map.array_begin = this->summation_data.data();
+			map.data = l2data_double(this->summation_data);
+			map.size = l2count_double(this->summation_data);
 			map.connectivity_index = -1;
 			map.stride = summation_stride;
 			map.offset = j;
@@ -536,7 +537,7 @@ namespace symx
 
 							if (check_for_NaNs) {
 								if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
-									std::cout << "symx error: NaN found in CompiledInLoop::run() in the input " << symbol_number_as_str(symbol_i) << " for instance with name \"" + this->name + "\"" << std::endl;
+									std::cout << "symx error: NaN found in CompiledInLoop::run() in the summation input " << symbol_number_as_str(symbol_i) << " for instance with name \"" + this->name + "\"" << std::endl;
 									exit(-1);
 								}
 							}
