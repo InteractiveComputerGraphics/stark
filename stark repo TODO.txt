@@ -242,6 +242,10 @@ Mid priority
 Low priority
 ------------
 	Performance
+		* Coloring instead of mutexes
+		* Adaptive sparse matrix AMD reordering to keep the non-zero blocks near the diagonal
+		* MKL for CG (?) and projections
+		* Better preconditioners
 		* "Forcing sequence CG + projection to PD" seems to be the fastest. But it distributes the runtime into different bottlenecks.
 			Consider adding MKL as an optional dependency to speedup projections and CG.
 		* Collision dection could be improved by Verlet lists and to a lesser extent octree parallelization.
