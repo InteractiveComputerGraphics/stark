@@ -126,6 +126,9 @@ namespace symx
 		template<std::size_t STRIDE>
 		Vector make_summation_vector(const std::vector<std::array<double, STRIDE>>& iteration_vectors);
 
+		template<std::size_t STRIDE>
+		Scalar add_for_each(const std::vector<std::array<double, STRIDE>>& iteration_vectors, std::function<Scalar(Vector& vec)> f);
+
 		// Make constants
 		Scalar make_zero();
 		Scalar make_one();
@@ -243,5 +246,11 @@ namespace symx
 		this->compiled_condition.set_summation_vector(summation, summation_data, (int)STRIDE);
 
 		return summation;
+	}
+	template<std::size_t STRIDE>
+	inline Scalar Energy::add_for_each(const std::vector<std::array<double, STRIDE>>& iteration_vectors, std::function<Scalar(Vector& vec)> f)
+	{
+		Vector summation_vector = this->make_summation_vector(iteration_vectors);
+		return f(summation_vector);
 	}
 }
