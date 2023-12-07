@@ -32,14 +32,14 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 	this->global_points = std::make_shared<RigidBodyConstraints::GlobalPoints>();
 	this->global_directions = std::make_shared<RigidBodyConstraints::GlobalDirections>();
 	this->points = std::make_shared<RigidBodyConstraints::Points>();
+	this->point_on_axes = std::make_shared<RigidBodyConstraints::PointOnAxes>();
 	this->distances = std::make_shared<RigidBodyConstraints::Distance>();
-	this->relative_direction_locks = std::make_shared<RigidBodyConstraints::RelativeDirectionLocks>();
-	this->point_on_axis = std::make_shared<RigidBodyConstraints::PointOnAxis>();
-	this->damped_springs = std::make_shared<RigidBodyConstraints::DampedSprings>();
 	this->distance_limits = std::make_shared<RigidBodyConstraints::DistanceLimits>();
+	this->directions = std::make_shared<RigidBodyConstraints::Directions>();
 	this->angle_limits = std::make_shared<RigidBodyConstraints::AngleLimits>();
-	this->relative_linear_velocity_motors = std::make_shared<RigidBodyConstraints::RelativeLinearVelocityMotors>();
-	this->relative_angular_velocity_motors = std::make_shared<RigidBodyConstraints::RelativeAngularVelocityMotors>();
+	//this->damped_springs = std::make_shared<RigidBodyConstraints::DampedSprings>();
+	//this->relative_linear_velocity_motors = std::make_shared<RigidBodyConstraints::RelativeLinearVelocityMotors>();
+	//this->relative_angular_velocity_motors = std::make_shared<RigidBodyConstraints::RelativeAngularVelocityMotors>();
 
 	// Energy declarations
 	stark.global_energy.add_energy("rb_constraint_global_points", this->global_points->conn,
@@ -94,6 +94,25 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 		}
 	);
 
+	stark.global_energy.add_energy("rb_constraint_point_on_axis", this->point_on_axes->conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto& data = this->point_on_axes;
+
+			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
+			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
+			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
+			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
+			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+
+			auto [a1, da1] = this->dyn->get_x1_d1(energy, conn["a"], a_loc, da_loc, dt);
+			symx::Vector b1 = this->dyn->get_x1(energy, conn["b"], b_loc, dt);
+			symx::Scalar E = RigidBodyConstraints::PointOnAxes::energy(stiffness, a1, da1, b1);
+			energy.set_with_condition(E, is_active > 0.0);
+		}
+	);
+
 	stark.global_energy.add_energy("rb_constraint_distances", this->distances->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
@@ -113,61 +132,40 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 		}
 	);
 
-
-
-
-
-
-
-
-	stark.global_energy.add_energy("rb_constraint_ball_joint", this->ball_joints->conn,
+	stark.global_energy.add_energy("rb_constraint_distance_limits", this->distance_limits->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->ball_joints;
+			auto& data = this->distance_limits;
 
 			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
 			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
+			symx::Scalar min_distance = energy.make_scalar(data->min_distance, conn["idx"]);
+			symx::Scalar max_distance = energy.make_scalar(data->max_distance, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
-			symx::Vector a1 = this->_get_x1(energy, stark, conn["a"], a_loc);
-			symx::Vector b1 = this->_get_x1(energy, stark, conn["b"], b_loc);
-			symx::Scalar E = 0.5 * stiffness * (a1 - b1).squared_norm();
+			symx::Vector a1 = this->dyn->get_x1(energy, conn["a"], a_loc, dt);
+			symx::Vector b1 = this->dyn->get_x1(energy, conn["b"], b_loc, dt);
+			symx::Scalar E = RigidBodyConstraints::DistanceLimits::energy(stiffness, a1, b1, min_distance, max_distance);
 			energy.set_with_condition(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_relative_direction_lock", this->relative_direction_locks->conn,
+	stark.global_energy.add_energy("rb_constraint_directions", this->directions->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->relative_direction_locks;
+			auto& data = this->directions;
 
 			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
 			symx::Vector db_loc = energy.make_vector(data->db_loc, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
-			symx::Vector da1 = this->_get_d1(energy, stark, conn["a"], da_loc);
-			symx::Vector db1 = this->_get_d1(energy, stark, conn["b"], db_loc);
-			symx::Scalar E = 0.5 * stiffness * (da1 - db1).squared_norm();
-			energy.set_with_condition(E, is_active > 0.0);
-		}
-	);
-
-	stark.global_energy.add_energy("rb_constraint_point_on_axis", this->point_on_axis->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
-		{
-			auto& data = this->point_on_axis;
-
-			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
-			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
-			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-
-			auto [a1, da1] = this->_get_x1_d1(energy, stark, conn["a"], a_loc, da_loc);
-			symx::Vector b1 = this->_get_x1(energy, stark, conn["b"], b_loc);
-			symx::Scalar E = 0.5 * stiffness * sq_distance_point_line(b1, a1, a1 + da1);
+			symx::Vector da = this->dyn->get_d1(energy, conn["a"], da_loc, dt);
+			symx::Vector db = this->dyn->get_d1(energy, conn["b"], db_loc, dt);
+			symx::Scalar E = RigidBodyConstraints::Directions::energy(stiffness, da, db);
 			energy.set_with_condition(E, is_active > 0.0);
 		}
 	);
@@ -179,111 +177,92 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 
 			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
 			symx::Vector db_loc = energy.make_vector(data->db_loc, conn["idx"]);
-			symx::Scalar admissible_dot = energy.make_scalar(data->admissible_dot, conn["idx"]);
+			symx::Scalar max_distance = energy.make_scalar(data->max_distance, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-
-			symx::Vector da1 = this->_get_d1(energy, stark, conn["a"], da_loc);
-			symx::Vector db1 = this->_get_d1(energy, stark, conn["b"], db_loc);
-			symx::Scalar dot = da1.dot(db1);
-			symx::Scalar C = admissible_dot - dot; // dot must be larger than admissible_dot
-
-			symx::Scalar E = stiffness * symx::powN(C, 3) / 3.0;
-			energy.set_with_condition(E, symx::min(C, is_active) > 0.0);  // both conditions must be positive
-		}
-	);
-
-	stark.global_energy.add_energy("rb_constraint_damped_spring", this->damped_springs->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
-		{
-			auto& data = this->damped_springs;
-
-			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
-			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
-			symx::Scalar rest_length = energy.make_scalar(data->rest_length, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar damping = energy.make_scalar(data->damping, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
 			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
-			auto [a0, a1] = this->_get_x0_x1(energy, stark, conn["a"], a_loc);
-			auto [b0, b1] = this->_get_x0_x1(energy, stark, conn["b"], b_loc);
-
-			symx::Vector r1 = b1 - a1;
-			symx::Vector r0 = b0 - a0;
-			symx::Scalar l1 = r1.norm();
-			symx::Scalar l0 = r0.norm();
-			
-			symx::Scalar E_spring = 0.5 * stiffness * (l1 / rest_length - 1.0).powN(2);
-			symx::Scalar E_damper = 0.5 * damping * ((l1 - l0) / dt).powN(2);
-			energy.set_with_condition(E_spring + E_damper, is_active > 0.0);
+			symx::Vector da1 = this->dyn->get_d1(energy, conn["a"], da_loc, dt);
+			symx::Vector db1 = this->dyn->get_d1(energy, conn["b"], db_loc, dt);
+			symx::Scalar E = RigidBodyConstraints::AngleLimits::energy(stiffness, da1, db1, max_distance);
+			energy.set_with_condition(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_distance_limits", this->distance_limits->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
-		{
-			auto& data = this->distance_limits;
 
-			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
-			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
-			symx::Scalar min_length = energy.make_scalar(data->min_length, conn["idx"]);
-			symx::Scalar max_length = energy.make_scalar(data->max_length, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
 
-			symx::Vector a1 = this->_get_x1(energy, stark, conn["a"], a_loc);
-			symx::Vector b1 = this->_get_x1(energy, stark, conn["b"], b_loc);
-			symx::Scalar length = (a1 - b1).norm();
 
-			symx::Scalar E_min = symx::branch(length < min_length, stiffness*symx::powN(min_length - length, 3)/3.0, 0.0);
-			symx::Scalar E_max = symx::branch(length > max_length, stiffness*symx::powN(length - max_length, 3)/3.0, 0.0);
-			energy.set_with_condition(E_min + E_max, symx::max(symx::max(E_min, E_max), is_active) > 0.0);
-		}
-	);
 
-	stark.global_energy.add_energy("rb_constraint_relative_linear_velocity_motors", this->relative_linear_velocity_motors->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
-		{
-			auto& data = this->relative_linear_velocity_motors;
 
-			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
-			symx::Scalar target_v = energy.make_scalar(data->target_v, conn["idx"]);
-			symx::Scalar max_force = energy.make_scalar(data->max_force, conn["idx"]);
-			symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Vector va1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["a"]);
-			symx::Vector vb1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["b"]);
-			symx::Vector wa1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["a"]);
-			symx::Vector qa0 = energy.make_vector(this->dyn->q0_, conn["a"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+	//stark.global_energy.add_energy("rb_constraint_damped_spring", this->damped_springs->conn,
+	//	[&](symx::Energy& energy, symx::Element& conn)
+	//	{
+	//		auto& data = this->damped_springs;
 
-			symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
-			symx::Scalar v = da1.dot(vb1 - va1);
-			this->_set_c1_controller_energy(energy, v, target_v, max_force, delay, dt, is_active);
-		}
-	);
+	//		symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
+	//		symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
+	//		symx::Scalar rest_length = energy.make_scalar(data->rest_length, conn["idx"]);
+	//		symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
+	//		symx::Scalar damping = energy.make_scalar(data->damping, conn["idx"]);
+	//		symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+	//		symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
-	stark.global_energy.add_energy("rb_constraint_relative_angular_velocity_motors", this->relative_angular_velocity_motors->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
-		{
-			auto& data = this->relative_angular_velocity_motors;
+	//		auto [a0, a1] = this->_get_x0_x1(energy, stark, conn["a"], a_loc);
+	//		auto [b0, b1] = this->_get_x0_x1(energy, stark, conn["b"], b_loc);
 
-			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
-			symx::Scalar target_w = energy.make_scalar(data->target_w, conn["idx"]);
-			symx::Scalar max_torque = energy.make_scalar(data->max_torque, conn["idx"]);
-			symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Vector wa1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["a"]);
-			symx::Vector wb1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["b"]);
-			symx::Vector qa0 = energy.make_vector(this->dyn->q0_, conn["a"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+	//		symx::Vector r1 = b1 - a1;
+	//		symx::Vector r0 = b0 - a0;
+	//		symx::Scalar l1 = r1.norm();
+	//		symx::Scalar l0 = r0.norm();
+	//		
+	//		symx::Scalar E_spring = 0.5 * stiffness * (l1 / rest_length - 1.0).powN(2);
+	//		symx::Scalar E_damper = 0.5 * damping * ((l1 - l0) / dt).powN(2);
+	//		energy.set_with_condition(E_spring + E_damper, is_active > 0.0);
+	//	}
+	//);
 
-			symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
-			symx::Scalar w = da1.dot(wb1 - wa1);
-			this->_set_c1_controller_energy(energy, w, target_w, max_torque, delay, dt, is_active);
-		}
-	);
+	//stark.global_energy.add_energy("rb_constraint_relative_linear_velocity_motors", this->relative_linear_velocity_motors->conn,
+	//	[&](symx::Energy& energy, symx::Element& conn)
+	//	{
+	//		auto& data = this->relative_linear_velocity_motors;
+
+	//		symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
+	//		symx::Scalar target_v = energy.make_scalar(data->target_v, conn["idx"]);
+	//		symx::Scalar max_force = energy.make_scalar(data->max_force, conn["idx"]);
+	//		symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
+	//		symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+	//		symx::Vector va1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["a"]);
+	//		symx::Vector vb1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["b"]);
+	//		symx::Vector wa1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["a"]);
+	//		symx::Vector qa0 = energy.make_vector(this->dyn->q0_, conn["a"]);
+	//		symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+
+	//		symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
+	//		symx::Scalar v = da1.dot(vb1 - va1);
+	//		this->_set_c1_controller_energy(energy, v, target_v, max_force, delay, dt, is_active);
+	//	}
+	//);
+
+	//stark.global_energy.add_energy("rb_constraint_relative_angular_velocity_motors", this->relative_angular_velocity_motors->conn,
+	//	[&](symx::Energy& energy, symx::Element& conn)
+	//	{
+	//		auto& data = this->relative_angular_velocity_motors;
+
+	//		symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
+	//		symx::Scalar target_w = energy.make_scalar(data->target_w, conn["idx"]);
+	//		symx::Scalar max_torque = energy.make_scalar(data->max_torque, conn["idx"]);
+	//		symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
+	//		symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+	//		symx::Vector wa1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["a"]);
+	//		symx::Vector wb1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["b"]);
+	//		symx::Vector qa0 = energy.make_vector(this->dyn->q0_, conn["a"]);
+	//		symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+
+	//		symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
+	//		symx::Scalar w = da1.dot(wb1 - wa1);
+	//		this->_set_c1_controller_energy(energy, w, target_w, max_torque, delay, dt, is_active);
+	//	}
+	//);
 }
 
 void stark::models::EnergyRigidBodyConstraints::_set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt, const symx::Scalar& is_active)
@@ -305,7 +284,7 @@ bool stark::models::EnergyRigidBodyConstraints::_is_converged_state_valid(core::
 		Hardens every constraints that has gone beyond the input tolerance.
 		If no constraint needs to be hardened, return true.
 	*/
-	return this->_adjust_constraints_stiffness(stark, 1.0, this->stiffness_hard_multiplier, /*log = */ false);
+	return this->_adjust_constraints_stiffness_and_log(stark, 1.0, this->stiffness_hard_multiplier, /*log = */ false, /* are_positions_set = */ false);
 }
 
 void stark::models::EnergyRigidBodyConstraints::_on_time_step_accepted(core::Stark& stark)
@@ -317,7 +296,7 @@ void stark::models::EnergyRigidBodyConstraints::_on_time_step_accepted(core::Sta
 	*	Adaptive soft decrease is not done as it would require a base stiffness value which is added responsibility to the user.
 	*	It's too easy to have an overly soft constraint parametrization that runs into force time restarts too frequently.
 	*/
-	this->_adjust_constraints_stiffness(stark, this->soft_constraint_capacity_hardening_point, this->stiffness_soft_multiplier, /* log = */ true);
+	this->_adjust_constraints_stiffness_and_log(stark, this->soft_constraint_capacity_hardening_point, this->stiffness_soft_multiplier, /* log = */ true, /* are_positions_set = */ true);
 }
 
 void stark::models::EnergyRigidBodyConstraints::_write_frame(core::Stark& stark)
@@ -326,23 +305,34 @@ void stark::models::EnergyRigidBodyConstraints::_write_frame(core::Stark& stark)
 	this->logger.save_to_disk(fmt::format("{}/rigidbody_constraints_logger_{}__{}.txt", output.output_directory, output.simulation_name, output.time_stamp));
 }
 
-bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(core::Stark& stark, double cap, double multiplier, bool log)
+bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_and_log(core::Stark& stark, double cap, double multiplier, bool log, bool are_positions_set)
 {
-	// Note: Equality vector constraints use component-wise enforcement. We check for inf_norm to detect if any component of the constraint has been violated.
+	/*
+		This function evaluates all the constraints and serves multiple purposes:
+			- Hard increase of stiffness within the newton step
+			- Soft increase stiffness at the end of a successful time step
+			- Log the state of constraints
+	*/
 
 	const double dt = stark.settings.simulation.adaptive_time_step.value;
-	bool is_valid = true;
+
+	// Get correct points and directions according to `are_positions_set`
+	auto get_x1 = [&](int rb, Eigen::Vector3d& loc) { return (are_positions_set) ? this->dyn->get_x1(rb, loc) : this->dyn->get_x1(rb, loc, dt); };
+	auto get_d1 = [&](int rb, Eigen::Vector3d& loc) { return (are_positions_set) ? this->dyn->get_d1(rb, loc) : this->dyn->get_d1(rb, loc, dt); };
 
 	if (log) {
 		this->logger.append_to_series("time [s]", stark.current_time);
 		this->logger.append_to_series("frame", stark.current_frame);
 	}
 
+	// Set true and make false if a constraint is violated beyond tolerance
+	bool is_valid = true;
+
 	// Global Points
 	for (int i = 0; i < (int)this->global_points->conn.size(); i++) {
 		auto& data = this->global_points;
 		auto [idx, a] = data->conn[i];
-		const Eigen::Vector3d p = this->dyn->get_x1(a, data->loc[idx], dt);
+		const Eigen::Vector3d p = get_x1(a, data->loc[idx]);
 		auto [C, f] = RigidBodyConstraints::GlobalPoints::violation_in_m_and_force(data->stiffness[idx], data->target_glob[idx], p);
 
 		if (log) {
@@ -367,12 +357,12 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 	for (int i = 0; i < (int)this->global_directions->conn.size(); i++) {
 		auto& data = this->global_directions;
 		auto [idx, a] = data->conn[i];
-		const Eigen::Vector3d d = this->dyn->get_d1(a, data->d_loc[idx], dt);
+		const Eigen::Vector3d d = get_d1(a, data->d_loc[idx]);
 		auto [C, t] = RigidBodyConstraints::GlobalDirections::violation_in_deg_and_torque(data->stiffness[idx], data->target_d_glob[idx], d);
 
 		if (log) {
 			log_parameters(this->logger, "absolute_direction", idx, data->labels[idx],
-				"violation [m]", C,
+				"violation [deg]", C,
 				"stiffness [N/m]", data->stiffness[idx],
 				"torque [Nm]", t.norm(),
 				"torque_x [Nm]", t[0],
@@ -392,12 +382,12 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 	for (int i = 0; i < (int)this->points->conn.size(); i++) {
 		auto& data = this->points;
 		auto [idx, a, b] = data->conn[i];
-		const Eigen::Vector3d a1 = this->dyn->get_x1(a, data->a_loc[idx], dt);
-		const Eigen::Vector3d b1 = this->dyn->get_x1(b, data->b_loc[idx], dt);
+		const Eigen::Vector3d a1 = get_x1(a, data->a_loc[idx]);
+		const Eigen::Vector3d b1 = get_x1(b, data->b_loc[idx]);
 		auto [C, f] = RigidBodyConstraints::Points::violation_in_m_and_force(data->stiffness[idx], a1, b1);
 
 		if (log) {
-			log_parameters(this->logger, "absolute_position", idx, data->labels[idx],
+			log_parameters(this->logger, "point", idx, data->labels[idx],
 				"violation [m]", C,
 				"stiffness [N/m]", data->stiffness[idx],
 				"force [N]", f.norm(),
@@ -414,44 +404,54 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 		}
 	}
 
-	// Relative Direction Locks
-	for (int i = 0; i < (int)this->relative_direction_locks->conn.size(); i++) {
-		auto& data = this->relative_direction_locks;
+	// PointOnAxis
+	for (int i = 0; i < (int)this->point_on_axes->conn.size(); i++) {
+		auto& data = this->point_on_axes;
 		auto [idx, a, b] = data->conn[i];
-		const Eigen::Vector3d da1 = this->_get_d1(a, data->da_loc[idx], dt);
-		const Eigen::Vector3d db1 = this->_get_d1(b, data->db_loc[idx], dt);
-		const double C = inf_norm(da1 - db1);
-		const double tol = data->tolerance[idx];
+		const Eigen::Vector3d a1 = get_x1(a, data->a_loc[idx]);
+		const Eigen::Vector3d da1 = get_d1(a, data->da_loc[idx]);
+		const Eigen::Vector3d b1 = get_x1(b, data->b_loc[idx]);
+		auto [C, f] = RigidBodyConstraints::PointOnAxes::violation_in_m_and_force(data->stiffness[idx], a1, da1, b1);
 
 		if (log) {
-			const double f = data->stiffness[idx] * std::abs(C);  // force = torque in this case as the leverage is 1m
-			const double angle_deg = RigidBodyConstraints::get_angle_deg_from_distance_violation(C);
-			const double tol_deg = RigidBodyConstraints::get_angle_deg_from_distance_violation(tol);
-			log_parameters(this->logger, "relative_direction_lock", idx, data->labels[idx], "violation [deg]", angle_deg, "stiffness [N/m2]", data->stiffness[idx], "torque [Nm]", f, "tolerance [deg]", tol_deg);
+			log_parameters(this->logger, "point_on_axis", idx, data->labels[idx],
+				"violation [m]", C,
+				"stiffness [N/m]", data->stiffness[idx],
+				"force [N]", f.norm(),
+				"force_x [N]", f[0],
+				"force_y [N]", f[1],
+				"force_z [N]", f[2],
+				"tolerance [m]", data->tolerance_in_m[idx],
+				"is_active", data->is_active[idx]);
 		}
 
-		if (C > tol) {
+		if (C > data->tolerance_in_m[idx]) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
 		}
 	}
 
-	// Point On Axis
-	for (int i = 0; i < (int)this->point_on_axis->conn.size(); i++) {
-		auto& data = this->point_on_axis;
+	// Distance
+	for (int i = 0; i < (int)this->distances->conn.size(); i++) {
+		auto& data = this->distances;
 		auto [idx, a, b] = data->conn[i];
-		const Eigen::Vector3d a1 = this->_get_x1(a, data->a_loc[idx], dt);
-		const Eigen::Vector3d da1 = this->_get_d1(a, data->da_loc[idx], dt);
-		const Eigen::Vector3d b1 = this->_get_x1(b, data->b_loc[idx], dt);
-		const double C = distance_point_line(b1, a1, a1 + da1);
-		const double tol = data->tolerance[idx];
+		const Eigen::Vector3d a1 = get_x1(a, data->a_loc[idx]);
+		const Eigen::Vector3d b1 = get_x1(b, data->b_loc[idx]);
+		auto [C, f] = RigidBodyConstraints::Distance::violation_in_m_and_force(data->stiffness[idx], a1, b1, data->target_distance[idx]);
 
 		if (log) {
-			const double f = data->stiffness[idx] * std::abs(C);
-			log_parameters(this->logger, "point_on_axis", idx, data->labels[idx], "violation [m]", C, "stiffness [N/m]", data->stiffness[idx], "force [N]", f, "tolerance [m]", tol);
+			log_parameters(this->logger, "distance", idx, data->labels[idx],
+				"violation [m]", C,
+				"stiffness [N/m]", data->stiffness[idx],
+				"force [N]", f.norm(),
+				"force_x [N]", f[0],
+				"force_y [N]", f[1],
+				"force_z [N]", f[2],
+				"tolerance [m]", data->tolerance_in_m[idx],
+				"is_active", data->is_active[idx]);
 		}
 
-		if (C > tol) {
+		if (C > data->tolerance_in_m[idx]) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
 		}
@@ -461,26 +461,49 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 	for (int i = 0; i < (int)this->distance_limits->conn.size(); i++) {
 		auto& data = this->distance_limits;
 		auto [idx, a, b] = data->conn[i];
-		const Eigen::Vector3d a1 = this->_get_x1(a, data->a_loc[idx], dt);
-		const Eigen::Vector3d b1 = this->_get_x1(b, data->b_loc[idx], dt);
-		const double& min_distance = data->min_length[idx];
-		const double& max_distance = data->max_length[idx];
-		const double d = (a1 - b1).norm();
-		const double tol = data->tolerance[idx];
+		const Eigen::Vector3d a1 = get_x1(a, data->a_loc[idx]);
+		const Eigen::Vector3d b1 = get_x1(b, data->b_loc[idx]);
+		auto [C, f] = RigidBodyConstraints::DistanceLimits::violation_in_m_and_force(data->stiffness[idx], a1, b1, data->min_distance[idx], data->max_distance[idx]);
 
 		if (log) {
-			double C = 0.0;
-			if (d < min_distance) {
-				C = min_distance - d;
-			}
-			else if (d > max_distance) {
-				C = d - max_distance;
-			}
-			const double f = data->stiffness[idx] * std::pow(C, 2);
-			log_parameters(this->logger, "distance_limit", idx, data->labels[idx], "violation [m]", C, "stiffness [N/m]", data->stiffness[idx], "force [N]", f, "tolerance [m]", tol);
+			log_parameters(this->logger, "distance_limits", idx, data->labels[idx],
+				"violation [m]", C,
+				"stiffness [N/m]", data->stiffness[idx],
+				"force [N]", f.norm(),
+				"force_x [N]", f[0],
+				"force_y [N]", f[1],
+				"force_z [N]", f[2],
+				"tolerance [m]", data->tolerance_in_m[idx],
+				"is_active", data->is_active[idx]);
 		}
 
-		if (d < (min_distance - tol) || (max_distance + tol) < d) {
+		if (C > data->tolerance_in_m[idx]) {
+			is_valid = false;
+			data->stiffness[idx] *= multiplier;
+		}
+	}
+
+	// Directions
+	for (int i = 0; i < (int)this->directions->conn.size(); i++) {
+		auto& data = this->directions;
+		auto [idx, a, b] = data->conn[i];
+		const Eigen::Vector3d da = get_d1(a, data->da_loc[idx]);
+		const Eigen::Vector3d db = get_d1(b, data->db_loc[idx]);
+		auto [C, t] = RigidBodyConstraints::Directions::violation_in_deg_and_torque(data->stiffness[idx], da, db);
+
+		if (log) {
+			log_parameters(this->logger, "direction", idx, data->labels[idx],
+				"violation [deg]", C,
+				"stiffness [N/m]", data->stiffness[idx],
+				"torque [Nm]", t.norm(),
+				"torque_x [Nm]", t[0],
+				"torque_y [Nm]", t[1],
+				"torque_z [Nm]", t[2],
+				"tolerance [deg]", data->tolerance_in_deg[idx],
+				"is_active", data->is_active[idx]);
+		}
+
+		if (C > data->tolerance_in_deg[idx]) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
 		}
@@ -490,32 +513,26 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 	for (int i = 0; i < (int)this->angle_limits->conn.size(); i++) {
 		auto& data = this->angle_limits;
 		auto [idx, a, b] = data->conn[i];
-		const Eigen::Vector3d da1 = this->_get_d1(a, data->da_loc[idx], dt);
-		const Eigen::Vector3d db1 = this->_get_d1(b, data->db_loc[idx], dt);
-		const double& admissible_dot = data->admissible_dot[idx];
-		const double dot = da1.dot(db1);
+		const Eigen::Vector3d da = get_d1(a, data->da_loc[idx]);
+		const Eigen::Vector3d db = get_d1(b, data->db_loc[idx]);
+		auto [C, t] = RigidBodyConstraints::AngleLimits::violation_in_deg_and_torque(data->stiffness[idx], da, db, data->max_distance[idx]);
 
-		const double tol = data->tolerance[idx];
-		if (dot < admissible_dot - tol) {
+		if (log) {
+			log_parameters(this->logger, "angle_limit", idx, data->labels[idx],
+				"violation [deg]", C,
+				"stiffness [N/m]", data->stiffness[idx],
+				"torque [Nm]", t.norm(),
+				"torque_x [Nm]", t[0],
+				"torque_y [Nm]", t[1],
+				"torque_z [Nm]", t[2],
+				"tolerance [deg]", data->tolerance_in_deg[idx],
+				"is_active", data->is_active[idx]);
+		}
+
+		if (C > data->tolerance_in_deg[idx]) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
 		}
-
-		std::cout << "Angle limits not implemented correctly. Waiting for a refactor." << std::endl;
-		exit(-1);
-
-		//if (log) {
-		//	const double C = std::max(0.0, angle_deg - admissible_angle_deg);
-		//	const double f = data->stiffness[idx] * std::pow(C, 2);
-		//	const double angle_deg = RigidBodyConstraints::get_angle_deg_from_dot(dot);
-		//	const double tol_deg = RigidBodyConstraints::get_angle_deg_from_dot(tol);
-		//	log_parameters(this->logger, "distance_limit", idx, data->labels[idx], "violation [m]", C, "stiffness [N/m]", data->stiffness[idx], "force [N]", f, "tolerance [m]", tol);
-		//}
-
-		//if (dot < admissible_dot - tol) {
-		//	is_valid = false;
-		//	data->stiffness[idx] *= multiplier;
-		//}
 	}
 
 

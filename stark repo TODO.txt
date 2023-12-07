@@ -12,30 +12,6 @@ Oct unification
 		* Safe setters and getters
 		* UI should not contain logic, just lower-level calls
 	
-	All constraints
-
-		Absolute
-			absolute_point
-			absolute_direction
-			
-		Relative
-			Hard Constraints
-				Positional
-					point (ball_joint)
-					point_on_axis
-					distance
-					distance_limits
-
-				Directional
-					direction
-					angle
-					angle_limits
-			
-			Soft Constraints
-				spring_linear
-				spring_angular
-				motor_linear_velocity
-				motor_angular_velocity
 		
 		
 		
@@ -94,6 +70,8 @@ Oct unification
 		- Soften/harden the constraints softly at the end of every time step.
 			This should also prevent the chain effect
 	
+	* [*] Proper rigid body data structure where all the rigid bodies and constraint information is stored and written in a structured manner.
+		Translations, rotations, velocities... Constraint points, directions, violations, stiffnesses...
 	
 	* Architecture
 		- core is a weird mix. General and specific.

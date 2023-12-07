@@ -9,6 +9,7 @@
 #include <symx>
 
 #include "../../utils/mesh_utils.h"
+#include "../distances.h"
 
 namespace stark::models
 {
@@ -137,7 +138,6 @@ namespace stark::models
 
 				return { angle_deg, torque };  // { [deg], [Nm] }
 			}
-
 		};
 
 
@@ -165,20 +165,57 @@ namespace stark::models
 				this->labels.push_back("");
 				return id;
 			}
-			static symx::Scalar energy(const symx::Scalar& k, const symx::Vector& p, const symx::Vector& q)
+			static symx::Scalar energy(const symx::Scalar& k, const symx::Vector& a, const symx::Vector& b)
 			{
-				return 0.5 * k * (q - p).squared_norm();
+				return 0.5 * k * (b - a).squared_norm();
 			}
-			static std::pair<double, Eigen::Vector3d> violation_in_m_and_force(double k, const Eigen::Vector3d& p, const Eigen::Vector3d& q)
+			static std::pair<double, Eigen::Vector3d> violation_in_m_and_force(double k, const Eigen::Vector3d& a, const Eigen::Vector3d& b)
 			{
-				const Eigen::Vector3d u = q - p;
+				const Eigen::Vector3d u = b - a;
 				const double C = u.norm();
 				return { C, k * C * u / C };  // { [m], [N] }
 			}
 		};
 
 		/*
-		*	Disables absolute displacement of a point in a an object. (Ball joint)
+		*	Enforces a point on a object to move along a direction relative to another object.
+		*/
+		struct PointOnAxes
+		{
+			symx::LabelledConnectivity<3> conn{ { "idx", "a", "b" } };
+			std::vector<Eigen::Vector3d> a_loc;
+			std::vector<Eigen::Vector3d> da_loc;
+			std::vector<Eigen::Vector3d> b_loc;
+			std::vector<double> stiffness;
+			std::vector<double> tolerance_in_m;
+			std::vector<double> is_active;
+			std::vector<std::string> labels;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& b_loc, double stiffness, double tolerance_in_m)
+			{
+				const int id = this->conn.numbered_push_back({ rb_a, rb_b });
+				this->a_loc.push_back(a_loc);
+				this->da_loc.push_back(da_loc.normalized());
+				this->b_loc.push_back(b_loc);
+				this->stiffness.push_back(stiffness);
+				this->tolerance_in_m.push_back(tolerance_in_m);
+				this->is_active.push_back(1.0);
+				this->labels.push_back("");
+				return id;
+			}
+			static symx::Scalar energy(const symx::Scalar& k, const symx::Vector& a, const symx::Vector& da, const symx::Vector& b)
+			{
+				return 0.5 * k * sq_distance_point_line(b, a, a + da);
+			}
+			static std::pair<double, Eigen::Vector3d> violation_in_m_and_force(double k, const Eigen::Vector3d& a, const Eigen::Vector3d& da, const Eigen::Vector3d& b)
+			{
+				const double C = std::sqrt(sq_distance_point_line(b, a, a + da));
+				const Eigen::Vector3d u = da.cross(b - a).cross(da).normalized();
+				return { C, k * C * u };  // { [m], [N] }
+			}
+		};
+
+		/*
+		*	Enforces two points on two objects to be at a certain distance.
 		*/
 		struct Distance
 		{
@@ -203,78 +240,181 @@ namespace stark::models
 				this->labels.push_back("");
 				return id;
 			}
-			static symx::Scalar energy(const symx::Scalar& k, const symx::Vector& p, const symx::Vector& q, const symx::Scalar& target_distance)
+			static symx::Scalar energy(const symx::Scalar& k, const symx::Vector& a, const symx::Vector& b, const symx::Scalar& target_distance)
 			{
-				return 0.5 * k * (target_distance - (q - p).norm()).powN(2);
+				return 0.5 * k * (target_distance - (b - a).norm()).powN(2);
 			}
-			static std::pair<double, Eigen::Vector3d> violation_in_m_and_force(double k, const Eigen::Vector3d& p, const Eigen::Vector3d& q, const double target_distance)
+			static std::pair<double, Eigen::Vector3d> violation_in_m_and_force(double k, const Eigen::Vector3d& a, const Eigen::Vector3d& b, double target_distance)
 			{
-				const Eigen::Vector3d u = q - p;
+				const Eigen::Vector3d u = b - a;
 				const double d = u.norm();
 				const double C = target_distance - d;
 				return { C, k * C * u / d };  // { [m], [N] }
 			}
 		};
 
+		/*
+		*	Limits the min and max distance between two points from two different objects.
+		*/
+		struct DistanceLimits
+		{
+			symx::LabelledConnectivity<3> conn{ { "idx", "a", "b" } };
+			std::vector<Eigen::Vector3d> a_loc;
+			std::vector<Eigen::Vector3d> b_loc;
+			std::vector<double> min_distance;
+			std::vector<double> max_distance;
+			std::vector<double> stiffness;
+			std::vector<double> tolerance_in_m;
+			std::vector<double> is_active;
+			std::vector<std::string> labels;
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double min_distance, double max_distance, double stiffness, double tolerance_in_m)
+			{
+				const int id = this->conn.numbered_push_back({ rb_a, rb_b });
+				this->a_loc.push_back(a_loc);
+				this->b_loc.push_back(b_loc);
+				this->min_distance.push_back(min_distance);
+				this->max_distance.push_back(max_distance);
+				this->stiffness.push_back(stiffness);
+				this->tolerance_in_m.push_back(tolerance_in_m);
+				this->is_active.push_back(1.0);
+				this->labels.push_back("");
+				return id;
+			}
+			static symx::Scalar energy(const symx::Scalar& k, const symx::Vector& a, const symx::Vector& b, const symx::Scalar& min_distance, const symx::Scalar& max_distance)
+			{
+				const symx::Scalar length = (b - a).norm();
+				const symx::Scalar E_min = symx::branch(length < min_distance, k * symx::powN(min_distance - length, 3) / 3.0, 0.0);
+				const symx::Scalar E_max = symx::branch(length > max_distance, k * symx::powN(length - max_distance, 3) / 3.0, 0.0);
+				return E_min + E_max;
+			}
+			static std::pair<double, Eigen::Vector3d> violation_in_m_and_force(double k, const Eigen::Vector3d& a, const Eigen::Vector3d& b, double min_distance, double max_distance)
+			{
+				const Eigen::Vector3d u = b - a;
+				const double d = u.norm();
 
-
-
-
-
+				if (d < min_distance) {
+					const double C = min_distance - d;
+					return { C, k * std::pow(C, 2) * u / d };  // { [m], [N] }
+				}
+				else if (d > max_distance) {
+					const double C = d - max_distance;
+					return { C, k * std::pow(C, 2) * u / d };  // { [m], [N] }
+				}
+				else {
+					return {0.0, Eigen::Vector3d::Zero()};
+				}
+			}
+		};
 
 		/*
 		*	Enforces two local axes in two objects to be aligned.
+		* 
+		*	The formulation is "displacement" between global direction vectors equals to zero. See [1].
 		*/
-		struct RelativeDirectionLocks
+		struct Directions
 		{
 			symx::LabelledConnectivity<3> conn{ { "idx", "a", "b" } };
 			std::vector<Eigen::Vector3d> da_loc;
 			std::vector<Eigen::Vector3d> db_loc;
 			std::vector<double> stiffness;
-			std::vector<double> tolerance;
+			std::vector<double> tolerance_in_deg;
 			std::vector<double> is_active;
 			std::vector<std::string> labels;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double stiffness, double tolerance)
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double stiffness, double tolerance_in_deg)
 			{
-				const int id = (int)this->is_active.size();
-				this->conn.numbered_push_back({ rb_a, rb_b });
+				const int id = this->conn.numbered_push_back({ rb_a, rb_b });
 				this->da_loc.push_back(da_loc.normalized());
 				this->db_loc.push_back(db_loc.normalized());
 				this->stiffness.push_back(stiffness);
-				this->tolerance.push_back(tolerance);
+				this->tolerance_in_deg.push_back(tolerance_in_deg);
 				this->is_active.push_back(1.0);
 				this->labels.push_back("");
 				return id;
+			}
+			static symx::Scalar energy(const symx::Scalar& k, const symx::Vector& da, const symx::Vector& db)
+			{
+				return 0.5 * k * (db - da).squared_norm();
+			}
+			static std::pair<double, Eigen::Vector3d> violation_in_deg_and_torque(double k, const Eigen::Vector3d& da, const Eigen::Vector3d& db)
+			{
+				const Eigen::Vector3d u = db - da;
+				const double C = u.norm();
+				const Eigen::Vector3d force = k * C * u / C;
+
+				const double angle_deg = utils::rad2deg(std::asin(C));
+				const Eigen::Vector3d torque = da.cross(force);
+
+				return { angle_deg, torque };  // { [deg], [Nm] }
 			}
 		};
 
 		/*
-		*	Enforces a point on a object to move along a relative direction of another object.
+		*	Enforces a local direction in an object to be within the cone of admissible directions relative to another object.
+		* 
+		*	The formulation is "displacement" between global direction vectors equals to zero. See [1].
 		*/
-		struct PointOnAxis
+		struct AngleLimits
 		{
 			symx::LabelledConnectivity<3> conn{ { "idx", "a", "b" } };
-			std::vector<Eigen::Vector3d> a_loc;
 			std::vector<Eigen::Vector3d> da_loc;
-			std::vector<Eigen::Vector3d> b_loc;
+			std::vector<Eigen::Vector3d> db_loc;
+			std::vector<double> max_distance;
 			std::vector<double> stiffness;
-			std::vector<double> tolerance;
+			std::vector<double> tolerance_in_deg;
 			std::vector<double> is_active;
 			std::vector<std::string> labels;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& b_loc, double stiffness, double tolerance)
+			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double max_distance, double stiffness, double tolerance_in_deg)
 			{
-				const int id = (int)this->is_active.size();
-				this->conn.numbered_push_back({ rb_a, rb_b });
-				this->a_loc.push_back(a_loc);
+				const int id = this->conn.numbered_push_back({ rb_a, rb_b });
 				this->da_loc.push_back(da_loc.normalized());
-				this->b_loc.push_back(b_loc);
+				this->db_loc.push_back(db_loc.normalized());
+				this->max_distance.push_back(max_distance);
 				this->stiffness.push_back(stiffness);
-				this->tolerance.push_back(tolerance);
+				this->tolerance_in_deg.push_back(tolerance_in_deg);
 				this->is_active.push_back(1.0);
 				this->labels.push_back("");
 				return id;
 			}
+			static double opening_distance_of_angle(double angle_deg)
+			{
+				return std::sqrt(1.0 + 1.0 - 2.0*std::cos(utils::deg2rad(angle_deg))); // Law of cosines for sides of unit length
+			}
+			static double angle_of_opening_distance(double d)
+			{
+				return utils::rad2deg(std::acos((1.0 + 1.0 - d*d) / 2.0)); // Law of cosines for sides of unit length
+			}
+			static symx::Scalar energy(const symx::Scalar& k, const symx::Vector& da, const symx::Vector& db, const symx::Scalar& max_distance)
+			{
+				const symx::Scalar length = (db - da).norm();
+				return symx::branch(length > max_distance, k * symx::powN(length - max_distance, 3) / 3.0, 0.0);
+			}
+			static std::pair<double, Eigen::Vector3d> violation_in_deg_and_torque(double k, const Eigen::Vector3d& da, const Eigen::Vector3d& db, double max_distance)
+			{
+				const Eigen::Vector3d u = db - da;
+				const double d = u.norm();
+
+				if (d > max_distance) {
+					const double C = d - max_distance;
+					const Eigen::Vector3d force = k * std::pow(C, 2) * u / d;
+					return { angle_of_opening_distance(C), da.cross(force) };  // { [deg], [N] }
+				}
+				else {
+					return { 0.0, Eigen::Vector3d::Zero() };
+				}
+			}
 		};
+
+
+
+
+
+
+
+
+
+
+
+
 
 		/*
 		*	Adds forces counteracting relative displacement and velocity of two local points from different objects to not be at a reference distance.
@@ -304,63 +444,7 @@ namespace stark::models
 			}
 		};
 
-		/*
-		*	Limits the min and max distance of two points from two objects.
-		*/
-		struct DistanceLimits
-		{
-			symx::LabelledConnectivity<3> conn{ { "idx", "a", "b" } };
-			std::vector<Eigen::Vector3d> a_loc;
-			std::vector<Eigen::Vector3d> b_loc;
-			std::vector<double> min_length;
-			std::vector<double> max_length;
-			std::vector<double> stiffness;
-			std::vector<double> tolerance;
-			std::vector<double> is_active;
-			std::vector<std::string> labels;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double min_length, double max_length, double stiffness, double tolerance)
-			{
-				const int id = (int)this->is_active.size();
-				this->conn.numbered_push_back({ rb_a, rb_b });
-				this->a_loc.push_back(a_loc);
-				this->b_loc.push_back(b_loc);
-				this->min_length.push_back(min_length);
-				this->max_length.push_back(max_length);
-				this->stiffness.push_back(stiffness);
-				this->tolerance.push_back(tolerance);
-				this->is_active.push_back(1.0);
-				this->labels.push_back("");
-				return id;
-			}
-		};
 
-		/*
-		*	Enforces a local direction in an object to be within the cone of admissible directions relative to another object.
-		*/
-		struct AngleLimits
-		{
-			symx::LabelledConnectivity<3> conn{ { "idx", "a", "b" } };
-			std::vector<Eigen::Vector3d> da_loc;
-			std::vector<Eigen::Vector3d> db_loc;
-			std::vector<double> admissible_dot;
-			std::vector<double> stiffness;
-			std::vector<double> tolerance;
-			std::vector<double> is_active;
-			std::vector<std::string> labels;
-			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double admissible_dot, double stiffness, double tolerance)
-			{
-				const int id = (int)this->is_active.size();
-				this->conn.numbered_push_back({ rb_a, rb_b });
-				this->da_loc.push_back(da_loc.normalized());
-				this->db_loc.push_back(db_loc.normalized());
-				this->admissible_dot.push_back(admissible_dot);
-				this->stiffness.push_back(stiffness);
-				this->tolerance.push_back(tolerance);
-				this->is_active.push_back(1.0);
-				this->labels.push_back("");
-				return id;
-			}
-		};
 
 		/*
 		*	Add torque counteracting the difference in angular velocity between two objects.

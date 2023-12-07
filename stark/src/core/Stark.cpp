@@ -123,7 +123,7 @@ bool Stark::run_one_step()
 			this->logger.set("avg dt", this->current_time / (double)this->logger.ints["time_steps"]);
 			this->logger.set("cr", this->logger.doubles["step"] / this->current_time);
 
-			this->callbacks.run_on_convergence(); // Sets solution. x0 = x1. Exits minimization.
+			this->callbacks.run_on_time_step_accepted(); // Sets solution. x0 = x1. Exits minimization.
 
 			this->callbacks.run_after_time_step();  // Can use the converged state x1, v1.
 

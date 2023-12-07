@@ -125,6 +125,49 @@ namespace stark::models
 		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
+	class RBCPointOnAxis
+	{
+	private:
+		std::shared_ptr<RigidBodyConstraints::PointOnAxes> constraints;
+		int idx = -1;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
+
+	public:
+		RBCPointOnAxis(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::PointOnAxes> constraints, int idx)
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
+		{};
+
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
+
+		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
+		inline auto& set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; return (*this); };
+
+		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
+		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
+
+		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
+		inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
+
+		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
+		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
+
+		inline std::pair<double, Eigen::Vector3d> violation_in_m_and_force() const
+		{
+			return RigidBodyConstraints::PointOnAxes::violation_in_m_and_force(get_stiffness(),
+				rb_a.local_to_global_point(get_local_point_body_a()), rb_a.local_to_global_direction(get_local_direction_body_a()), rb_b.local_to_global_point(get_local_point_body_b()));
+		};
+
+		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
+		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
+	};
+
 	class RBCDistanceHandler
 	{
 	private:
@@ -168,122 +211,7 @@ namespace stark::models
 		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
-	class RelativeDirectionLockHandler
-	{
-	private:
-		std::shared_ptr<RigidBodyConstraints::RelativeDirectionLocks> constraints;
-		int idx = -1;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
-
-	public:
-		RelativeDirectionLockHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::RelativeDirectionLocks> constraints, int idx) 
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
-		{};
-
-		inline RigidBodyHandler get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-
-		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
-		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
-
-		inline Eigen::Vector3d get_local_direction_body_b() const { return this->constraints->db_loc[this->idx]; };
-		inline auto& set_local_direction_body_b(const Eigen::Vector3d& d) const { this->constraints->db_loc[this->idx] = d; return (*this); };
-
-		inline double get_angle_tolerance_in_deg() const
-		{
-			return utils::rad2deg(std::asin(this->constraints->tolerance[this->idx])); // convert from meters which is what is constrained (lengh of opposite side of triangle)
-		};
-		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg)
-		{
-			this->constraints->tolerance[this->idx] = std::sin(utils::deg2rad(tolerance_in_deg)); // convert to meters which is what is constrained (lengh of opposite side of triangle)
-			return (*this);
-		};
-
-		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
-		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
-
-		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
-		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
-
-		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
-	};
-
-	class PointOnAxisConstraintHandler
-	{
-	private:
-		std::shared_ptr<RigidBodyConstraints::PointOnAxis> constraints;
-		int idx = -1;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
-
-	public:
-		PointOnAxisConstraintHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::PointOnAxis> constraints, int idx)
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
-		{};
-
-		inline RigidBodyHandler get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-
-		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
-		inline auto& set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; return (*this); };
-
-		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
-		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
-
-		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
-		inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
-
-		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance[this->idx]; };
-		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance[this->idx] = tolerance_in_m; return (*this); };
-
-		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
-		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
-
-		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
-		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
-
-		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
-	};
-
-	class DampedSpringHandler
-	{
-	private:
-		std::shared_ptr<RigidBodyConstraints::DampedSprings> constraints;
-		int idx = -1;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
-
-	public:
-		DampedSpringHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::DampedSprings> constraints, int idx)
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
-		{};
-
-		inline RigidBodyHandler get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-
-		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
-		inline auto& set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; return (*this); };
-
-		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
-		inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
-
-		inline double get_rest_length() const { return this->constraints->rest_length[this->idx]; };
-		inline auto& set_rest_length(double length) { this->constraints->rest_length[this->idx] = length; return (*this); };
-
-		inline double get_damping() const { return this->constraints->damping[this->idx]; };
-		inline auto& set_damping(double damping) { this->constraints->damping[this->idx] = damping; return (*this); };
-
-		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
-		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
-
-		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
-		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
-
-		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
-	};
-
-	class DistanceLimitHandler
+	class RBCDistanceLimitHandler
 	{
 	private:
 		std::shared_ptr<RigidBodyConstraints::DistanceLimits> constraints;
@@ -292,8 +220,8 @@ namespace stark::models
 		RigidBodyHandler rb_b;
 
 	public:
-		DistanceLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::DistanceLimits> constraints, int idx)
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
+		RBCDistanceLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::DistanceLimits> constraints, int idx)
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
 		{};
 
 		inline RigidBodyHandler get_body_a() { return this->rb_a; };
@@ -305,14 +233,20 @@ namespace stark::models
 		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
 		inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
 
-		inline double get_min_length() const { return this->constraints->min_length[this->idx]; };
-		inline auto& set_min_length(double length) { this->constraints->min_length[this->idx] = length; return (*this); };
+		inline double get_min_distance() const { return this->constraints->min_distance[this->idx]; };
+		inline auto& set_min_distance(double distance) { this->constraints->min_distance[this->idx] = distance; return (*this); };
 
-		inline double get_max_length() const { return this->constraints->max_length[this->idx]; };
-		inline auto& set_max_length(double length) { this->constraints->max_length[this->idx] = length; return (*this); };
+		inline double get_max_distance() const { return this->constraints->max_distance[this->idx]; };
+		inline auto& set_max_distance(double distance) { this->constraints->max_distance[this->idx] = distance; return (*this); };
 
-		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance[this->idx]; };
-		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance[this->idx] = tolerance_in_m; return (*this); };
+		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
+		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
+
+		inline std::pair<double, Eigen::Vector3d> violation_in_m_and_force() const
+		{
+			return RigidBodyConstraints::DistanceLimits::violation_in_m_and_force(get_stiffness(),
+				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()), get_min_distance(), get_max_distance());
+		};
 
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
@@ -323,16 +257,16 @@ namespace stark::models
 		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
-	class AngleLimitHandler
+	class RBCDirection
 	{
 	private:
-		std::shared_ptr<RigidBodyConstraints::AngleLimits> constraints;
+		std::shared_ptr<RigidBodyConstraints::Directions> constraints;
 		int idx = -1;
 		RigidBodyHandler rb_a;
 		RigidBodyHandler rb_b;
 
 	public:
-		AngleLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::AngleLimits> constraints, int idx)
+		RBCDirection(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::Directions> constraints, int idx)
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
 		{};
 
@@ -345,27 +279,56 @@ namespace stark::models
 		inline Eigen::Vector3d get_local_direction_body_b() const { return this->constraints->db_loc[this->idx]; };
 		inline auto& set_local_direction_body_b(const Eigen::Vector3d& d) const { this->constraints->db_loc[this->idx] = d; return (*this); };
 
-		inline double get_angle_tolerance_in_deg() const
+		inline double get_angle_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
+		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
+
+		inline std::pair<double, Eigen::Vector3d> violation_in_deg_and_torque() const
 		{
-			// The actual tolerance used is the difference between the dot product of the max admissible angle plus the tolerance, minus the dot product of the admissible angle by itself
-			return utils::rad2deg(std::acos(this->constraints->admissible_dot[this->idx] - this->constraints->tolerance[this->idx])) - this->get_limit_angle_in_deg();
-		};
-		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg)
-		{
-			// The actual tolerance used is the difference between the dot product of the max admissible angle plus the tolerance, minus the dot product of the admissible angle by itself
-			this->constraints->tolerance[this->idx] = this->constraints->admissible_dot[this->idx] - std::cos(utils::deg2rad(this->get_limit_angle_in_deg() + tolerance_in_deg));
-			return (*this);
+			return RigidBodyConstraints::Directions::violation_in_deg_and_torque(get_stiffness(), 
+				rb_a.local_to_global_direction(get_local_direction_body_a()), rb_b.local_to_global_direction(get_local_direction_body_b()));
 		};
 
-		inline double get_limit_angle_in_deg() const 
-		{ 
-			return utils::rad2deg(std::acos(this->constraints->admissible_dot[this->idx])); // converts from the dot product of normalized vectors with that angle
+		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
+		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
+	};
+
+	class RBCAngleLimitHandler
+	{
+	private:
+		std::shared_ptr<RigidBodyConstraints::AngleLimits> constraints;
+		int idx = -1;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
+
+	public:
+		RBCAngleLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::AngleLimits> constraints, int idx)
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
+		{};
+
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
+
+		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
+		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
+
+		inline Eigen::Vector3d get_local_direction_body_b() const { return this->constraints->db_loc[this->idx]; };
+		inline auto& set_local_direction_body_b(const Eigen::Vector3d& d) const { this->constraints->db_loc[this->idx] = d; return (*this); };
+
+		inline double get_angle_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
+		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
+
+		inline double get_limit_angle_in_deg() const
+		{
+			return RigidBodyConstraints::AngleLimits::angle_of_opening_distance(this->constraints->max_distance[this->idx]);
 		};
-		inline auto& set_limit_angle_in_deg(double angle) 
-		{ 
-			const double angle_tol = this->get_angle_tolerance_in_deg();
-			this->constraints->admissible_dot[this->idx] = std::cos(utils::deg2rad(angle)); // converts to the dot product of normalized vectors with that angle
-			this->set_angle_tolerance_in_deg(angle_tol);
+		inline auto& set_limit_angle_in_deg(double angle_deg)
+		{
+			this->constraints->max_distance[this->idx] = RigidBodyConstraints::AngleLimits::opening_distance_of_angle(angle_deg);
 			return (*this);
 		};
 
@@ -378,277 +341,320 @@ namespace stark::models
 		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
-	class RelativeLinearVelocityMotorHandler
-	{
-	private:
-		std::shared_ptr<RigidBodyConstraints::RelativeLinearVelocityMotors> constraints;
-		int idx = -1;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
-
-	public:
-		RelativeLinearVelocityMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::RelativeLinearVelocityMotors> constraints, int idx) 
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
-		{};
-
-		inline RigidBodyHandler get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-
-		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
-		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
-
-		inline double get_target_velocity() const { return this->constraints->target_v[this->idx]; };
-		inline auto& set_target_velocity(double velocity) { this->constraints->target_v[this->idx] = velocity; return (*this); };
-
-		inline double get_max_force() const { return this->constraints->max_force[this->idx]; };
-		inline auto& set_max_force(double force) { this->constraints->max_force[this->idx] = force; return (*this); };
-
-		inline double get_delay() const { return this->constraints->delay[this->idx]; };
-		inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
-
-		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
-		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
-
-		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
-	};
-
-	class RelativeAngularVelocityMotorHandler
-	{
-	private:
-		std::shared_ptr<RigidBodyConstraints::RelativeAngularVelocityMotors> constraints;
-		int idx = -1;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
-
-	public:
-		RelativeAngularVelocityMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::RelativeAngularVelocityMotors> constraints, int idx) 
-			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
-		{};
-
-		inline RigidBodyHandler get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-
-		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
-		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
-
-		inline double get_target_angular_velocity() const { return this->constraints->target_w[this->idx]; };
-		inline auto& set_target_angular_velocity(double velocity) { this->constraints->target_w[this->idx] = velocity; return (*this); };
-
-		inline double get_max_torque() const { return this->constraints->max_torque[this->idx]; };
-		inline auto& set_max_torque(double torque) { this->constraints->max_torque[this->idx] = torque; return (*this); };
-
-		inline double get_delay() const { return this->constraints->delay[this->idx]; };
-		inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
-
-		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
-		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
-
-		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
-	};
 
 
-	/* ===================================================================================================================================== */
-	/* =======================================================  DERIVED CONSTRAINTS  ======================================================= */
-	/* ===================================================================================================================================== */
-	class FixedConstraintHandler
-	{
-	private:
-		AnchorPointHandler anchor_point;
-		AbsoluteDirectionLockHandler z_lock;
-		AbsoluteDirectionLockHandler x_lock;
-		RigidBodyHandler rb;
-		std::string label = "";
 
-	public:
-		FixedConstraintHandler(RigidBodyHandler rb, AnchorPointHandler anchor_point, AbsoluteDirectionLockHandler z_lock, AbsoluteDirectionLockHandler x_lock)
-			: rb(rb), anchor_point(anchor_point), z_lock(z_lock), x_lock(x_lock) {};
-		inline RigidBodyHandler get_body() { return this->rb; };
-		inline AnchorPointHandler get_anchor_point() { return this->anchor_point; };
-		inline AbsoluteDirectionLockHandler get_z_lock() { return this->z_lock; };
-		inline AbsoluteDirectionLockHandler get_x_lock() { return this->x_lock; };
 
-		inline auto& set_stiffness(double stiffness);
-		inline auto& set_distance_tolerance_in_m(double tolerance_in_m);
-		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg);
 
-		inline std::string get_label() const { return this->label; };
-		inline auto& set_label(std::string label) 
-		{ 
-			this->label = label;
-			this->anchor_point.set_label(label + "_anchor_point");
-			this->z_lock.set_label(label + "_z_lock");
-			this->x_lock.set_label(label + "_x_lock");
-			return (*this); 
-		};
 
-		inline auto& enable(bool activation)
-		{
-			this->anchor_point.enable(activation);
-			this->z_lock.enable(activation);
-			this->x_lock.enable(activation);
-			return (*this);
-		};
-	};
+	//class DampedSpringHandler
+	//{
+	//private:
+	//	std::shared_ptr<RigidBodyConstraints::DampedSprings> constraints;
+	//	int idx = -1;
+	//	RigidBodyHandler rb_a;
+	//	RigidBodyHandler rb_b;
 
-	class HingeJointHandler
-	{
-	private:
-		BallJointHandler ball_joint;
-		RelativeDirectionLockHandler relative_direction_lock;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
+	//public:
+	//	DampedSpringHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::DampedSprings> constraints, int idx)
+	//		: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
+	//	{};
 
-	public:
-		HingeJointHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, BallJointHandler ball_joint, RelativeDirectionLockHandler relative_direction_lock)
-			: rb_a(rb_a), rb_b(rb_b), ball_joint(ball_joint), relative_direction_lock(relative_direction_lock) {};
-		inline RigidBodyHandler get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline BallJointHandler get_ball_joint() { return this->ball_joint; };
-		inline RelativeDirectionLockHandler get_relative_direction_lock() { return this->relative_direction_lock; };
-		inline void enable(bool activation)
-		{
-			this->ball_joint.enable(activation);
-			this->relative_direction_lock.enable(activation);
-		};
-		inline auto& set_label(std::string label);
-	};
+	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
+	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
 
-	class HingeJointWithLimitsHandler
-	{
-	private:
-		HingeJointHandler hinge_joint;
-		AngleLimitHandler angle_limit;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
+	//	inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
+	//	inline auto& set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; return (*this); };
 
-	public:
-		HingeJointWithLimitsHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, HingeJointHandler hinge_joint, AngleLimitHandler angle_limit)
-			: rb_a(rb_a), rb_b(rb_b), hinge_joint(hinge_joint), angle_limit(angle_limit) {};
-		inline RigidBodyHandler get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline HingeJointHandler get_hinge_joint() { return this->hinge_joint; };
-		inline AngleLimitHandler get_angle_limit() { return this->angle_limit; };
-		inline void enable(bool activation)
-		{
-			this->hinge_joint.enable(activation);
-			this->angle_limit.enable(activation);
-		};
-		inline auto& set_label(std::string label);
-	};
+	//	inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
+	//	inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
 
-	class SpringWithLimitsHandler
-	{
-	private:
-		DampedSpringHandler spring;
-		DistanceLimitHandler distance_limit;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
+	//	inline double get_rest_length() const { return this->constraints->rest_length[this->idx]; };
+	//	inline auto& set_rest_length(double length) { this->constraints->rest_length[this->idx] = length; return (*this); };
 
-	public:
-		SpringWithLimitsHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, DampedSpringHandler spring, DistanceLimitHandler distance_limit)
-			: rb_a(rb_a), rb_b(rb_b), spring(spring), distance_limit(distance_limit) {};
-		inline RigidBodyHandler get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline DampedSpringHandler get_spring() { return this->spring; };
-		inline DistanceLimitHandler get_distance_limit() { return this->distance_limit; };
-		inline void enable(bool activation)
-		{
-			this->spring.enable(activation);
-			this->distance_limit.enable(activation);
-		};
-		inline auto& set_label(std::string label);
-	};
+	//	inline double get_damping() const { return this->constraints->damping[this->idx]; };
+	//	inline auto& set_damping(double damping) { this->constraints->damping[this->idx] = damping; return (*this); };
 
-	class SliderHandler
-	{
-	private:
-		PointOnAxisConstraintHandler point_on_axis;
-		RelativeDirectionLockHandler relative_direction_lock;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
+	//	inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
+	//	inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
 
-	public:
-		SliderHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, PointOnAxisConstraintHandler point_on_axis, RelativeDirectionLockHandler relative_direction_lock)
-			: rb_a(rb_a), rb_b(rb_b), point_on_axis(point_on_axis), relative_direction_lock(relative_direction_lock) {};
-		inline RigidBodyHandler get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline PointOnAxisConstraintHandler get_point_on_axis() { return this->point_on_axis; };
-		inline RelativeDirectionLockHandler get_relative_direction_lock() { return this->relative_direction_lock; };
-		inline void enable(bool activation)
-		{
-			this->point_on_axis.enable(activation);
-			this->relative_direction_lock.enable(activation);
-		};
-		inline auto& set_label(std::string label);
-	};
+	//	inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+	//	inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
 
-	class PrismaticSliderHandler
-	{
-	private:
-		SliderHandler slider;
-		RelativeDirectionLockHandler relative_direction_lock;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
+	//	inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
+	//};
 
-	public:
-		PrismaticSliderHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, SliderHandler slider, RelativeDirectionLockHandler relative_direction_lock)
-			: rb_a(rb_a), rb_b(rb_b), slider(slider), relative_direction_lock(relative_direction_lock) {};
-		inline RigidBodyHandler get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline SliderHandler get_slider() { return this->slider; };
-		inline RelativeDirectionLockHandler get_relative_direction_lock() { return this->relative_direction_lock; };
-		inline void enable(bool activation)
-		{
-			this->slider.enable(activation);
-			this->relative_direction_lock.enable(activation);
-		};
-		inline auto& set_label(std::string label);
-	};
+	//class RelativeLinearVelocityMotorHandler
+	//{
+	//private:
+	//	std::shared_ptr<RigidBodyConstraints::RelativeLinearVelocityMotors> constraints;
+	//	int idx = -1;
+	//	RigidBodyHandler rb_a;
+	//	RigidBodyHandler rb_b;
 
-	class MotorHandler
-	{
-	private:
-		HingeJointHandler hinge;
-		RelativeAngularVelocityMotorHandler motor;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
+	//public:
+	//	RelativeLinearVelocityMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::RelativeLinearVelocityMotors> constraints, int idx) 
+	//		: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
+	//	{};
 
-	public:
-		MotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, HingeJointHandler hinge, RelativeAngularVelocityMotorHandler motor)
-			: rb_a(rb_a), rb_b(rb_b), hinge(hinge), motor(motor) {};
-		inline RigidBodyHandler get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline HingeJointHandler get_hinge_joint() { return this->hinge; };
-		inline RelativeAngularVelocityMotorHandler get_motor() { return this->motor; };
-		inline void enable(bool activation)
-		{
-			this->hinge.enable(activation);
-			this->motor.enable(activation);
-		};
-		inline auto& set_label(std::string label);
-	};
+	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
+	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
 
-	// Parallel Gripper, hydraulic press. Positive velocity for expansion.
-	class PrismaticPressHandler
-	{
-	private:
-		PrismaticSliderHandler prismatic_slider;
-		RelativeLinearVelocityMotorHandler motor;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
+	//	inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
+	//	inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
 
-	public:
-		PrismaticPressHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, PrismaticSliderHandler prismatic_slider, RelativeLinearVelocityMotorHandler motor)
-			: rb_a(rb_a), rb_b(rb_b), prismatic_slider(prismatic_slider), motor(motor) {};
-		inline RigidBodyHandler get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler get_body_b() { return this->rb_b; };
-		inline PrismaticSliderHandler get_prismatic_slider() { return this->prismatic_slider; };
-		inline RelativeLinearVelocityMotorHandler get_motor() { return this->motor; };
-		inline void enable(bool activation)
-		{
-			this->prismatic_slider.enable(activation);
-			this->motor.enable(activation);
-		};
-		inline auto& set_label(std::string label);
-	};
+	//	inline double get_target_velocity() const { return this->constraints->target_v[this->idx]; };
+	//	inline auto& set_target_velocity(double velocity) { this->constraints->target_v[this->idx] = velocity; return (*this); };
+
+	//	inline double get_max_force() const { return this->constraints->max_force[this->idx]; };
+	//	inline auto& set_max_force(double force) { this->constraints->max_force[this->idx] = force; return (*this); };
+
+	//	inline double get_delay() const { return this->constraints->delay[this->idx]; };
+	//	inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
+
+	//	inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+	//	inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+	//	inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
+	//};
+
+	//class RelativeAngularVelocityMotorHandler
+	//{
+	//private:
+	//	std::shared_ptr<RigidBodyConstraints::RelativeAngularVelocityMotors> constraints;
+	//	int idx = -1;
+	//	RigidBodyHandler rb_a;
+	//	RigidBodyHandler rb_b;
+
+	//public:
+	//	RelativeAngularVelocityMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::RelativeAngularVelocityMotors> constraints, int idx) 
+	//		: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
+	//	{};
+
+	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
+	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
+
+	//	inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
+	//	inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
+
+	//	inline double get_target_angular_velocity() const { return this->constraints->target_w[this->idx]; };
+	//	inline auto& set_target_angular_velocity(double velocity) { this->constraints->target_w[this->idx] = velocity; return (*this); };
+
+	//	inline double get_max_torque() const { return this->constraints->max_torque[this->idx]; };
+	//	inline auto& set_max_torque(double torque) { this->constraints->max_torque[this->idx] = torque; return (*this); };
+
+	//	inline double get_delay() const { return this->constraints->delay[this->idx]; };
+	//	inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
+
+	//	inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+	//	inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+	//	inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
+	//};
+
+
+	///* ===================================================================================================================================== */
+	///* =======================================================  DERIVED CONSTRAINTS  ======================================================= */
+	///* ===================================================================================================================================== */
+	//class FixedConstraintHandler
+	//{
+	//private:
+	//	AnchorPointHandler anchor_point;
+	//	AbsoluteDirectionLockHandler z_lock;
+	//	AbsoluteDirectionLockHandler x_lock;
+	//	RigidBodyHandler rb;
+	//	std::string label = "";
+
+	//public:
+	//	FixedConstraintHandler(RigidBodyHandler rb, AnchorPointHandler anchor_point, AbsoluteDirectionLockHandler z_lock, AbsoluteDirectionLockHandler x_lock)
+	//		: rb(rb), anchor_point(anchor_point), z_lock(z_lock), x_lock(x_lock) {};
+	//	inline RigidBodyHandler get_body() { return this->rb; };
+	//	inline AnchorPointHandler get_anchor_point() { return this->anchor_point; };
+	//	inline AbsoluteDirectionLockHandler get_z_lock() { return this->z_lock; };
+	//	inline AbsoluteDirectionLockHandler get_x_lock() { return this->x_lock; };
+
+	//	inline auto& set_stiffness(double stiffness);
+	//	inline auto& set_distance_tolerance_in_m(double tolerance_in_m);
+	//	inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg);
+
+	//	inline std::string get_label() const { return this->label; };
+	//	inline auto& set_label(std::string label) 
+	//	{ 
+	//		this->label = label;
+	//		this->anchor_point.set_label(label + "_anchor_point");
+	//		this->z_lock.set_label(label + "_z_lock");
+	//		this->x_lock.set_label(label + "_x_lock");
+	//		return (*this); 
+	//	};
+
+	//	inline auto& enable(bool activation)
+	//	{
+	//		this->anchor_point.enable(activation);
+	//		this->z_lock.enable(activation);
+	//		this->x_lock.enable(activation);
+	//		return (*this);
+	//	};
+	//};
+
+	//class HingeJointHandler
+	//{
+	//private:
+	//	BallJointHandler ball_joint;
+	//	RelativeDirectionLockHandler relative_direction_lock;
+	//	RigidBodyHandler rb_a;
+	//	RigidBodyHandler rb_b;
+
+	//public:
+	//	HingeJointHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, BallJointHandler ball_joint, RelativeDirectionLockHandler relative_direction_lock)
+	//		: rb_a(rb_a), rb_b(rb_b), ball_joint(ball_joint), relative_direction_lock(relative_direction_lock) {};
+	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
+	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
+	//	inline BallJointHandler get_ball_joint() { return this->ball_joint; };
+	//	inline RelativeDirectionLockHandler get_relative_direction_lock() { return this->relative_direction_lock; };
+	//	inline void enable(bool activation)
+	//	{
+	//		this->ball_joint.enable(activation);
+	//		this->relative_direction_lock.enable(activation);
+	//	};
+	//	inline auto& set_label(std::string label);
+	//};
+
+	//class HingeJointWithLimitsHandler
+	//{
+	//private:
+	//	HingeJointHandler hinge_joint;
+	//	AngleLimitHandler angle_limit;
+	//	RigidBodyHandler rb_a;
+	//	RigidBodyHandler rb_b;
+
+	//public:
+	//	HingeJointWithLimitsHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, HingeJointHandler hinge_joint, AngleLimitHandler angle_limit)
+	//		: rb_a(rb_a), rb_b(rb_b), hinge_joint(hinge_joint), angle_limit(angle_limit) {};
+	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
+	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
+	//	inline HingeJointHandler get_hinge_joint() { return this->hinge_joint; };
+	//	inline AngleLimitHandler get_angle_limit() { return this->angle_limit; };
+	//	inline void enable(bool activation)
+	//	{
+	//		this->hinge_joint.enable(activation);
+	//		this->angle_limit.enable(activation);
+	//	};
+	//	inline auto& set_label(std::string label);
+	//};
+
+	//class SpringWithLimitsHandler
+	//{
+	//private:
+	//	DampedSpringHandler spring;
+	//	DistanceLimitHandler distance_limit;
+	//	RigidBodyHandler rb_a;
+	//	RigidBodyHandler rb_b;
+
+	//public:
+	//	SpringWithLimitsHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, DampedSpringHandler spring, DistanceLimitHandler distance_limit)
+	//		: rb_a(rb_a), rb_b(rb_b), spring(spring), distance_limit(distance_limit) {};
+	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
+	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
+	//	inline DampedSpringHandler get_spring() { return this->spring; };
+	//	inline DistanceLimitHandler get_distance_limit() { return this->distance_limit; };
+	//	inline void enable(bool activation)
+	//	{
+	//		this->spring.enable(activation);
+	//		this->distance_limit.enable(activation);
+	//	};
+	//	inline auto& set_label(std::string label);
+	//};
+
+	//class SliderHandler
+	//{
+	//private:
+	//	PointOnAxisConstraintHandler point_on_axes;
+	//	RelativeDirectionLockHandler relative_direction_lock;
+	//	RigidBodyHandler rb_a;
+	//	RigidBodyHandler rb_b;
+
+	//public:
+	//	SliderHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, PointOnAxisConstraintHandler point_on_axes, RelativeDirectionLockHandler relative_direction_lock)
+	//		: rb_a(rb_a), rb_b(rb_b), point_on_axes(point_on_axes), relative_direction_lock(relative_direction_lock) {};
+	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
+	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
+	//	inline PointOnAxisConstraintHandler get_point_on_axis() { return this->point_on_axes; };
+	//	inline RelativeDirectionLockHandler get_relative_direction_lock() { return this->relative_direction_lock; };
+	//	inline void enable(bool activation)
+	//	{
+	//		this->point_on_axes.enable(activation);
+	//		this->relative_direction_lock.enable(activation);
+	//	};
+	//	inline auto& set_label(std::string label);
+	//};
+
+	//class PrismaticSliderHandler
+	//{
+	//private:
+	//	SliderHandler slider;
+	//	RelativeDirectionLockHandler relative_direction_lock;
+	//	RigidBodyHandler rb_a;
+	//	RigidBodyHandler rb_b;
+
+	//public:
+	//	PrismaticSliderHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, SliderHandler slider, RelativeDirectionLockHandler relative_direction_lock)
+	//		: rb_a(rb_a), rb_b(rb_b), slider(slider), relative_direction_lock(relative_direction_lock) {};
+	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
+	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
+	//	inline SliderHandler get_slider() { return this->slider; };
+	//	inline RelativeDirectionLockHandler get_relative_direction_lock() { return this->relative_direction_lock; };
+	//	inline void enable(bool activation)
+	//	{
+	//		this->slider.enable(activation);
+	//		this->relative_direction_lock.enable(activation);
+	//	};
+	//	inline auto& set_label(std::string label);
+	//};
+
+	//class MotorHandler
+	//{
+	//private:
+	//	HingeJointHandler hinge;
+	//	RelativeAngularVelocityMotorHandler motor;
+	//	RigidBodyHandler rb_a;
+	//	RigidBodyHandler rb_b;
+
+	//public:
+	//	MotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, HingeJointHandler hinge, RelativeAngularVelocityMotorHandler motor)
+	//		: rb_a(rb_a), rb_b(rb_b), hinge(hinge), motor(motor) {};
+	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
+	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
+	//	inline HingeJointHandler get_hinge_joint() { return this->hinge; };
+	//	inline RelativeAngularVelocityMotorHandler get_motor() { return this->motor; };
+	//	inline void enable(bool activation)
+	//	{
+	//		this->hinge.enable(activation);
+	//		this->motor.enable(activation);
+	//	};
+	//	inline auto& set_label(std::string label);
+	//};
+
+	//// Parallel Gripper, hydraulic press. Positive velocity for expansion.
+	//class PrismaticPressHandler
+	//{
+	//private:
+	//	PrismaticSliderHandler prismatic_slider;
+	//	RelativeLinearVelocityMotorHandler motor;
+	//	RigidBodyHandler rb_a;
+	//	RigidBodyHandler rb_b;
+
+	//public:
+	//	PrismaticPressHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, PrismaticSliderHandler prismatic_slider, RelativeLinearVelocityMotorHandler motor)
+	//		: rb_a(rb_a), rb_b(rb_b), prismatic_slider(prismatic_slider), motor(motor) {};
+	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
+	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
+	//	inline PrismaticSliderHandler get_prismatic_slider() { return this->prismatic_slider; };
+	//	inline RelativeLinearVelocityMotorHandler get_motor() { return this->motor; };
+	//	inline void enable(bool activation)
+	//	{
+	//		this->prismatic_slider.enable(activation);
+	//		this->motor.enable(activation);
+	//	};
+	//	inline auto& set_label(std::string label);
+	//};
 }

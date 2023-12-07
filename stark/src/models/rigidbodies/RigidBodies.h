@@ -58,119 +58,122 @@ namespace stark::models
 			const RigidBodyHandler& body_b, 
 			const Eigen::Vector3d& p_glob
 		);
+		RBCPointOnAxis add_constraint_point_on_axis(
+			const RigidBodyHandler& body_a, 
+			const RigidBodyHandler& body_b, 
+			const Eigen::Vector3d& p_glob, 
+			const Eigen::Vector3d& d_glob
+		);
 		RBCDistanceHandler add_constraint_distance(
 			const RigidBodyHandler& body_a, 
 			const RigidBodyHandler& body_b, 
 			const Eigen::Vector3d& a_glob,
 			const Eigen::Vector3d& b_glob
 		);
-		RelativeDirectionLockHandler add_constraint_relative_direction_lock(
-			const RigidBodyHandler& body_a, 
-			const RigidBodyHandler& body_b, 
-			const Eigen::Vector3d& d_glob
-		);
-		PointOnAxisConstraintHandler add_constraint_point_on_axis(
-			const RigidBodyHandler& body_a, 
-			const RigidBodyHandler& body_b, 
-			const Eigen::Vector3d& p_glob, 
-			const Eigen::Vector3d& d_glob
-		);
-		DampedSpringHandler add_spring(
-			const RigidBodyHandler& body_a,
-			const RigidBodyHandler& body_b,
-			const Eigen::Vector3d& a_glob, 
-			const Eigen::Vector3d& b_glob, 
-			double stiffness, 
-			double damping = 0.0
-		);
-		DistanceLimitHandler add_constraint_distance_limits(
+		RBCDistanceLimitHandler add_constraint_distance_limits(
 			const RigidBodyHandler& body_a, 
 			const RigidBodyHandler& body_b, 
 			const Eigen::Vector3d& a_glob, 
 			const Eigen::Vector3d& b_glob, 
-			double min_length,
-			double max_length
+			double min_distance,
+			double max_distance
 		);
-		AngleLimitHandler add_constraint_angle_limits(
+		RBCDirection add_constraint_direction(
+			const RigidBodyHandler& body_a, 
+			const RigidBodyHandler& body_b, 
+			const Eigen::Vector3d& d_glob
+		);
+		RBCAngleLimitHandler add_constraint_angle_limit(
 			const RigidBodyHandler& body_a,
 			const RigidBodyHandler& body_b, 
 			const Eigen::Vector3d& d_glob,
 			double admissible_angle_deg
 		);
-		RelativeLinearVelocityMotorHandler add_relative_linear_velocity_motor(
-			const RigidBodyHandler& body_a, 
-			const RigidBodyHandler& body_b,
-			const Eigen::Vector3d& d_glob, 
-			double target_v, 
-			double max_force,
-			double delay = 0.01
-		);
-		RelativeAngularVelocityMotorHandler add_relative_angular_velocity_motor(
-			const RigidBodyHandler& body_a,
-			const RigidBodyHandler& body_b,
-			const Eigen::Vector3d& d_glob, 
-			double target_w, 
-			double max_torque, 
-			double delay = 0.01
-		);
-		
-		//// Derived
-		FixedConstraintHandler add_constraint_fixed(
-			const RigidBodyHandler& body
-		);
-		HingeJointHandler add_constraint_hinge(
-			const RigidBodyHandler& body_a, 
-			const RigidBodyHandler& body_b,
-			const Eigen::Vector3d& p_glob, 
-			const Eigen::Vector3d& d_glob
-		);
-		HingeJointWithLimitsHandler add_constraint_hinge_with_limits(
-			const RigidBodyHandler& body_a, 
-			const RigidBodyHandler& body_b, 
-			const Eigen::Vector3d& p_glob, 
-			const Eigen::Vector3d& d_glob,
-			double admissible_angle_deg
-		);
-		SliderHandler add_constraint_slider(
-			const RigidBodyHandler& body_a,
-			const RigidBodyHandler& body_b,
-			const Eigen::Vector3d& p_glob,
-			const Eigen::Vector3d& d_glob
-		);
-		PrismaticSliderHandler add_constraint_prismatic_slider(
-			const RigidBodyHandler& body_a,
-			const RigidBodyHandler& body_b,
-			const Eigen::Vector3d& p_glob, 
-			const Eigen::Vector3d& d_glob
-		);
-		SpringWithLimitsHandler add_spring_with_limits(
-			const RigidBodyHandler& body_a,
-			const RigidBodyHandler& body_b, 
-			const Eigen::Vector3d& a_glob, 
-			const Eigen::Vector3d& b_glob, 
-			double stiffness,
-			double min_length,
-			double max_length,
-			double damping = 0.0
-		);
-		PrismaticPressHandler add_prismatic_press(
-			const RigidBodyHandler& body_a, 
-			const RigidBodyHandler& body_b,
-			const Eigen::Vector3d& p_glob, 
-			const Eigen::Vector3d& d_glob, 
-			double target_v,
-			double max_force,
-			double delay = 0.01
-		);
-		MotorHandler add_motor(
-			const RigidBodyHandler& body_a, 
-			const RigidBodyHandler& body_b,
-			const Eigen::Vector3d& p_glob,
-			const Eigen::Vector3d& d_glob, 
-			double target_w, 
-			double max_torque,
-			double delay = 0.01
-		);
+
+
+
+		//DampedSpringHandler add_spring(
+		//	const RigidBodyHandler& body_a,
+		//	const RigidBodyHandler& body_b,
+		//	const Eigen::Vector3d& a_glob, 
+		//	const Eigen::Vector3d& b_glob, 
+		//	double stiffness, 
+		//	double damping = 0.0
+		//);
+		//RelativeLinearVelocityMotorHandler add_relative_linear_velocity_motor(
+		//	const RigidBodyHandler& body_a, 
+		//	const RigidBodyHandler& body_b,
+		//	const Eigen::Vector3d& d_glob, 
+		//	double target_v, 
+		//	double max_force,
+		//	double delay = 0.01
+		//);
+		//RelativeAngularVelocityMotorHandler add_relative_angular_velocity_motor(
+		//	const RigidBodyHandler& body_a,
+		//	const RigidBodyHandler& body_b,
+		//	const Eigen::Vector3d& d_glob, 
+		//	double target_w, 
+		//	double max_torque, 
+		//	double delay = 0.01
+		//);
+		//
+		////// Derived
+		//FixedConstraintHandler add_constraint_fixed(
+		//	const RigidBodyHandler& body
+		//);
+		//HingeJointHandler add_constraint_hinge(
+		//	const RigidBodyHandler& body_a, 
+		//	const RigidBodyHandler& body_b,
+		//	const Eigen::Vector3d& p_glob, 
+		//	const Eigen::Vector3d& d_glob
+		//);
+		//HingeJointWithLimitsHandler add_constraint_hinge_with_limits(
+		//	const RigidBodyHandler& body_a, 
+		//	const RigidBodyHandler& body_b, 
+		//	const Eigen::Vector3d& p_glob, 
+		//	const Eigen::Vector3d& d_glob,
+		//	double admissible_angle_deg
+		//);
+		//SliderHandler add_constraint_slider(
+		//	const RigidBodyHandler& body_a,
+		//	const RigidBodyHandler& body_b,
+		//	const Eigen::Vector3d& p_glob,
+		//	const Eigen::Vector3d& d_glob
+		//);
+		//PrismaticSliderHandler add_constraint_prismatic_slider(
+		//	const RigidBodyHandler& body_a,
+		//	const RigidBodyHandler& body_b,
+		//	const Eigen::Vector3d& p_glob, 
+		//	const Eigen::Vector3d& d_glob
+		//);
+		//SpringWithLimitsHandler add_spring_with_limits(
+		//	const RigidBodyHandler& body_a,
+		//	const RigidBodyHandler& body_b, 
+		//	const Eigen::Vector3d& a_glob, 
+		//	const Eigen::Vector3d& b_glob, 
+		//	double stiffness,
+		//	double min_length,
+		//	double max_length,
+		//	double damping = 0.0
+		//);
+		//PrismaticPressHandler add_prismatic_press(
+		//	const RigidBodyHandler& body_a, 
+		//	const RigidBodyHandler& body_b,
+		//	const Eigen::Vector3d& p_glob, 
+		//	const Eigen::Vector3d& d_glob, 
+		//	double target_v,
+		//	double max_force,
+		//	double delay = 0.01
+		//);
+		//MotorHandler add_motor(
+		//	const RigidBodyHandler& body_a, 
+		//	const RigidBodyHandler& body_b,
+		//	const Eigen::Vector3d& p_glob,
+		//	const Eigen::Vector3d& d_glob, 
+		//	double target_w, 
+		//	double max_torque,
+		//	double delay = 0.01
+		//);
 	};
 	using spRigidBodies = std::shared_ptr<RigidBodies>;
 }

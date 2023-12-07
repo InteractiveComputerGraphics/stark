@@ -6,43 +6,43 @@
 #include "rb_constraint_test_scenes.h"
 
 
-void rb()
-{
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "rb";
-	settings.output.output_directory = OUTPUT_PATH + "/rb";
-	settings.output.codegen_directory = COMPILE_PATH;
-	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
-	settings.execution.end_simulation_time = 5.0;
-	settings.contact.collisions_enabled = false;
-	settings.contact.friction_enabled = false;
-
-	settings.debug.symx_check_for_NaNs = true;
-	//settings.newton.project_to_PD = true;
-	//settings.newton.use_direct_linear_solve = true;
-	//settings.newton.max_line_search_iterations = 1000;
-
-	stark::Simulation simulation(settings);
-
-	// Objects
-	stark::RigidBodyHandler box0 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
-		.set_linear_damping(1.0)
-		.enable_writing_transformation_sequence("box0");
-	stark::RigidBodyHandler box1 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
-		.set_linear_damping(1.0)
-		.add_displacement({ 0.1, 0, 0 })
-		.enable_writing_transformation_sequence("box1");
-
-	// Constraints
-	simulation.rigidbodies->add_constraint_anchor_point(box0, { -0.05, -0.05, -0.05 });
-	simulation.rigidbodies->add_constraint_ball_joint(box0, box1, { 0.05, 0.05, 0.05 });
-
-	// Misc
-	simulation.rigidbodies->write_collision_meshes(true);
-
-	// Run
-	simulation.stark.run();
-}
+//void rb()
+//{
+//	stark::Settings settings = stark::Settings();
+//	settings.output.simulation_name = "rb";
+//	settings.output.output_directory = OUTPUT_PATH + "/rb";
+//	settings.output.codegen_directory = COMPILE_PATH;
+//	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
+//	settings.execution.end_simulation_time = 5.0;
+//	settings.contact.collisions_enabled = false;
+//	settings.contact.friction_enabled = false;
+//
+//	settings.debug.symx_check_for_NaNs = true;
+//	//settings.newton.project_to_PD = true;
+//	//settings.newton.use_direct_linear_solve = true;
+//	//settings.newton.max_line_search_iterations = 1000;
+//
+//	stark::Simulation simulation(settings);
+//
+//	// Objects
+//	stark::RigidBodyHandler box0 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
+//		.set_linear_damping(1.0)
+//		.enable_writing_transformation_sequence("box0");
+//	stark::RigidBodyHandler box1 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
+//		.set_linear_damping(1.0)
+//		.add_displacement({ 0.1, 0, 0 })
+//		.enable_writing_transformation_sequence("box1");
+//
+//	// Constraints
+//	simulation.rigidbodies->add_constraint_anchor_point(box0, { -0.05, -0.05, -0.05 });
+//	simulation.rigidbodies->add_constraint_ball_joint(box0, box1, { 0.05, 0.05, 0.05 });
+//
+//	// Misc
+//	simulation.rigidbodies->write_collision_meshes(true);
+//
+//	// Run
+//	simulation.stark.run();
+//}
 void net()
 {
 	stark::Settings settings = stark::Settings();
@@ -209,5 +209,5 @@ int main()
 	//rb();
 
 	//rb_constraints_all();
-	rb_constraints_ball_joint();
+	rb_constraints_point();
 }

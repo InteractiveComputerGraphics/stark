@@ -2,7 +2,7 @@
 
 #include <stark>
 
-void rb_constraints_ball_joint();
+void rb_constraints_point();
 void rb_constraints_relative_direction_lock();
 void rb_constraints_point_on_axis();
 void rb_constraints_spring();

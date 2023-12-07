@@ -79,8 +79,6 @@ set(MODELS_DEFORMABLES_FILES
 set(MODELS_RIGIDBODIES_FILES
 	src/models/rigidbodies/EnergyRigidBodyConstraints.cpp
 	src/models/rigidbodies/EnergyRigidBodyConstraints.h
-	src/models/rigidbodies/EnergyRigidBodyConstraint_AnchorPoints.cpp
-	src/models/rigidbodies/EnergyRigidBodyConstraint_AnchorPoints.h
 	src/models/rigidbodies/EnergyRigidBodyInertia.cpp
 	src/models/rigidbodies/EnergyRigidBodyInertia.h
 	src/models/rigidbodies/inertia_tensors.cpp
