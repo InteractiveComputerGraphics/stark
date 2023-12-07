@@ -29,28 +29,23 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
 
 	// Constraint containers initialization
-	this->anchor_points = std::make_shared<BaseRigidBodyConstraints::AnchorPoints>();
-	this->absolute_direction_locks = std::make_shared<BaseRigidBodyConstraints::AbsoluteDirectionLocks>();
-	this->ball_joints = std::make_shared<BaseRigidBodyConstraints::BallJoints>();
-	this->relative_direction_locks = std::make_shared<BaseRigidBodyConstraints::RelativeDirectionLocks>();
-	this->point_on_axis = std::make_shared<BaseRigidBodyConstraints::PointOnAxis>();
-	this->damped_springs = std::make_shared<BaseRigidBodyConstraints::DampedSprings>();
-	this->distance_limits = std::make_shared<BaseRigidBodyConstraints::DistanceLimits>();
-	this->angle_limits = std::make_shared<BaseRigidBodyConstraints::AngleLimits>();
-	this->relative_linear_velocity_motors = std::make_shared<BaseRigidBodyConstraints::RelativeLinearVelocityMotors>();
-	this->relative_angular_velocity_motors = std::make_shared<BaseRigidBodyConstraints::RelativeAngularVelocityMotors>();
+	this->global_points = std::make_shared<RigidBodyConstraints::GlobalPoints>();
+	this->global_directions = std::make_shared<RigidBodyConstraints::GlobalDirections>();
+	this->points = std::make_shared<RigidBodyConstraints::Points>();
+	this->distances = std::make_shared<RigidBodyConstraints::Distance>();
+	this->relative_direction_locks = std::make_shared<RigidBodyConstraints::RelativeDirectionLocks>();
+	this->point_on_axis = std::make_shared<RigidBodyConstraints::PointOnAxis>();
+	this->damped_springs = std::make_shared<RigidBodyConstraints::DampedSprings>();
+	this->distance_limits = std::make_shared<RigidBodyConstraints::DistanceLimits>();
+	this->angle_limits = std::make_shared<RigidBodyConstraints::AngleLimits>();
+	this->relative_linear_velocity_motors = std::make_shared<RigidBodyConstraints::RelativeLinearVelocityMotors>();
+	this->relative_angular_velocity_motors = std::make_shared<RigidBodyConstraints::RelativeAngularVelocityMotors>();
 
 	// Energy declarations
-
-	Do not make a anchor_point, absolute_direction_lock, absolute_angle_constraint...
-	Just make a fixed_constraint directly.
-	Every other constraint is between two objects.
-	Otherwise we have twice the constraints, and code, and documentation...
-
-	stark.global_energy.add_energy("rb_constraint_anchor_point", this->anchor_points->conn,
+	stark.global_energy.add_energy("rb_constraint_global_points", this->global_points->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->anchor_points;
+			auto& data = this->global_points;
 
 			symx::Vector loc = energy.make_vector(data->loc, conn["idx"]);
 			symx::Vector target_glob = energy.make_vector(data->target_glob, conn["idx"]);
@@ -59,44 +54,71 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
 			symx::Vector glob = this->dyn->get_x1(energy, conn["rb"], loc, dt);
-			symx::Scalar E = data->energy(stiffness, target_glob, glob);
+			symx::Scalar E = RigidBodyConstraints::GlobalPoints::energy(stiffness, target_glob, glob);
 			energy.set_with_condition(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_distance_constraint", this->ball_joints->conn,
+	stark.global_energy.add_energy("rb_constraint_global_directions", this->global_directions->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			auto& data = this->ball_joints;
-
-			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
-			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-
-			symx::Vector a1 = this->_get_x1(energy, stark, conn["a"], a_loc);
-			symx::Vector b1 = this->_get_x1(energy, stark, conn["b"], b_loc);
-			symx::Scalar E = 0.5 * stiffness * (a1 - b1).squared_norm();
-			energy.set_with_condition(E, is_active > 0.0);
-		}
-	);
-
-
-	stark.global_energy.add_energy("rb_constraint_absolute_direction_lock", this->absolute_direction_locks->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
-		{
-			auto& data = this->absolute_direction_locks;
+			auto& data = this->global_directions;
 
 			symx::Vector d_loc = energy.make_vector(data->d_loc, conn["idx"]);
 			symx::Vector target_d_glob = energy.make_vector(data->target_d_glob, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
-			symx::Vector d_glob = this->_get_d1(energy, stark, conn["rb"], d_loc);
-			symx::Scalar E = 0.5 * stiffness * (target_d_glob - d_glob).squared_norm();
+			symx::Vector d_glob = this->dyn->get_d1(energy, conn["rb"], d_loc, dt);
+			symx::Scalar E = RigidBodyConstraints::GlobalDirections::energy(stiffness, target_d_glob, d_glob);
 			energy.set_with_condition(E, is_active > 0.0);
 		}
 	);
+
+	stark.global_energy.add_energy("rb_constraint_points", this->points->conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto& data = this->points;
+
+			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
+			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
+			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
+			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+
+			symx::Vector a1 = this->dyn->get_x1(energy, conn["a"], a_loc, dt);
+			symx::Vector b1 = this->dyn->get_x1(energy, conn["b"], b_loc, dt);
+			symx::Scalar E = RigidBodyConstraints::Points::energy(stiffness, a1, b1);
+			energy.set_with_condition(E, is_active > 0.0);
+		}
+	);
+
+	stark.global_energy.add_energy("rb_constraint_distances", this->distances->conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto& data = this->distances;
+
+			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
+			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
+			symx::Scalar target_distance = energy.make_scalar(data->target_distance, conn["idx"]);
+			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
+			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+
+			symx::Vector a1 = this->dyn->get_x1(energy, conn["a"], a_loc, dt);
+			symx::Vector b1 = this->dyn->get_x1(energy, conn["b"], b_loc, dt);
+			symx::Scalar E = RigidBodyConstraints::Distance::energy(stiffness, a1, b1, target_distance);
+			energy.set_with_condition(E, is_active > 0.0);
+		}
+	);
+
+
+
+
+
+
+
 
 	stark.global_energy.add_energy("rb_constraint_ball_joint", this->ball_joints->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
@@ -316,64 +338,77 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 		this->logger.append_to_series("frame", stark.current_frame);
 	}
 
-	// Anchor Points
-	for (int i = 0; i < (int)this->anchor_points->conn.size(); i++) {
-		auto& data = this->anchor_points;
+	// Global Points
+	for (int i = 0; i < (int)this->global_points->conn.size(); i++) {
+		auto& data = this->global_points;
 		auto [idx, a] = data->conn[i];
 		const Eigen::Vector3d p = this->dyn->get_x1(a, data->loc[idx], dt);
-		auto [C, f] = data->violation_and_force(data->stiffness[idx], data->target_glob[idx], p);
+		auto [C, f] = RigidBodyConstraints::GlobalPoints::violation_in_m_and_force(data->stiffness[idx], data->target_glob[idx], p);
 
 		if (log) {
-			log_parameters(this->logger, "anchor_point", idx, data->labels[idx], 
+			log_parameters(this->logger, "absolute_position", idx, data->labels[idx], 
 				"violation [m]", C, 
 				"stiffness [N/m]", data->stiffness[idx], 
-				"force [N]", f, 
-				"tolerance [m]", data->tolerance[idx]);
+				"force [N]", f.norm(), 
+				"force_x [N]", f[0], 
+				"force_y [N]", f[1], 
+				"force_z [N]", f[2], 
+				"tolerance [m]", data->tolerance_in_m[idx],
+				"is_active", data->is_active[idx]);
 		}
 
-		if (C > data->tolerance[idx]) {
+		if (C > data->tolerance_in_m[idx]) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
 		}
 	}
 
-	// Absolute Direction Locks
-	for (int i = 0; i < (int)this->absolute_direction_locks->conn.size(); i++) {
-		auto& data = this->absolute_direction_locks;
+	// Global Directions
+	for (int i = 0; i < (int)this->global_directions->conn.size(); i++) {
+		auto& data = this->global_directions;
 		auto [idx, a] = data->conn[i];
-		const Eigen::Vector3d d = this->_get_d1(a, data->d_loc[idx], dt);
-		const Eigen::Vector3d d_target = data->target_d_glob[idx];
-		const double C = inf_norm(d - d_target);
-		const double tol = data->tolerance[idx];
+		const Eigen::Vector3d d = this->dyn->get_d1(a, data->d_loc[idx], dt);
+		auto [C, t] = RigidBodyConstraints::GlobalDirections::violation_in_deg_and_torque(data->stiffness[idx], data->target_d_glob[idx], d);
 
 		if (log) {
-			const double f = data->stiffness[idx] * std::abs(C);  // force = torque in this case as the leverage is 1m
-			const double angle_deg = BaseRigidBodyConstraints::get_angle_deg_from_distance_violation(C);
-			const double tol_deg = BaseRigidBodyConstraints::get_angle_deg_from_distance_violation(tol);
-			log_parameters(this->logger, "absolute_direction_lock", idx, data->labels[idx], "violation [deg]", angle_deg, "stiffness [N/m2]", data->stiffness[idx], "torque [Nm]", f, "tolerance [deg]", tol_deg);
+			log_parameters(this->logger, "absolute_direction", idx, data->labels[idx],
+				"violation [m]", C,
+				"stiffness [N/m]", data->stiffness[idx],
+				"torque [Nm]", t.norm(),
+				"torque_x [Nm]", t[0],
+				"torque_y [Nm]", t[1],
+				"torque_z [Nm]", t[2],
+				"tolerance [deg]", data->tolerance_in_deg[idx],
+				"is_active", data->is_active[idx]);
 		}
 
-		if (C > tol) {
+		if (C > data->tolerance_in_deg[idx]) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
 		}
 	}
 
-	// Ball joints
-	for (int i = 0; i < (int)this->ball_joints->conn.size(); i++) {
-		auto& data = this->ball_joints;
+	// Points
+	for (int i = 0; i < (int)this->points->conn.size(); i++) {
+		auto& data = this->points;
 		auto [idx, a, b] = data->conn[i];
-		const Eigen::Vector3d a1 = this->_get_x1(a, data->a_loc[idx], dt);
-		const Eigen::Vector3d b1 = this->_get_x1(b, data->b_loc[idx], dt);
-		const double C = inf_norm(a1 - b1);
-		const double tol = data->tolerance[idx];
+		const Eigen::Vector3d a1 = this->dyn->get_x1(a, data->a_loc[idx], dt);
+		const Eigen::Vector3d b1 = this->dyn->get_x1(b, data->b_loc[idx], dt);
+		auto [C, f] = RigidBodyConstraints::Points::violation_in_m_and_force(data->stiffness[idx], a1, b1);
 
 		if (log) {
-			const double f = data->stiffness[idx] * std::abs(C);
-			log_parameters(this->logger, "ball_joint", idx, data->labels[idx], "violation [m]", C, "stiffness [N/m]", data->stiffness[idx], "force [N]", f, "tolerance [m]", tol);
+			log_parameters(this->logger, "absolute_position", idx, data->labels[idx],
+				"violation [m]", C,
+				"stiffness [N/m]", data->stiffness[idx],
+				"force [N]", f.norm(),
+				"force_x [N]", f[0],
+				"force_y [N]", f[1],
+				"force_z [N]", f[2],
+				"tolerance [m]", data->tolerance_in_m[idx],
+				"is_active", data->is_active[idx]);
 		}
 
-		if (C > tol) {
+		if (C > data->tolerance_in_m[idx]) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
 		}
@@ -390,8 +425,8 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 
 		if (log) {
 			const double f = data->stiffness[idx] * std::abs(C);  // force = torque in this case as the leverage is 1m
-			const double angle_deg = BaseRigidBodyConstraints::get_angle_deg_from_distance_violation(C);
-			const double tol_deg = BaseRigidBodyConstraints::get_angle_deg_from_distance_violation(tol);
+			const double angle_deg = RigidBodyConstraints::get_angle_deg_from_distance_violation(C);
+			const double tol_deg = RigidBodyConstraints::get_angle_deg_from_distance_violation(tol);
 			log_parameters(this->logger, "relative_direction_lock", idx, data->labels[idx], "violation [deg]", angle_deg, "stiffness [N/m2]", data->stiffness[idx], "torque [Nm]", f, "tolerance [deg]", tol_deg);
 		}
 
@@ -472,8 +507,8 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness(co
 		//if (log) {
 		//	const double C = std::max(0.0, angle_deg - admissible_angle_deg);
 		//	const double f = data->stiffness[idx] * std::pow(C, 2);
-		//	const double angle_deg = BaseRigidBodyConstraints::get_angle_deg_from_dot(dot);
-		//	const double tol_deg = BaseRigidBodyConstraints::get_angle_deg_from_dot(tol);
+		//	const double angle_deg = RigidBodyConstraints::get_angle_deg_from_dot(dot);
+		//	const double tol_deg = RigidBodyConstraints::get_angle_deg_from_dot(tol);
 		//	log_parameters(this->logger, "distance_limit", idx, data->labels[idx], "violation [m]", C, "stiffness [N/m]", data->stiffness[idx], "force [N]", f, "tolerance [m]", tol);
 		//}
 

@@ -14,28 +14,28 @@ Oct unification
 	
 	All constraints
 
-		anchor_point
-		distance_to_anchor_point
-		
-		absolute_direction
-		absolute_angle
-		
-		ball_joint
-		distance_constraint
-		
-		relative_direction
-		relative_angle
-		
-		distance_limits
-		
-		angle_limits
-		
-		point_on_axis
-		
-		linear_spring
-		angular_spring
-		linear_velocity_constraint
-		angular_velocity_constraint
+		Absolute
+			absolute_point
+			absolute_direction
+			
+		Relative
+			Hard Constraints
+				Positional
+					point (ball_joint)
+					point_on_axis
+					distance
+					distance_limits
+
+				Directional
+					direction
+					angle
+					angle_limits
+			
+			Soft Constraints
+				spring_linear
+				spring_angular
+				motor_linear_velocity
+				motor_angular_velocity
 		
 		
 		
@@ -55,6 +55,8 @@ Oct unification
 	* Attachments
 	
 	* BlockedSparseMatrix is an old version!
+	
+	* current_frame = zero runs for double the amount of iterations than the rest!
 	
 	
 	* run_accept_newton_iteration() is a terrible name
@@ -99,6 +101,8 @@ Oct unification
 			-> shared_ptr
 		- Check if all the ~"find_node_node_map_simplex" are necessary
 	
+	* Put back SymX fem_integrator.cpp.
+		It needs to be there, even if not used in Stark. It serves as example.
 		
 	* Reintroduce the constraint logger
 	* It really might not be a bad idea to have a RB class to

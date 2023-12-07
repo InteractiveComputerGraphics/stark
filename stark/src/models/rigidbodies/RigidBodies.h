@@ -45,18 +45,24 @@ namespace stark::models
 
 		// Add constraints
 		//// Base
-		AnchorPointHandler add_constraint_anchor_point(
+		RBCGlobalPointHandler add_constraint_global_point(
 			const RigidBodyHandler& body, 
 			const Eigen::Vector3d& p_glob
 		);
-		AbsoluteDirectionLockHandler add_constraint_absolute_direction_lock(
+		RBCGlobalDirectionHandler add_constraint_global_direction(
 			const RigidBodyHandler& body, 
 			const Eigen::Vector3d& d_glob
 		);
-		BallJointHandler add_constraint_ball_joint(
+		RBCPointHandler add_constraint_point(
 			const RigidBodyHandler& body_a, 
 			const RigidBodyHandler& body_b, 
 			const Eigen::Vector3d& p_glob
+		);
+		RBCDistanceHandler add_constraint_distance(
+			const RigidBodyHandler& body_a, 
+			const RigidBodyHandler& body_b, 
+			const Eigen::Vector3d& a_glob,
+			const Eigen::Vector3d& b_glob
 		);
 		RelativeDirectionLockHandler add_constraint_relative_direction_lock(
 			const RigidBodyHandler& body_a, 

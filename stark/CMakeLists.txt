@@ -77,7 +77,6 @@ set(MODELS_DEFORMABLES_FILES
 )
 
 set(MODELS_RIGIDBODIES_FILES
-	src/models/rigidbodies/BaseRigidBodyConstraints.h
 	src/models/rigidbodies/EnergyRigidBodyConstraints.cpp
 	src/models/rigidbodies/EnergyRigidBodyConstraints.h
 	src/models/rigidbodies/EnergyRigidBodyConstraint_AnchorPoints.cpp
@@ -91,6 +90,7 @@ set(MODELS_RIGIDBODIES_FILES
 	src/models/rigidbodies/RigidBodies.h
 	src/models/rigidbodies/RigidBodiesInternal.cpp
 	src/models/rigidbodies/RigidBodiesInternal.h
+	src/models/rigidbodies/RigidBodyConstraints.h
 	src/models/rigidbodies/RigidBodyDynamics.cpp
 	src/models/rigidbodies/RigidBodyDynamics.h
 	src/models/rigidbodies/RigidBodyHandler.cpp

@@ -99,32 +99,31 @@ stark::models::RigidBodyHandler stark::models::RigidBodies::add_torus(const doub
 	return body;
 }
 
-stark::models::AnchorPointHandler stark::models::RigidBodies::add_constraint_anchor_point(const RigidBodyHandler& body, const Eigen::Vector3d& p_glob)
+stark::models::RBCGlobalPointHandler stark::models::RigidBodies::add_constraint_global_point(const RigidBodyHandler& body, const Eigen::Vector3d& p_glob)
 {
-	const int idx = this->rb->constraints->anchor_points->add(
+	const int idx = this->rb->constraints->global_points->add(
 		body.index(), 
 		body.global_to_local_point(p_glob),
 		p_glob, 
 		this->default_stiffness,
 		this->default_tolerance_in_m
 	);
-	return AnchorPointHandler(body, this->rb->constraints->anchor_points, idx);
+	return RBCGlobalPointHandler(body, this->rb->constraints->global_points, idx);
 }
-stark::models::AbsoluteDirectionLockHandler stark::models::RigidBodies::add_constraint_absolute_direction_lock(const RigidBodyHandler& body, const Eigen::Vector3d& d_glob)
+stark::models::RBCGlobalDirectionHandler stark::models::RigidBodies::add_constraint_global_direction(const RigidBodyHandler& body, const Eigen::Vector3d& d_glob)
 {
-	const int idx = this->rb->constraints->absolute_direction_locks->add(
+	const int idx = this->rb->constraints->global_directions->add(
 		body.index(),
 		body.global_to_local_direction(d_glob),
 		d_glob,
 		this->default_stiffness,
-		0.0  // I use .set_angle_tolerance_in_deg() below
+		this->default_tolerance_in_deg
 	);
-	return AbsoluteDirectionLockHandler(body, this->rb->constraints->absolute_direction_locks, idx)
-		.set_angle_tolerance_in_deg(this->default_tolerance_in_deg);
+	return RBCGlobalDirectionHandler(body, this->rb->constraints->global_directions, idx);
 }
-stark::models::BallJointHandler stark::models::RigidBodies::add_constraint_ball_joint(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob)
+stark::models::RBCPointHandler stark::models::RigidBodies::add_constraint_point(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob)
 {
-	const int idx = this->rb->constraints->ball_joints->add(
+	const int idx = this->rb->constraints->points->add(
 		body_a.index(),
 		body_b.index(),
 		body_a.global_to_local_point(p_glob),
@@ -132,7 +131,20 @@ stark::models::BallJointHandler stark::models::RigidBodies::add_constraint_ball_
 		this->default_stiffness,
 		this->default_tolerance_in_m
 	);
-	return BallJointHandler(body_a, body_b, this->rb->constraints->ball_joints, idx);
+	return RBCPointHandler(body_a, body_b, this->rb->constraints->points, idx);
+}
+stark::models::RBCDistanceHandler stark::models::RigidBodies::add_constraint_distance(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob)
+{
+	const int idx = this->rb->constraints->distances->add(
+		body_a.index(),
+		body_b.index(),
+		body_a.global_to_local_point(a_glob),
+		body_b.global_to_local_point(b_glob),
+		(a_glob - b_glob).norm(),
+		this->default_stiffness,
+		this->default_tolerance_in_m
+	);
+	return RBCDistanceHandler(body_a, body_b, this->rb->constraints->distances, idx);
 }
 stark::models::RelativeDirectionLockHandler stark::models::RigidBodies::add_constraint_relative_direction_lock(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob)
 {

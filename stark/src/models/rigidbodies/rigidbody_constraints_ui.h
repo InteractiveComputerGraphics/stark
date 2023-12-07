@@ -2,7 +2,7 @@
 
 #include "../../utils/mesh_utils.h"
 
-#include "BaseRigidBodyConstraints.h"
+#include "RigidBodyConstraints.h"
 #include "RigidBodyHandler.h"
 
 namespace stark::models
@@ -11,15 +11,15 @@ namespace stark::models
 	/* =======================================================  BASE CONSTRAINTS  ======================================================= */
 	/* ================================================================================================================================== */
 	
-	class AnchorPointHandler
+	class RBCGlobalPointHandler
 	{
 	private:
-		std::shared_ptr<BaseRigidBodyConstraints::AnchorPoints> constraints;
+		std::shared_ptr<RigidBodyConstraints::GlobalPoints> constraints;
 		int idx = -1;
 		RigidBodyHandler rb;
 
 	public:
-		AnchorPointHandler(RigidBodyHandler rb, std::shared_ptr<BaseRigidBodyConstraints::AnchorPoints> constraints, int idx) 
+		RBCGlobalPointHandler(RigidBodyHandler rb, std::shared_ptr<RigidBodyConstraints::GlobalPoints> constraints, int idx)
 			: rb(rb), constraints(constraints), idx(idx) 
 		{};
 
@@ -34,12 +34,12 @@ namespace stark::models
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
 
-		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance[this->idx]; };
-		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance[this->idx] = tolerance_in_m; return (*this); };
+		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
+		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
-		inline std::array<double, 2> get_violation_and_force() const 
+		inline std::pair<double, Eigen::Vector3d> violation_in_m_and_force() const
 		{ 
-			return this->constraints->violation_and_force(get_stiffness(), get_global_target_point(), rb.local_to_global_point(get_local_point())); 
+			return RigidBodyConstraints::GlobalPoints::violation_in_m_and_force(get_stiffness(), get_global_target_point(), rb.local_to_global_point(get_local_point()));
 		};
 
 		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
@@ -48,15 +48,15 @@ namespace stark::models
 		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
-	class AbsoluteDirectionLockHandler
+	class RBCGlobalDirectionHandler
 	{
 	private:
-		std::shared_ptr<BaseRigidBodyConstraints::AbsoluteDirectionLocks> constraints;
+		std::shared_ptr<RigidBodyConstraints::GlobalDirections> constraints;
 		int idx = -1;
 		RigidBodyHandler rb;
 
 	public:
-		AbsoluteDirectionLockHandler(RigidBodyHandler rb, std::shared_ptr<BaseRigidBodyConstraints::AbsoluteDirectionLocks> constraints, int idx)
+		RBCGlobalDirectionHandler(RigidBodyHandler rb, std::shared_ptr<RigidBodyConstraints::GlobalDirections> constraints, int idx)
 			: rb(rb), constraints(constraints), idx(idx) 
 		{};
 
@@ -71,14 +71,12 @@ namespace stark::models
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
 
-		inline double get_angle_tolerance_in_deg() const 
-		{ 
-			return utils::rad2deg(std::asin(this->constraints->tolerance[this->idx])); // convert from meters which is what is constrained (lengh of opposite side of triangle)
-		};
-		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg)
-		{ 
-			this->constraints->tolerance[this->idx] = std::sin(utils::deg2rad(tolerance_in_deg)); // convert to meters which is what is constrained (lengh of opposite side of triangle)
-			return (*this);
+		inline double get_angle_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
+		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
+
+		inline std::pair<double, Eigen::Vector3d> violation_in_deg_and_torque() const
+		{
+			return RigidBodyConstraints::GlobalDirections::violation_in_deg_and_torque(get_stiffness(), get_global_target_direction(), rb.local_to_global_direction(get_local_direction()));
 		};
 
 		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
@@ -87,16 +85,16 @@ namespace stark::models
 		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
-	class BallJointHandler
+	class RBCPointHandler
 	{
 	private:
-		std::shared_ptr<BaseRigidBodyConstraints::BallJoints> constraints;
+		std::shared_ptr<RigidBodyConstraints::Points> constraints;
 		int idx = -1;
 		RigidBodyHandler rb_a;
 		RigidBodyHandler rb_b;
 
 	public:
-		BallJointHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::BallJoints> constraints, int idx) 
+		RBCPointHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::Points> constraints, int idx)
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
 		{};
 
@@ -112,8 +110,57 @@ namespace stark::models
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
 
-		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance[this->idx]; };
-		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance[this->idx] = tolerance_in_m; return (*this); };
+		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
+		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
+
+		inline std::pair<double, Eigen::Vector3d> violation_in_m_and_force() const
+		{
+			return RigidBodyConstraints::Points::violation_in_m_and_force(get_stiffness(),
+				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()));
+		};
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
+	};
+
+	class RBCDistanceHandler
+	{
+	private:
+		std::shared_ptr<RigidBodyConstraints::Distance> constraints;
+		int idx = -1;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
+
+	public:
+		RBCDistanceHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::Distance> constraints, int idx)
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
+		{};
+
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
+
+		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
+		inline auto& set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; return (*this); };
+
+		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
+		inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
+
+		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
+		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
+
+		inline double get_target_distance() const { return this->constraints->target_distance[this->idx]; };
+		inline auto& set_target_distance(double target_distance) { this->constraints->target_distance[this->idx] = target_distance; return (*this); };
+
+		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
+		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
+
+		inline std::pair<double, Eigen::Vector3d> violation_in_m_and_force() const
+		{
+			return RigidBodyConstraints::Distance::violation_in_m_and_force(get_stiffness(),
+				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()), get_target_distance());
+		};
 
 		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
 		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
@@ -124,13 +171,13 @@ namespace stark::models
 	class RelativeDirectionLockHandler
 	{
 	private:
-		std::shared_ptr<BaseRigidBodyConstraints::RelativeDirectionLocks> constraints;
+		std::shared_ptr<RigidBodyConstraints::RelativeDirectionLocks> constraints;
 		int idx = -1;
 		RigidBodyHandler rb_a;
 		RigidBodyHandler rb_b;
 
 	public:
-		RelativeDirectionLockHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::RelativeDirectionLocks> constraints, int idx) 
+		RelativeDirectionLockHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::RelativeDirectionLocks> constraints, int idx) 
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
 		{};
 
@@ -165,13 +212,13 @@ namespace stark::models
 	class PointOnAxisConstraintHandler
 	{
 	private:
-		std::shared_ptr<BaseRigidBodyConstraints::PointOnAxis> constraints;
+		std::shared_ptr<RigidBodyConstraints::PointOnAxis> constraints;
 		int idx = -1;
 		RigidBodyHandler rb_a;
 		RigidBodyHandler rb_b;
 
 	public:
-		PointOnAxisConstraintHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::PointOnAxis> constraints, int idx)
+		PointOnAxisConstraintHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::PointOnAxis> constraints, int idx)
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
 		{};
 
@@ -202,13 +249,13 @@ namespace stark::models
 	class DampedSpringHandler
 	{
 	private:
-		std::shared_ptr<BaseRigidBodyConstraints::DampedSprings> constraints;
+		std::shared_ptr<RigidBodyConstraints::DampedSprings> constraints;
 		int idx = -1;
 		RigidBodyHandler rb_a;
 		RigidBodyHandler rb_b;
 
 	public:
-		DampedSpringHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::DampedSprings> constraints, int idx)
+		DampedSpringHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::DampedSprings> constraints, int idx)
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
 		{};
 
@@ -239,13 +286,13 @@ namespace stark::models
 	class DistanceLimitHandler
 	{
 	private:
-		std::shared_ptr<BaseRigidBodyConstraints::DistanceLimits> constraints;
+		std::shared_ptr<RigidBodyConstraints::DistanceLimits> constraints;
 		int idx = -1;
 		RigidBodyHandler rb_a;
 		RigidBodyHandler rb_b;
 
 	public:
-		DistanceLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::DistanceLimits> constraints, int idx)
+		DistanceLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::DistanceLimits> constraints, int idx)
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
 		{};
 
@@ -279,13 +326,13 @@ namespace stark::models
 	class AngleLimitHandler
 	{
 	private:
-		std::shared_ptr<BaseRigidBodyConstraints::AngleLimits> constraints;
+		std::shared_ptr<RigidBodyConstraints::AngleLimits> constraints;
 		int idx = -1;
 		RigidBodyHandler rb_a;
 		RigidBodyHandler rb_b;
 
 	public:
-		AngleLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::AngleLimits> constraints, int idx)
+		AngleLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::AngleLimits> constraints, int idx)
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
 		{};
 
@@ -334,13 +381,13 @@ namespace stark::models
 	class RelativeLinearVelocityMotorHandler
 	{
 	private:
-		std::shared_ptr<BaseRigidBodyConstraints::RelativeLinearVelocityMotors> constraints;
+		std::shared_ptr<RigidBodyConstraints::RelativeLinearVelocityMotors> constraints;
 		int idx = -1;
 		RigidBodyHandler rb_a;
 		RigidBodyHandler rb_b;
 
 	public:
-		RelativeLinearVelocityMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::RelativeLinearVelocityMotors> constraints, int idx) 
+		RelativeLinearVelocityMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::RelativeLinearVelocityMotors> constraints, int idx) 
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
 		{};
 
@@ -368,13 +415,13 @@ namespace stark::models
 	class RelativeAngularVelocityMotorHandler
 	{
 	private:
-		std::shared_ptr<BaseRigidBodyConstraints::RelativeAngularVelocityMotors> constraints;
+		std::shared_ptr<RigidBodyConstraints::RelativeAngularVelocityMotors> constraints;
 		int idx = -1;
 		RigidBodyHandler rb_a;
 		RigidBodyHandler rb_b;
 
 	public:
-		RelativeAngularVelocityMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<BaseRigidBodyConstraints::RelativeAngularVelocityMotors> constraints, int idx) 
+		RelativeAngularVelocityMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::RelativeAngularVelocityMotors> constraints, int idx) 
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
 		{};
 
