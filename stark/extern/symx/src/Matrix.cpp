@@ -230,6 +230,52 @@ symx::Vector symx::Matrix::singular_values_2x2() const
 	return Vector({ s0, s1 });
 }
 
+symx::Matrix symx::Matrix::block(const int32_t begin_row, const int32_t begin_col, const int32_t n_rows, const int32_t n_cols) const
+{
+	assert(begin_row >= 0 && begin_row + n_rows < this->rows());
+	assert(begin_col >= 0 && begin_col + n_cols < this->cols());
+
+	std::vector<Scalar> values;
+	for (int i = 0; i < n_rows; i++) {
+		for (int j = 0; j < n_cols; j++) {
+			values.push_back((*this)(begin_row + i, begin_col + j));
+		}
+	}
+	return Matrix(values, { n_rows, n_cols });
+}
+
+symx::Vector symx::Matrix::row(const int32_t idx) const
+{
+	return Vector(this->block(idx, 0, 1, this->ncols).vals);
+}
+
+symx::Vector symx::Matrix::col(const int32_t idx) const
+{
+	return Vector(this->block(0, idx, this->nrows, 1).vals);
+}
+
+void symx::Matrix::set_block(const int32_t begin_row, const int32_t begin_col, const int32_t n_rows, const int32_t n_cols, const Matrix& m)
+{
+	assert(begin_row >= 0 && begin_row + n_rows < this->rows());
+	assert(begin_col >= 0 && begin_col + n_cols < this->cols());
+
+	for (int i = 0; i < n_rows; i++) {
+		for (int j = 0; j < n_cols; j++) {
+			(*this)(begin_row + i, begin_col + j) = m(i, j);
+		}
+	}
+}
+
+void symx::Matrix::set_row(const int32_t idx, const Vector& v)
+{
+	this->set_block(idx, 0, 1, this->ncols, Matrix(v.vals, { 1, this->ncols }));
+}
+
+void symx::Matrix::set_col(const int32_t idx, const Vector& v)
+{
+	this->set_block(0, idx, this->nrows, 1, Matrix(v.vals, { this->nrows, 1 }));
+}
+
 symx::Scalar symx::Matrix::det() const
 {
 	assert(this->nrows == this->ncols && "symx error: cannot use symx::Matrix::div() on non-square matrices.");

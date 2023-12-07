@@ -20,6 +20,7 @@ namespace symx
 		Vector(const std::vector<Scalar>& values);
 
 		// Operations
+		Vector slice(const int32_t begin, const int32_t end) const;
 		Vector transpose() const;
 		Scalar dot(const Vector& other) const;
 		Scalar cross2(const Vector& other) const;

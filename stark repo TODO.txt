@@ -103,6 +103,7 @@ Oct unification
 	
 	* Put back SymX fem_integrator.cpp.
 		It needs to be there, even if not used in Stark. It serves as example.
+	* SymX what's private/public. Very important before publication.
 		
 	* Reintroduce the constraint logger
 	* It really might not be a bad idea to have a RB class to

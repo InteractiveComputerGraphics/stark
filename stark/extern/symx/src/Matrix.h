@@ -37,6 +37,12 @@ namespace symx
 		Scalar trace() const;
 		Scalar frobenius_norm_sq() const;
 		Vector singular_values_2x2() const;
+		Matrix block(const int32_t begin_row, const int32_t begin_col, const int32_t n_rows, const int32_t n_cols) const;
+		Vector row(const int32_t idx) const;
+		Vector col(const int32_t idx) const;
+		void set_block(const int32_t begin_row, const int32_t begin_col, const int32_t n_rows, const int32_t n_cols, const Matrix& m);
+		void set_row(const int32_t idx, const Vector& v);
+		void set_col(const int32_t idx, const Vector& v);
 
 		Matrix operator+(const Matrix& other) const;
 		Matrix operator-(const Matrix& other) const;

@@ -40,6 +40,14 @@ symx::Vector::Vector(const std::vector<Scalar>& values)
 	this->ncols = 1;
 	this->nrows = (int32_t)values.size();
 }
+symx::Vector symx::Vector::slice(const int32_t begin, const int32_t end) const
+{
+	std::vector<Scalar> values;
+	for (int i = begin; i < end; i++) {
+		values.push_back((*this)[i]);
+	}
+	return Vector(values);
+}
 symx::Vector symx::Vector::transpose() const
 {
 	Vector other = (*this);
