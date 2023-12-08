@@ -3,6 +3,10 @@ stark repo TODO
 
 Oct unification
 ---------------
+	* Remove the current logging system.
+	
+	* Stark core should have it's own settings. The user will have also their own settings.
+
 	Refactor all RB constraints
 		* Each BaseEnergy in it's own file.
 		* Move `symx::Vector _get_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc);`

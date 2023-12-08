@@ -191,6 +191,8 @@ void Stark::_initialize()
 }
 void Stark::_write_frame()
 {
+	if (!this->settings.output.enable_write_frame) { return; }
+
 	auto write_frame_impl = [&]() 
 	{
 		this->callbacks.run_write_frame();
