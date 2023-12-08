@@ -21,7 +21,7 @@ namespace stark::core
 			ConsoleVerbosity console_verbosity = ConsoleVerbosity::TimeSteps;
 			ConsoleOutputTo console_output_to = ConsoleOutputTo::FileAndConsole;
 			bool calculate_smooth_normals = true;
-			bool enable_write_frame = true;
+			bool enable_output = true;
 		};
 		struct Simulation
 		{

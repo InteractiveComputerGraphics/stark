@@ -51,6 +51,9 @@ Stark::Stark(const Settings& settings)
 bool Stark::run(std::function<void()> callback)
 {
 	const double t0 = omp_get_wtime();
+	
+	this->_initialize();
+
 	while (
 		this->current_time < this->settings.execution.end_simulation_time && 
 		this->current_frame < this->settings.execution.end_frame && 
@@ -191,7 +194,7 @@ void Stark::_initialize()
 }
 void Stark::_write_frame()
 {
-	if (!this->settings.output.enable_write_frame) { return; }
+	if (!this->settings.output.enable_output) { return; }
 
 	auto write_frame_impl = [&]() 
 	{

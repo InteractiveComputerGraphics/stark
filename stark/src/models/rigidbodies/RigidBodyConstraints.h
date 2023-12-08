@@ -59,7 +59,7 @@ namespace stark::models
 				of our *hard constraint* formulations is "to have enough stiffness to reach a tolerance". Theoretically,
 				stiffnesses should be infinite in these cases. The only relevant values are force/torque and tolerances.
 		*/
-
+		constexpr static double EPS = 100.0 * std::numeric_limits<double>::epsilon();
 
 		/*
 		*	Disables absolute displacement of a point in a an object.
@@ -92,7 +92,7 @@ namespace stark::models
 			{
 				const Eigen::Vector3d u = target - p;
 				const double C = u.norm();
-				return { C, k * C * u/C };  // { [m], [N] }
+				return { C, k * C * u/(C + EPS) };  // { [m], [N] }
 			}
 		};
 

@@ -112,7 +112,7 @@ std::string Settings::as_string() const
 	out += "\n         console_verbosity: " + to_string(this->output.console_verbosity);
 	out += "\n         console_output_to: " + to_string(this->output.console_output_to);
 	out += "\n         calculate_smooth_normals: " + to_string(this->output.calculate_smooth_normals);
-	out += "\n         enable_write_frame: " + to_string(this->output.enable_write_frame);
+	out += "\n         enable_output: " + to_string(this->output.enable_output);
 
 	out += "\n     Simulation";
 	out += "\n         adaptive_time_step" + to_string(this->simulation.adaptive_time_step);

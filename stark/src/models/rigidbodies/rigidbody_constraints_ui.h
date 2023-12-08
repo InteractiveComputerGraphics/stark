@@ -37,7 +37,7 @@ namespace stark::models
 		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
 		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> violation_in_m_and_force() const
+		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
 		{ 
 			return RigidBodyConstraints::GlobalPoints::violation_in_m_and_force(get_stiffness(), get_global_target_point(), rb.local_to_global_point(get_local_point()));
 		};
@@ -74,7 +74,7 @@ namespace stark::models
 		inline double get_angle_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
 		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> violation_in_deg_and_torque() const
+		inline std::pair<double, Eigen::Vector3d> get_violation_in_deg_and_torque() const
 		{
 			return RigidBodyConstraints::GlobalDirections::violation_in_deg_and_torque(get_stiffness(), get_global_target_direction(), rb.local_to_global_direction(get_local_direction()));
 		};
@@ -113,7 +113,7 @@ namespace stark::models
 		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
 		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> violation_in_m_and_force() const
+		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
 		{
 			return RigidBodyConstraints::Points::violation_in_m_and_force(get_stiffness(),
 				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()));
@@ -153,7 +153,7 @@ namespace stark::models
 		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
 		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> violation_in_m_and_force() const
+		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
 		{
 			return RigidBodyConstraints::PointOnAxes::violation_in_m_and_force(get_stiffness(),
 				rb_a.local_to_global_point(get_local_point_body_a()), rb_a.local_to_global_direction(get_local_direction_body_a()), rb_b.local_to_global_point(get_local_point_body_b()));
@@ -199,7 +199,7 @@ namespace stark::models
 		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
 		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> violation_in_m_and_force() const
+		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
 		{
 			return RigidBodyConstraints::Distance::violation_in_m_and_force(get_stiffness(),
 				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()), get_target_distance());
@@ -242,7 +242,7 @@ namespace stark::models
 		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
 		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> violation_in_m_and_force() const
+		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
 		{
 			return RigidBodyConstraints::DistanceLimits::violation_in_m_and_force(get_stiffness(),
 				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()), get_min_distance(), get_max_distance());
@@ -282,7 +282,7 @@ namespace stark::models
 		inline double get_angle_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
 		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> violation_in_deg_and_torque() const
+		inline std::pair<double, Eigen::Vector3d> get_violation_in_deg_and_torque() const
 		{
 			return RigidBodyConstraints::Directions::violation_in_deg_and_torque(get_stiffness(), 
 				rb_a.local_to_global_direction(get_local_direction_body_a()), rb_b.local_to_global_direction(get_local_direction_body_b()));
