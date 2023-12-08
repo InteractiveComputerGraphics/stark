@@ -3,6 +3,10 @@ stark repo TODO
 
 Oct unification
 ---------------
+	* SymX Catch2
+		- Print
+		- No SIMD assembly
+		
 	* Remove the current logging system.
 	
 	* Stark core should have it's own settings. The user will have also their own settings.

@@ -43,11 +43,10 @@ stark::models::EnergyRigidBodyInertia::EnergyRigidBodyInertia(stark::core::Stark
 
 			symx::Vector what = w0 + dt * (aa + J0_inv_glob * t);
 			symx::Vector dev = w1 - what;
-			symx::Scalar E = 0.5 * (dev.transpose() * J0_glob * dev + w1.transpose() * J0_glob * w1 * damping * dt);
+			symx::Scalar E = 0.5 * (dev.dot(J0_glob.dot(dev)) + w1.dot(J0_glob.dot(w1)) * damping * dt);
 			energy.set(E);
 		}
 	);
-
 }
 
 void stark::models::EnergyRigidBodyInertia::add(const double mass, const Eigen::Matrix3d& inertia_loc, const double linear_damping, const double angular_damping)

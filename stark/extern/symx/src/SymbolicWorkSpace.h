@@ -23,7 +23,6 @@ namespace symx
 		Scalar make_scalar(const std::string label);
 		Vector make_vector(const std::string label, const int32_t size);
 		Matrix make_matrix(const std::string label, const std::array<int32_t, 2> shape);
-		Matrix make_symmetric_matrix(const std::string label, const int32_t rows, const int32_t cols);
 
 		std::vector<Scalar> make_scalars(const std::string label, const int32_t n);
 		std::vector<Vector> make_vectors(const std::string label, const int32_t size, const int32_t n);
@@ -33,7 +32,6 @@ namespace symx
 		Scalar get_one();
 		Vector get_zero_vector(const int32_t size);
 		Matrix get_zero_matrix(const std::array<int32_t, 2> shape);
-		Matrix get_zero_symmetric_matrix(const std::array<int32_t, 2> shape);
 		Matrix get_identity_matrix(const int32_t size);
 	};
 }

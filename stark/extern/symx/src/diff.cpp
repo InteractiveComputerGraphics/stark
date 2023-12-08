@@ -32,19 +32,7 @@ symx::Matrix symx::hessian(const Scalar& expr, const std::vector<Scalar>& symbol
 			}
 		}
 	}
-	return Matrix(vals, { n, n }, Matrix::Layout::NonSymmetric);
-}
-symx::Matrix symx::hessian_as_symmetric_lower_triangular(const Scalar& expr, const std::vector<Scalar>& symbols)
-{
-	const int n = (int)symbols.size();
-	std::vector<Scalar> vals;
-	for (int i = 0; i < n; i++) {
-		symx::Scalar g = symx::diff(expr, symbols[i]);
-		for (int j = 0; j <= i; j++) {
-			vals.push_back(symx::diff(g, symbols[j]));
-		}
-	}
-	return Matrix(vals, { n, n }, Matrix::Layout::SymmetricLowerTriangular);
+	return Matrix(vals, { n, n });
 }
 std::vector<symx::Scalar> symx::value_gradient_hessian(const Scalar& expr, const std::vector<Scalar>& symbols, const bool symmetric)
 {

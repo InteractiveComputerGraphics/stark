@@ -21,8 +21,8 @@ void symx::EvalSequence::set(const Vector& vector, const double* v)
 
 void symx::EvalSequence::set(const Matrix& matrix, const double* v)
 {
-	for (int i = 0; i < matrix.vals.size(); i++) {
-		this->set(matrix.vals[i], v[i]);
+	for (int i = 0; i < matrix.values().size(); i++) {
+		this->set(matrix.values()[i], v[i]);
 	}
 }
 

@@ -351,7 +351,7 @@ namespace symx
 		const int32_t n = (int)indices.size();
 		std::vector<Vector> values;
 		for (size_t i = 0; i < n; i++) {
-			values.push_back(Vector(matrices[i].vals));  // Set the values of the matrix as a vector
+			values.push_back(Vector(matrices[i].values()));  // Set the values of the matrix as a vector
 		}
 		this->set_vectors(values, indices, data, size);
 	}

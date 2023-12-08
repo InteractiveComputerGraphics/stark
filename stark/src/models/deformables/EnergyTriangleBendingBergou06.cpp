@@ -28,7 +28,7 @@ stark::models::EnergyTriangleBendingBergou06::EnergyTriangleBendingBergou06(star
 			for (int i = 0; i < 3; i++) {
 				symx::Vector x = symx::Vector({ x1[0][i], x1[1][i], x1[2][i], x1[3][i] });
 				symx::Vector v = symx::Vector({ v1[0][i], v1[1][i], v1[2][i], v1[3][i] });
-				E += stiffness * (x.transpose() * Q * x) + 0.5 * damping * dt * (v.transpose() * Q * v);
+				E += stiffness*x.dot(Q.dot(x)) + 0.5*damping*dt*v.dot(Q.dot(v));
 			}
 			energy.set(E);
 		}
