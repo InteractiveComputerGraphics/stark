@@ -6,6 +6,8 @@ Oct unification
 	* Remove the current logging system.
 	
 	* Stark core should have it's own settings. The user will have also their own settings.
+	
+	* CMake files are a mess. Lot's of duplicities.
 
 	Refactor all RB constraints
 		* Each BaseEnergy in it's own file.
