@@ -47,8 +47,8 @@ void stark::models::EnergyPointInertia::add(Id& id, const std::vector<double>& l
 	this->labels.push_back(label);
 
 	for (int i = 0; i < n; i++) {
-		this->dyn->X.get_global_index(id.get_global_idx(), i);
-		this->conn.numbered_push_back({ i, group });
+		const int glob_idx = this->dyn->X.get_global_index(id.get_global_idx(), i);
+		this->conn.numbered_push_back({ glob_idx, group });
 	}
 
 	id.set_local_idx("EnergyPointInertia", group);
