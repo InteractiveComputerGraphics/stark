@@ -171,9 +171,14 @@ namespace cg
     {
         const int n_threads_ = (n_threads == -1) ? omp_get_num_procs() : n_threads;
         Info info;
-        if (error_tolerance > 1)
+        if (error_tolerance > 1.0)
         {
             std::cout << "Solving error: Only tolerances less or equal to 1 supported." << std::endl;
+            exit(-1);
+        }
+        if (error_tolerance <= 0.0)
+        {
+            std::cout << "Solving error: Only tolerances larger than 0 are supported." << std::endl;
             exit(-1);
         }
         
