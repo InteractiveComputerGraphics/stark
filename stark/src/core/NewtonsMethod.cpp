@@ -44,10 +44,15 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		logger.add_to_timer("compiled_E_g_h (acc)", assembled.compiled_runtime);
 		console.print(fmt::format("dE0 = {:.2e} | ", assembled.grad->maxCoeff()), ConsoleVerbosity::NewtonIterations);
 
+		//// Converged right away? Can happen in the first time step
+		const double grad_norm = assembled.grad->norm();
+		if (grad_norm < settings.newton.newton_tol) {
+			break;
+		}
+
 		//// Solve
 		this->du.resize(ndofs);
 		const Eigen::VectorXd rhs = -1.0 * (*assembled.grad);
-
 		if (settings.newton.use_direct_linear_solve) {  // TODO: Clarify that one is directLU and the other is BCG without PSD checks
 			logger.start_timing("directLU");
 			solve_linear_system_with_directLU(this->du, *assembled.hess, rhs);
@@ -57,7 +62,6 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 			logger.start_timing("CG");
 
 			// Forcing sequence
-			const double grad_norm = assembled.grad->norm();
 			const double cg_tol = std::min(0.1 /*TODO: arbritrary.*/, grad_norm * std::min(0.5, std::sqrt(grad_norm)));
 
 			this->du.setZero();
