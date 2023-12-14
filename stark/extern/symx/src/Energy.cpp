@@ -300,6 +300,7 @@ void symx::Energy::evaluate_E_grad_hess(Assembly& assembly, const bool runtime_N
 
 void symx::Energy::_update_connectivity_conditionally(const int n_threads)
 {
+	this->connectivity_after_condition.clear();
 	const int n_original_elements = this->compiled_condition.connectivity_n_elements();
 	if (n_original_elements == 0) { return; }
 	this->positive_conditions.resize(n_original_elements);
@@ -311,7 +312,6 @@ void symx::Energy::_update_connectivity_conditionally(const int n_threads)
 	);
 
 	const int32_t* connectivity_data = this->compiled_condition.connectivity_data();
-	this->connectivity_after_condition.clear();
 	for (int i = 0; i < n_original_elements; i++) {
 		if (this->positive_conditions[i]) {
 			for (int j = 0; j < n_items_per_element; j++) {
