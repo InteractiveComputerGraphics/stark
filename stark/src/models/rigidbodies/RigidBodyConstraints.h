@@ -90,9 +90,9 @@ namespace stark::models
 			}
 			static std::pair<double, Eigen::Vector3d> violation_in_m_and_force(double k, const Eigen::Vector3d& target, const Eigen::Vector3d& p)
 			{
-				const Eigen::Vector3d u = target - p;
+				const Eigen::Vector3d u = p - target;
 				const double C = u.norm();
-				return { C, k * C * u/(C + EPS) };  // { [m], [N] }
+				return { C, -k * C * u/(C + EPS) };  // { [m], [N] }
 			}
 		};
 
@@ -129,9 +129,9 @@ namespace stark::models
 			}
 			static std::pair<double, Eigen::Vector3d> violation_in_deg_and_torque(double k, const Eigen::Vector3d& d_target, const Eigen::Vector3d& d)
 			{
-				const Eigen::Vector3d u = d_target - d;
+				const Eigen::Vector3d u = d - d_target;
 				const double C = u.norm();
-				const Eigen::Vector3d force = k*C*u/C;
+				const Eigen::Vector3d force = -k*C*u/C;
 
 				const double angle_deg = utils::rad2deg(std::asin(C));
 				const Eigen::Vector3d torque = d_target.cross(force);
@@ -173,7 +173,7 @@ namespace stark::models
 			{
 				const Eigen::Vector3d u = b - a;
 				const double C = u.norm();
-				return { C, k * C * u / C };  // { [m], [N] }
+				return { C, -k * C * u / C };  // { [m], [N] }
 			}
 		};
 
@@ -210,7 +210,7 @@ namespace stark::models
 			{
 				const double C = std::sqrt(sq_distance_point_line(b, a, a + da));
 				const Eigen::Vector3d u = da.cross(b - a).cross(da).normalized();
-				return { C, k * C * u };  // { [m], [N] }
+				return { C, -k * C * u };  // { [m], [N] }
 			}
 		};
 
@@ -248,8 +248,8 @@ namespace stark::models
 			{
 				const Eigen::Vector3d u = b - a;
 				const double d = u.norm();
-				const double C = target_distance - d;
-				return { C, k * C * u / d };  // { [m], [N] }
+				const double C = d - target_distance;
+				return { C, -k * C * u / d };  // { [m], [N] }
 			}
 		};
 
@@ -294,11 +294,11 @@ namespace stark::models
 
 				if (d < min_distance) {
 					const double C = min_distance - d;
-					return { C, k * std::pow(C, 2) * u / d };  // { [m], [N] }
+					return { C, k * std::pow(C, 2) * u / d };  // { [m], [N] }  (doesn't need the minus as the direction u should also be flipped)
 				}
 				else if (d > max_distance) {
 					const double C = d - max_distance;
-					return { C, k * std::pow(C, 2) * u / d };  // { [m], [N] }
+					return { C, -k * std::pow(C, 2) * u / d };  // { [m], [N] }
 				}
 				else {
 					return {0.0, Eigen::Vector3d::Zero()};
@@ -339,7 +339,7 @@ namespace stark::models
 			{
 				const Eigen::Vector3d u = db - da;
 				const double C = u.norm();
-				const Eigen::Vector3d force = k * C * u / C;
+				const Eigen::Vector3d force = -k * C * u / C;
 
 				const double angle_deg = utils::rad2deg(std::asin(C));
 				const Eigen::Vector3d torque = da.cross(force);
@@ -395,7 +395,7 @@ namespace stark::models
 
 				if (d > max_distance) {
 					const double C = d - max_distance;
-					const Eigen::Vector3d force = k * std::pow(C, 2) * u / d;
+					const Eigen::Vector3d force = -k * std::pow(C, 2) * u / d;
 					return { angle_of_opening_distance(C), da.cross(force) };  // { [deg], [N] }
 				}
 				else {

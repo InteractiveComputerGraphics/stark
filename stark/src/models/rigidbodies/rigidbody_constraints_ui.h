@@ -34,8 +34,8 @@ namespace stark::models
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
 
-		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
-		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
+		inline double get_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
+		inline auto& set_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
 		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
 		{ 
@@ -71,8 +71,8 @@ namespace stark::models
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
 
-		inline double get_angle_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
-		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
+		inline double get_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
+		inline auto& set_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
 
 		inline std::pair<double, Eigen::Vector3d> get_violation_in_deg_and_torque() const
 		{
@@ -110,8 +110,8 @@ namespace stark::models
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
 
-		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
-		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
+		inline double get_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
+		inline auto& set_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
 		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
 		{
@@ -150,8 +150,8 @@ namespace stark::models
 		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
 		inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
 
-		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
-		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
+		inline double get_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
+		inline auto& set_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
 		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
 		{
@@ -196,8 +196,8 @@ namespace stark::models
 		inline double get_target_distance() const { return this->constraints->target_distance[this->idx]; };
 		inline auto& set_target_distance(double target_distance) { this->constraints->target_distance[this->idx] = target_distance; return (*this); };
 
-		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
-		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
+		inline double get_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
+		inline auto& set_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
 		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
 		{
@@ -239,8 +239,8 @@ namespace stark::models
 		inline double get_max_distance() const { return this->constraints->max_distance[this->idx]; };
 		inline auto& set_max_distance(double distance) { this->constraints->max_distance[this->idx] = distance; return (*this); };
 
-		inline double get_distance_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
-		inline auto& set_distance_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
+		inline double get_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
+		inline auto& set_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
 		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
 		{
@@ -279,8 +279,8 @@ namespace stark::models
 		inline Eigen::Vector3d get_local_direction_body_b() const { return this->constraints->db_loc[this->idx]; };
 		inline auto& set_local_direction_body_b(const Eigen::Vector3d& d) const { this->constraints->db_loc[this->idx] = d; return (*this); };
 
-		inline double get_angle_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
-		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
+		inline double get_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
+		inline auto& set_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
 
 		inline std::pair<double, Eigen::Vector3d> get_violation_in_deg_and_torque() const
 		{
@@ -319,8 +319,8 @@ namespace stark::models
 		inline Eigen::Vector3d get_local_direction_body_b() const { return this->constraints->db_loc[this->idx]; };
 		inline auto& set_local_direction_body_b(const Eigen::Vector3d& d) const { this->constraints->db_loc[this->idx] = d; return (*this); };
 
-		inline double get_angle_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
-		inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
+		inline double get_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
+		inline auto& set_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
 
 		inline double get_limit_angle_in_deg() const
 		{
@@ -453,48 +453,63 @@ namespace stark::models
 	//};
 
 
-	///* ===================================================================================================================================== */
-	///* =======================================================  DERIVED CONSTRAINTS  ======================================================= */
-	///* ===================================================================================================================================== */
-	//class FixedConstraintHandler
-	//{
-	//private:
-	//	AnchorPointHandler anchor_point;
-	//	AbsoluteDirectionLockHandler z_lock;
-	//	AbsoluteDirectionLockHandler x_lock;
-	//	RigidBodyHandler rb;
-	//	std::string label = "";
+	/* ===================================================================================================================================== */
+	/* =======================================================  DERIVED CONSTRAINTS  ======================================================= */
+	/* ===================================================================================================================================== */
+	class RBCFixHandler
+	{
+	private:
+		RBCGlobalPointHandler anchor_point;
+		RBCGlobalDirectionHandler z_lock;
+		RBCGlobalDirectionHandler x_lock;
+		RigidBodyHandler rb;
+		std::string label = "";
 
-	//public:
-	//	FixedConstraintHandler(RigidBodyHandler rb, AnchorPointHandler anchor_point, AbsoluteDirectionLockHandler z_lock, AbsoluteDirectionLockHandler x_lock)
-	//		: rb(rb), anchor_point(anchor_point), z_lock(z_lock), x_lock(x_lock) {};
-	//	inline RigidBodyHandler get_body() { return this->rb; };
-	//	inline AnchorPointHandler get_anchor_point() { return this->anchor_point; };
-	//	inline AbsoluteDirectionLockHandler get_z_lock() { return this->z_lock; };
-	//	inline AbsoluteDirectionLockHandler get_x_lock() { return this->x_lock; };
+	public:
+		RBCFixHandler(RigidBodyHandler rb, RBCGlobalPointHandler anchor_point, RBCGlobalDirectionHandler z_lock, RBCGlobalDirectionHandler x_lock)
+			: rb(rb), anchor_point(anchor_point), z_lock(z_lock), x_lock(x_lock) {};
+		inline auto& get_body() { return this->rb; };
+		inline auto& get_anchor_point() { return this->anchor_point; };
+		inline auto& get_z_lock() { return this->z_lock; };
+		inline auto& get_x_lock() { return this->x_lock; };
 
-	//	inline auto& set_stiffness(double stiffness);
-	//	inline auto& set_distance_tolerance_in_m(double tolerance_in_m);
-	//	inline auto& set_angle_tolerance_in_deg(double tolerance_in_deg);
+		inline auto& set_stiffness(double stiffness) 
+		{
+			this->anchor_point.set_stiffness(stiffness);
+			this->z_lock.set_stiffness(stiffness);
+			this->x_lock.set_stiffness(stiffness);
+			return (*this);
+		};
+		inline auto& set_tolerance_in_m(double tolerance_in_m)
+		{
+			this->anchor_point.set_tolerance_in_m(tolerance_in_m);
+			return (*this);
+		}
+		inline auto& set_tolerance_in_deg(double tolerance_in_deg)
+		{
+			this->z_lock.set_tolerance_in_deg(tolerance_in_deg);
+			this->x_lock.set_tolerance_in_deg(tolerance_in_deg);
+			return (*this);
+		}
 
-	//	inline std::string get_label() const { return this->label; };
-	//	inline auto& set_label(std::string label) 
-	//	{ 
-	//		this->label = label;
-	//		this->anchor_point.set_label(label + "_anchor_point");
-	//		this->z_lock.set_label(label + "_z_lock");
-	//		this->x_lock.set_label(label + "_x_lock");
-	//		return (*this); 
-	//	};
+		inline std::string get_label() const { return this->label; };
+		inline auto& set_label(std::string label) 
+		{ 
+			this->label = label;
+			this->anchor_point.set_label(label + "_anchor_point");
+			this->z_lock.set_label(label + "_z_lock");
+			this->x_lock.set_label(label + "_x_lock");
+			return (*this); 
+		};
 
-	//	inline auto& enable(bool activation)
-	//	{
-	//		this->anchor_point.enable(activation);
-	//		this->z_lock.enable(activation);
-	//		this->x_lock.enable(activation);
-	//		return (*this);
-	//	};
-	//};
+		inline auto& enable(bool activation)
+		{
+			this->anchor_point.enable(activation);
+			this->z_lock.enable(activation);
+			this->x_lock.enable(activation);
+			return (*this);
+		};
+	};
 
 	//class HingeJointHandler
 	//{

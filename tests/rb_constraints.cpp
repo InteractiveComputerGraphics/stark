@@ -1,10 +1,23 @@
 #include <iostream>
+#include <random>
 
 #include <stark>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include "../app/paths.h"
 
+using namespace Catch::Matchers;
+
+double rng() {
+	static std::random_device rd;
+	static std::mt19937 gen(rd());
+	static std::uniform_real_distribution<double> distr(0.0, 100.0);
+	return distr(gen);
+}
+
+const double MASS = rng();
+const double PERTURBATION = rng();
 
 stark::Settings test_settings(std::string name)
 {
@@ -12,32 +25,140 @@ stark::Settings test_settings(std::string name)
 	settings.output.simulation_name = name;
 	settings.output.output_directory = OUTPUT_PATH + "/test_output";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
-	settings.output.enable_output = true;
-	settings.execution.end_simulation_time = 5.0;
-	settings.simulation.gravity = { 0.0, 0.0, -10.0 };
+	settings.output.console_verbosity = stark::ConsoleVerbosity::NoOutput;
+	settings.output.enable_output = false;
+	settings.execution.end_simulation_time = 3.0;
+	settings.simulation.gravity = {0, 0, 0};
 	settings.contact.collisions_enabled = false;
-	settings.contact.friction_enabled = false;
 	return settings;
 }
 
 
-TEST_CASE("global_point_load", "[rb_constraints]") 
+TEST_CASE("global_point", "[rb_constraints]") 
 {
-	stark::Settings settings = test_settings("global_point_load");
+	stark::Settings settings = test_settings("global_point");
 	stark::models::Simulation simulation(settings);
 
-	TODO: It does not work with only one constraint
-
-	auto box0 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 });
-	//auto constraint = simulation.rigidbodies->add_constraint_global_point(box0, box0.get_translation());
-	auto constraint = simulation.rigidbodies->add_constraint_global_point(box0, {1, 1, 1});
-	simulation.stark.run(
-		[&]()
-		{
-			//auto [C, f] = constraint.get_violation_in_m_and_force();
-			//std::cout << C << " | " << f << std::endl;
-		}
-	);
+	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto constraint = simulation.rigidbodies->add_constraint_global_point(box0, box0.get_translation());
+	box0.add_force_at_centroid({PERTURBATION, 0, 0});
+	simulation.stark.run();
+	auto [C, f] = constraint.get_violation_in_m_and_force();
+	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
+	REQUIRE_THAT(f[0], WithinRel(-PERTURBATION, 1e-3));
+	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
 }
+
+TEST_CASE("global_direction", "[rb_constraints]") 
+{
+	stark::Settings settings = test_settings("global_direction");
+	stark::models::Simulation simulation(settings);
+
+	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto constraint = simulation.rigidbodies->add_constraint_global_direction(box0, Eigen::Vector3d::UnitZ());
+	box0.add_torque({PERTURBATION, 0, 0});
+	simulation.stark.run();
+	auto [C, t] = constraint.get_violation_in_deg_and_torque();
+	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_deg()));
+	REQUIRE_THAT(t[0], WithinRel(-PERTURBATION, 1e-3));
+	REQUIRE_THAT(t[1], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(t[2], WithinAbs(0.0, 1e-3));
+}
+
+TEST_CASE("point", "[rb_constraints]")
+{
+	stark::Settings settings = test_settings("point");
+	stark::models::Simulation simulation(settings);
+
+	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	simulation.rigidbodies->add_constraint_fix(box0);
+	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({0.1, 0.0, 0.0});
+	auto constraint = simulation.rigidbodies->add_constraint_point(box0, box1, {0.05, 0.0, 0.0});
+
+	box1.add_force_at_centroid({ PERTURBATION, 0, 0 });
+	simulation.stark.run();
+	auto [C, f] = constraint.get_violation_in_m_and_force();
+	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
+	REQUIRE_THAT(f[0], WithinRel(-PERTURBATION, 1e-3));
+	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+}
+
+TEST_CASE("point_on_axis", "[rb_constraints]")
+{
+	stark::Settings settings = test_settings("point_on_axis");
+	stark::models::Simulation simulation(settings);
+
+	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	simulation.rigidbodies->add_constraint_fix(box0);
+	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({0.1, 0.0, 0.0});
+	auto constraint = simulation.rigidbodies->add_constraint_point_on_axis(box0, box1, {0.0, 0.0, 0.0}, Eigen::Vector3d::UnitZ());
+
+	box1.add_force_at_centroid({ PERTURBATION, 0, 0 });
+	simulation.stark.run();
+	auto [C, f] = constraint.get_violation_in_m_and_force();
+	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
+	REQUIRE_THAT(f[0], WithinRel(-PERTURBATION, 1e-3));
+	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+}
+
+TEST_CASE("distance", "[rb_constraints]")
+{
+	stark::Settings settings = test_settings("distance");
+	stark::models::Simulation simulation(settings);
+
+	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	simulation.rigidbodies->add_constraint_fix(box0);
+	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({1.0, 0.0, 0.0});
+	auto constraint = simulation.rigidbodies->add_constraint_distance(box0, box1, box0.get_translation(), box1.get_translation());
+
+	box1.add_force_at_centroid({ PERTURBATION, 0, 0 });
+	simulation.stark.run();
+	auto [C, f] = constraint.get_violation_in_m_and_force();
+	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
+	REQUIRE_THAT(f[0], WithinRel(-PERTURBATION, 1e-3));
+	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+}
+
+TEST_CASE("distance_limits_max", "[rb_constraints]")
+{
+	stark::Settings settings = test_settings("distance_limits_max");
+	stark::models::Simulation simulation(settings);
+
+	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	simulation.rigidbodies->add_constraint_fix(box0);
+	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({1.0, 0.0, 0.0});
+	auto constraint = simulation.rigidbodies->add_constraint_distance_limits(box0, box1, box0.get_translation(), box1.get_translation(), 0.99, 1.01);
+
+	box1.add_force_at_centroid({ PERTURBATION, 0, 0 });
+	simulation.stark.run();
+	auto [C, f] = constraint.get_violation_in_m_and_force();
+	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
+	REQUIRE_THAT(f[0], WithinRel(-PERTURBATION, 1e-3));
+	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+}
+
+TEST_CASE("distance_limits_min", "[rb_constraints]")
+{
+	stark::Settings settings = test_settings("distance_limits_min");
+	stark::models::Simulation simulation(settings);
+
+	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	simulation.rigidbodies->add_constraint_fix(box0);
+	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({1.0, 0.0, 0.0});
+	auto constraint = simulation.rigidbodies->add_constraint_distance_limits(box0, box1, box0.get_translation(), box1.get_translation(), 0.99, 1.01);
+
+	box1.add_force_at_centroid({ -PERTURBATION, 0, 0 });
+	simulation.stark.run();
+	auto [C, f] = constraint.get_violation_in_m_and_force();
+	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
+	REQUIRE_THAT(f[0], WithinRel(PERTURBATION, 1e-3));
+	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+}
+
 

@@ -3,6 +3,7 @@ stark repo TODO
 
 Oct unification
 ---------------
+	* Try multi body of all systems
 	* SymX Catch2
 		- Print
 		- No SIMD assembly
@@ -260,6 +261,9 @@ Low priority
 			Consider adding MKL as an optional dependency to speedup projections and CG.
 		* Collision dection could be improved by Verlet lists and to a lesser extent octree parallelization.
 		* Regardless of minimization technique, there is an optimal time step size and collision stiffness that we should try to track.
+	* Newton max_step should not return double, but directly clamp the step.
+		This is tricky because if we pass du to the user, they need to know that this is the Newton step, that is, delta from the last newton iteration configuration.
+		Need to figure out how to nicely slide du for the user.
 	* Rigid body limits trigger jitters when they suddenly increase.
 	* Perfomance analysis. It's definitely not linear and we should have a better understanding.
 		Large simulations are definitely much slower. Because CG. But because run out of cache? Super linear number of iterations?

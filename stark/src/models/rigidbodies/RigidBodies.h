@@ -116,11 +116,11 @@ namespace stark::models
 		//	double max_torque, 
 		//	double delay = 0.01
 		//);
-		//
-		////// Derived
-		//FixedConstraintHandler add_constraint_fixed(
-		//	const RigidBodyHandler& body
-		//);
+		
+		//// Derived
+		RBCFixHandler add_constraint_fix(
+			const RigidBodyHandler& body
+		);
 		//HingeJointHandler add_constraint_hinge(
 		//	const RigidBodyHandler& body_a, 
 		//	const RigidBodyHandler& body_b,

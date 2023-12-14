@@ -241,13 +241,13 @@ stark::models::RBCAngleLimitHandler stark::models::RigidBodies::add_constraint_a
 //	);
 //	return RelativeAngularVelocityMotorHandler(body_a, body_b, this->rb->constraints->relative_angular_velocity_motors, idx);
 //}
-//stark::models::FixedConstraintHandler stark::models::RigidBodies::add_constraint_fixed(const RigidBodyHandler& body)
-//{
-//	auto anchor_point = this->add_constraint_anchor_point(body, body.get_translation());
-//	auto z_lock = this->add_constraint_absolute_direction_lock(body, Eigen::Vector3d::UnitZ());
-//	auto x_lock = this->add_constraint_absolute_direction_lock(body, Eigen::Vector3d::UnitX());
-//	return FixedConstraintHandler(body, anchor_point, z_lock, x_lock);
-//}
+stark::models::RBCFixHandler stark::models::RigidBodies::add_constraint_fix(const RigidBodyHandler& body)
+{
+	auto anchor_point = this->add_constraint_global_point(body, body.get_translation());
+	auto z_lock = this->add_constraint_global_direction(body, Eigen::Vector3d::UnitZ());
+	auto x_lock = this->add_constraint_global_direction(body, Eigen::Vector3d::UnitX());
+	return RBCFixHandler(body, anchor_point, z_lock, x_lock);
+}
 //stark::models::HingeJointHandler stark::models::RigidBodies::add_constraint_hinge(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob)
 //{
 //	auto ball_joint = this->add_constraint_ball_joint(body_a, body_b, p_glob);
