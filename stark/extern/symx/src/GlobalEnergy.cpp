@@ -104,7 +104,7 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 	output += "SymX energies:\n";
 
 	const double t0 = omp_get_wtime();
-	#pragma omp parallel for num_threads(this->n_threads)
+	#pragma omp parallel for num_threads(this->n_threads) schedule(dynamic)
 	for (int i = 0; i < (int)this->energies.size(); i++) {
 		this->energies[i]->working_directory = this->working_directory;
 
