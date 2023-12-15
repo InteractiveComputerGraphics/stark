@@ -332,6 +332,13 @@ namespace stark::models
 			return (*this);
 		};
 
+		inline std::pair<double, Eigen::Vector3d> get_violation_in_deg_and_torque() const
+		{
+			return RigidBodyConstraints::AngleLimits::violation_in_deg_and_torque(get_stiffness(),
+				rb_a.local_to_global_direction(get_local_direction_body_a()), rb_b.local_to_global_direction(get_local_direction_body_b()), 
+				this->constraints->max_distance[this->idx]);
+		};
+
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
 

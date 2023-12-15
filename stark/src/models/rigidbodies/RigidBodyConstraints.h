@@ -396,7 +396,7 @@ namespace stark::models
 				if (d > max_distance) {
 					const double C = d - max_distance;
 					const Eigen::Vector3d force = -k * std::pow(C, 2) * u / d;
-					return { angle_of_opening_distance(C), da.cross(force) };  // { [deg], [N] }
+					return { angle_of_opening_distance(C), da.cross(force) };  // { [deg], [Nm] }
 				}
 				else {
 					return { 0.0, Eigen::Vector3d::Zero() };
