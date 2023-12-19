@@ -217,5 +217,33 @@ TEST_CASE("angle_limit", "[rb_constraints]")
 	REQUIRE_THAT(t[2], WithinAbs(0.0, 1e-3));
 }
 
-#endif // ENABLE_THESE_TESTS
 
+TEST_CASE("spring", "[rb_constraints]")
+{
+	stark::Settings settings = test_settings("spring");
+	settings.execution.end_simulation_time = 10.0;
+	stark::models::Simulation simulation(settings);
+	const double stiffness = 1000.0;
+	const double perturbation = PERTURBATION/100.0;
+
+	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	simulation.rigidbodies->add_constraint_fix(box0);
+	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({ 0.2, 0.0, 0.0 });
+	auto constraint = simulation.rigidbodies->add_spring(box0, box1, box0.get_translation(), box1.get_translation(), stiffness, 1.0);
+
+	box1.add_force_at_centroid({ perturbation, 0, 0 });
+	simulation.stark.run();
+	auto [dC, df] = constraint.get_damper_velocity_and_force();
+	REQUIRE_THAT(dC, WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(df[0], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(df[1], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(df[2], WithinAbs(0.0, 1e-3));
+
+	auto [C, f] = constraint.get_spring_displacement_in_m_and_force();
+	REQUIRE_THAT(-C*stiffness, WithinRel(f[0], 1e-3));
+	REQUIRE_THAT(f[0], WithinRel(-perturbation, 1e-1));  // NOTE: Not sure why this is so inaccurate
+	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+}
+
+#endif // ENABLE_THESE_TESTS

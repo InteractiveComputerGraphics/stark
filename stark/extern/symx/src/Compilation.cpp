@@ -4,7 +4,8 @@
 #ifdef _MSC_VER
 #define NOMINMAX
 #include <windows.h>
-std::string symx::compiler_command = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"";
+//std::string symx::compiler_command = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"";
+std::string symx::compiler_command = "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"";
 #else
 #include <dlfcn.h>
 std::string symx::compiler_command = "g++";

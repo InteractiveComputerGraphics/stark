@@ -89,17 +89,16 @@ namespace stark::models
 			const Eigen::Vector3d& d_glob,
 			double admissible_angle_deg
 		);
+		RBCDampedSpringHandler add_spring(
+			const RigidBodyHandler& body_a,
+			const RigidBodyHandler& body_b,
+			const Eigen::Vector3d& a_glob, 
+			const Eigen::Vector3d& b_glob, 
+			double stiffness, 
+			double damping = 0.0
+		);
 
 
-
-		//DampedSpringHandler add_spring(
-		//	const RigidBodyHandler& body_a,
-		//	const RigidBodyHandler& body_b,
-		//	const Eigen::Vector3d& a_glob, 
-		//	const Eigen::Vector3d& b_glob, 
-		//	double stiffness, 
-		//	double damping = 0.0
-		//);
 		//RelativeLinearVelocityMotorHandler add_relative_linear_velocity_motor(
 		//	const RigidBodyHandler& body_a, 
 		//	const RigidBodyHandler& body_b,

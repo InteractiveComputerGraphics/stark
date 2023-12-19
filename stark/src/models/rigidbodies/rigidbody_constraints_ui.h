@@ -380,7 +380,7 @@ namespace stark::models
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> get_spring_violation_in_m_and_force() const
+		inline std::pair<double, Eigen::Vector3d> get_spring_displacement_in_m_and_force() const
 		{
 			return RigidBodyConstraints::DampedSprings::spring_violation_in_m_and_force(get_stiffness(),
 				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()), get_rest_length());

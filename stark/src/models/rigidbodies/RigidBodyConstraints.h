@@ -441,10 +441,9 @@ namespace stark::models
 			}
 			static std::pair<double, Eigen::Vector3d> damper_velocity_and_force(const double damping, const Eigen::Vector3d& a1, const Eigen::Vector3d& b1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double rest_length)
 			{
-				const Eigen::Vector3d r1 = b1 - a1;
-				const double l1 = r1.norm();
+				const Eigen::Vector3d r1 = (b1 - a1).normalized();
 				const double dv = (vb1 - va1).transpose() *  r1;
-				const Eigen::Vector3d f = -damping * dv * r1 / l1;
+				const Eigen::Vector3d f = -damping * dv * r1;
 				return { dv, f };  // { [m/s], [N] }
 			}
 		};
