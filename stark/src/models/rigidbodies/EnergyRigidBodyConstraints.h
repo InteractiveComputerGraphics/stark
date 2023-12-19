@@ -57,12 +57,9 @@ namespace stark::models
 		std::shared_ptr<RigidBodyConstraints::DistanceLimits> distance_limits;
 		std::shared_ptr<RigidBodyConstraints::Directions> directions;
 		std::shared_ptr<RigidBodyConstraints::AngleLimits> angle_limits;
-
-
-
-		//std::shared_ptr<RigidBodyConstraints::DampedSprings> damped_springs;
-		//std::shared_ptr<RigidBodyConstraints::RelativeLinearVelocityMotors> relative_linear_velocity_motors;
-		//std::shared_ptr<RigidBodyConstraints::RelativeAngularVelocityMotors> relative_angular_velocity_motors;
+		std::shared_ptr<RigidBodyConstraints::DampedSprings> damped_springs;
+		std::shared_ptr<RigidBodyConstraints::LinearVelocity> linear_velocity;
+		std::shared_ptr<RigidBodyConstraints::LngularVelocity> angular_velocity;
 
 		// Output
 		core::Logger logger;

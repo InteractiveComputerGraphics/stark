@@ -15,16 +15,6 @@ namespace stark::models
 {
 	struct RigidBodyConstraints
 	{
-		/* ===========================================   HELPERS  =========================================== */
-		//inline static double get_angle_deg_from_distance_violation(double violation)
-		//{
-		//	return utils::rad2deg(std::asin(violation));
-		//}
-		//inline static double get_angle_deg_from_dot(double dot)
-		//{
-		//	return utils::rad2deg(std::acos(dot)); // converts from the dot product of normalized vectors with that angle
-		//}
-
 		/* ===========================================   DEFINITIONS  =========================================== */
 		/*
 			Terms:
@@ -404,18 +394,6 @@ namespace stark::models
 			}
 		};
 
-
-
-
-
-
-
-
-
-
-
-
-
 		/*
 		*	Adds forces counteracting relative displacement and velocity of two local points from different objects to not be at a reference distance.
 		*/
@@ -431,8 +409,7 @@ namespace stark::models
 			std::vector<std::string> labels;
 			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& a_loc, const Eigen::Vector3d& b_loc, double rest_length, double stiffness, double damping)
 			{
-				const int id = (int)this->is_active.size();
-				this->conn.numbered_push_back({ rb_a, rb_b });
+				const int id = this->conn.numbered_push_back({ rb_a, rb_b });
 				this->a_loc.push_back(a_loc);
 				this->b_loc.push_back(b_loc);
 				this->rest_length.push_back(rest_length);
@@ -442,6 +419,34 @@ namespace stark::models
 				this->labels.push_back("");
 				return id;
 			}
+			static symx::Scalar energy(const symx::Scalar& stiffness, const symx::Scalar& damping, const symx::Vector& a0, const symx::Vector& a1, const symx::Vector& b0, const symx::Vector& b1, const symx::Scalar& rest_length, const symx::Scalar& dt)
+			{
+				symx::Vector r1 = b1 - a1;
+				symx::Vector r0 = b0 - a0;
+				symx::Scalar l1 = r1.norm();
+				symx::Scalar l0 = r0.norm();
+
+				symx::Scalar E_spring = 0.5 * stiffness * (rest_length - l1).powN(2);
+				symx::Scalar E_damper = 0.5 * damping * ((l1 - l0) / dt).powN(2);
+
+				return E_spring + E_damper;
+			}
+			static std::pair<double, Eigen::Vector3d> spring_violation_in_m_and_force(const double stiffness, const Eigen::Vector3d& a1, const Eigen::Vector3d& b1, const double rest_length)
+			{
+				const Eigen::Vector3d r1 = b1 - a1;
+				const double l1 = r1.norm();
+				const double C = l1 - rest_length;
+				const Eigen::Vector3d f = -stiffness * C * r1 / l1;
+				return { C, f };  // { [m], [N] }
+			}
+			static std::pair<double, Eigen::Vector3d> damper_velocity_and_force(const double damping, const Eigen::Vector3d& a1, const Eigen::Vector3d& b1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double rest_length)
+			{
+				const Eigen::Vector3d r1 = b1 - a1;
+				const double l1 = r1.norm();
+				const double dv = (vb1 - va1).transpose() *  r1;
+				const Eigen::Vector3d f = -damping * dv * r1 / l1;
+				return { dv, f };  // { [m/s], [N] }
+			}
 		};
 
 
@@ -449,7 +454,7 @@ namespace stark::models
 		/*
 		*	Add torque counteracting the difference in angular velocity between two objects.
 		*/
-		struct RelativeLinearVelocityMotors
+		struct LinearVelocity
 		{
 			symx::LabelledConnectivity<3> conn{ { "idx", "a", "b" } };
 			std::vector<Eigen::Vector3d> da_loc;
@@ -475,7 +480,7 @@ namespace stark::models
 		/*
 		*	Add torque counteracting the difference in angular velocity between two objects.
 		*/
-		struct RelativeAngularVelocityMotors
+		struct AngularVelocity
 		{
 			symx::LabelledConnectivity<3> conn{ { "idx", "a", "b" } };
 			std::vector<Eigen::Vector3d> da_loc;

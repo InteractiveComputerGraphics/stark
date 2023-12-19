@@ -45,6 +45,7 @@ namespace stark::models
 		RigidBodyHandler& add_rotation(const double& angle_deg, const Eigen::Vector3d& axis);
 
 		Eigen::Vector3d get_velocity() const;
+		Eigen::Vector3d get_velocity_at(const Eigen::Vector3d& loc) const;
 		RigidBodyHandler& set_velocity(const Eigen::Vector3d& vel_glob_coords);
 		RigidBodyHandler& add_velocity(const Eigen::Vector3d& vel_glob_coords);
 		
@@ -70,11 +71,11 @@ namespace stark::models
 		RigidBodyHandler& add_angular_acceleration(const Eigen::Vector3d& ang_acc_glob_coords);
 
 		Eigen::Vector3d local_to_global_point(const Eigen::Vector3d& x) const;
-		Eigen::Vector3d local_to_global_direction(const Eigen::Vector3d& x) const;
+		Eigen::Vector3d local_to_global_direction(const Eigen::Vector3d& d) const;
 		Eigen::Matrix3d local_to_global_matrix(const Eigen::Matrix3d& A) const;
 
 		Eigen::Vector3d global_to_local_point(const Eigen::Vector3d& x) const;
-		Eigen::Vector3d global_to_local_direction(const Eigen::Vector3d& x) const;
+		Eigen::Vector3d global_to_local_direction(const Eigen::Vector3d& d) const;
 		Eigen::Matrix3d global_to_local_matrix(const Eigen::Matrix3d& A) const;
 
 		RigidBodyHandler& set_collision_mesh(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);

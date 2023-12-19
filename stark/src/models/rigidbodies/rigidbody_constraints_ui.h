@@ -349,47 +349,56 @@ namespace stark::models
 	};
 
 
+	class RBCDampedSpringHandler
+	{
+	private:
+		std::shared_ptr<RigidBodyConstraints::DampedSprings> constraints;
+		int idx = -1;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
 
+	public:
+		RBCDampedSpringHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::DampedSprings> constraints, int idx)
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
+		{};
 
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
 
+		inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
+		inline auto& set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; return (*this); };
 
+		inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
+		inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
 
-	//class DampedSpringHandler
-	//{
-	//private:
-	//	std::shared_ptr<RigidBodyConstraints::DampedSprings> constraints;
-	//	int idx = -1;
-	//	RigidBodyHandler rb_a;
-	//	RigidBodyHandler rb_b;
+		inline double get_rest_length() const { return this->constraints->rest_length[this->idx]; };
+		inline auto& set_rest_length(double length) { this->constraints->rest_length[this->idx] = length; return (*this); };
 
-	//public:
-	//	DampedSpringHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::DampedSprings> constraints, int idx)
-	//		: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
-	//	{};
+		inline double get_damping() const { return this->constraints->damping[this->idx]; };
+		inline auto& set_damping(double damping) { this->constraints->damping[this->idx] = damping; return (*this); };
 
-	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
-	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
+		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
+		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
 
-	//	inline Eigen::Vector3d get_local_point_body_a() const { return this->constraints->a_loc[this->idx]; };
-	//	inline auto& set_local_point_body_a(const Eigen::Vector3d& x) const { this->constraints->a_loc[this->idx] = x; return (*this); };
+		inline std::pair<double, Eigen::Vector3d> get_spring_violation_in_m_and_force() const
+		{
+			return RigidBodyConstraints::DampedSprings::spring_violation_in_m_and_force(get_stiffness(),
+				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()), get_rest_length());
+		};
 
-	//	inline Eigen::Vector3d get_local_point_body_b() const { return this->constraints->b_loc[this->idx]; };
-	//	inline auto& set_local_point_body_b(const Eigen::Vector3d& x) const { this->constraints->b_loc[this->idx] = x; return (*this); };
+		inline std::pair<double, Eigen::Vector3d> get_damper_velocity_and_force() const
+		{
+			return RigidBodyConstraints::DampedSprings::damper_velocity_and_force(get_damping(),
+				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()), 
+				rb_a.get_velocity_at(get_local_point_body_a()), rb_b.get_velocity_at(get_local_point_body_b()),
+				get_rest_length());
+		};
 
-	//	inline double get_rest_length() const { return this->constraints->rest_length[this->idx]; };
-	//	inline auto& set_rest_length(double length) { this->constraints->rest_length[this->idx] = length; return (*this); };
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
 
-	//	inline double get_damping() const { return this->constraints->damping[this->idx]; };
-	//	inline auto& set_damping(double damping) { this->constraints->damping[this->idx] = damping; return (*this); };
-
-	//	inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
-	//	inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
-
-	//	inline std::string get_label() const { return this->constraints->labels[this->idx]; };
-	//	inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
-
-	//	inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
-	//};
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
+	};
 
 	//class RelativeLinearVelocityMotorHandler
 	//{

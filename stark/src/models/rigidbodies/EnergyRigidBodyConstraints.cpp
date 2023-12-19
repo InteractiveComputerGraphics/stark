@@ -37,9 +37,9 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 	this->distance_limits = std::make_shared<RigidBodyConstraints::DistanceLimits>();
 	this->directions = std::make_shared<RigidBodyConstraints::Directions>();
 	this->angle_limits = std::make_shared<RigidBodyConstraints::AngleLimits>();
-	//this->damped_springs = std::make_shared<RigidBodyConstraints::DampedSprings>();
-	//this->relative_linear_velocity_motors = std::make_shared<RigidBodyConstraints::RelativeLinearVelocityMotors>();
-	//this->relative_angular_velocity_motors = std::make_shared<RigidBodyConstraints::RelativeAngularVelocityMotors>();
+	this->damped_springs = std::make_shared<RigidBodyConstraints::DampedSprings>();
+	this->linear_velocity = std::make_shared<RigidBodyConstraints::LinearVelocity>();
+	this->angular_velocity = std::make_shared<RigidBodyConstraints::AngularVelocity>();
 
 	// Energy declarations
 	stark.global_energy.add_energy("rb_constraint_global_points", this->global_points->conn,
@@ -189,37 +189,26 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 		}
 	);
 
+	stark.global_energy.add_energy("rb_constraint_damped_spring", this->damped_springs->conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto& data = this->damped_springs;
 
+			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
+			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
+			symx::Scalar rest_length = energy.make_scalar(data->rest_length, conn["idx"]);
+			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
+			symx::Scalar damping = energy.make_scalar(data->damping, conn["idx"]);
+			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
+			auto [a0, a1] = this->dyn->get_x0_x1(energy, conn["a"], a_loc, dt);
+			auto [b0, b1] = this->dyn->get_x0_x1(energy, conn["b"], b_loc, dt);
 
-
-
-	//stark.global_energy.add_energy("rb_constraint_damped_spring", this->damped_springs->conn,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto& data = this->damped_springs;
-
-	//		symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
-	//		symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
-	//		symx::Scalar rest_length = energy.make_scalar(data->rest_length, conn["idx"]);
-	//		symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-	//		symx::Scalar damping = energy.make_scalar(data->damping, conn["idx"]);
-	//		symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-	//		symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
-
-	//		auto [a0, a1] = this->_get_x0_x1(energy, stark, conn["a"], a_loc);
-	//		auto [b0, b1] = this->_get_x0_x1(energy, stark, conn["b"], b_loc);
-
-	//		symx::Vector r1 = b1 - a1;
-	//		symx::Vector r0 = b0 - a0;
-	//		symx::Scalar l1 = r1.norm();
-	//		symx::Scalar l0 = r0.norm();
-	//		
-	//		symx::Scalar E_spring = 0.5 * stiffness * (l1 / rest_length - 1.0).powN(2);
-	//		symx::Scalar E_damper = 0.5 * damping * ((l1 - l0) / dt).powN(2);
-	//		energy.set_with_condition(E_spring + E_damper, is_active > 0.0);
-	//	}
-	//);
+			symx::Scalar E = RigidBodyConstraints::DampedSprings::energy(stiffness, damping, a0, a1, b0, b1, rest_length, dt);
+			energy.set_with_condition(E, is_active > 0.0);
+		}
+	);
 
 	//stark.global_energy.add_energy("rb_constraint_relative_linear_velocity_motors", this->relative_linear_velocity_motors->conn,
 	//	[&](symx::Energy& energy, symx::Element& conn)

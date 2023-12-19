@@ -204,19 +204,19 @@ stark::models::RBCAngleLimitHandler stark::models::RigidBodies::add_constraint_a
 	);
 	return RBCAngleLimitHandler(body_a, body_b, this->rb->constraints->angle_limits, idx);
 }
-//stark::models::DampedSpringHandler stark::models::RigidBodies::add_spring(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double damping)
-//{
-//	const int idx = this->rb->constraints->damped_springs->add(
-//		body_a.index(),
-//		body_b.index(),
-//		body_a.global_to_local_point(a_glob),
-//		body_b.global_to_local_point(b_glob),
-//		(a_glob - b_glob).norm(),
-//		stiffness,
-//		damping
-//	);
-//	return DampedSpringHandler(body_a, body_b, this->rb->constraints->damped_springs, idx);
-//}
+stark::models::RBCDampedSpringHandler stark::models::RigidBodies::add_spring(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double damping)
+{
+	const int idx = this->rb->constraints->damped_springs->add(
+		body_a.index(),
+		body_b.index(),
+		body_a.global_to_local_point(a_glob),
+		body_b.global_to_local_point(b_glob),
+		(a_glob - b_glob).norm(),
+		stiffness,
+		damping
+	);
+	return RBCDampedSpringHandler(body_a, body_b, this->rb->constraints->damped_springs, idx);
+}
 //stark::models::RelativeLinearVelocityMotorHandler stark::models::RigidBodies::add_relative_linear_velocity_motor(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double target_v, double max_force, double delay)
 //{
 //	const int idx = this->rb->constraints->relative_linear_velocity_motors->add(

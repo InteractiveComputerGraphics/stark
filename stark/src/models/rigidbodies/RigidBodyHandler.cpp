@@ -149,6 +149,10 @@ Eigen::Vector3d stark::models::RigidBodyHandler::get_velocity() const
 {
 	return this->rb->dyn->v1[this->idx];
 }
+Eigen::Vector3d stark::models::RigidBodyHandler::get_velocity_at(const Eigen::Vector3d& loc) const
+{
+	return this->get_velocity() + this->get_angular_velocity().cross((this->local_to_global_point(loc) - this->get_translation()));
+}
 stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::set_velocity(const Eigen::Vector3d& vel_glob_coords)
 {
 	this->rb->dyn->v0[this->idx] = vel_glob_coords;

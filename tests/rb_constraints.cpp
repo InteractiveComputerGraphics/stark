@@ -216,5 +216,6 @@ TEST_CASE("angle_limit", "[rb_constraints]")
 	REQUIRE_THAT(t[1], WithinAbs(0.0, 1e-3));
 	REQUIRE_THAT(t[2], WithinAbs(0.0, 1e-3));
 }
+
 #endif // ENABLE_THESE_TESTS
 
