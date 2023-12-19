@@ -51,6 +51,33 @@ namespace stark::models
 		*/
 		constexpr static double EPS = 100.0 * std::numeric_limits<double>::epsilon();
 
+		static symx::Scalar c1_controller_energy(const symx::Vector& da1, const symx::Vector& va1, const symx::Vector& vb1, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt)
+		{
+			// Constraint (Analogous to C1 friction)
+			// Important: derivatives wrt "positions", therefore needed chain rule and resulted in added product by dt
+			symx::Scalar v = da1.dot(vb1 - va1);
+			symx::Scalar k = max_force / delay;
+			symx::Scalar eps = max_force / (2.0 * k);
+			symx::Scalar dv = symx::sqrt((target_v - v).powN(2));
+			symx::Scalar E_l = 0.5 * k * dv.powN(2) * dt;
+			symx::Scalar E_r = max_force * (dv - eps) * dt;
+			symx::Scalar E = symx::branch(dv < delay, E_l, E_r);
+			return E;
+		}
+		static std::pair<double, Eigen::Vector3d> c1_controller_violation_and_force(const Eigen::Vector3d& da1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double target_v, const double max_force, const double delay)
+		{
+			const double v = da1.dot(vb1 - va1);
+			const double k = max_force / delay;
+			const double eps = max_force / (2.0 * k);
+			const double dv = std::abs(target_v - v);
+			if (dv < delay) {
+				return { dv, -k * dv * da1.normalized() };  // { [m], [N] }
+			}
+			else {
+				return { dv, -max_force * da1.normalized() };  // { [m], [N] }
+			}
+		}
+
 		/*
 		*	Disables absolute displacement of a point in a an object.
 		*/
@@ -86,7 +113,6 @@ namespace stark::models
 			}
 		};
 
-
 		/*
 		*	Forces the a local direction on an object to be aligned to a global direction.
 		* 
@@ -121,7 +147,7 @@ namespace stark::models
 			{
 				const Eigen::Vector3d u = d - d_target;
 				const double C = u.norm();
-				const Eigen::Vector3d force = -k*C*u/C;
+				const Eigen::Vector3d force = -k*C*u/(C + EPS);
 
 				const double angle_deg = utils::rad2deg(std::asin(C));
 				const Eigen::Vector3d torque = d_target.cross(force);
@@ -129,7 +155,6 @@ namespace stark::models
 				return { angle_deg, torque };  // { [deg], [Nm] }
 			}
 		};
-
 
 		/*
 		*	Disables absolute displacement of a point in a an object. (Ball joint)
@@ -163,7 +188,7 @@ namespace stark::models
 			{
 				const Eigen::Vector3d u = b - a;
 				const double C = u.norm();
-				return { C, -k * C * u / C };  // { [m], [N] }
+				return { C, -k * C * u / (C + EPS) };  // { [m], [N] }
 			}
 		};
 
@@ -239,7 +264,7 @@ namespace stark::models
 				const Eigen::Vector3d u = b - a;
 				const double d = u.norm();
 				const double C = d - target_distance;
-				return { C, -k * C * u / d };  // { [m], [N] }
+				return { C, -k * C * u / (d + EPS) };  // { [m], [N] }
 			}
 		};
 
@@ -284,11 +309,11 @@ namespace stark::models
 
 				if (d < min_distance) {
 					const double C = min_distance - d;
-					return { C, k * std::pow(C, 2) * u / d };  // { [m], [N] }  (doesn't need the minus as the direction u should also be flipped)
+					return { C, k * std::pow(C, 2) * u / (d + EPS) };  // { [m], [N] }  (doesn't need the minus as the direction u should also be flipped)
 				}
 				else if (d > max_distance) {
 					const double C = d - max_distance;
-					return { C, -k * std::pow(C, 2) * u / d };  // { [m], [N] }
+					return { C, -k * std::pow(C, 2) * u / (d + EPS) };  // { [m], [N] }
 				}
 				else {
 					return {0.0, Eigen::Vector3d::Zero()};
@@ -329,7 +354,7 @@ namespace stark::models
 			{
 				const Eigen::Vector3d u = db - da;
 				const double C = u.norm();
-				const Eigen::Vector3d force = -k * C * u / C;
+				const Eigen::Vector3d force = -k * C * u / (C + EPS);
 
 				const double angle_deg = utils::rad2deg(std::asin(C));
 				const Eigen::Vector3d torque = da.cross(force);
@@ -385,7 +410,7 @@ namespace stark::models
 
 				if (d > max_distance) {
 					const double C = d - max_distance;
-					const Eigen::Vector3d force = -k * std::pow(C, 2) * u / d;
+					const Eigen::Vector3d force = -k * std::pow(C, 2) * u / (d + EPS);
 					return { angle_of_opening_distance(C), da.cross(force) };  // { [deg], [Nm] }
 				}
 				else {
@@ -436,7 +461,7 @@ namespace stark::models
 				const Eigen::Vector3d r1 = b1 - a1;
 				const double l1 = r1.norm();
 				const double C = l1 - rest_length;
-				const Eigen::Vector3d f = -stiffness * C * r1 / l1;
+				const Eigen::Vector3d f = -stiffness * C * r1 / (l1 + EPS);
 				return { C, f };  // { [m], [N] }
 			}
 			static std::pair<double, Eigen::Vector3d> damper_velocity_and_force(const double damping, const Eigen::Vector3d& a1, const Eigen::Vector3d& b1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double rest_length)
@@ -447,8 +472,6 @@ namespace stark::models
 				return { dv, f };  // { [m/s], [N] }
 			}
 		};
-
-
 
 		/*
 		*	Add torque counteracting the difference in angular velocity between two objects.
@@ -464,8 +487,7 @@ namespace stark::models
 			std::vector<std::string> labels;
 			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, double target_v, double max_force, double delay)
 			{
-				const int id = (int)this->is_active.size();
-				this->conn.numbered_push_back({ rb_a, rb_b });
+				const int id = this->conn.numbered_push_back({ rb_a, rb_b });
 				this->da_loc.push_back(da_loc.normalized());
 				this->target_v.push_back(target_v);
 				this->max_force.push_back(max_force);
@@ -473,6 +495,14 @@ namespace stark::models
 				this->is_active.push_back(1.0);
 				this->labels.push_back("");
 				return id;
+			}
+			static symx::Scalar energy(const symx::Vector& da1, const symx::Vector& va1, const symx::Vector& vb1, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt)
+			{
+				return c1_controller_energy(da1, va1, vb1, target_v, max_force, delay, dt);
+			}
+			static std::pair<double, Eigen::Vector3d> velocity_violation_and_force(const Eigen::Vector3d& da1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double target_v, const double max_force, const double delay)
+			{
+				return c1_controller_violation_and_force(da1, va1, vb1, target_v, max_force, delay);
 			}
 		};
 
@@ -490,8 +520,7 @@ namespace stark::models
 			std::vector<std::string> labels;
 			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, double target_w, double max_torque, double delay)
 			{
-				const int id = (int)this->is_active.size();
-				this->conn.numbered_push_back({ rb_a, rb_b });
+				const int id = this->conn.numbered_push_back({ rb_a, rb_b });
 				this->da_loc.push_back(da_loc.normalized());
 				this->target_w.push_back(target_w);
 				this->max_torque.push_back(max_torque);
@@ -499,6 +528,14 @@ namespace stark::models
 				this->is_active.push_back(1.0);
 				this->labels.push_back("");
 				return id;
+			}
+			static symx::Scalar energy(const symx::Vector& da1, const symx::Vector& wa1, const symx::Vector& wb1, const symx::Scalar& target_w, const symx::Scalar& max_torque, const symx::Scalar& delay, const symx::Scalar& dt)
+			{
+				return c1_controller_energy(da1, wa1, wb1, target_w, max_torque, delay, dt);
+			}
+			static std::pair<double, Eigen::Vector3d> angular_velocity_violation_and_torque(const Eigen::Vector3d& da1, const Eigen::Vector3d& wa1, const Eigen::Vector3d& wb1, const double target_w, const double max_torque, const double delay)
+			{
+				return c1_controller_violation_and_force(da1, wa1, wb1, target_w, max_torque, delay);
 			}
 		};
 	};

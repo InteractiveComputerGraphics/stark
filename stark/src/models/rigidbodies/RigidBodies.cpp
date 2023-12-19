@@ -204,7 +204,7 @@ stark::models::RBCAngleLimitHandler stark::models::RigidBodies::add_constraint_a
 	);
 	return RBCAngleLimitHandler(body_a, body_b, this->rb->constraints->angle_limits, idx);
 }
-stark::models::RBCDampedSpringHandler stark::models::RigidBodies::add_spring(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double damping)
+stark::models::RBCDampedSpringHandler stark::models::RigidBodies::add_constraint_spring(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double damping)
 {
 	const int idx = this->rb->constraints->damped_springs->add(
 		body_a.index(),
@@ -217,30 +217,30 @@ stark::models::RBCDampedSpringHandler stark::models::RigidBodies::add_spring(con
 	);
 	return RBCDampedSpringHandler(body_a, body_b, this->rb->constraints->damped_springs, idx);
 }
-//stark::models::RelativeLinearVelocityMotorHandler stark::models::RigidBodies::add_relative_linear_velocity_motor(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double target_v, double max_force, double delay)
-//{
-//	const int idx = this->rb->constraints->relative_linear_velocity_motors->add(
-//		body_a.index(),
-//		body_b.index(),
-//		body_a.global_to_local_direction(d_glob),
-//		target_v,
-//		max_force,
-//		delay
-//	);
-//	return RelativeLinearVelocityMotorHandler(body_a, body_b, this->rb->constraints->relative_linear_velocity_motors, idx);
-//}
-//stark::models::RelativeAngularVelocityMotorHandler stark::models::RigidBodies::add_relative_angular_velocity_motor(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double target_w, double max_torque, double delay)
-//{
-//	const int idx = this->rb->constraints->relative_angular_velocity_motors->add(
-//		body_a.index(),
-//		body_b.index(),
-//		body_a.global_to_local_direction(d_glob),
-//		target_w,
-//		max_torque,
-//		delay
-//	);
-//	return RelativeAngularVelocityMotorHandler(body_a, body_b, this->rb->constraints->relative_angular_velocity_motors, idx);
-//}
+stark::models::RBCLinearVelocityHandler stark::models::RigidBodies::add_constraint_linear_velocity(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double target_v, double max_force, double delay)
+{
+	const int idx = this->rb->constraints->linear_velocity->add(
+		body_a.index(),
+		body_b.index(),
+		body_a.global_to_local_direction(d_glob),
+		target_v,
+		max_force,
+		delay
+	);
+	return RBCLinearVelocityHandler(body_a, body_b, this->rb->constraints->linear_velocity, idx);
+}
+stark::models::RBCAngularVelocityHandler stark::models::RigidBodies::add_constraint_angular_velocity(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double target_w, double max_torque, double delay)
+{
+	const int idx = this->rb->constraints->angular_velocity->add(
+		body_a.index(),
+		body_b.index(),
+		body_a.global_to_local_direction(d_glob),
+		target_w,
+		max_torque,
+		delay
+	);
+	return RBCAngularVelocityHandler(body_a, body_b, this->rb->constraints->angular_velocity, idx);
+}
 stark::models::RBCFixHandler stark::models::RigidBodies::add_constraint_fix(const RigidBodyHandler& body)
 {
 	auto anchor_point = this->add_constraint_global_point(body, body.get_translation());
@@ -278,7 +278,7 @@ stark::models::RBCFixHandler stark::models::RigidBodies::add_constraint_fix(cons
 //}
 //stark::models::SpringWithLimitsHandler stark::models::RigidBodies::add_spring_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double min_length, double max_length, double damping)
 //{
-//	auto spring = this->add_spring(body_a, body_b, a_glob, b_glob, stiffness, damping);
+//	auto spring = this->add_constraint_spring(body_a, body_b, a_glob, b_glob, stiffness, damping);
 //	auto distance_limits = this->add_constraint_distance_limits(body_a, body_b, a_glob, b_glob, min_length, max_length);
 //	return SpringWithLimitsHandler(body_a, body_b, spring, distance_limits);
 //}

@@ -89,7 +89,7 @@ namespace stark::models
 			const Eigen::Vector3d& d_glob,
 			double admissible_angle_deg
 		);
-		RBCDampedSpringHandler add_spring(
+		RBCDampedSpringHandler add_constraint_spring(
 			const RigidBodyHandler& body_a,
 			const RigidBodyHandler& body_b,
 			const Eigen::Vector3d& a_glob, 
@@ -97,24 +97,22 @@ namespace stark::models
 			double stiffness, 
 			double damping = 0.0
 		);
-
-
-		//RelativeLinearVelocityMotorHandler add_relative_linear_velocity_motor(
-		//	const RigidBodyHandler& body_a, 
-		//	const RigidBodyHandler& body_b,
-		//	const Eigen::Vector3d& d_glob, 
-		//	double target_v, 
-		//	double max_force,
-		//	double delay = 0.01
-		//);
-		//RelativeAngularVelocityMotorHandler add_relative_angular_velocity_motor(
-		//	const RigidBodyHandler& body_a,
-		//	const RigidBodyHandler& body_b,
-		//	const Eigen::Vector3d& d_glob, 
-		//	double target_w, 
-		//	double max_torque, 
-		//	double delay = 0.01
-		//);
+		RBCLinearVelocityHandler add_constraint_linear_velocity(
+			const RigidBodyHandler& body_a, 
+			const RigidBodyHandler& body_b,
+			const Eigen::Vector3d& d_glob, 
+			double target_v, 
+			double max_force,
+			double delay = 0.01
+		);
+		RBCAngularVelocityHandler add_constraint_angular_velocity(
+			const RigidBodyHandler& body_a,
+			const RigidBodyHandler& body_b,
+			const Eigen::Vector3d& d_glob, 
+			double target_w, 
+			double max_torque, 
+			double delay = 0.01
+		);
 		
 		//// Derived
 		RBCFixHandler add_constraint_fix(

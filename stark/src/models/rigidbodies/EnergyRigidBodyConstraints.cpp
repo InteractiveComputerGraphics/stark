@@ -210,61 +210,48 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 		}
 	);
 
-	//stark.global_energy.add_energy("rb_constraint_relative_linear_velocity_motors", this->relative_linear_velocity_motors->conn,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto& data = this->relative_linear_velocity_motors;
+	stark.global_energy.add_energy("rb_constraint_linear_velocity", this->linear_velocity->conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto& data = this->linear_velocity;
 
-	//		symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
-	//		symx::Scalar target_v = energy.make_scalar(data->target_v, conn["idx"]);
-	//		symx::Scalar max_force = energy.make_scalar(data->max_force, conn["idx"]);
-	//		symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
-	//		symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-	//		symx::Vector va1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["a"]);
-	//		symx::Vector vb1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["b"]);
-	//		symx::Vector wa1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["a"]);
-	//		symx::Vector qa0 = energy.make_vector(this->dyn->q0_, conn["a"]);
-	//		symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
+			symx::Scalar target_v = energy.make_scalar(data->target_v, conn["idx"]);
+			symx::Scalar max_force = energy.make_scalar(data->max_force, conn["idx"]);
+			symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
+			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+			symx::Vector va1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["a"]);
+			symx::Vector vb1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["b"]);
+			symx::Vector wa1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["a"]);
+			symx::Vector qa0 = energy.make_vector(this->dyn->q0_, conn["a"]);
+			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
-	//		symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
-	//		symx::Scalar v = da1.dot(vb1 - va1);
-	//		this->_set_c1_controller_energy(energy, v, target_v, max_force, delay, dt, is_active);
-	//	}
-	//);
+			symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
+			symx::Scalar E = RigidBodyConstraints::LinearVelocity::energy(da1, va1, vb1, target_v, max_force, delay, dt);
+			energy.set_with_condition(E, is_active > 0.0);
+		}
+	);
 
-	//stark.global_energy.add_energy("rb_constraint_relative_angular_velocity_motors", this->relative_angular_velocity_motors->conn,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto& data = this->relative_angular_velocity_motors;
+	stark.global_energy.add_energy("rb_constraint_angular_velocity", this->angular_velocity->conn,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto& data = this->angular_velocity;
 
-	//		symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
-	//		symx::Scalar target_w = energy.make_scalar(data->target_w, conn["idx"]);
-	//		symx::Scalar max_torque = energy.make_scalar(data->max_torque, conn["idx"]);
-	//		symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
-	//		symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-	//		symx::Vector wa1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["a"]);
-	//		symx::Vector wb1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["b"]);
-	//		symx::Vector qa0 = energy.make_vector(this->dyn->q0_, conn["a"]);
-	//		symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
+			symx::Scalar target_w = energy.make_scalar(data->target_w, conn["idx"]);
+			symx::Scalar max_torque = energy.make_scalar(data->max_torque, conn["idx"]);
+			symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
+			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
+			symx::Vector wa1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["a"]);
+			symx::Vector wb1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["b"]);
+			symx::Vector qa0 = energy.make_vector(this->dyn->q0_, conn["a"]);
+			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
-	//		symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
-	//		symx::Scalar w = da1.dot(wb1 - wa1);
-	//		this->_set_c1_controller_energy(energy, w, target_w, max_torque, delay, dt, is_active);
-	//	}
-	//);
-}
-
-void stark::models::EnergyRigidBodyConstraints::_set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt, const symx::Scalar& is_active)
-{
-	// Constraint (Analogous to C1 friction)
-	// Important: derivatives wrt "positions", therefore needed chain rule and resulted in added product by dt
-	symx::Scalar k = max_force / delay;
-	symx::Scalar eps = max_force / (2.0 * k);
-	symx::Scalar dv = symx::sqrt((target_v - v).powN(2));
-	symx::Scalar E_l = 0.5 * k * dv.powN(2) * dt;
-	symx::Scalar E_r = max_force * (dv - eps) * dt;
-	symx::Scalar E = symx::branch(dv < delay, E_l, E_r);
-	energy.set_with_condition(E, is_active > 0.0);
+			symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
+			symx::Scalar E = RigidBodyConstraints::AngularVelocity::energy(da1, wa1, wb1, target_w, max_torque, delay, dt);
+			energy.set_with_condition(E, is_active > 0.0);
+		}
+	);
 }
 
 bool stark::models::EnergyRigidBodyConstraints::_is_converged_state_valid(core::Stark& stark)

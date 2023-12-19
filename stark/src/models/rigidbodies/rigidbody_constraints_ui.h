@@ -400,73 +400,95 @@ namespace stark::models
 		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
-	//class RelativeLinearVelocityMotorHandler
-	//{
-	//private:
-	//	std::shared_ptr<RigidBodyConstraints::RelativeLinearVelocityMotors> constraints;
-	//	int idx = -1;
-	//	RigidBodyHandler rb_a;
-	//	RigidBodyHandler rb_b;
+	class RBCLinearVelocityHandler
+	{
+	private:
+		std::shared_ptr<RigidBodyConstraints::LinearVelocity> constraints;
+		int idx = -1;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
 
-	//public:
-	//	RelativeLinearVelocityMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::RelativeLinearVelocityMotors> constraints, int idx) 
-	//		: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
-	//	{};
+	public:
+		RBCLinearVelocityHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::LinearVelocity> constraints, int idx)
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) 
+		{};
 
-	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
-	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
 
-	//	inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
-	//	inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
+		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
+		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
 
-	//	inline double get_target_velocity() const { return this->constraints->target_v[this->idx]; };
-	//	inline auto& set_target_velocity(double velocity) { this->constraints->target_v[this->idx] = velocity; return (*this); };
+		inline double get_target_velocity() const { return this->constraints->target_v[this->idx]; };
+		inline auto& set_target_velocity(double velocity) { this->constraints->target_v[this->idx] = velocity; return (*this); };
 
-	//	inline double get_max_force() const { return this->constraints->max_force[this->idx]; };
-	//	inline auto& set_max_force(double force) { this->constraints->max_force[this->idx] = force; return (*this); };
+		inline double get_max_force() const { return this->constraints->max_force[this->idx]; };
+		inline auto& set_max_force(double force) { this->constraints->max_force[this->idx] = force; return (*this); };
 
-	//	inline double get_delay() const { return this->constraints->delay[this->idx]; };
-	//	inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
+		inline double get_delay() const { return this->constraints->delay[this->idx]; };
+		inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
 
-	//	inline std::string get_label() const { return this->constraints->labels[this->idx]; };
-	//	inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+		inline std::pair<double, Eigen::Vector3d> get_velocity_violation_and_force() const
+		{
+			return RigidBodyConstraints::LinearVelocity::velocity_violation_and_force(
+				rb_a.local_to_global_direction(get_local_direction_body_a()),
+				rb_a.get_velocity(),
+				rb_b.get_velocity(),
+				get_target_velocity(),
+				get_max_force(),
+				get_delay());
+		};
 
-	//	inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
-	//};
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
 
-	//class RelativeAngularVelocityMotorHandler
-	//{
-	//private:
-	//	std::shared_ptr<RigidBodyConstraints::RelativeAngularVelocityMotors> constraints;
-	//	int idx = -1;
-	//	RigidBodyHandler rb_a;
-	//	RigidBodyHandler rb_b;
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
+	};
 
-	//public:
-	//	RelativeAngularVelocityMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::RelativeAngularVelocityMotors> constraints, int idx) 
-	//		: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
-	//	{};
+	class RBCAngularVelocityHandler
+	{
+	private:
+		std::shared_ptr<RigidBodyConstraints::AngularVelocity> constraints;
+		int idx = -1;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
 
-	//	inline RigidBodyHandler get_body_a() { return this->rb_a; };
-	//	inline RigidBodyHandler get_body_b() { return this->rb_b; };
+	public:
+		RBCAngularVelocityHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::AngularVelocity> constraints, int idx)
+			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
+		{};
 
-	//	inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
-	//	inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
 
-	//	inline double get_target_angular_velocity() const { return this->constraints->target_w[this->idx]; };
-	//	inline auto& set_target_angular_velocity(double velocity) { this->constraints->target_w[this->idx] = velocity; return (*this); };
+		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
+		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
 
-	//	inline double get_max_torque() const { return this->constraints->max_torque[this->idx]; };
-	//	inline auto& set_max_torque(double torque) { this->constraints->max_torque[this->idx] = torque; return (*this); };
+		inline double get_target_angular_velocity() const { return this->constraints->target_w[this->idx]; };
+		inline auto& set_target_angular_velocity(double velocity) { this->constraints->target_w[this->idx] = velocity; return (*this); };
 
-	//	inline double get_delay() const { return this->constraints->delay[this->idx]; };
-	//	inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
+		inline double get_max_torque() const { return this->constraints->max_torque[this->idx]; };
+		inline auto& set_max_torque(double torque) { this->constraints->max_torque[this->idx] = torque; return (*this); };
 
-	//	inline std::string get_label() const { return this->constraints->labels[this->idx]; };
-	//	inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+		inline double get_delay() const { return this->constraints->delay[this->idx]; };
+		inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
 
-	//	inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
-	//};
+		inline std::pair<double, Eigen::Vector3d> get_angular_velocity_violation_and_torque() const
+		{
+			return RigidBodyConstraints::AngularVelocity::angular_velocity_violation_and_torque(
+				rb_a.local_to_global_direction(get_local_direction_body_a()),
+				rb_a.get_velocity(),
+				rb_b.get_velocity(),
+				get_target_angular_velocity(),
+				get_max_torque(),
+				get_delay());
+		};
+
+		inline std::string get_label() const { return this->constraints->labels[this->idx]; };
+		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); };
+
+		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
+	};
 
 
 	/* ===================================================================================================================================== */

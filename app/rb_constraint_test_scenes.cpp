@@ -133,7 +133,7 @@ void rb_constraints_angle_limits()
 //		{
 //			auto box1 = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 //				.set_translation({ 0.5, 0.0, 0.0 });
-//			sim.rigidbodies->add_spring(box0, box1, box0.get_translation(), box1.get_translation() - 0.05*Eigen::Vector3d::Ones(), 5.0, 1.0);
+//			sim.rigidbodies->add_constraint_spring(box0, box1, box0.get_translation(), box1.get_translation() - 0.05*Eigen::Vector3d::Ones(), 5.0, 1.0);
 //		}
 //	);
 //}
@@ -166,7 +166,7 @@ void rb_constraints_angle_limits()
 //		{
 //			auto box1 = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 //				.set_translation({ 0.1, 0.0, 0.0 });
-//			sim.rigidbodies->add_spring(box0, box1, box0.get_translation(), box1.get_translation(), 0.2);
+//			sim.rigidbodies->add_constraint_spring(box0, box1, box0.get_translation(), box1.get_translation(), 0.2);
 //			sim.rigidbodies->add_constraint_slider(box0, box1, { 0.05, -0.05, 0.05 }, { 1, 0, -1 });
 //		}
 //	);
@@ -178,7 +178,7 @@ void rb_constraints_angle_limits()
 //		{
 //			auto box1 = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 //				.set_translation({ 0.1, 0.0, 0.0 });
-//			sim.rigidbodies->add_spring(box0, box1, box0.get_translation(), box1.get_translation(), 0.2);
+//			sim.rigidbodies->add_constraint_spring(box0, box1, box0.get_translation(), box1.get_translation(), 0.2);
 //			sim.rigidbodies->add_constraint_prismatic_slider(box0, box1, { 0.05, -0.05, 0.05 }, { 1, 0, -1 });
 //		}
 //	);
@@ -202,7 +202,7 @@ void rb_constraints_angle_limits()
 //			auto box1 = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 //				.set_translation({ 0.0, 0.0, -0.5 });
 //			sim.rigidbodies->add_prismatic_press(box0, box1, box0.get_translation(), Eigen::Vector3d::UnitZ(), 0.2, 20.0);
-//			sim.rigidbodies->add_spring(box0, box1, box0.get_translation(), box1.get_translation(), 8.0, 0.5);
+//			sim.rigidbodies->add_constraint_spring(box0, box1, box0.get_translation(), box1.get_translation(), 8.0, 0.5);
 //		}
 //	);
 //}
