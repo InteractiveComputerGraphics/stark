@@ -470,8 +470,8 @@ namespace stark::models
 		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
 		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
 
-		inline double get_target_angular_velocity() const { return this->constraints->target_w[this->idx]; };
-		inline auto& set_target_angular_velocity(double velocity) { this->constraints->target_w[this->idx] = velocity; return (*this); };
+		inline double get_target_angular_velocity_in_deg_per_s() const { return utils::rad2deg(this->constraints->target_w[this->idx]); };
+		inline auto& set_target_angular_velocity_in_deg_per_s(double w) { this->constraints->target_w[this->idx] = utils::deg2rad(w); return (*this); };
 
 		inline double get_max_torque() const { return this->constraints->max_torque[this->idx]; };
 		inline auto& set_max_torque(double torque) { this->constraints->max_torque[this->idx] = torque; return (*this); };
@@ -479,13 +479,13 @@ namespace stark::models
 		inline double get_delay() const { return this->constraints->delay[this->idx]; };
 		inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> get_angular_velocity_violation_and_torque() const
+		inline std::pair<double, Eigen::Vector3d> get_angular_velocity_violation_in_deg_per_s_and_torque() const
 		{
-			return RigidBodyConstraints::AngularVelocity::angular_velocity_violation_and_torque(
+			return RigidBodyConstraints::AngularVelocity::angular_velocity_violation_in_deg_per_s_and_torque(
 				rb_a.local_to_global_direction(get_local_direction_body_a()),
 				rb_a.get_velocity(),
 				rb_b.get_velocity(),
-				get_target_angular_velocity(),
+				this->constraints->target_w[this->idx],
 				get_max_torque(),
 				get_delay());
 		};

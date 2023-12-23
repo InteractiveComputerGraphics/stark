@@ -17,21 +17,21 @@ namespace stark::models
 
 	public:
 		/* Fields */
-		std::vector<Eigen::Vector3d> t0;  // Translation at time n
-		std::vector<Eigen::Vector3d> t1;  // Translation at time n+1
+		std::vector<Eigen::Vector3d> t0;  // [m] Translation at time n
+		std::vector<Eigen::Vector3d> t1;  // [m] Translation at time n+1
 		std::vector<Eigen::Quaterniond> q0;  // Quaternion at time n
 		std::vector<std::array<double, 4>> q0_;  // Quaternion at time n (for SymX)
 		std::vector<Eigen::Quaterniond> q1;  // Quaternion at time n+1
 		std::vector<Eigen::Matrix3d> R0;  // Rotation matrix at time n
 		std::vector<Eigen::Matrix3d> R1;  // Rotation matrix at time n+1
-		std::vector<Eigen::Vector3d> v0;  // Velocity at time n
-		std::vector<Eigen::Vector3d> v1;  // Velocity at time n+1
-		std::vector<Eigen::Vector3d> w0;  // Angular velocity at time n
-		std::vector<Eigen::Vector3d> w1;  // Angular velocity at time n+1
-		std::vector<Eigen::Vector3d> a;  // Acceleration
-		std::vector<Eigen::Vector3d> aa;  // Angular acceleration
-		std::vector<Eigen::Vector3d> force;  // Forces
-		std::vector<Eigen::Vector3d> torque;  // Torques
+		std::vector<Eigen::Vector3d> v0;  // [m/s] Velocity at time n
+		std::vector<Eigen::Vector3d> v1;  // [m/s] Velocity at time n+1
+		std::vector<Eigen::Vector3d> w0;  // [rad/s] Angular velocity at time n
+		std::vector<Eigen::Vector3d> w1;  // [rad/s] Angular velocity at time n+1
+		std::vector<Eigen::Vector3d> a;  // [m/s^2] Acceleration
+		std::vector<Eigen::Vector3d> aa;  // [rad/s^2] Angular acceleration
+		std::vector<Eigen::Vector3d> force;  // [N] Force
+		std::vector<Eigen::Vector3d> torque;  // [Nm] Torque
 		symx::DoF dof_v;
 		symx::DoF dof_w;
 		std::vector<std::string> labels;
@@ -54,6 +54,7 @@ namespace stark::models
 
 		//// With final positions
 		Eigen::Vector3d get_x1(int rb_idx, const Eigen::Vector3d& x_loc);
+		Eigen::Vector3d get_v1(int rb_idx, const Eigen::Vector3d& x_loc);
 		Eigen::Vector3d get_d1(int rb_idx, const Eigen::Vector3d& d_loc);
 
 	private:

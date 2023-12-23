@@ -513,7 +513,7 @@ namespace stark::models
 		{
 			symx::LabelledConnectivity<3> conn{ { "idx", "a", "b" } };
 			std::vector<Eigen::Vector3d> da_loc;
-			std::vector<double> target_w;
+			std::vector<double> target_w;  // [rad/s]
 			std::vector<double> max_torque;
 			std::vector<double> delay;
 			std::vector<double> is_active;
@@ -533,9 +533,10 @@ namespace stark::models
 			{
 				return c1_controller_energy(da1, wa1, wb1, target_w, max_torque, delay, dt);
 			}
-			static std::pair<double, Eigen::Vector3d> angular_velocity_violation_and_torque(const Eigen::Vector3d& da1, const Eigen::Vector3d& wa1, const Eigen::Vector3d& wb1, const double target_w, const double max_torque, const double delay)
+			static std::pair<double, Eigen::Vector3d> angular_velocity_violation_in_deg_per_s_and_torque(const Eigen::Vector3d& da1, const Eigen::Vector3d& wa1, const Eigen::Vector3d& wb1, const double target_w, const double max_torque, const double delay)
 			{
-				return c1_controller_violation_and_force(da1, wa1, wb1, target_w, max_torque, delay);
+				auto [C, t] = c1_controller_violation_and_force(da1, wa1, wb1, target_w, max_torque, delay);
+				return { utils::rad2deg(C), t };
 			}
 		};
 	};

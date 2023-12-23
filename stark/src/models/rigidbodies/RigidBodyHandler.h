@@ -45,7 +45,7 @@ namespace stark::models
 		RigidBodyHandler& add_rotation(const double& angle_deg, const Eigen::Vector3d& axis);
 
 		Eigen::Vector3d get_velocity() const;
-		Eigen::Vector3d get_velocity_at(const Eigen::Vector3d& loc) const;
+		Eigen::Vector3d get_velocity_at(const Eigen::Vector3d& x_loc) const;
 		RigidBodyHandler& set_velocity(const Eigen::Vector3d& vel_glob_coords);
 		RigidBodyHandler& add_velocity(const Eigen::Vector3d& vel_glob_coords);
 		

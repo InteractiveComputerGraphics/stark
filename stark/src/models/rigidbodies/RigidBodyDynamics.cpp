@@ -121,6 +121,10 @@ Eigen::Vector3d stark::models::RigidBodyDynamics::get_x1(int rb_idx, const Eigen
 {
 	return local_to_global_point(x_loc, this->R1[rb_idx], this->t1[rb_idx]);
 }
+Eigen::Vector3d stark::models::RigidBodyDynamics::get_v1(int rb_idx, const Eigen::Vector3d& x_loc)
+{
+	return this->v1[rb_idx] + this->w1[rb_idx].cross((this->get_x1(rb_idx, x_loc) - this->t1[rb_idx]));
+}
 Eigen::Vector3d stark::models::RigidBodyDynamics::get_d1(int rb_idx, const Eigen::Vector3d& d_loc)
 {
 	return local_to_global_direction(d_loc, this->R1[rb_idx]);
