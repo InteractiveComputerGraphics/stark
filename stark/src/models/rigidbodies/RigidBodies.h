@@ -78,7 +78,7 @@ namespace stark::models
 			double min_distance,
 			double max_distance
 		);
-		RBCDirection add_constraint_direction(
+		RBCDirectionHandler add_constraint_direction(
 			const RigidBodyHandler& body_a, 
 			const RigidBodyHandler& body_b, 
 			const Eigen::Vector3d& d_glob
@@ -118,32 +118,41 @@ namespace stark::models
 		RBCFixHandler add_constraint_fix(
 			const RigidBodyHandler& body
 		);
-		//HingeJointHandler add_constraint_hinge(
+		RBCAttachmentHandler add_constraint_attachment(
+			const RigidBodyHandler& body_a,
+			const RigidBodyHandler& body_b
+		);
+		//RBCBallJointHandler add_constraint_ball_joint(
+		//	const RigidBodyHandler& body_a,
+		//	const RigidBodyHandler& body_b,
+		//	const Eigen::Vector3d& p_glob
+		//);
+		//RBCHingeJointHandler add_constraint_hinge(
 		//	const RigidBodyHandler& body_a, 
 		//	const RigidBodyHandler& body_b,
 		//	const Eigen::Vector3d& p_glob, 
 		//	const Eigen::Vector3d& d_glob
 		//);
-		//HingeJointWithLimitsHandler add_constraint_hinge_with_limits(
+		//RBCHingeJointWithLimitsHandler add_constraint_hinge_with_limits(
 		//	const RigidBodyHandler& body_a, 
 		//	const RigidBodyHandler& body_b, 
 		//	const Eigen::Vector3d& p_glob, 
 		//	const Eigen::Vector3d& d_glob,
 		//	double admissible_angle_deg
 		//);
-		//SliderHandler add_constraint_slider(
+		//RBCSliderHandler add_constraint_slider(
 		//	const RigidBodyHandler& body_a,
 		//	const RigidBodyHandler& body_b,
 		//	const Eigen::Vector3d& p_glob,
 		//	const Eigen::Vector3d& d_glob
 		//);
-		//PrismaticSliderHandler add_constraint_prismatic_slider(
+		//RBCPrismaticSliderHandler add_constraint_prismatic_slider(
 		//	const RigidBodyHandler& body_a,
 		//	const RigidBodyHandler& body_b,
 		//	const Eigen::Vector3d& p_glob, 
 		//	const Eigen::Vector3d& d_glob
 		//);
-		//SpringWithLimitsHandler add_spring_with_limits(
+		//RBCSpringWithLimitsHandler add_spring_with_limits(
 		//	const RigidBodyHandler& body_a,
 		//	const RigidBodyHandler& body_b, 
 		//	const Eigen::Vector3d& a_glob, 
@@ -153,7 +162,7 @@ namespace stark::models
 		//	double max_length,
 		//	double damping = 0.0
 		//);
-		//PrismaticPressHandler add_prismatic_press(
+		//RBCPrismaticPressHandler add_prismatic_press(
 		//	const RigidBodyHandler& body_a, 
 		//	const RigidBodyHandler& body_b,
 		//	const Eigen::Vector3d& p_glob, 
@@ -162,7 +171,7 @@ namespace stark::models
 		//	double max_force,
 		//	double delay = 0.01
 		//);
-		//MotorHandler add_motor(
+		//RBCMotorHandler add_motor(
 		//	const RigidBodyHandler& body_a, 
 		//	const RigidBodyHandler& body_b,
 		//	const Eigen::Vector3d& p_glob,

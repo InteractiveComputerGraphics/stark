@@ -221,25 +221,30 @@ TEST_CASE("spring", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("spring");
 	stark::models::Simulation simulation(settings);
-	const double stiffness = 1000.0;
-	const double perturbation = PERTURBATION/100.0;
+	const double stiffness = 1000.0; // 1000.0;
+	const double perturbation = 1.0; // PERTURBATION / 100.0;
+	const double mass = 1.0;
+	const double damping = 0.0;
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add_box(mass, { 0.1, 0.1, 0.1 });
 	simulation.rigidbodies->add_constraint_fix(box0);
-	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({ 0.2, 0.0, 0.0 });
-	auto constraint = simulation.rigidbodies->add_constraint_spring(box0, box1, box0.get_translation(), box1.get_translation(), stiffness, 1.0);
+	auto box1 = simulation.rigidbodies->add_box(mass, { 0.1, 0.1, 0.1 }).set_translation({ 0.2, 0.0, 0.0 });
+	auto constraint = simulation.rigidbodies->add_constraint_spring(box0, box1, box0.get_translation(), box1.get_translation(), stiffness, damping);
 
 	box1.add_force_at_centroid({ perturbation, 0, 0 });
 	simulation.stark.run();
+
+	// Damper
 	auto [dC, df] = constraint.get_damper_velocity_and_force();
 	REQUIRE_THAT(dC, WithinAbs(0.0, 1e-3));
 	REQUIRE_THAT(df[0], WithinAbs(0.0, 1e-3));
 	REQUIRE_THAT(df[1], WithinAbs(0.0, 1e-3));
 	REQUIRE_THAT(df[2], WithinAbs(0.0, 1e-3));
 
+	// Spring
 	auto [C, f] = constraint.get_spring_displacement_in_m_and_force();
 	REQUIRE_THAT(-C*stiffness, WithinRel(f[0], 1e-3));
-	REQUIRE_THAT(f[0], WithinRel(-perturbation, 1e-1));  // NOTE: Not sure why this is so inaccurate
+	REQUIRE_THAT(f[0], WithinRel(-perturbation, 1e-2));  // NOTE: Not sure why this is so inaccurate
 	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
 	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
 }
@@ -254,12 +259,36 @@ TEST_CASE("linear_velocity", "[rb_constraints]")
 	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
 	simulation.rigidbodies->add_constraint_fix(box0);
 	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({ 0.1, 0.0, 0.0 });
-	//auto ball_joint = simulation.rigidbodies->add_constraint_point(box0, box1, { 0.05, 0.0, 0.0 });
+	auto ball_joint = simulation.rigidbodies->add_constraint_point(box0, box1, { 0.05, 0.0, 0.0 });
 	auto constraint = simulation.rigidbodies->add_constraint_linear_velocity(box0, box1, Eigen::Vector3d::UnitX(), perturbation, max_force);
 
-	//auto [bC, bf] = ball_joint.get_violation_in_m_and_force();
+	simulation.stark.run();
+
+	auto [bC, bf] = ball_joint.get_violation_in_m_and_force();
 	auto [C, f] = constraint.get_velocity_violation_and_force();
-	//REQUIRE_THAT(f[0], WithinRel(-bf[0], 1e-3));
+	REQUIRE_THAT(f[0], WithinRel(-bf[0], 1e-3));
+	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+}
+
+TEST_CASE("angular_velocity", "[rb_constraints]")
+{
+	stark::Settings settings = test_settings("angular_velocity");
+	stark::models::Simulation simulation(settings);
+	const double max_torque = 1000.0;
+	const double perturbation = PERTURBATION/100.0;
+
+	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	simulation.rigidbodies->add_constraint_fix(box0);
+	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({ 0.1, 0.0, 0.0 });
+	auto attachment = simulation.rigidbodies->add_constraint_attachment(box0, box1);
+	auto constraint = simulation.rigidbodies->add_constraint_angular_velocity(box0, box1, Eigen::Vector3d::UnitX(), perturbation, max_torque);
+
+	simulation.stark.run();
+
+	auto [bC, bf] = attachment.get_z_lock().get_violation_in_deg_and_torque();
+	auto [C, f] = constraint.get_angular_velocity_violation_and_torque();
+	REQUIRE_THAT(f[0], WithinRel(-bf[0], 1e-3));
 	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
 	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
 }

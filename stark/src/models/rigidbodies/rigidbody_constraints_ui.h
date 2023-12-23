@@ -257,7 +257,7 @@ namespace stark::models
 		inline auto& enable(bool activation) { this->constraints->is_active[this->idx] = (activation) ? 1.0 : -1.0; return (*this); };
 	};
 
-	class RBCDirection
+	class RBCDirectionHandler
 	{
 	private:
 		std::shared_ptr<RigidBodyConstraints::Directions> constraints;
@@ -266,7 +266,7 @@ namespace stark::models
 		RigidBodyHandler rb_b;
 
 	public:
-		RBCDirection(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::Directions> constraints, int idx)
+		RBCDirectionHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<RigidBodyConstraints::Directions> constraints, int idx)
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx)
 		{};
 
@@ -543,6 +543,63 @@ namespace stark::models
 		inline auto& enable(bool activation)
 		{
 			this->anchor_point.enable(activation);
+			this->z_lock.enable(activation);
+			this->x_lock.enable(activation);
+			return (*this);
+		};
+	};
+
+	class RBCAttachmentHandler
+	{
+	private:
+		RBCPointHandler point;
+		RBCDirectionHandler z_lock;
+		RBCDirectionHandler x_lock;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
+		std::string label = "";
+
+	public:
+		RBCAttachmentHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCPointHandler point, RBCDirectionHandler z_lock, RBCDirectionHandler x_lock)
+			: rb_a(rb_a), rb_b(rb_b), point(point), z_lock(z_lock), x_lock(x_lock) {};
+		inline RigidBodyHandler get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler get_body_b() { return this->rb_b; };
+		inline auto& get_point_constraint() { return this->point; };
+		inline auto& get_z_lock() { return this->z_lock; };
+		inline auto& get_x_lock() { return this->x_lock; };
+
+		inline auto& set_stiffness(double stiffness) 
+		{
+			this->point.set_stiffness(stiffness);
+			this->z_lock.set_stiffness(stiffness);
+			this->x_lock.set_stiffness(stiffness);
+			return (*this);
+		};
+		inline auto& set_tolerance_in_m(double tolerance_in_m)
+		{
+			this->point.set_tolerance_in_m(tolerance_in_m);
+			return (*this);
+		}
+		inline auto& set_tolerance_in_deg(double tolerance_in_deg)
+		{
+			this->z_lock.set_tolerance_in_deg(tolerance_in_deg);
+			this->x_lock.set_tolerance_in_deg(tolerance_in_deg);
+			return (*this);
+		}
+
+		inline std::string get_label() const { return this->label; };
+		inline auto& set_label(std::string label) 
+		{ 
+			this->label = label;
+			this->point.set_label(label + "_point");
+			this->z_lock.set_label(label + "_z_lock");
+			this->x_lock.set_label(label + "_x_lock");
+			return (*this); 
+		};
+
+		inline auto& enable(bool activation)
+		{
+			this->point.enable(activation);
 			this->z_lock.enable(activation);
 			this->x_lock.enable(activation);
 			return (*this);

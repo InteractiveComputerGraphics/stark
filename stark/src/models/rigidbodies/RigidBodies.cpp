@@ -179,7 +179,7 @@ stark::models::RBCDistanceLimitHandler stark::models::RigidBodies::add_constrain
 	);
 	return RBCDistanceLimitHandler(body_a, body_b, this->rb->constraints->distance_limits, idx);
 }
-stark::models::RBCDirection stark::models::RigidBodies::add_constraint_direction(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob)
+stark::models::RBCDirectionHandler stark::models::RigidBodies::add_constraint_direction(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob)
 {
 	const int idx = this->rb->constraints->directions->add(
 		body_a.index(),
@@ -189,7 +189,7 @@ stark::models::RBCDirection stark::models::RigidBodies::add_constraint_direction
 		this->default_stiffness,
 		this->default_tolerance_in_deg
 	);
-	return RBCDirection(body_a, body_b, this->rb->constraints->directions, idx);
+	return RBCDirectionHandler(body_a, body_b, this->rb->constraints->directions, idx);
 }
 stark::models::RBCAngleLimitHandler stark::models::RigidBodies::add_constraint_angle_limit(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double admissible_angle_deg)
 {
@@ -247,6 +247,13 @@ stark::models::RBCFixHandler stark::models::RigidBodies::add_constraint_fix(cons
 	auto z_lock = this->add_constraint_global_direction(body, Eigen::Vector3d::UnitZ());
 	auto x_lock = this->add_constraint_global_direction(body, Eigen::Vector3d::UnitX());
 	return RBCFixHandler(body, anchor_point, z_lock, x_lock);
+}
+stark::models::RBCAttachmentHandler stark::models::RigidBodies::add_constraint_attachment(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b)
+{
+	auto point = this->add_constraint_point(body_a, body_b, 0.5*(body_a.get_translation() + body_b.get_translation()));
+	auto z_lock = this->add_constraint_direction(body_a, body_b, Eigen::Vector3d::UnitZ());
+	auto x_lock = this->add_constraint_direction(body_a, body_b, Eigen::Vector3d::UnitX());
+	return RBCAttachmentHandler(body_a, body_b, point, z_lock, x_lock);
 }
 //stark::models::HingeJointHandler stark::models::RigidBodies::add_constraint_hinge(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob)
 //{

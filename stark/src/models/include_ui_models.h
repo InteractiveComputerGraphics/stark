@@ -12,6 +12,6 @@ namespace stark
 	using models::RBCPointHandler;
 	using models::RBCPointOnAxis;
 	using models::RBCDistanceHandler;
-	using models::RBCDirection;
+	using models::RBCDirectionHandler;
 	using models::RBCAngleLimitHandler;
 }

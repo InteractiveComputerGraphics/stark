@@ -71,10 +71,10 @@ namespace stark::models
 			const double eps = max_force / (2.0 * k);
 			const double dv = std::abs(target_v - v);
 			if (dv < delay) {
-				return { dv, -k * dv * da1.normalized() };  // { [m], [N] }
+				return { dv, k * dv * da1.normalized() };  // { [m], [N] }
 			}
 			else {
-				return { dv, -max_force * da1.normalized() };  // { [m], [N] }
+				return { dv, max_force * da1.normalized() };  // { [m], [N] }
 			}
 		}
 
