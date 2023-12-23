@@ -133,7 +133,7 @@ stark::models::RBCPointHandler stark::models::RigidBodies::add_constraint_point(
 	);
 	return RBCPointHandler(body_a, body_b, this->rb->constraints->points, idx);
 }
-stark::models::RBCPointOnAxis stark::models::RigidBodies::add_constraint_point_on_axis(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob)
+stark::models::RBCPointOnAxisHandler stark::models::RigidBodies::add_constraint_point_on_axis(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob)
 {
 	const int idx = this->rb->constraints->point_on_axes->add(
 		body_a.index(),
@@ -144,7 +144,7 @@ stark::models::RBCPointOnAxis stark::models::RigidBodies::add_constraint_point_o
 		this->default_stiffness,
 		this->default_tolerance_in_m
 	);
-	return RBCPointOnAxis(body_a, body_b, this->rb->constraints->point_on_axes, idx);
+	return RBCPointOnAxisHandler(body_a, body_b, this->rb->constraints->point_on_axes, idx);
 }
 stark::models::RBCDistanceHandler stark::models::RigidBodies::add_constraint_distance(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob)
 {
@@ -255,49 +255,55 @@ stark::models::RBCAttachmentHandler stark::models::RigidBodies::add_constraint_a
 	auto x_lock = this->add_constraint_direction(body_a, body_b, Eigen::Vector3d::UnitX());
 	return RBCAttachmentHandler(body_a, body_b, point, z_lock, x_lock);
 }
-//stark::models::HingeJointHandler stark::models::RigidBodies::add_constraint_hinge(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob)
-//{
-//	auto ball_joint = this->add_constraint_ball_joint(body_a, body_b, p_glob);
-//	auto dir_lock = this->add_constraint_relative_direction_lock(body_a, body_b, d_glob);
-//	return HingeJointHandler(body_a, body_b, ball_joint, dir_lock);
-//}
-//stark::models::HingeJointWithLimitsHandler stark::models::RigidBodies::add_constraint_hinge_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double admissible_angle_deg)
-//{
-//	const Eigen::Vector3d u = (d_glob.dot(Eigen::Vector3d::UnitX()) < 0.5) ? d_glob.cross(Eigen::Vector3d::UnitX()) : d_glob.cross(Eigen::Vector3d::UnitY());
-//
-//	auto hinge_joint = this->add_constraint_hinge(body_a, body_b, p_glob, d_glob);
-//	auto angle_limits = this->add_constraint_angle_limits(body_a, body_b, u, admissible_angle_deg);
-//	return HingeJointWithLimitsHandler(body_a, body_b, hinge_joint, angle_limits);
-//}
-//stark::models::SliderHandler stark::models::RigidBodies::add_constraint_slider(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob)
-//{
-//	auto point_on_axes = this->add_constraint_point_on_axis(body_a, body_b, p_glob, d_glob);
-//	auto dir_lock = this->add_constraint_relative_direction_lock(body_a, body_b, d_glob);
-//	return SliderHandler(body_a, body_b, point_on_axes, dir_lock);
-//}
-//stark::models::PrismaticSliderHandler stark::models::RigidBodies::add_constraint_prismatic_slider(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob)
-//{
-//	const Eigen::Vector3d u = (d_glob.dot(Eigen::Vector3d::UnitX()) < 0.5) ? d_glob.cross(Eigen::Vector3d::UnitX()) : d_glob.cross(Eigen::Vector3d::UnitY());
-//
-//	auto slider = this->add_constraint_slider(body_a, body_b, p_glob, d_glob);
-//	auto dir_lock = this->add_constraint_relative_direction_lock(body_a, body_b, u);
-//	return PrismaticSliderHandler(body_a, body_b, slider, dir_lock);
-//}
-//stark::models::SpringWithLimitsHandler stark::models::RigidBodies::add_spring_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double min_length, double max_length, double damping)
-//{
-//	auto spring = this->add_constraint_spring(body_a, body_b, a_glob, b_glob, stiffness, damping);
-//	auto distance_limits = this->add_constraint_distance_limits(body_a, body_b, a_glob, b_glob, min_length, max_length);
-//	return SpringWithLimitsHandler(body_a, body_b, spring, distance_limits);
-//}
-//stark::models::PrismaticPressHandler stark::models::RigidBodies::add_prismatic_press(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double target_v, double max_force, double delay)
-//{
-//	auto prismatic_slider = this->add_constraint_prismatic_slider(body_a, body_b, p_glob, d_glob);
-//	auto motor = this->add_relative_linear_velocity_motor(body_a, body_b, d_glob, target_v, max_force, delay);
-//	return PrismaticPressHandler(body_a, body_b, prismatic_slider, motor);
-//}
-//stark::models::MotorHandler stark::models::RigidBodies::add_motor(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double target_w, double max_torque, double delay)
-//{
-//	auto hinge_joint = this->add_constraint_hinge(body_a, body_b, p_glob, d_glob);
-//	auto motor = this->add_relative_angular_velocity_motor(body_a, body_b, d_glob, target_w, max_torque, delay);
-//	return MotorHandler(body_a, body_b, hinge_joint, motor);
-//}
+stark::models::RBCPointWithAngleLimitHandler stark::models::RigidBodies::add_constraint_point_with_angle_limit(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, const double admissible_angle_deg)
+{
+	auto point = this->add_constraint_point(body_a, body_b, 0.5 * (body_a.get_translation() + body_b.get_translation()));
+	auto angle_limit = this->add_constraint_angle_limit(body_a, body_b, d_glob, admissible_angle_deg);
+	return RBCPointWithAngleLimitHandler(body_a, body_b, point, angle_limit);
+}
+stark::models::RBCHingeJointHandler stark::models::RigidBodies::add_constraint_hinge(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob)
+{
+	auto point = this->add_constraint_point(body_a, body_b, p_glob);
+	auto direction = this->add_constraint_direction(body_a, body_b, d_glob);
+	return RBCHingeJointHandler(body_a, body_b, point, direction);
+}
+stark::models::RBCHingeJointWithAngleLimitHandler stark::models::RigidBodies::add_constraint_hinge_with_angle_limit(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double admissible_angle_deg)
+{
+	const Eigen::Vector3d u = (d_glob.dot(Eigen::Vector3d::UnitX()) < 0.5) ? d_glob.cross(Eigen::Vector3d::UnitX()) : d_glob.cross(Eigen::Vector3d::UnitY());
+
+	auto hinge_joint = this->add_constraint_hinge(body_a, body_b, p_glob, d_glob);
+	auto angle_limits = this->add_constraint_angle_limit(body_a, body_b, u, admissible_angle_deg);
+	return RBCHingeJointWithAngleLimitHandler(body_a, body_b, hinge_joint, angle_limits);
+}
+stark::models::RBCSliderHandler stark::models::RigidBodies::add_constraint_slider(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob)
+{
+	auto point_on_axes = this->add_constraint_point_on_axis(body_a, body_b, p_glob, d_glob);
+	auto dir_lock = this->add_constraint_direction(body_a, body_b, d_glob);
+	return RBCSliderHandler(body_a, body_b, point_on_axes, dir_lock);
+}
+stark::models::RBCPrismaticSliderHandler stark::models::RigidBodies::add_constraint_prismatic_slider(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob)
+{
+	const Eigen::Vector3d u = (d_glob.dot(Eigen::Vector3d::UnitX()) < 0.5) ? d_glob.cross(Eigen::Vector3d::UnitX()) : d_glob.cross(Eigen::Vector3d::UnitY());
+
+	auto slider = this->add_constraint_slider(body_a, body_b, p_glob, d_glob);
+	auto dir_lock = this->add_constraint_direction(body_a, body_b, u);
+	return RBCPrismaticSliderHandler(body_a, body_b, slider, dir_lock);
+}
+stark::models::RBCSpringWithLimitsHandler stark::models::RigidBodies::add_spring_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double min_length, double max_length, double damping)
+{
+	auto spring = this->add_constraint_spring(body_a, body_b, a_glob, b_glob, stiffness, damping);
+	auto distance_limits = this->add_constraint_distance_limits(body_a, body_b, a_glob, b_glob, min_length, max_length);
+	return RBCSpringWithLimitsHandler(body_a, body_b, spring, distance_limits);
+}
+stark::models::RBCPrismaticPressHandler stark::models::RigidBodies::add_prismatic_press(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double target_v, double max_force, double delay)
+{
+	auto prismatic_slider = this->add_constraint_prismatic_slider(body_a, body_b, p_glob, d_glob);
+	auto linear_velocity = this->add_constraint_linear_velocity(body_a, body_b, d_glob, target_v, max_force, delay);
+	return RBCPrismaticPressHandler(body_a, body_b, prismatic_slider, linear_velocity);
+}
+stark::models::RBCMotorHandler stark::models::RigidBodies::add_motor(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double target_w, double max_torque, double delay)
+{
+	auto hinge_joint = this->add_constraint_hinge(body_a, body_b, p_glob, d_glob);
+	auto angular_velocity = this->add_constraint_angular_velocity(body_a, body_b, d_glob, target_w, max_torque, delay);
+	return RBCMotorHandler(body_a, body_b, hinge_joint, angular_velocity);
+}

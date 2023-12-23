@@ -58,7 +58,7 @@ namespace stark::models
 			const RigidBodyHandler& body_b, 
 			const Eigen::Vector3d& p_glob
 		);
-		RBCPointOnAxis add_constraint_point_on_axis(
+		RBCPointOnAxisHandler add_constraint_point_on_axis(
 			const RigidBodyHandler& body_a, 
 			const RigidBodyHandler& body_b, 
 			const Eigen::Vector3d& p_glob, 
@@ -122,64 +122,66 @@ namespace stark::models
 			const RigidBodyHandler& body_a,
 			const RigidBodyHandler& body_b
 		);
-		//RBCBallJointHandler add_constraint_ball_joint(
-		//	const RigidBodyHandler& body_a,
-		//	const RigidBodyHandler& body_b,
-		//	const Eigen::Vector3d& p_glob
-		//);
-		//RBCHingeJointHandler add_constraint_hinge(
-		//	const RigidBodyHandler& body_a, 
-		//	const RigidBodyHandler& body_b,
-		//	const Eigen::Vector3d& p_glob, 
-		//	const Eigen::Vector3d& d_glob
-		//);
-		//RBCHingeJointWithLimitsHandler add_constraint_hinge_with_limits(
-		//	const RigidBodyHandler& body_a, 
-		//	const RigidBodyHandler& body_b, 
-		//	const Eigen::Vector3d& p_glob, 
-		//	const Eigen::Vector3d& d_glob,
-		//	double admissible_angle_deg
-		//);
-		//RBCSliderHandler add_constraint_slider(
-		//	const RigidBodyHandler& body_a,
-		//	const RigidBodyHandler& body_b,
-		//	const Eigen::Vector3d& p_glob,
-		//	const Eigen::Vector3d& d_glob
-		//);
-		//RBCPrismaticSliderHandler add_constraint_prismatic_slider(
-		//	const RigidBodyHandler& body_a,
-		//	const RigidBodyHandler& body_b,
-		//	const Eigen::Vector3d& p_glob, 
-		//	const Eigen::Vector3d& d_glob
-		//);
-		//RBCSpringWithLimitsHandler add_spring_with_limits(
-		//	const RigidBodyHandler& body_a,
-		//	const RigidBodyHandler& body_b, 
-		//	const Eigen::Vector3d& a_glob, 
-		//	const Eigen::Vector3d& b_glob, 
-		//	double stiffness,
-		//	double min_length,
-		//	double max_length,
-		//	double damping = 0.0
-		//);
-		//RBCPrismaticPressHandler add_prismatic_press(
-		//	const RigidBodyHandler& body_a, 
-		//	const RigidBodyHandler& body_b,
-		//	const Eigen::Vector3d& p_glob, 
-		//	const Eigen::Vector3d& d_glob, 
-		//	double target_v,
-		//	double max_force,
-		//	double delay = 0.01
-		//);
-		//RBCMotorHandler add_motor(
-		//	const RigidBodyHandler& body_a, 
-		//	const RigidBodyHandler& body_b,
-		//	const Eigen::Vector3d& p_glob,
-		//	const Eigen::Vector3d& d_glob, 
-		//	double target_w, 
-		//	double max_torque,
-		//	double delay = 0.01
-		//);
+		RBCPointWithAngleLimitHandler add_constraint_point_with_angle_limit(
+			const RigidBodyHandler& body_a,
+			const RigidBodyHandler& body_b,
+			const Eigen::Vector3d& p_glob,
+			const Eigen::Vector3d& d_glob,
+			const double admissible_angle_deg
+		);
+		RBCHingeJointHandler add_constraint_hinge(
+			const RigidBodyHandler& body_a, 
+			const RigidBodyHandler& body_b,
+			const Eigen::Vector3d& p_glob, 
+			const Eigen::Vector3d& d_glob
+		);
+		RBCHingeJointWithAngleLimitHandler add_constraint_hinge_with_angle_limit(
+			const RigidBodyHandler& body_a, 
+			const RigidBodyHandler& body_b, 
+			const Eigen::Vector3d& p_glob, 
+			const Eigen::Vector3d& d_glob,
+			double admissible_angle_deg
+		);
+		RBCSpringWithLimitsHandler add_spring_with_limits(
+			const RigidBodyHandler& body_a,
+			const RigidBodyHandler& body_b, 
+			const Eigen::Vector3d& a_glob, 
+			const Eigen::Vector3d& b_glob, 
+			double stiffness,
+			double min_length,
+			double max_length,
+			double damping = 0.0
+		);
+		RBCSliderHandler add_constraint_slider(
+			const RigidBodyHandler& body_a,
+			const RigidBodyHandler& body_b,
+			const Eigen::Vector3d& p_glob,
+			const Eigen::Vector3d& d_glob
+		);
+		RBCPrismaticSliderHandler add_constraint_prismatic_slider(
+			const RigidBodyHandler& body_a,
+			const RigidBodyHandler& body_b,
+			const Eigen::Vector3d& p_glob, 
+			const Eigen::Vector3d& d_glob
+		);
+		RBCPrismaticPressHandler add_prismatic_press(
+			const RigidBodyHandler& body_a, 
+			const RigidBodyHandler& body_b,
+			const Eigen::Vector3d& p_glob, 
+			const Eigen::Vector3d& d_glob, 
+			double target_v,
+			double max_force,
+			double delay = 0.01
+		);
+		RBCMotorHandler add_motor(
+			const RigidBodyHandler& body_a, 
+			const RigidBodyHandler& body_b,
+			const Eigen::Vector3d& p_glob,
+			const Eigen::Vector3d& d_glob, 
+			double target_w, 
+			double max_torque,
+			double delay = 0.01
+		);
 	};
 	using spRigidBodies = std::shared_ptr<RigidBodies>;
 }

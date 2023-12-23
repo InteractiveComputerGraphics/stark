@@ -3,6 +3,10 @@ stark repo TODO
 
 Oct unification
 ---------------
+	* RB left:
+		* Self adjusting tolerances
+		* include_ui_models.h
+	
 	* At the end, revise all user interface for consistency.
 		I don't love the `.local_to_global_point()` but `.get_velocity_at()`
 	* Test RB.get_velocity_at()

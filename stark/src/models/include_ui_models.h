@@ -10,8 +10,10 @@ namespace stark
 	using models::RBCGlobalPointHandler;
 	using models::RBCGlobalDirectionHandler;
 	using models::RBCPointHandler;
-	using models::RBCPointOnAxis;
+	using models::RBCPointOnAxisHandler;
 	using models::RBCDistanceHandler;
 	using models::RBCDirectionHandler;
 	using models::RBCAngleLimitHandler;
+
+	// TODO! Add more handlers
 }

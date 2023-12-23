@@ -155,7 +155,7 @@ void rb_constraints_angle_limits()
 //		{
 //			auto box1 = sim.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 //				.set_translation({ 0.1, 0.0, 0.0 });
-//			sim.rigidbodies->add_constraint_hinge_with_limits(box0, box1, { 0.05, 0.0, -0.05 }, Eigen::Vector3d::UnitY(), 30);
+//			sim.rigidbodies->add_constraint_hinge_with_angle_limit(box0, box1, { 0.05, 0.0, -0.05 }, Eigen::Vector3d::UnitY(), 30);
 //		}
 //	);
 //}

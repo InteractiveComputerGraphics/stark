@@ -612,7 +612,7 @@ namespace stark::models
 		};
 	};
 
-	class RBCPointWithAngleLimitsHandler
+	class RBCPointWithAngleLimitHandler
 	{
 	private:
 		RBCPointHandler point;
@@ -622,7 +622,7 @@ namespace stark::models
 		std::string label = "";
 
 	public:
-		RBCPointWithAngleLimitsHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCPointHandler point, RBCAngleLimitHandler angle_limit)
+		RBCPointWithAngleLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCPointHandler point, RBCAngleLimitHandler angle_limit)
 			: rb_a(rb_a), rb_b(rb_b), point(point), angle_limit(angle_limit) {};
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
@@ -712,7 +712,7 @@ namespace stark::models
 		};
 	};
 
-	class RBCHingeJointWithLimitsHandler
+	class RBCHingeJointWithAngleLimitHandler
 	{
 	private:
 		RBCHingeJointHandler hinge_joint;
@@ -722,7 +722,7 @@ namespace stark::models
 		std::string label = "";
 
 	public:
-		RBCHingeJointWithLimitsHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCHingeJointHandler hinge_joint, RBCAngleLimitHandler angle_limit)
+		RBCHingeJointWithAngleLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCHingeJointHandler hinge_joint, RBCAngleLimitHandler angle_limit)
 			: rb_a(rb_a), rb_b(rb_b), hinge_joint(hinge_joint), angle_limit(angle_limit) {};
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
@@ -905,53 +905,6 @@ namespace stark::models
 		};
 	};
 
-	class RBCMotorHandler
-	{
-	private:
-		RBCHingeJointHandler hinge;
-		RBCAngularVelocityHandler angular_velocity;
-		RigidBodyHandler rb_a;
-		RigidBodyHandler rb_b;
-		std::string label = "";
-
-	public:
-		RBCMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCHingeJointHandler hinge, RBCAngularVelocityHandler angular_velocity)
-			: rb_a(rb_a), rb_b(rb_b), hinge(hinge), angular_velocity(angular_velocity) {};
-		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
-		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
-		inline RBCHingeJointHandler& get_hinge_joint() { return this->hinge; };
-		inline RBCAngularVelocityHandler& get_angular_velocity_constraint() { return this->angular_velocity; };
-		inline auto& set_stiffness(double stiffness)
-		{
-			this->hinge.set_stiffness(stiffness);
-			return (*this);
-		};
-		inline auto& set_tolerance_in_m(double tolerance_in_m)
-		{
-			this->hinge.set_tolerance_in_m(tolerance_in_m);
-			return (*this);
-		}
-		inline auto& set_tolerance_in_deg(double tolerance_in_deg)
-		{
-			this->hinge.set_tolerance_in_deg(tolerance_in_deg);
-			return (*this);
-		}
-		inline std::string get_label() const { return this->label; };
-		inline auto& set_label(std::string label)
-		{
-			this->label = label;
-			this->hinge.set_label(label + "_hinge");
-			this->angular_velocity.set_label(label + "_angular_velocity");
-			return (*this);
-		};
-		inline auto& enable(bool activation)
-		{
-			this->hinge.enable(activation);
-			this->angular_velocity.enable(activation);
-			return (*this);
-		};
-	};
-
 	class RBCPrismaticPressHandler
 	{
 	private:
@@ -995,6 +948,53 @@ namespace stark::models
 		{
 			this->prismatic_slider.enable(activation);
 			this->linear_velocity.enable(activation);
+			return (*this);
+		};
+	};
+
+	class RBCMotorHandler
+	{
+	private:
+		RBCHingeJointHandler hinge;
+		RBCAngularVelocityHandler angular_velocity;
+		RigidBodyHandler rb_a;
+		RigidBodyHandler rb_b;
+		std::string label = "";
+
+	public:
+		RBCMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCHingeJointHandler hinge, RBCAngularVelocityHandler angular_velocity)
+			: rb_a(rb_a), rb_b(rb_b), hinge(hinge), angular_velocity(angular_velocity) {};
+		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
+		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
+		inline RBCHingeJointHandler& get_hinge_joint() { return this->hinge; };
+		inline RBCAngularVelocityHandler& get_angular_velocity_constraint() { return this->angular_velocity; };
+		inline auto& set_stiffness(double stiffness)
+		{
+			this->hinge.set_stiffness(stiffness);
+			return (*this);
+		};
+		inline auto& set_tolerance_in_m(double tolerance_in_m)
+		{
+			this->hinge.set_tolerance_in_m(tolerance_in_m);
+			return (*this);
+		}
+		inline auto& set_tolerance_in_deg(double tolerance_in_deg)
+		{
+			this->hinge.set_tolerance_in_deg(tolerance_in_deg);
+			return (*this);
+		}
+		inline std::string get_label() const { return this->label; };
+		inline auto& set_label(std::string label)
+		{
+			this->label = label;
+			this->hinge.set_label(label + "_hinge");
+			this->angular_velocity.set_label(label + "_angular_velocity");
+			return (*this);
+		};
+		inline auto& enable(bool activation)
+		{
+			this->hinge.enable(activation);
+			this->angular_velocity.enable(activation);
 			return (*this);
 		};
 	};
