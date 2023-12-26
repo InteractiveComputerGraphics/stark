@@ -3,10 +3,6 @@ stark repo TODO
 
 Oct unification
 ---------------
-	* RB left:
-		* Self adjusting tolerances
-		* include_ui_models.h
-		
 	* Vehicle! https://www.reddit.com/r/interestingasfuck/comments/18p75uj/turning_diameter_comparison_of_lego_steering/
 	
 	* At the end, revise all user interface for consistency.
@@ -14,100 +10,42 @@ Oct unification
 	* Test RB.get_velocity_at()
 	* Springs as distance or elongation? Same decision as with rods
 	* Try multi body of all systems
-	* SymX Catch2
+	* SymX 
+		- Catch2
 		- Print
 		- No SIMD assembly
+		- Put back SymX fem_integrator.cpp.
+		- private/public
+		- Something is broken when loading an energy that has recently changed.
 		
 	* Remove the current logging system.
 	
 	* Stark core should have it's own settings. The user will have also their own settings.
 	
 	* CMake files are a mess. Lot's of duplicities.
-
-	Refactor all RB constraints
-		* Each BaseEnergy in it's own file.
-		* Move `symx::Vector _get_x1(symx::Energy& energy, const stark::core::Stark& stark, const symx::Index& rb_idx, const symx::Vector& x_loc);`
-			to RigidbodyDynamics
-		* Formulate angle constraints as distance constraints with 1m arm consistently
-		* Proper explanations of the formulations (energy and force)
-		* Safe setters and getters
-		* UI should not contain logic, just lower-level calls
-	
-		
-		
-		
-	Tolerances
-		* Test set/get angle limits
-		* Finish setters and getters for derived constraints
-		* Constraints should have labels so we can print which joint, linking which objects, needed to increase stiffness to what and what was the problem.
-		* Tolerances to deformables BC
-		* UI? Or we just keep the values fixed from initialization...
-	Constraint logging
-		* Every time step: stiffness, violation, tolerance
-		* Constraint UI should return constraint violations and forces
-		
-	* Constraint formulation is unsafe as data is kept raw and converted to user readable in different places.
-		For instance tolerances and violations to angles, forces, etc..
-	
-	* Attachments
-	
-	* BlockedSparseMatrix is an old version!
-	
-	* current_frame = zero runs for double the amount of iterations than the rest!
-	
-	
-	* run_accept_newton_iteration() is a terrible name
-		Clean callbacks and decide for a global strategy
-	
-	* Separate internals and UI using namespaces.
-		namespace stark { class RigidBodyHandler {}; }
-		namespace stark::core { class EnergyRigidBodyInertia {}; }
-		
-		-> Classify in folders appropriately.
-		
-	* In this current design, Stark should also be a shared pointer.
-		Right now is a reference that is used during the simulation (e.g. write_frame) and could theoretically become invalid.
-	* I need to clarify where things are initialized, who owns who, etc...
-	* Inertia tensor should not be in utils. Probably we need a stark::rigidbody namespace
-	* Should I drop the "Handler" at the end of each constraint?
-	
-	* SymX doesnt recompile if the source array changes `this->dyn->da` to `this->dyn->a`
-		-> I need a SymX recompile flag for Stark
-	* Disable exporting smooth normals.
-		Blender can do it by itself. We don't care about Paraview.
-	
 	* Fix all header includes. Compile on linux.
 	* Fix warnings from Eigen and par_shapes.
 	* Make sure all compiles in many OS as possible.
+
+	* Tolerances to deformables BC
+	* Attachments
+	* BlockedSparseMatrix is an old version!
+	* current_frame = zero runs for double the amount of iterations than the rest!
+	* run_accept_newton_iteration() is a terrible name
+		Clean callbacks and decide for a global strategy
+	* In this current design, Stark should also be a shared pointer.
+		Right now is a reference that is used during the simulation (e.g. write_frame) and could theoretically become invalid.
+	
+	* I need to clarify where things are initialized, who owns who, etc...
+	
+	* SymX doesnt recompile if the source array changes `this->dyn->da` to `this->dyn->a`
+
 	* Move adaptive contact stiffness into EnergyFrictionalContact.
 		This must be possible without hardcoding it in NewtonsMethod.
 		NewtonsMethod::Error and handling needs to be rewritten.
 			Restarts can be triggered by non-convergence, contacts, too soft constraints...
 			I need to handle this better. Everything should take care of itself except non-convergence
 	
-	* Adaptive constraint stiffness
-		- Input stiffness should be absolute, not per kg.
-			The user can use the .get_mass() themselves.
-		- Soften/harden the constraints softly at the end of every time step.
-			This should also prevent the chain effect
-	
-	* [*] Proper rigid body data structure where all the rigid bodies and constraint information is stored and written in a structured manner.
-		Translations, rotations, velocities... Constraint points, directions, violations, stiffnesses...
-	
-	* Architecture
-		- core is a weird mix. General and specific.
-		- Settings is wrong as some things (contact) have been moved.
-			-> shared_ptr
-		- Check if all the ~"find_node_node_map_simplex" are necessary
-	
-	* Put back SymX fem_integrator.cpp.
-		It needs to be there, even if not used in Stark. It serves as example.
-	* SymX what's private/public. Very important before publication.
-		
-	* Reintroduce the constraint logger
-	* It really might not be a bad idea to have a RB class to
-			rb.get_mass()
-		and things like that... Maybe that is the way to get rid of the Id weirdness.
 	* Document/refactor Id:
 		- While for deformables there is a distinction between local and global, for rigid bodies there is not.
 			- Also, "local" and "global" is a bit unfortunate.
@@ -115,32 +53,23 @@ Oct unification
 			`DeformableId`, `RigidBodyId`... and they are specialised.
 			I think it is completely fine to specialize interaction energies in the interface for the type combinations.
 			Overall this is worse for the user and perhaps more clear internally (?)
-	* Inherit DeformableSolids to pass BC and other setters/getters
 	* Consistent naming for Energies, PhysicalSystems and user interface
 		DynamicsPoints, DynamicsRigidBodies...
-	* Consistency in tools being passed by reference or with output or both
 	* PrescribedPositions stiffness is completely inconsistent across surface and volumes.
 		Multiply by thickness or sth
 	* casserts really suck because the debugger can't get there! Replace them.
 	* All boxes should be center + side. Not bottom and top.
 		Shell should have .add_grid_mesh() and just place it with a default transformation to avoid the unnecessary lines above.
-	* Something is broken when loading an energy that has recently changed.
-	* RigidBodies should have different collision and render meshes.
 	* `stark.settings.contact.friction_displacement_perturbation` is hardcoded now
 	* We have many different index types. Do I want to hard-type them? GroupId, ObjId...
 		- Some functions are very confusing (volumetric._write_frame())
 	* PrescribedPositions
 		- Offer common lambdas uses cases (distance from line, plane... inside box, sphere...)
-	* Work with IntervalVector in PointDynamics for now but consider splitting it into one `Interval` and multiple `std::vector`
 	* `Settings` has things that really should not go into the core. Some stuff has to be placed outside. 
 		Maybe I can add custom entries ?
 		It should also be a pointer so the user can change it. Right now it's confusing.
-	* Clean up files and Cmake
-	* Check the output frames for code duplicities
 	* Sanitize all the UI
 		negative stiffness, tolerances, ...
-	* The whole Stark and SymX must have a public/private sweep. There is so many places users can get when declaring energies...
-		They should only have access to whatever `energy` offers.
 	* SymX uses "get_..." and Stark "make_..." for symbols
 		
 	* Modelling:
