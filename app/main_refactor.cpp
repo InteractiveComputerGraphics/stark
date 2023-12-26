@@ -103,7 +103,7 @@ void hanging_cloth()
 	settings.contact.friction_enabled = false;
 
 	settings.debug.symx_check_for_NaNs = true;
-	settings.newton.project_to_PD = true;
+	//settings.newton.project_to_PD = true;
 	//settings.newton.use_direct_linear_solve = true;
 	//settings.newton.max_line_search_iterations = 1000;
 
@@ -114,6 +114,11 @@ void hanging_cloth()
 	const int n = 50;
 	auto [vertices, triangles] = stark::utils::generate_triangular_grid({ -l, -l }, { l, l }, { n, n });
 	auto material = stark::models::SurfaceMaterial::towel();
+	material.bending_damping = 0.0;
+	material.inertia_damping = 0.0;
+	material.strain_damping = 0.0;
+	material.strain_limit = 0.1;
+	material.strain_limit_stiffness = 1e4;
 	//material.area_density = 3.0;
 	//material.strain_limit_stiffness = 1e7;
 	//material.strain_limit = 99999.9;
@@ -203,11 +208,11 @@ void rubber_block()
 
 int main()
 {
-	//hanging_cloth();
+	hanging_cloth();
 	//rubber_block();
 	//net();
 	//rb();
 
-	rb_constraints_all();
+	//rb_constraints_all();
 	//rb_constraints_point();
 }

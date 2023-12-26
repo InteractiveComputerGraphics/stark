@@ -33,6 +33,11 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& st
 			symx::Matrix F_32 = Dx_32 * DXinv;  // 3x2
 			symx::Matrix C = F_32.transpose() * F_32;
 
+			// Hardening for strain limiting
+			symx::Scalar s1 = symx::sqrt(C.singular_values_2x2()[0]);
+			symx::Scalar dl = s1 - (strain_limit + 1.0);
+			E += symx::branch(dl > 0.0, strain_limiting_stiffness * dl.powN(3) / 3.0, 0.0);
+
 			// Stable Neo-Hookean strain energy
 			symx::Scalar mu = E / (2.0 * (1.0 + nu));
 			symx::Scalar lambda = (E * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
@@ -41,14 +46,8 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& st
 			symx::Scalar Ic = C.trace();
 			symx::Scalar logJ = symx::log(J);
 			symx::Scalar energy_density = 0.5*mu*(Ic - 2.0) - mu*logJ + 0.5*lambda*logJ.powN(2);
-			symx::Scalar E_elasticity = thickness * rest_area * energy_density;
-
-			// Strain limiting
-			symx::Scalar s1 = symx::sqrt(C.singular_values_2x2()[0]);
-			symx::Scalar dl = s1 - (strain_limit + 1.0);
-			symx::Scalar E_sl = symx::branch(dl > 0.0, thickness * rest_area * strain_limiting_stiffness * dl.powN(3)/3.0, 0.0);
-
-			energy.set(E_elasticity + E_sl);
+			symx::Scalar Energy = thickness * rest_area * energy_density;
+			energy.set(Energy);
 		}
 	);
 }

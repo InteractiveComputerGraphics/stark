@@ -9,6 +9,7 @@
 #include "EnergyPointPrescribedPositions.h"
 #include "EnergyTriangleStrain.h"
 #include "EnergyTriangleBendingBergou06.h"
+#include "EnergyTriangleBendingGrinspun03.h"
 //#include "EnergyFrictionalContact.h"
 
 
@@ -61,6 +62,7 @@ namespace stark::models
 		spEnergyPointPrescribedPositions prescribed_positions;
 		spEnergyTriangleStrain strain;
 		spEnergyTriangleBendingBergou06 bending_bergou;
+		spEnergyTriangleBendingGrinspun03 bending_grispun_03;
 		//spEnergyFrictionalContact contact;
 		std::vector<int> global_indices;
 

@@ -58,6 +58,8 @@ set(MODELS_DEFORMABLES_FILES
 	src/models/deformables/EnergyTetStrain.h
 	src/models/deformables/EnergyTriangleBendingBergou06.cpp
 	src/models/deformables/EnergyTriangleBendingBergou06.h
+	src/models/deformables/EnergyTriangleBendingGrinspun03.cpp
+	src/models/deformables/EnergyTriangleBendingGrinspun03.h
 	src/models/deformables/EnergyTriangleStrain.cpp
 	src/models/deformables/EnergyTriangleStrain.h
 	src/models/deformables/Id.cpp

@@ -15,6 +15,7 @@ stark::models::SurfaceDeformableSolids::SurfaceDeformableSolids(
 
 	this->strain = std::make_shared<EnergyTriangleStrain>(stark, dyn);
 	this->bending_bergou = std::make_shared<EnergyTriangleBendingBergou06>(stark, dyn);
+	this->bending_grispun_03 = std::make_shared<EnergyTriangleBendingGrinspun03>(stark, dyn);
 }
 
 stark::models::Id stark::models::SurfaceDeformableSolids::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const SurfaceMaterial& material)
@@ -35,10 +36,12 @@ stark::models::Id stark::models::SurfaceDeformableSolids::add(const std::vector<
 		material.strain_poisson_ratio, 
 		material.strain_limit, 
 		material.strain_limit_stiffness);
-	this->bending_bergou->add(id, triangles, 
-		material.bending_stiffness, 
-		material.bending_damping, 
-		material.bending_cutoff_angle_deg);
+	//this->bending_bergou->add(id, triangles, 
+	//	material.bending_stiffness, 
+	//	material.bending_damping, 
+	//	material.bending_cutoff_angle_deg);
+	this->bending_grispun_03->add(id, triangles, 
+		material.bending_stiffness);
 	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
 
 	id.set_local_idx("SurfaceDeformableSolids", shell_id);

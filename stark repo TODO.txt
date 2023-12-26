@@ -3,6 +3,9 @@ stark repo TODO
 
 Oct unification
 ---------------
+	* Write to research_topics
+		- Hardening Young Modulus as a generic method to obtain strain limiting. Works like a charm.
+			Also gives way to work on penalty parameter controllers
 	* Vehicle! https://www.reddit.com/r/interestingasfuck/comments/18p75uj/turning_diameter_comparison_of_lego_steering/
 	
 	* At the end, revise all user interface for consistency.
