@@ -208,6 +208,6 @@ int main()
 	//net();
 	//rb();
 
-	//rb_constraints_all();
-	rb_constraints_point();
+	rb_constraints_all();
+	//rb_constraints_point();
 }

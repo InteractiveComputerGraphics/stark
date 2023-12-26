@@ -89,6 +89,7 @@ namespace stark::models
 			const Eigen::Vector3d& d_glob,
 			double admissible_angle_deg
 		);
+
 		RBCDampedSpringHandler add_constraint_spring(
 			const RigidBodyHandler& body_a,
 			const RigidBodyHandler& body_b,

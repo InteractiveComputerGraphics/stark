@@ -6,6 +6,8 @@ Oct unification
 	* RB left:
 		* Self adjusting tolerances
 		* include_ui_models.h
+		
+	* Vehicle! https://www.reddit.com/r/interestingasfuck/comments/18p75uj/turning_diameter_comparison_of_lego_steering/
 	
 	* At the end, revise all user interface for consistency.
 		I don't love the `.local_to_global_point()` but `.get_velocity_at()`
