@@ -149,12 +149,12 @@ void hanging_cloth()
 void rubber_block()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "rubber_block";
+	settings.output.simulation_name = "rubber_block_viscoelasticity";
 	settings.output.output_directory = OUTPUT_PATH + "/rubber_block";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
-	settings.simulation.adaptive_time_step.set(0.0, 0.02, 0.02);
+	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
 	settings.contact.collisions_enabled = false;
 	settings.contact.friction_enabled = false;
 
@@ -167,16 +167,19 @@ void rubber_block()
 
 	// Declare objects
 	const double w = 0.1;
-	const double l = 0.1*w;
-	const int nw = 30;
-	const int nl = nw; nw* (l / w);
+	const double l = 2.0*w;
+	const int nw = 10;
+	const int nl = nw * (l / w);
 	auto [vertices, tets] = stark::utils::generate_tet_grid({ -l, -w, -w }, { l, w, w }, { nl, nw, nw });
 	auto material = stark::models::VolumeMaterial::soft_rubber();
+	material.strain_young_modulus = 1e2;
+	material.strain_limit = 1000000.0;
+	material.strain_damping = 20.0;
 	//material.area_density = 3.0;
 	//material.strain_limit_stiffness = 1e7;
 	//material.strain_limit = 99999.9;
 	//material.strain_young_modulus = 1e3;
-	material.strain_poisson_ratio = 0.4;
+	//material.strain_poisson_ratio = 0.4;
 	auto id = simulation.volumes->add(vertices, tets, material);
 
 	// BC
@@ -184,6 +187,15 @@ void rubber_block()
 		auto bc = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
 		bc->set_stiffness(1e6);
 		bc->add_vertices_in_aabb({ -l, 0.0, 0.0 }, { 0.001, 2.0*w, 2.0*w });
+	}
+	else if (true) {
+		auto bcl = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
+		bcl->set_stiffness(1e6);
+		bcl->add_vertices_in_aabb({ -l, -w, w }, { 0.001, 0.001, 0.001 });
+
+		auto bcr = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
+		bcr->set_stiffness(1e6);
+		bcl->add_vertices_in_aabb({ -l, w, w }, { 0.001, 0.001, 0.001 });
 	}
 	else {
 		auto bcl = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
@@ -208,8 +220,8 @@ void rubber_block()
 
 int main()
 {
-	hanging_cloth();
-	//rubber_block();
+	//hanging_cloth();
+	rubber_block();
 	//net();
 	//rb();
 

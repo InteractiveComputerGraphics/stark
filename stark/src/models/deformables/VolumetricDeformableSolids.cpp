@@ -37,7 +37,10 @@ stark::models::Id stark::models::VolumetricDeformableSolids::add(const std::vect
 		material.inertia_damping);
 	this->strain->add(id, tets, 
 		material.strain_young_modulus, 
-		material.strain_poisson_ratio);
+		material.strain_poisson_ratio,
+		material.strain_damping,
+		material.strain_limit,
+		material.strain_limit_stiffness);
 	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
 
 	id.set_local_idx("VolumetricDeformableSolids", shell_id);
@@ -120,8 +123,8 @@ stark::models::VolumeMaterial stark::models::VolumeMaterial::soft_rubber()
 	material.inertia_damping = 0.1;
 	material.strain_young_modulus = 1e5;
 	material.strain_poisson_ratio = 0.3;
-	//material.strain_limit = 0.1;
-	//material.strain_limit_stiffness = 1e5;
-	//material.strain_damping = 0.2;
+	material.strain_limit = 0.1;
+	material.strain_limit_stiffness = 1e5;
+	material.strain_damping = 0.2;
 	return material;
 }

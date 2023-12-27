@@ -19,7 +19,7 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& st
 			symx::Matrix DXinv = energy.make_matrix(this->DXinv, { 2, 2 }, conn["idx"]);
 			symx::Scalar rest_area = energy.make_scalar(this->triangle_area_rest, conn["idx"]);
 			symx::Scalar thickness = energy.make_scalar(this->thickness, conn["group"]);
-			symx::Scalar E = energy.make_scalar(this->young_modulus, conn["group"]);
+			symx::Scalar e = energy.make_scalar(this->young_modulus, conn["group"]);
 			symx::Scalar nu = energy.make_scalar(this->poisson_ratio, conn["group"]);
 			symx::Scalar strain_limit = energy.make_scalar(this->strain_limit, conn["group"]);
 			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, conn["group"]);
@@ -36,11 +36,11 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& st
 			// Hardening for strain limiting
 			symx::Scalar s1 = symx::sqrt(C.singular_values_2x2()[0]);
 			symx::Scalar dl = s1 - (strain_limit + 1.0);
-			E += symx::branch(dl > 0.0, strain_limiting_stiffness * dl.powN(3) / 3.0, 0.0);
+			e += symx::branch(dl > 0.0, strain_limiting_stiffness * dl.powN(3) / 3.0, 0.0);
 
 			// Stable Neo-Hookean strain energy
-			symx::Scalar mu = E / (2.0 * (1.0 + nu));
-			symx::Scalar lambda = (E * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
+			symx::Scalar mu = e / (2.0 * (1.0 + nu));
+			symx::Scalar lambda = (e * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
 			symx::Scalar area = 0.5 * ((x1[0] - x1[2]).cross3(x1[1] - x1[2])).norm();
 			symx::Scalar J = area / rest_area;
 			symx::Scalar Ic = C.trace();

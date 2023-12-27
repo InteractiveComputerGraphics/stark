@@ -44,9 +44,9 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		logger.add_to_timer("compiled_E_g_h (acc)", assembled.compiled_runtime);
 		console.print(fmt::format("dE0 = {:.2e} | ", assembled.grad->maxCoeff()), ConsoleVerbosity::NewtonIterations);
 
-		//// Converged right away? Can happen in the first time step
+		//// Converged right away? Can happen in the first time step. Avoids unnecessary CG iterations.
 		const double grad_norm = assembled.grad->norm();
-		if (grad_norm < settings.newton.newton_tol) {
+		if (grad_norm < 1e-10) {
 			break;
 		}
 
