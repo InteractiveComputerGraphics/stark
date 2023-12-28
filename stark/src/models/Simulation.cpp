@@ -14,21 +14,21 @@ stark::models::Simulation::Simulation(const core::Settings& settings)
 	//auto energy_frictional_contact = std::make_shared<EnergyFrictionalContact>(this->stark, point_dynamics, rb);
 
 	// Physical Systems
-	this->lines = std::make_shared<OneDimensionalDeformableSolids>(
+	this->lines = std::make_shared<DeformableSolidsLines>(
 		this->stark,
 		point_dynamics,
 		energy_point_inertia,
 		energy_point_prescribed_positions
 		//energy_frictional_contact
 		);
-	this->surfaces = std::make_shared<SurfaceDeformableSolids>(
+	this->surfaces = std::make_shared<DeformableSolidsSurfaces>(
 		this->stark,
 		point_dynamics,
 		energy_point_inertia,
 		energy_point_prescribed_positions
 		//energy_frictional_contact
 		);
-	this->volumes = std::make_shared<VolumetricDeformableSolids>(
+	this->volumes = std::make_shared<DeformableSolidsVolumes>(
 		this->stark,
 		point_dynamics,
 		energy_point_inertia,

@@ -1,8 +1,8 @@
-#include "SurfaceDeformableSolids.h"
+#include "DeformableSolidsSurfaces.h"
 
 #include "../../utils/mesh_utils.h"
 
-stark::models::SurfaceDeformableSolids::SurfaceDeformableSolids(
+stark::models::DeformableSolidsSurfaces::DeformableSolidsSurfaces(
 	stark::core::Stark& stark, 
 	spPointDynamics dyn, 
 	spEnergyPointInertia inertia, 
@@ -18,7 +18,7 @@ stark::models::SurfaceDeformableSolids::SurfaceDeformableSolids(
 	this->bending_grispun_03 = std::make_shared<EnergyTriangleBendingGrinspun03>(stark, dyn);
 }
 
-stark::models::Id stark::models::SurfaceDeformableSolids::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const SurfaceMaterial& material)
+stark::models::Id stark::models::DeformableSolidsSurfaces::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const SurfaceMaterial& material)
 {
 	Id id = this->dyn->add(vertices);
 	const int shell_id = (int)this->global_indices.size();
@@ -44,36 +44,36 @@ stark::models::Id stark::models::SurfaceDeformableSolids::add(const std::vector<
 		material.bending_stiffness);
 	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
 
-	id.set_local_idx("SurfaceDeformableSolids", shell_id);
+	id.set_local_idx("DeformableSolidsSurfaces", shell_id);
 	return id;
 }
 
-std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::SurfaceDeformableSolids::create_prescribed_positions_group(Id& id, const std::string label)
+std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::DeformableSolidsSurfaces::create_prescribed_positions_group(Id& id, const std::string label)
 {
 	return this->prescribed_positions->create_group(id, label);
 }
 
-std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::SurfaceDeformableSolids::create_prescribed_positions_group_with_transformation(Id& id, const std::string label)
+std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::DeformableSolidsSurfaces::create_prescribed_positions_group_with_transformation(Id& id, const std::string label)
 {
 	return this->prescribed_positions->create_group_with_transformation(id, label);
 }
 
-void stark::models::SurfaceDeformableSolids::add_to_output_label(const std::string label, Id& id)
+void stark::models::DeformableSolidsSurfaces::add_to_output_label(const std::string label, Id& id)
 {
-	this->output_groups.add_to_group(label, id.get_local_idx("SurfaceDeformableSolids"));
+	this->output_groups.add_to_group(label, id.get_local_idx("DeformableSolidsSurfaces"));
 }
 
-bool stark::models::SurfaceDeformableSolids::is_empty() const
+bool stark::models::DeformableSolidsSurfaces::is_empty() const
 {
 	return this->get_n_objects() == 0;
 }
 
-int stark::models::SurfaceDeformableSolids::get_n_objects() const
+int stark::models::DeformableSolidsSurfaces::get_n_objects() const
 {
 	return (int)this->global_indices.size();
 }
 
-void stark::models::SurfaceDeformableSolids::_write_frame(stark::core::Stark& stark)
+void stark::models::DeformableSolidsSurfaces::_write_frame(stark::core::Stark& stark)
 {
 	if (this->is_empty()) { return; }
 

@@ -1,8 +1,8 @@
-#include "VolumetricDeformableSolids.h"
+#include "DeformableSolidsVolumes.h"
 
 #include "../../utils/mesh_utils.h"
 
-stark::models::VolumetricDeformableSolids::VolumetricDeformableSolids(
+stark::models::DeformableSolidsVolumes::DeformableSolidsVolumes(
 	stark::core::Stark& stark, 
 	spPointDynamics dyn, 
 	spEnergyPointInertia inertia, 
@@ -15,7 +15,7 @@ stark::models::VolumetricDeformableSolids::VolumetricDeformableSolids(
 	this->strain = std::make_shared<EnergyTetStrain>(stark, dyn);
 }
 
-stark::models::Id stark::models::VolumetricDeformableSolids::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 4>>& tets, const VolumeMaterial& material)
+stark::models::Id stark::models::DeformableSolidsVolumes::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 4>>& tets, const VolumeMaterial& material)
 {
 	Id id = this->dyn->add(vertices);
 	const int shell_id = (int)this->global_indices.size();
@@ -43,36 +43,36 @@ stark::models::Id stark::models::VolumetricDeformableSolids::add(const std::vect
 		material.strain_limit_stiffness);
 	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
 
-	id.set_local_idx("VolumetricDeformableSolids", shell_id);
+	id.set_local_idx("DeformableSolidsVolumes", shell_id);
 	return id;
 }
 
-std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::VolumetricDeformableSolids::create_prescribed_positions_group(Id& id, const std::string label)
+std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::DeformableSolidsVolumes::create_prescribed_positions_group(Id& id, const std::string label)
 {
 	return this->prescribed_positions->create_group(id, label);
 }
 
-std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::VolumetricDeformableSolids::create_prescribed_positions_group_with_transformation(Id& id, const std::string label)
+std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::DeformableSolidsVolumes::create_prescribed_positions_group_with_transformation(Id& id, const std::string label)
 {
 	return this->prescribed_positions->create_group_with_transformation(id, label);
 }
 
-void stark::models::VolumetricDeformableSolids::add_to_output_label(const std::string label, Id& id)
+void stark::models::DeformableSolidsVolumes::add_to_output_label(const std::string label, Id& id)
 {
-	this->output_groups.add_to_group(label, id.get_local_idx("VolumetricDeformableSolids"));
+	this->output_groups.add_to_group(label, id.get_local_idx("DeformableSolidsVolumes"));
 }
 
-bool stark::models::VolumetricDeformableSolids::is_empty() const
+bool stark::models::DeformableSolidsVolumes::is_empty() const
 {
 	return this->get_n_objects() == 0;
 }
 
-int stark::models::VolumetricDeformableSolids::get_n_objects() const
+int stark::models::DeformableSolidsVolumes::get_n_objects() const
 {
 	return (int)this->global_indices.size();
 }
 
-void stark::models::VolumetricDeformableSolids::_write_frame(stark::core::Stark& stark)
+void stark::models::DeformableSolidsVolumes::_write_frame(stark::core::Stark& stark)
 {
 	if (this->is_empty()) { return; }
 

@@ -184,5 +184,4 @@ namespace stark::models
 			double delay = 0.01
 		);
 	};
-	using spRigidBodies = std::shared_ptr<RigidBodies>;
 }

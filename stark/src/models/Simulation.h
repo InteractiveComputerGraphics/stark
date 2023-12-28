@@ -1,10 +1,11 @@
 #pragma once
+#include <memory>
 
 #include "../core/Stark.h"
 
-#include "deformables/OneDimensionalDeformableSolids.h"
-#include "deformables/SurfaceDeformableSolids.h"
-#include "deformables/VolumetricDeformableSolids.h"
+#include "deformables/DeformableSolidsLines.h"
+#include "deformables/DeformableSolidsSurfaces.h"
+#include "deformables/DeformableSolidsVolumes.h"
 #include "rigidbodies/RigidBodies.h"
 
 
@@ -14,10 +15,10 @@ namespace stark::models
 	{
 	public:
 		core::Stark stark;
-		spOneDimensionalDeformableSolids lines;
-		spSurfaceDeformableSolids surfaces;
-		spVolumetricDeformableSolids volumes;
-		spRigidBodies rigidbodies;
+		std::shared_ptr<DeformableSolidsLines> lines;
+		std::shared_ptr<DeformableSolidsSurfaces> surfaces;
+		std::shared_ptr<DeformableSolidsVolumes> volumes;
+		std::shared_ptr<RigidBodies> rigidbodies;
 
 		Simulation(const core::Settings& settings);
 	};

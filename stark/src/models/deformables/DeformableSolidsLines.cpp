@@ -1,8 +1,8 @@
-#include "OneDimensionalDeformableSolids.h"
+#include "DeformableSolidsLines.h"
 
 #include "../../utils/mesh_utils.h"
 
-stark::models::OneDimensionalDeformableSolids::OneDimensionalDeformableSolids(
+stark::models::DeformableSolidsLines::DeformableSolidsLines(
 	stark::core::Stark& stark, 
 	spPointDynamics dyn, 
 	spEnergyPointInertia inertia, 
@@ -17,7 +17,7 @@ stark::models::OneDimensionalDeformableSolids::OneDimensionalDeformableSolids(
 	this->strain = std::make_shared<EnergyEdgeStrain>(stark, dyn);
 }
 
-stark::models::Id stark::models::OneDimensionalDeformableSolids::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 2>>& edges, const OneDimensionalMaterial& material)
+stark::models::Id stark::models::DeformableSolidsLines::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 2>>& edges, const OneDimensionalMaterial& material)
 {
 	Id id = this->dyn->add(vertices);
 	const int shell_id = (int)this->global_indices.size();
@@ -40,36 +40,36 @@ stark::models::Id stark::models::OneDimensionalDeformableSolids::add(const std::
 		material.strain_damping);
 	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
 
-	id.set_local_idx("OneDimensionalDeformableSolids", shell_id);
+	id.set_local_idx("DeformableSolidsLines", shell_id);
 	return id;
 }
 
-std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::OneDimensionalDeformableSolids::create_prescribed_positions_group(Id& id, const std::string label)
+std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::DeformableSolidsLines::create_prescribed_positions_group(Id& id, const std::string label)
 {
 	return this->prescribed_positions->create_group(id, label);
 }
 
-std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::OneDimensionalDeformableSolids::create_prescribed_positions_group_with_transformation(Id& id, const std::string label)
+std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::DeformableSolidsLines::create_prescribed_positions_group_with_transformation(Id& id, const std::string label)
 {
 	return this->prescribed_positions->create_group_with_transformation(id, label);
 }
 
-void stark::models::OneDimensionalDeformableSolids::add_to_output_label(const std::string label, Id& id)
+void stark::models::DeformableSolidsLines::add_to_output_label(const std::string label, Id& id)
 {
-	this->output_groups.add_to_group(label, id.get_local_idx("OneDimensionalDeformableSolids"));
+	this->output_groups.add_to_group(label, id.get_local_idx("DeformableSolidsLines"));
 }
 
-bool stark::models::OneDimensionalDeformableSolids::is_empty() const
+bool stark::models::DeformableSolidsLines::is_empty() const
 {
 	return this->get_n_objects() == 0;
 }
 
-int stark::models::OneDimensionalDeformableSolids::get_n_objects() const
+int stark::models::DeformableSolidsLines::get_n_objects() const
 {
 	return (int)this->global_indices.size();
 }
 
-void stark::models::OneDimensionalDeformableSolids::_write_frame(stark::core::Stark& stark)
+void stark::models::DeformableSolidsLines::_write_frame(stark::core::Stark& stark)
 {
 	if (this->is_empty()) { return; }
 

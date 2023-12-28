@@ -64,18 +64,18 @@ set(MODELS_DEFORMABLES_FILES
 	src/models/deformables/EnergyTriangleStrain.h
 	src/models/deformables/Id.cpp
 	src/models/deformables/Id.h
-	src/models/deformables/OneDimensionalDeformableSolids.cpp
-	src/models/deformables/OneDimensionalDeformableSolids.h
 	src/models/deformables/PointDynamics.cpp
 	src/models/deformables/PointDynamics.h
 	src/models/deformables/PrescribedPointGroup.cpp
 	src/models/deformables/PrescribedPointGroup.h
 	src/models/deformables/PrescribedPointGroupWithTransformation.cpp
 	src/models/deformables/PrescribedPointGroupWithTransformation.h
-	src/models/deformables/SurfaceDeformableSolids.cpp
-	src/models/deformables/SurfaceDeformableSolids.h
-	src/models/deformables/VolumetricDeformableSolids.cpp
-	src/models/deformables/VolumetricDeformableSolids.h
+	src/models/deformables/DeformableSolidsLines.cpp
+	src/models/deformables/DeformableSolidsLines.h
+	src/models/deformables/DeformableSolidsSurfaces.cpp
+	src/models/deformables/DeformableSolidsSurfaces.h
+	src/models/deformables/DeformableSolidsVolumes.cpp
+	src/models/deformables/DeformableSolidsVolumes.h
 )
 
 set(MODELS_RIGIDBODIES_FILES
