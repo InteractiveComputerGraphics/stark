@@ -62,6 +62,10 @@ set(MODELS_DEFORMABLES_FILES
 	src/models/deformables/EnergyTriangleBendingGrinspun03.h
 	src/models/deformables/EnergyTriangleStrain.cpp
 	src/models/deformables/EnergyTriangleStrain.h
+	src/models/deformables/DeformableHandler.cpp
+	src/models/deformables/DeformableHandler.h
+	src/models/deformables/DeformableSurfaceHandler.cpp
+	src/models/deformables/DeformableSurfaceHandler.h
 	src/models/deformables/Id.cpp
 	src/models/deformables/Id.h
 	src/models/deformables/PointDynamics.cpp

@@ -14,11 +14,10 @@ stark::models::DeformableSolidsSurfaces::DeformableSolidsSurfaces(
 	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
 
 	this->strain = std::make_shared<EnergyTriangleStrain>(stark, dyn);
-	this->bending_bergou = std::make_shared<EnergyTriangleBendingBergou06>(stark, dyn);
 	this->bending_grispun_03 = std::make_shared<EnergyTriangleBendingGrinspun03>(stark, dyn);
 }
 
-stark::models::Id stark::models::DeformableSolidsSurfaces::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const SurfaceMaterial& material)
+stark::models::Id stark::models::DeformableSolidsSurfaces::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const MaterialSurface& material)
 {
 	Id id = this->dyn->add(vertices);
 	const int shell_id = (int)this->global_indices.size();
@@ -34,48 +33,31 @@ stark::models::Id stark::models::DeformableSolidsSurfaces::add(const std::vector
 		material.thickness, 
 		material.strain_young_modulus, 
 		material.strain_poisson_ratio, 
+		material.strain_damping,
 		material.strain_limit, 
 		material.strain_limit_stiffness);
-	//this->bending_bergou->add(id, triangles, 
-	//	material.bending_stiffness, 
-	//	material.bending_damping, 
-	//	material.bending_cutoff_angle_deg);
 	this->bending_grispun_03->add(id, triangles, 
-		material.bending_stiffness);
+		material.bending_stiffness,
+		material.bending_damping);
 	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
 
 	id.set_local_idx("DeformableSolidsSurfaces", shell_id);
 	return id;
 }
 
-std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::DeformableSolidsSurfaces::create_prescribed_positions_group(Id& id, const std::string label)
+int stark::models::DeformableSolidsSurfaces::get_index(const Id& id) const
 {
-	return this->prescribed_positions->create_group(id, label);
+	return id.get_local_idx("DeformableSolidsSurfaces");
 }
 
-std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::DeformableSolidsSurfaces::create_prescribed_positions_group_with_transformation(Id& id, const std::string label)
-{
-	return this->prescribed_positions->create_group_with_transformation(id, label);
-}
-
-void stark::models::DeformableSolidsSurfaces::add_to_output_label(const std::string label, Id& id)
-{
-	this->output_groups.add_to_group(label, id.get_local_idx("DeformableSolidsSurfaces"));
-}
-
-bool stark::models::DeformableSolidsSurfaces::is_empty() const
-{
-	return this->get_n_objects() == 0;
-}
-
-int stark::models::DeformableSolidsSurfaces::get_n_objects() const
+int stark::models::DeformableSolidsSurfaces::get_n_surfaces() const
 {
 	return (int)this->global_indices.size();
 }
 
 void stark::models::DeformableSolidsSurfaces::_write_frame(stark::core::Stark& stark)
 {
-	if (this->is_empty()) { return; }
+	if (this->get_n_surfaces() == 0) { return; }
 
 	auto concatenate_meshes = [&](const std::vector<int>& local_indices)
 	{
@@ -104,16 +86,16 @@ void stark::models::DeformableSolidsSurfaces::_write_frame(stark::core::Stark& s
 
 	// Default: everything goes into the same .vtk
 	else {
-		std::vector<int> all_local_indices(this->get_n_objects());
+		std::vector<int> all_local_indices(this->get_n_surfaces());
 		std::iota(all_local_indices.begin(), all_local_indices.end(), 0);
 		auto [vertices, triangles] = concatenate_meshes(all_local_indices);
 		utils::write_VTK(stark.get_frame_path("surface_") + ".vtk", vertices, triangles, stark.settings.output.calculate_smooth_normals);
 	}
 }
 
-stark::models::SurfaceMaterial stark::models::SurfaceMaterial::towel()
+stark::models::MaterialSurface stark::models::MaterialSurface::towel()
 {
-	SurfaceMaterial material;
+	MaterialSurface material;
 	material.area_density = 0.2;
 	material.thickness = 3.2e-3;
 	material.inertia_damping = 2.0;
@@ -121,8 +103,8 @@ stark::models::SurfaceMaterial stark::models::SurfaceMaterial::towel()
 	material.strain_poisson_ratio = 0.3;
 	material.strain_limit = 0.1;
 	material.strain_limit_stiffness = 1e5;
-	//material.strain_damping = 0.2;
+	material.strain_damping = 0.2;
 	material.bending_stiffness = 5e-6;
-	//material.bending_damping = 0.2;
+	material.bending_damping = 0.2;
 	return material;
 }

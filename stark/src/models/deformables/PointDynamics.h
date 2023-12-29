@@ -19,6 +19,7 @@ namespace stark::models
 		IntervalVector<Eigen::Vector3d> v0;  // Node velocities at time n
 		IntervalVector<Eigen::Vector3d> v1;  // Node velocities at time n+1
 		IntervalVector<Eigen::Vector3d> a;   // Node accelerations
+		IntervalVector<Eigen::Vector3d> f;   // Node forces
 		symx::DoF dof;
 
 		/* Methods */

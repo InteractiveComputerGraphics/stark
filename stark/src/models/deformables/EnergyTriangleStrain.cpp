@@ -22,7 +22,7 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& st
 			symx::Scalar e = energy.make_scalar(this->young_modulus, conn["group"]);
 			symx::Scalar nu = energy.make_scalar(this->poisson_ratio, conn["group"]);
 			symx::Scalar strain_limit = energy.make_scalar(this->strain_limit, conn["group"]);
-			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, conn["group"]);
+			symx::Scalar strain_limit_stiffness = energy.make_scalar(this->strain_limit_stiffness, conn["group"]);
 			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
 			// Time integration
@@ -36,7 +36,7 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& st
 			// Hardening for strain limiting
 			symx::Scalar s1 = symx::sqrt(C.singular_values_2x2()[0]);
 			symx::Scalar dl = s1 - (strain_limit + 1.0);
-			e += symx::branch(dl > 0.0, strain_limiting_stiffness * dl.powN(3) / 3.0, 0.0);
+			e += symx::branch(dl > 0.0, strain_limit_stiffness * dl.powN(3) / 3.0, 0.0);
 
 			// Stable Neo-Hookean strain energy
 			symx::Scalar mu = e / (2.0 * (1.0 + nu));
@@ -51,16 +51,16 @@ stark::models::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& st
 		}
 	);
 }
-void stark::models::EnergyTriangleStrain::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double thickness, const double young_modulus, const double poisson_ratio, const double strain_limit, const double strain_limiting_stiffness, const std::string label)
+void stark::models::EnergyTriangleStrain::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double thickness, const double young_modulus, const double poisson_ratio, const double strain_damping, const double strain_limit, const double strain_limit_stiffness)
 {
-	const int group = (int)this->labels.size();
+	const int group = (int)this->thickness.size();
 
 	this->thickness.push_back(thickness);
 	this->young_modulus.push_back(young_modulus);
 	this->poisson_ratio.push_back(poisson_ratio);
+	this->strain_damping.push_back(strain_damping);
 	this->strain_limit.push_back(strain_limit);
-	this->strain_limiting_stiffness.push_back(strain_limiting_stiffness);
-	this->labels.push_back(label);
+	this->strain_limit_stiffness.push_back(strain_limit_stiffness);
 
 	// Initialize structures
 	for (int tri_i = 0; tri_i < (int)triangles.size(); tri_i++) {
@@ -103,10 +103,55 @@ void stark::models::EnergyTriangleStrain::add(Id& id, const std::vector<std::arr
 	id.set_local_idx("EnergyTriangleStrain", group);
 }
 
-void stark::models::EnergyTriangleStrain::set_parameters(Id& id, const double young_modulus, const double poisson_ratio, const double strain_limit, const double strain_limiting_stiffness)
+void stark::models::EnergyTriangleStrain::set_thickness(const Id& id, const double thickness)
 {
-	this->young_modulus[id.get_local_idx("EnergyTriangleStrain")] = young_modulus;
-	this->poisson_ratio[id.get_local_idx("EnergyTriangleStrain")] = poisson_ratio;
-	this->strain_limit[id.get_local_idx("EnergyTriangleStrain")] = strain_limit;
-	this->strain_limiting_stiffness[id.get_local_idx("EnergyTriangleStrain")] = strain_limiting_stiffness;
+	this->thickness[this->get_index(id)] = thickness;
+}
+void stark::models::EnergyTriangleStrain::set_young_modulus(const Id& id, const double young_modulus)
+{
+	this->young_modulus[this->get_index(id)] = young_modulus;
+}
+void stark::models::EnergyTriangleStrain::set_poisson_ratio(const Id& id, const double poisson_ratio)
+{
+	this->poisson_ratio[this->get_index(id)] = poisson_ratio;
+}
+void stark::models::EnergyTriangleStrain::set_strain_damping(const Id& id, const double strain_damping)
+{
+	this->strain_damping[this->get_index(id)] = strain_damping;
+}
+void stark::models::EnergyTriangleStrain::set_strain_limit(const Id& id, const double strain_limit)
+{
+	this->strain_limit[this->get_index(id)] = strain_limit;
+}
+void stark::models::EnergyTriangleStrain::set_strain_limit_stiffness(const Id& id, const double strain_limit_stiffness)
+{
+	this->strain_limit_stiffness[this->get_index(id)] = strain_limit_stiffness;
+}
+double stark::models::EnergyTriangleStrain::get_thickness(const Id& id)
+{
+	return this->thickness[this->get_index(id)];
+}
+double stark::models::EnergyTriangleStrain::get_young_modulus(const Id& id)
+{
+	return this->young_modulus[this->get_index(id)];
+}
+double stark::models::EnergyTriangleStrain::get_poisson_ratio(const Id& id)
+{
+	return this->poisson_ratio[this->get_index(id)];
+}
+double stark::models::EnergyTriangleStrain::get_strain_damping(const Id& id)
+{
+	return this->strain_damping[this->get_index(id)];
+}
+double stark::models::EnergyTriangleStrain::get_strain_limit(const Id& id)
+{
+	return this->strain_limit[this->get_index(id)];
+}
+double stark::models::EnergyTriangleStrain::get_strain_limit_stiffness(const Id& id)
+{
+	return this->strain_limit_stiffness[this->get_index(id)];
+}
+int stark::models::EnergyTriangleStrain::get_index(const Id& id) const
+{
+	return id.get_local_idx("EnergyTriangleStrain");
 }

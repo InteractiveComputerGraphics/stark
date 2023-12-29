@@ -113,7 +113,7 @@ void hanging_cloth()
 	const double l = 0.5;
 	const int n = 50;
 	auto [vertices, triangles] = stark::utils::generate_triangular_grid({ -l, -l }, { l, l }, { n, n });
-	auto material = stark::models::SurfaceMaterial::towel();
+	auto material = stark::models::MaterialSurface::towel();
 	material.bending_damping = 0.0;
 	material.inertia_damping = 0.0;
 	material.strain_damping = 0.0;

@@ -3,7 +3,7 @@
 #include "../time_integration.h"
 #include "../../utils/mesh_utils.h"
 
-//constexpr double EPSILON = 1e-8;
+using namespace stark::models;
 constexpr double EPSILON = 1e-12;
 
 stark::models::EnergyTriangleBendingGrinspun03::EnergyTriangleBendingGrinspun03(stark::core::Stark& stark, spPointDynamics dyn)
@@ -45,17 +45,21 @@ stark::models::EnergyTriangleBendingGrinspun03::EnergyTriangleBendingGrinspun03(
 				auto angle_delta = dihedral_angle_comp_rad - rest_angle;
 
 				E += stiffness * (angle_delta * angle_delta) * (rest_edge_length / rest_height);
+
+				TODO: DAMPING
+
 			}
 
 			energy.set(E);
 		}
 	);
 }
-void stark::models::EnergyTriangleBendingGrinspun03::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double stiffness)
+void stark::models::EnergyTriangleBendingGrinspun03::add(Id& id, const std::vector<std::array<int, 3>>& triangles, const double stiffness, const double damping)
 {
 	const int group = (int)this->stiffness.size();
 
 	this->stiffness.push_back(stiffness);
+	this->damping.push_back(damping);
 
 	// Find internal_angles (dihedral) connectivity
 	std::vector<std::array<int, 4>> internal_angles;
@@ -98,7 +102,24 @@ void stark::models::EnergyTriangleBendingGrinspun03::add(Id& id, const std::vect
 
 	id.set_local_idx("EnergyTriangleBendingGrinspun03", group);
 }
-void stark::models::EnergyTriangleBendingGrinspun03::set_parameters(Id& id, const double stiffness)
+
+void stark::models::EnergyTriangleBendingGrinspun03::set_stiffness(const Id& id, const double stiffness)
 {
-	this->stiffness[id.get_local_idx("EnergyTriangleBendingGrinspun03")] = stiffness;
+	this->stiffness[this->get_index(id)] = stiffness;
+}
+void stark::models::EnergyTriangleBendingGrinspun03::set_damping(const Id& id, const double damping)
+{
+	this->damping[this->get_index(id)] = damping;
+}
+double stark::models::EnergyTriangleBendingGrinspun03::get_stiffness(const Id& id)
+{
+	return this->stiffness[this->get_index(id)];
+}
+double stark::models::EnergyTriangleBendingGrinspun03::get_damping(const Id& id)
+{
+	return this->damping[this->get_index(id)];
+}
+int stark::models::EnergyTriangleBendingGrinspun03::get_index(const Id& id) const
+{
+	return id.get_local_idx("EnergyTriangleBendingGrinspun03");
 }

@@ -1,7 +1,7 @@
 #include "Id.h"
 
-stark::models::Id::Id(PhysicalSystem ps, const int idx)
-	: ps(ps), idx(idx)
+stark::models::Id::Id(const int idx)
+	: idx(idx)
 {
 }
 
@@ -23,9 +23,4 @@ int stark::models::Id::get_local_idx(const std::string label) const
 		exit(-1);
 	}
 	return it->second;
-}
-
-stark::models::PhysicalSystem stark::models::Id::get_physical_system() const
-{
-	return this->ps;
 }

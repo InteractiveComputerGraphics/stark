@@ -25,18 +25,17 @@ stark::models::Id stark::models::PointDynamics::add(const std::vector<Eigen::Vec
 	this->v0.append(v_);
 	this->v1.append(v_);
 	this->a.append(zero);
-	return Id(PhysicalSystem::Deformables, glob_idx);
+	this->f.append(zero);
+	return Id(glob_idx);
 }
 
 int stark::models::PointDynamics::get_begin(const Id& id) const
 {
-	assert(id.get_physical_system() == PhysicalSystem::Deformables && "PointDynamics only works with Ids of type 'Deformables'");
 	return this->X.get_begin(id.get_global_idx());
 }
 
 int stark::models::PointDynamics::size(const Id& id) const
 {
-	assert(id.get_physical_system() == PhysicalSystem::Deformables && "PointDynamics only works with Ids of type 'Deformables'");
 	return this->X.get_set_size(id.get_global_idx());
 }
 
