@@ -6,91 +6,71 @@
 #include "rb_constraint_test_scenes.h"
 
 
-//void rb()
-//{
-//	stark::Settings settings = stark::Settings();
-//	settings.output.simulation_name = "rb";
-//	settings.output.output_directory = OUTPUT_PATH + "/rb";
-//	settings.output.codegen_directory = COMPILE_PATH;
-//	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
-//	settings.execution.end_simulation_time = 5.0;
-//	settings.contact.collisions_enabled = false;
-//	settings.contact.friction_enabled = false;
-//
-//	settings.debug.symx_check_for_NaNs = true;
-//	//settings.newton.project_to_PD = true;
-//	//settings.newton.use_direct_linear_solve = true;
-//	//settings.newton.max_line_search_iterations = 1000;
-//
-//	stark::Simulation simulation(settings);
-//
-//	// Objects
-//	stark::RigidBodyHandler box0 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
-//		.set_linear_damping(1.0)
-//		.enable_writing_transformation_sequence("box0");
-//	stark::RigidBodyHandler box1 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
-//		.set_linear_damping(1.0)
-//		.add_displacement({ 0.1, 0, 0 })
-//		.enable_writing_transformation_sequence("box1");
-//
-//	// Constraints
-//	simulation.rigidbodies->add_constraint_anchor_point(box0, { -0.05, -0.05, -0.05 });
-//	simulation.rigidbodies->add_constraint_ball_joint(box0, box1, { 0.05, 0.05, 0.05 });
-//
-//	// Misc
-//	simulation.rigidbodies->write_collision_meshes(true);
-//
-//	// Run
-//	simulation.stark.run();
-//}
-//void net()
-//{
-//	stark::Settings settings = stark::Settings();
-//	settings.output.simulation_name = "net";
-//	settings.output.output_directory = OUTPUT_PATH + "/net";
-//	settings.output.codegen_directory = COMPILE_PATH;
-//	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
-//	settings.execution.end_simulation_time = 5.0;
-//	settings.contact.collisions_enabled = false;
-//	settings.contact.friction_enabled = false;
-//
-//	settings.debug.symx_check_for_NaNs = true;
-//	//settings.newton.project_to_PD = true;
-//	//settings.newton.use_direct_linear_solve = true;
-//	//settings.newton.max_line_search_iterations = 1000;
-//
-//	stark::models::Simulation simulation(settings);
-//
-//	// Cloth
-//	const double l = 0.5;
-//	const int n = 10;
-//	auto [vertices, triangles] = stark::utils::generate_triangular_grid({ -l, -l }, { l, l }, { n, n });
-//	auto edges = stark::utils::find_edges_from_simplices(triangles, (int)vertices.size());
-//	auto material = stark::models::MaterialLine::sticky_goo();
-//	material.strain_damping = 0.1;
-//	auto id = simulation.lines->add(vertices, edges, material);
-//
-//	// BC
-//	if (true) {
-//		auto bc = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
-//		bc->add_vertices_in_aabb({ -l, -l, 0.0 }, 0.001);
-//		bc->add_vertices_in_aabb({ l, l, 0.0 }, 0.001);
-//	}
-//	else {
-//		auto bcl = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
-//		bcl->add_vertices_in_aabb({ -l, 0.0, 0.0 }, { 0.001, 1.0, 1.0 });
-//		bcl->set_linear_velocity(-Eigen::Vector3d::UnitX());
-//		//bcl->set_angular_velocity(-10.0*Eigen::Vector3d::UnitX(), Eigen::Vector3d::Zero());
-//
-//		auto bcr = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
-//		bcr->add_vertices_in_aabb({ l, 0.0, 0.0 }, { 0.001, 1.0, 1.0 });
-//		bcr->set_linear_velocity(Eigen::Vector3d::UnitX());
-//		//bcr->set_angular_velocity(10.0*Eigen::Vector3d::UnitX(), Eigen::Vector3d::Zero());
-//	}
-//
-//	// Run
-//	simulation.stark.run();
-//}
+void rb()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "rb";
+	settings.output.output_directory = OUTPUT_PATH + "/rb";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
+	settings.execution.end_simulation_time = 5.0;
+	settings.contact.collisions_enabled = false;
+	settings.contact.friction_enabled = false;
+	settings.debug.symx_check_for_NaNs = true;
+
+	stark::Simulation simulation(settings);
+
+	// Objects
+	stark::RigidBodyHandler box0 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
+		.set_linear_damping(1.0)
+		.enable_writing_transformation_sequence("box0");
+	stark::RigidBodyHandler box1 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
+		.set_linear_damping(1.0)
+		.add_displacement({ 0.1, 0, 0 })
+		.enable_writing_transformation_sequence("box1");
+
+	// Constraints
+	simulation.rigidbodies->add_constraint_global_point(box0, { -0.05, -0.05, -0.05 });
+	simulation.rigidbodies->add_constraint_point(box0, box1, { 0.05, 0.05, 0.05 });
+
+	// Misc
+	simulation.rigidbodies->write_collision_meshes(true);
+
+	// Run
+	simulation.stark.run();
+}
+void net()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "net";
+	settings.output.output_directory = OUTPUT_PATH + "/net";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
+	settings.execution.end_simulation_time = 5.0;
+	settings.contact.collisions_enabled = false;
+	settings.contact.friction_enabled = false;
+	settings.debug.symx_check_for_NaNs = true;
+	stark::models::Simulation simulation(settings);
+
+	// Net
+	const double l = 0.5;
+	const int n = 10;
+	auto [vertices, triangles] = stark::utils::generate_triangular_grid({ -l, -l }, { l, l }, { n, n });
+	auto edges = stark::utils::find_edges_from_simplices(triangles, (int)vertices.size());
+	auto material = stark::models::MaterialLine::sticky_goo();
+	material.strain_damping = 0.1;
+	auto net = simulation.deformables->add_line(vertices, edges, material);
+
+	// BC
+	if (true) {
+		auto bc = net.create_prescribed_positions_group_with_transformation();
+		bc->add_vertices_in_aabb({ -l, -l, 0.0 }, 0.001);
+		bc->add_vertices_in_aabb({ l, l, 0.0 }, 0.001);
+	}
+
+	// Run
+	simulation.stark.run();
+}
 void hanging_cloth()
 {
 	stark::Settings settings = stark::Settings();
@@ -102,12 +82,7 @@ void hanging_cloth()
 	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
 	settings.contact.collisions_enabled = false;
 	settings.contact.friction_enabled = false;
-
 	settings.debug.symx_check_for_NaNs = true;
-	//settings.newton.project_to_PD = true;
-	//settings.newton.use_direct_linear_solve = true;
-	//settings.newton.max_line_search_iterations = 1000;
-
 	stark::models::Simulation simulation(settings);
 
 	// Cloth
@@ -115,34 +90,12 @@ void hanging_cloth()
 	const int n = 50;
 	auto [vertices, triangles] = stark::utils::generate_triangular_grid({ -l, -l }, { l, l }, { n, n });
 	auto material = stark::MaterialSurface::towel();
-	//material.bending_damping = 1e-3;
-	//material.inertia_damping = 0.0;
-	//material.strain_damping = 0.0;
-	//material.strain_limit = 0.1;
-	//material.strain_limit_stiffness = 1e4;
-	//material.area_density = 3.0;
-	//material.strain_limit_stiffness = 1e7;
-	//material.strain_limit = 99999.9;
-	//material.strain_young_modulus = 1e3;
 	auto towel = simulation.deformables->add_surface(vertices, triangles, material);
 
 	// BC
-	if (true) {
-		auto bc = towel.create_prescribed_positions_group_with_transformation();
-		bc->add_vertices_in_aabb({ -l, -l, 0.0 }, 0.001);
-		bc->add_vertices_in_aabb({ -l, l, 0.0 }, 0.001);
-	}
-	//else {
-	//	auto bcl = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
-	//	bcl->add_vertices_in_aabb({ -l, 0.0, 0.0 }, { 0.001, 1.0, 1.0 });
-	//	bcl->set_linear_velocity(-Eigen::Vector3d::UnitX());
-	//	//bcl->set_angular_velocity(-10.0*Eigen::Vector3d::UnitX(), Eigen::Vector3d::Zero());
-
-	//	auto bcr = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
-	//	bcr->add_vertices_in_aabb({ l, 0.0, 0.0 }, { 0.001, 1.0, 1.0 });
-	//	bcr->set_linear_velocity(Eigen::Vector3d::UnitX());
-	//	//bcr->set_angular_velocity(10.0*Eigen::Vector3d::UnitX(), Eigen::Vector3d::Zero());
-	//}
+	auto bc = towel.create_prescribed_positions_group_with_transformation();
+	bc->add_vertices_in_aabb({ -l, -l, 0.0 }, 0.001);
+	bc->add_vertices_in_aabb({ -l, l, 0.0 }, 0.001);
 
 	// Run
 	simulation.stark.run();
@@ -158,12 +111,7 @@ void rubber_block()
 	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
 	settings.contact.collisions_enabled = false;
 	settings.contact.friction_enabled = false;
-
 	settings.debug.symx_check_for_NaNs = true;
-	//settings.newton.project_to_PD = true;
-	//settings.newton.use_direct_linear_solve = true;
-	//settings.newton.max_line_search_iterations = 1000;
-
 	stark::models::Simulation simulation(settings);
 
 	// Declare objects
@@ -173,44 +121,12 @@ void rubber_block()
 	const int nl = nw * (l / w);
 	auto [vertices, tets] = stark::utils::generate_tet_grid({ -l, -w, -w }, { l, w, w }, { nl, nw, nw });
 	auto material = stark::models::MaterialVolume::soft_rubber();
-	//material.strain_young_modulus = 1e2;
-	//material.strain_limit = 1000000.0;
-	//material.strain_damping = 20.0;
-	//material.area_density = 3.0;
-	//material.strain_limit_stiffness = 1e7;
-	//material.strain_limit = 99999.9;
-	//material.strain_young_modulus = 1e3;
-	//material.strain_poisson_ratio = 0.4;
 	auto block = simulation.deformables->add_volume(vertices, tets, material);
 
 	// BC
-	if (true) {
-		auto bc = block.create_prescribed_positions_group_with_transformation();
-		bc->set_stiffness(1e6);
-		bc->add_vertices_in_aabb({ -l, 0.0, 0.0 }, { 0.001, 2.0*w, 2.0*w });
-	}
-	//else if (true) {
-	//	auto bcl = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
-	//	bcl->set_stiffness(1e6);
-	//	bcl->add_vertices_in_aabb({ -l, -w, w }, { 0.001, 0.001, 0.001 });
-
-	//	auto bcr = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
-	//	bcr->set_stiffness(1e6);
-	//	bcl->add_vertices_in_aabb({ -l, w, w }, { 0.001, 0.001, 0.001 });
-	//}
-	//else {
-	//	auto bcl = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
-	//	bcl->set_stiffness(1e6);
-	//	bcl->add_vertices_in_aabb({ -l, 0.0, 0.0 }, { 0.001, 2.0*w, 2.0*w });
-	//	bcl->set_linear_velocity(-0.05*Eigen::Vector3d::UnitX());
-	//	//bcl->set_angular_velocity(-10.0*Eigen::Vector3d::UnitX(), Eigen::Vector3d::Zero());
-
-	//	auto bcr = simulation.surfaces->create_prescribed_positions_group_with_transformation(id);
-	//	bcr->set_stiffness(1e6);
-	//	bcr->add_vertices_in_aabb({ l, 0.0, 0.0 }, { 0.001, 2.0*w, 2.0*w });
-	//	bcr->set_linear_velocity(0.05*Eigen::Vector3d::UnitX());
-	//	//bcr->set_angular_velocity(10.0*Eigen::Vector3d::UnitX(), Eigen::Vector3d::Zero());
-	//}
+	auto bc = block.create_prescribed_positions_group_with_transformation();
+	bc->set_stiffness(1e6);
+	bc->add_vertices_in_aabb({ -l, 0.0, 0.0 }, { 0.001, 2.0*w, 2.0*w });
 
 	// Run
 	simulation.stark.run();
@@ -221,11 +137,10 @@ void rubber_block()
 
 int main()
 {
+	//rb();
+	//net();
 	//hanging_cloth();
 	rubber_block();
-	//net();
-	//rb();
 
 	//rb_constraints_all();
-	//rb_constraints_point();
 }

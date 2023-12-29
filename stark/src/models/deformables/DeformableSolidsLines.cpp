@@ -86,7 +86,7 @@ void stark::models::DeformableSolidsLines::_write_frame(stark::core::Stark& star
 		std::vector<int> all_local_indices(this->get_n_volumes());
 		std::iota(all_local_indices.begin(), all_local_indices.end(), 0);
 		auto [vertices, edges] = concatenate_meshes(all_local_indices);
-		//utils::write_VTK(stark.get_frame_path("line_") + ".vtk", vertices);
+		//utils::write_VTK(stark.get_frame_path("line_") + ".vtk", vertices, edges);
 		utils::write_VTK(stark.get_frame_path("line_") + ".vtk", vertices);
 	}
 }
@@ -98,8 +98,8 @@ stark::models::MaterialLine stark::models::MaterialLine::sticky_goo()
 	material.section_radius = 0.002;
 	material.inertia_damping = 0.1;
 	material.strain_young_modulus = 5e4;
-	material.strain_limit = std::numeric_limits<double>::max();
-	material.strain_limit_stiffness = 1e6;
+	material.strain_limit = 0.1;
+	material.strain_limit_stiffness = 1e5;
 	material.strain_damping = 0.2;
 	return material;
 }

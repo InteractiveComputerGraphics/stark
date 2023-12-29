@@ -43,7 +43,6 @@ namespace stark::models
 		int get_index(const Id& id) const;
 		int get_n_volumes() const;
 
-	private:
 		/* Fields */
 		spPointDynamics dyn;
 		spEnergyPointInertia inertia;

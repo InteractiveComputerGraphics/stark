@@ -17,7 +17,7 @@ stark::models::EnergyEdgeStrain::EnergyEdgeStrain(stark::core::Stark& stark, spP
 			symx::Scalar young_modulus = energy.make_scalar(this->young_modulus, conn["group"]);
 			symx::Scalar section_area = energy.make_scalar(this->section_area, conn["group"]);
 			symx::Scalar strain_limit = energy.make_scalar(this->strain_limit, conn["group"]);
-			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, conn["group"]);
+			symx::Scalar strain_limit_stiffness = energy.make_scalar(this->strain_limit_stiffness, conn["group"]);
 			symx::Scalar strain_damping = energy.make_scalar(this->strain_damping, conn["group"]);
 			symx::Scalar rest_length = energy.make_scalar(this->rest_length, conn["idx"]);
 			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
@@ -33,7 +33,7 @@ stark::models::EnergyEdgeStrain::EnergyEdgeStrain(stark::core::Stark& stark, spP
 
 			// Strain limiting
 			symx::Scalar e_over_limit = e - strain_limit;
-			symx::Scalar E_sl_ = volume * strain_limiting_stiffness * e_over_limit.powN(3) / 3.0;
+			symx::Scalar E_sl_ = volume * strain_limit_stiffness * e_over_limit.powN(3) / 3.0;
 			symx::Scalar E_sl = symx::branch(e_over_limit > 0.0, E_sl_, 0.0);
 
 			// Strain damping
@@ -54,7 +54,7 @@ void stark::models::EnergyEdgeStrain::add(Id& id, const std::vector<std::array<i
 	this->section_area.push_back(utils::PI * std::pow(section_radius, 2));
 	this->young_modulus.push_back(young_modulus);
 	this->strain_limit.push_back(strain_limit);
-	this->strain_limiting_stiffness.push_back(strain_limiting_stiffness);
+	this->strain_limit_stiffness.push_back(strain_limit_stiffness);
 	this->strain_damping.push_back(strain_damping);
 
 	// Initialize structures
@@ -84,10 +84,6 @@ void stark::models::EnergyEdgeStrain::set_young_modulus(const Id& id, const doub
 {
 	this->young_modulus[this->get_index(id)] = young_modulus;
 }
-void stark::models::EnergyEdgeStrain::set_poisson_ratio(const Id& id, const double poisson_ratio)
-{
-	this->poisson_ratio[this->get_index(id)] = poisson_ratio;
-}
 void stark::models::EnergyEdgeStrain::set_strain_damping(const Id& id, const double strain_damping)
 {
 	this->strain_damping[this->get_index(id)] = strain_damping;
@@ -112,10 +108,6 @@ double stark::models::EnergyEdgeStrain::get_radius(const Id& id)
 double stark::models::EnergyEdgeStrain::get_young_modulus(const Id& id)
 {
 	return this->young_modulus[this->get_index(id)];
-}
-double stark::models::EnergyEdgeStrain::get_poisson_ratio(const Id& id)
-{
-	return this->poisson_ratio[this->get_index(id)];
 }
 double stark::models::EnergyEdgeStrain::get_strain_damping(const Id& id)
 {

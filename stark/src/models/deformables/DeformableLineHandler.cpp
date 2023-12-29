@@ -1,81 +1,72 @@
-#include "DeformableVolumeHandler.h"
+#include "DeformableLineHandler.h"
 
 using namespace stark::models;
 
-stark::models::DeformableVolumeHandler::DeformableVolumeHandler(const Id& id, std::shared_ptr<DeformableSolidsVolumes> volumes)
-	: volumes(volumes), DeformableHandler(id, volumes->dyn, volumes->inertia, volumes->prescribed_positions)
+stark::models::DeformableLineHandler::DeformableLineHandler(const Id& id, std::shared_ptr<DeformableSolidsLines> lines)
+	: lines(lines), DeformableHandler(id, lines->dyn, lines->inertia, lines->prescribed_positions)
 {
 }
 
-DeformableVolumeHandler& stark::models::DeformableVolumeHandler::set_density(const double density)
+DeformableLineHandler& stark::models::DeformableLineHandler::set_linear_density(const double density)
 {
-	this->volumes->inertia->set_density(this->get_id(), density);
+	this->lines->inertia->set_density(this->get_id(), density);
 	return *this;
 }
-DeformableVolumeHandler& stark::models::DeformableVolumeHandler::set_inertia_damping(const double inertia_damping)
+DeformableLineHandler& stark::models::DeformableLineHandler::set_inertia_damping(const double inertia_damping)
 {
-	this->volumes->inertia->set_inertia_damping(this->get_id(), inertia_damping);
+	this->lines->inertia->set_inertia_damping(this->get_id(), inertia_damping);
 	return *this;
 }
-DeformableVolumeHandler& stark::models::DeformableVolumeHandler::set_young_modulus(const double young_modulus)
+DeformableLineHandler& stark::models::DeformableLineHandler::set_young_modulus(const double young_modulus)
 {
-	this->volumes->strain->set_young_modulus(this->get_id(), young_modulus);
+	this->lines->strain->set_young_modulus(this->get_id(), young_modulus);
 	return *this;
 }
-DeformableVolumeHandler& stark::models::DeformableVolumeHandler::set_poisson_ratio(const double poisson_ratio)
+DeformableLineHandler& stark::models::DeformableLineHandler::set_strain_damping(const double strain_damping)
 {
-	this->volumes->strain->set_poisson_ratio(this->get_id(), poisson_ratio);
+	this->lines->strain->set_strain_damping(this->get_id(), strain_damping);
 	return *this;
 }
-DeformableVolumeHandler& stark::models::DeformableVolumeHandler::set_strain_damping(const double strain_damping)
+DeformableLineHandler& stark::models::DeformableLineHandler::set_strain_limit(const double strain_limit)
 {
-	this->volumes->strain->set_strain_damping(this->get_id(), strain_damping);
+	this->lines->strain->set_strain_limit(this->get_id(), strain_limit);
 	return *this;
 }
-DeformableVolumeHandler& stark::models::DeformableVolumeHandler::set_strain_limit(const double strain_limit)
+DeformableLineHandler& stark::models::DeformableLineHandler::set_strain_limit_stiffness(const double strain_limit_stiffness)
 {
-	this->volumes->strain->set_strain_limit(this->get_id(), strain_limit);
+	this->lines->strain->set_strain_limit_stiffness(this->get_id(), strain_limit_stiffness);
 	return *this;
 }
-DeformableVolumeHandler& stark::models::DeformableVolumeHandler::set_strain_limit_stiffness(const double strain_limit_stiffness)
+DeformableLineHandler& stark::models::DeformableLineHandler::add_to_output_label(const std::string label)
 {
-	this->volumes->strain->set_strain_limit_stiffness(this->get_id(), strain_limit_stiffness);
+	this->lines->output_groups.add_to_group(label, this->get_line_index());
 	return *this;
 }
-DeformableVolumeHandler& stark::models::DeformableVolumeHandler::add_to_output_label(const std::string label)
+double stark::models::DeformableLineHandler::get_linear_density() const
 {
-	this->volumes->output_groups.add_to_group(label, this->get_volume_index());
-	return *this;
+	return this->lines->inertia->get_density(this->get_id());
 }
-double stark::models::DeformableVolumeHandler::get_density() const
+double stark::models::DeformableLineHandler::get_inertia_damping() const
 {
-	return this->volumes->inertia->get_density(this->get_id());
+	return this->lines->inertia->get_inertia_damping(this->get_id());
 }
-double stark::models::DeformableVolumeHandler::get_inertia_damping() const
+double stark::models::DeformableLineHandler::get_young_modulus() const
 {
-	return this->volumes->inertia->get_inertia_damping(this->get_id());
+	return this->lines->strain->get_young_modulus(this->get_id());
 }
-double stark::models::DeformableVolumeHandler::get_young_modulus() const
+double stark::models::DeformableLineHandler::get_strain_damping() const
 {
-	return this->volumes->strain->get_young_modulus(this->get_id());
+	return this->lines->strain->get_strain_damping(this->get_id());
 }
-double stark::models::DeformableVolumeHandler::get_poisson_ratio() const
+double stark::models::DeformableLineHandler::get_strain_limit() const
 {
-	return this->volumes->strain->get_poisson_ratio(this->get_id());
+	return this->lines->strain->get_strain_limit(this->get_id());
 }
-double stark::models::DeformableVolumeHandler::get_strain_damping() const
+double stark::models::DeformableLineHandler::get_strain_limit_stiffness() const
 {
-	return this->volumes->strain->get_strain_damping(this->get_id());
+	return this->lines->strain->get_strain_limit_stiffness(this->get_id());
 }
-double stark::models::DeformableVolumeHandler::get_strain_limit() const
+int stark::models::DeformableLineHandler::get_line_index() const
 {
-	return this->volumes->strain->get_strain_limit(this->get_id());
-}
-double stark::models::DeformableVolumeHandler::get_strain_limit_stiffness() const
-{
-	return this->volumes->strain->get_strain_limit_stiffness(this->get_id());
-}
-int stark::models::DeformableVolumeHandler::get_volume_index() const
-{
-	return this->volumes->get_index(this->get_id());
+	return this->lines->get_index(this->get_id());
 }
