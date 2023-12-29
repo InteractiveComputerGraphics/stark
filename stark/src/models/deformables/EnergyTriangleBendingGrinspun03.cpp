@@ -18,39 +18,44 @@ stark::models::EnergyTriangleBendingGrinspun03::EnergyTriangleBendingGrinspun03(
 			// Create symbols
 			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dyn->dof, this->dyn->v1.data, internal_edge);
 			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, internal_edge);
-
 			symx::Scalar rest_angle = energy.make_scalar(this->rest_angle, conn["idx"]);
 			symx::Scalar rest_edge_length = energy.make_scalar(this->rest_edge_length, conn["idx"]);
 			symx::Scalar rest_height = energy.make_scalar(this->rest_height, conn["idx"]);
-
 			symx::Scalar stiffness = energy.make_scalar(this->stiffness, conn["group"]);
-			//symx::Scalar damping = energy.make_scalar(this->damping, conn["group"]);
+			symx::Scalar damping = energy.make_scalar(this->damping, conn["group"]);
 			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
 			// Time integration
 			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
 
-			// Energy
-			symx::Scalar E = dt.get_zero();
+			// Compute angle delta
+			auto dihedral_angle_rad_f = [](std::vector<symx::Vector>& x)
 			{
-				auto e0 = x1[1] - x1[0];
-				auto e1 = x1[2] - x1[0];
-				auto e2 = x1[3] - x1[0];
+				auto e0 = x[1] - x[0];
+				auto e1 = x[2] - x[0];
+				auto e2 = x[3] - x[0];
 
 				auto n0 = e0.cross3(e1);
 				auto n1 = -e0.cross3(e2);
 
 				auto dihedral_angle_rad = ((1.0 - EPSILON) * n0.normalized().dot(n1.normalized())).acos();
-				auto dihedral_angle_comp_rad = utils::PI - dihedral_angle_rad;
-				auto angle_delta = dihedral_angle_comp_rad - rest_angle;
+				return dihedral_angle_rad;
+			};
 
-				E += stiffness * (angle_delta * angle_delta) * (rest_edge_length / rest_height);
+			// Bending
+			auto dihedral_angle_rad_1 = dihedral_angle_rad_f(x1);
+			auto dihedral_angle_comp_rad = utils::PI - dihedral_angle_rad_1;
+			auto angle_delta = dihedral_angle_comp_rad - rest_angle;
+			symx::Scalar Energy_bending = stiffness * (angle_delta * angle_delta) * (rest_edge_length / rest_height);
 
-				TODO: DAMPING
+			// Damping
+			auto dihedral_angle_rad_0 = dihedral_angle_rad_f(x0);
+			//auto bending_velocity = (angle_delta_1 - angle_delta_0) / dt;
+			//symx::Scalar Energy_damping = damping * bending_velocity.powN(2) * (rest_edge_length / rest_height);
+			symx::Scalar Energy_damping = damping * 1.0/dt * (0.5*dihedral_angle_rad_1.powN(2) - dihedral_angle_rad_0*dihedral_angle_rad_1) * (rest_edge_length / rest_height);
 
-			}
-
-			energy.set(E);
+			// Total energy
+			energy.set(Energy_bending + Energy_damping);
 		}
 	);
 }

@@ -41,7 +41,7 @@ stark::models::EnergyTetStrain::EnergyTetStrain(stark::core::Stark& stark, spPoi
 			symx::Scalar e = energy.make_scalar(this->young_modulus, conn["group"]);
 			symx::Scalar nu = energy.make_scalar(this->poisson_ratio, conn["group"]);
 			symx::Scalar strain_limit = energy.make_scalar(this->strain_limit, conn["group"]);
-			symx::Scalar strain_limiting_stiffness = energy.make_scalar(this->strain_limiting_stiffness, conn["group"]);
+			symx::Scalar strain_limit_stiffness = energy.make_scalar(this->strain_limit_stiffness, conn["group"]);
 			symx::Scalar damping = energy.make_scalar(this->damping, conn["group"]);
 			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
 
@@ -62,7 +62,7 @@ stark::models::EnergyTetStrain::EnergyTetStrain(stark::core::Stark& stark, spPoi
 			// Hardening for strain limiting
 			symx::Scalar s1 = largest_eigenvalue_sym_3x3(E1);
 			symx::Scalar dl = s1 - (strain_limit + 1.0);
-			e += symx::branch(dl > 0.0, strain_limiting_stiffness * dl.powN(3) / 3.0, 0.0);
+			e += symx::branch(dl > 0.0, strain_limit_stiffness * dl.powN(3) / 3.0, 0.0);
 
 			// [Smith et al. 2022] Stable Neo-Hookean Flesh Simulation
 			// Eq. 49 from [Smith et al. 2022]
@@ -126,21 +126,19 @@ stark::models::EnergyTetStrain::EnergyTetStrain(stark::core::Stark& stark, spPoi
 	//	}
 	//);
 }
-void stark::models::EnergyTetStrain::add(Id& id, const std::vector<std::array<int, 4>>& tets, const double young_modulus, const double poisson_ratio, const double damping, const double strain_limit, const double strain_limiting_stiffness, const std::string label)
+void stark::models::EnergyTetStrain::add(Id& id, const std::vector<std::array<int, 4>>& tets, const double young_modulus, const double poisson_ratio, const double damping, const double strain_limit, const double strain_limit_stiffness)
 {
 	if (strain_limit < std::numeric_limits<double>::epsilon()) {
 		std::cout << "stark error: EnergyTetStrain strain_limit must be larger than epsilon." << std::endl;
 		exit(-1);
 	}
 
-	const int group = (int)this->labels.size();
-
+	const int group = (int)this->young_modulus.size();
 	this->young_modulus.push_back(young_modulus);
 	this->poisson_ratio.push_back(poisson_ratio);
 	this->strain_limit.push_back(strain_limit);
-	this->strain_limiting_stiffness.push_back(strain_limiting_stiffness);
+	this->strain_limit_stiffness.push_back(strain_limit_stiffness);
 	this->damping.push_back(damping);
-	this->labels.push_back(label);
 
 	// Initialize structures
 	for (int tet_i = 0; tet_i < (int)tets.size(); tet_i++) {
@@ -176,8 +174,52 @@ void stark::models::EnergyTetStrain::add(Id& id, const std::vector<std::array<in
 	id.set_local_idx("EnergyTetStrain", group);
 }
 
-void stark::models::EnergyTetStrain::set_parameters(const int id, const double young_modulus, const double poisson_ratio)
+void stark::models::EnergyTetStrain::set_young_modulus(const Id& id, const double young_modulus)
 {
-	this->young_modulus[id] = young_modulus;
-	this->poisson_ratio[id] = poisson_ratio;
+	this->young_modulus[this->get_index(id)] = young_modulus;
+}
+void stark::models::EnergyTetStrain::set_poisson_ratio(const Id& id, const double poisson_ratio)
+{
+	this->poisson_ratio[this->get_index(id)] = poisson_ratio;
+}
+void stark::models::EnergyTetStrain::set_strain_damping(const Id& id, const double strain_damping)
+{
+	this->damping[this->get_index(id)] = strain_damping;
+}
+void stark::models::EnergyTetStrain::set_strain_limit(const Id& id, const double strain_limit)
+{
+	if (strain_limit < std::numeric_limits<double>::epsilon()) {
+		std::cout << "stark error: strain_limit must be larger than epsilon." << std::endl;
+		exit(-1);
+	}
+
+	this->strain_limit[this->get_index(id)] = strain_limit;
+}
+void stark::models::EnergyTetStrain::set_strain_limit_stiffness(const Id& id, const double strain_limit_stiffness)
+{
+	this->strain_limit_stiffness[this->get_index(id)] = strain_limit_stiffness;
+}
+double stark::models::EnergyTetStrain::get_young_modulus(const Id& id)
+{
+	return this->young_modulus[this->get_index(id)];
+}
+double stark::models::EnergyTetStrain::get_poisson_ratio(const Id& id)
+{
+	return this->poisson_ratio[this->get_index(id)];
+}
+double stark::models::EnergyTetStrain::get_strain_damping(const Id& id)
+{
+	return this->damping[this->get_index(id)];
+}
+double stark::models::EnergyTetStrain::get_strain_limit(const Id& id)
+{
+	return this->strain_limit[this->get_index(id)];
+}
+double stark::models::EnergyTetStrain::get_strain_limit_stiffness(const Id& id)
+{
+	return this->strain_limit_stiffness[this->get_index(id)];
+}
+int stark::models::EnergyTetStrain::get_index(const Id& id) const
+{
+	return id.get_local_idx("EnergyTetStrain");
 }

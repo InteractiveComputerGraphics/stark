@@ -14,7 +14,7 @@
 namespace stark::models
 {
 	/* Definitions */
-	struct VolumeMaterial
+	struct MaterialVolume
 	{
 		double density = 0.0;
 		double inertia_damping = 0.0;
@@ -23,12 +23,9 @@ namespace stark::models
 		double strain_damping = 0.0;
 		double strain_limit = 0.0;
 		double strain_limit_stiffness = 0.0;
-		static VolumeMaterial soft_rubber();
+		static MaterialVolume soft_rubber();
 	};
 
-	/*
-		This class is exposed to the user.
-	*/
 	class DeformableSolidsVolumes
 	{
 	public:
@@ -42,14 +39,10 @@ namespace stark::models
 			//spEnergyFrictionalContact contact
 		);
 
-		Id add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 4>>& tets, const VolumeMaterial& material);
-		std::shared_ptr<PrescribedPointGroup> create_prescribed_positions_group(Id& id, const std::string label = "");
-		std::shared_ptr<PrescribedPointGroupWithTransformation> create_prescribed_positions_group_with_transformation(Id& id, const std::string label = "");
-		void add_to_output_label(const std::string label, Id& id);
-		bool is_empty() const;
-		int get_n_objects() const;
+		Id add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 4>>& tets, const MaterialVolume& material);
+		int get_index(const Id& id) const;
+		int get_n_volumes() const;
 
-	private:
 		/* Fields */
 		spPointDynamics dyn;
 		spEnergyPointInertia inertia;
@@ -59,7 +52,7 @@ namespace stark::models
 		std::vector<int> global_indices;
 
 		// Output
-		MeshOutputGroups output_groups;  // local_indices
+		MeshOutputGroups output_groups;
 		std::vector<std::vector<std::array<int, 3>>> input_triangles;
 		std::vector<std::vector<int>> triangle_to_tet_node_maps;
 

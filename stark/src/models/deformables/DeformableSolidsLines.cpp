@@ -17,7 +17,7 @@ stark::models::DeformableSolidsLines::DeformableSolidsLines(
 	this->strain = std::make_shared<EnergyEdgeStrain>(stark, dyn);
 }
 
-stark::models::Id stark::models::DeformableSolidsLines::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 2>>& edges, const OneDimensionalMaterial& material)
+stark::models::Id stark::models::DeformableSolidsLines::add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 2>>& edges, const MaterialLine& material)
 {
 	Id id = this->dyn->add(vertices);
 	const int shell_id = (int)this->global_indices.size();
@@ -43,35 +43,17 @@ stark::models::Id stark::models::DeformableSolidsLines::add(const std::vector<Ei
 	id.set_local_idx("DeformableSolidsLines", shell_id);
 	return id;
 }
-
-std::shared_ptr<stark::models::PrescribedPointGroup> stark::models::DeformableSolidsLines::create_prescribed_positions_group(Id& id, const std::string label)
+int stark::models::DeformableSolidsLines::get_index(const Id& id) const
 {
-	return this->prescribed_positions->create_group(id, label);
+	return id.get_local_idx("DeformableSolidsLines");
 }
-
-std::shared_ptr<stark::models::PrescribedPointGroupWithTransformation> stark::models::DeformableSolidsLines::create_prescribed_positions_group_with_transformation(Id& id, const std::string label)
-{
-	return this->prescribed_positions->create_group_with_transformation(id, label);
-}
-
-void stark::models::DeformableSolidsLines::add_to_output_label(const std::string label, Id& id)
-{
-	this->output_groups.add_to_group(label, id.get_local_idx("DeformableSolidsLines"));
-}
-
-bool stark::models::DeformableSolidsLines::is_empty() const
-{
-	return this->get_n_objects() == 0;
-}
-
-int stark::models::DeformableSolidsLines::get_n_objects() const
+int stark::models::DeformableSolidsLines::get_n_volumes() const
 {
 	return (int)this->global_indices.size();
 }
-
 void stark::models::DeformableSolidsLines::_write_frame(stark::core::Stark& stark)
 {
-	if (this->is_empty()) { return; }
+	if (this->get_n_volumes() == 0) { return; }
 
 	auto concatenate_meshes = [&](const std::vector<int>& local_indices)
 	{
@@ -101,7 +83,7 @@ void stark::models::DeformableSolidsLines::_write_frame(stark::core::Stark& star
 
 	// Default: everything goes into the same .vtk
 	else {
-		std::vector<int> all_local_indices(this->get_n_objects());
+		std::vector<int> all_local_indices(this->get_n_volumes());
 		std::iota(all_local_indices.begin(), all_local_indices.end(), 0);
 		auto [vertices, edges] = concatenate_meshes(all_local_indices);
 		//utils::write_VTK(stark.get_frame_path("line_") + ".vtk", vertices);
@@ -109,9 +91,9 @@ void stark::models::DeformableSolidsLines::_write_frame(stark::core::Stark& star
 	}
 }
 
-stark::models::OneDimensionalMaterial stark::models::OneDimensionalMaterial::sticky_goo()
+stark::models::MaterialLine stark::models::MaterialLine::sticky_goo()
 {
-	OneDimensionalMaterial material;
+	MaterialLine material;
 	material.line_density = 0.05;
 	material.section_radius = 0.002;
 	material.inertia_damping = 0.1;

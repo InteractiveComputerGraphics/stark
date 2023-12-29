@@ -105,6 +105,6 @@ stark::models::MaterialSurface stark::models::MaterialSurface::towel()
 	material.strain_limit_stiffness = 1e5;
 	material.strain_damping = 0.2;
 	material.bending_stiffness = 5e-6;
-	material.bending_damping = 0.2;
+	material.bending_damping = 0.0;
 	return material;
 }

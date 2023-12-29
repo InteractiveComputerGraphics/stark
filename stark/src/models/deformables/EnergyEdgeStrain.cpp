@@ -47,16 +47,15 @@ stark::models::EnergyEdgeStrain::EnergyEdgeStrain(stark::core::Stark& stark, spP
 		}
 	);
 }
-void stark::models::EnergyEdgeStrain::add(Id& id, const std::vector<std::array<int, 2>>& edges, const double section_radius, const double young_modulus, const double strain_limit, const double strain_limiting_stiffness, const double strain_damping, const std::string label)
+void stark::models::EnergyEdgeStrain::add(Id& id, const std::vector<std::array<int, 2>>& edges, const double section_radius, const double young_modulus, const double strain_limit, const double strain_limit_stiffness, const double strain_damping)
 {
-	const int group = (int)this->labels.size();
+	const int group = (int)this->young_modulus.size();
 
 	this->section_area.push_back(utils::PI * std::pow(section_radius, 2));
 	this->young_modulus.push_back(young_modulus);
 	this->strain_limit.push_back(strain_limit);
 	this->strain_limiting_stiffness.push_back(strain_limiting_stiffness);
 	this->strain_damping.push_back(strain_damping);
-	this->labels.push_back(label);
 
 	// Initialize structures
 	for (int edge_i = 0; edge_i < (int)edges.size(); edge_i++) {
@@ -76,11 +75,61 @@ void stark::models::EnergyEdgeStrain::add(Id& id, const std::vector<std::array<i
 
 	id.set_local_idx("EnergyEdgeStrain", group);
 }
-void stark::models::EnergyEdgeStrain::set_parameters(Id& id, const double young_modulus, const double strain_limit, const double strain_limiting_stiffness, const double strain_damping)
+
+void stark::models::EnergyEdgeStrain::set_radius(const Id& id, const double radius)
 {
-	const int local_idx = id.get_local_idx("EnergyEdgeStrain");
-	this->young_modulus[local_idx] = young_modulus;
-	this->strain_limit[local_idx] = strain_limit;
-	this->strain_limiting_stiffness[local_idx] = strain_limiting_stiffness;
-	this->strain_damping[local_idx] = strain_damping;
+	this->section_area[this->get_index(id)] = utils::PI * std::pow(radius, 2);
+}
+void stark::models::EnergyEdgeStrain::set_young_modulus(const Id& id, const double young_modulus)
+{
+	this->young_modulus[this->get_index(id)] = young_modulus;
+}
+void stark::models::EnergyEdgeStrain::set_poisson_ratio(const Id& id, const double poisson_ratio)
+{
+	this->poisson_ratio[this->get_index(id)] = poisson_ratio;
+}
+void stark::models::EnergyEdgeStrain::set_strain_damping(const Id& id, const double strain_damping)
+{
+	this->strain_damping[this->get_index(id)] = strain_damping;
+}
+void stark::models::EnergyEdgeStrain::set_strain_limit(const Id& id, const double strain_limit)
+{
+	if (strain_limit < std::numeric_limits<double>::epsilon()) {
+		std::cout << "stark error: strain_limit must be larger than epsilon." << std::endl;
+		exit(-1);
+	}
+
+	this->strain_limit[this->get_index(id)] = strain_limit;
+}
+void stark::models::EnergyEdgeStrain::set_strain_limit_stiffness(const Id& id, const double strain_limit_stiffness)
+{
+	this->strain_limit_stiffness[this->get_index(id)] = strain_limit_stiffness;
+}
+double stark::models::EnergyEdgeStrain::get_radius(const Id& id)
+{
+	return std::sqrt(this->section_area[this->get_index(id)] / utils::PI);
+}
+double stark::models::EnergyEdgeStrain::get_young_modulus(const Id& id)
+{
+	return this->young_modulus[this->get_index(id)];
+}
+double stark::models::EnergyEdgeStrain::get_poisson_ratio(const Id& id)
+{
+	return this->poisson_ratio[this->get_index(id)];
+}
+double stark::models::EnergyEdgeStrain::get_strain_damping(const Id& id)
+{
+	return this->strain_damping[this->get_index(id)];
+}
+double stark::models::EnergyEdgeStrain::get_strain_limit(const Id& id)
+{
+	return this->strain_limit[this->get_index(id)];
+}
+double stark::models::EnergyEdgeStrain::get_strain_limit_stiffness(const Id& id)
+{
+	return this->strain_limit_stiffness[this->get_index(id)];
+}
+int stark::models::EnergyEdgeStrain::get_index(const Id& id) const
+{
+	return id.get_local_idx("EnergyEdgeStrain");
 }

@@ -56,16 +56,18 @@ set(MODELS_DEFORMABLES_FILES
 	src/models/deformables/EnergyPointPrescribedPositions.h
 	src/models/deformables/EnergyTetStrain.cpp
 	src/models/deformables/EnergyTetStrain.h
-	src/models/deformables/EnergyTriangleBendingBergou06.cpp
-	src/models/deformables/EnergyTriangleBendingBergou06.h
 	src/models/deformables/EnergyTriangleBendingGrinspun03.cpp
 	src/models/deformables/EnergyTriangleBendingGrinspun03.h
 	src/models/deformables/EnergyTriangleStrain.cpp
 	src/models/deformables/EnergyTriangleStrain.h
 	src/models/deformables/DeformableHandler.cpp
 	src/models/deformables/DeformableHandler.h
+	src/models/deformables/DeformableLineHandler.cpp
+	src/models/deformables/DeformableLineHandler.h
 	src/models/deformables/DeformableSurfaceHandler.cpp
 	src/models/deformables/DeformableSurfaceHandler.h
+	src/models/deformables/DeformableVolumeHandler.cpp
+	src/models/deformables/DeformableVolumeHandler.h
 	src/models/deformables/Id.cpp
 	src/models/deformables/Id.h
 	src/models/deformables/PointDynamics.cpp
@@ -80,6 +82,8 @@ set(MODELS_DEFORMABLES_FILES
 	src/models/deformables/DeformableSolidsSurfaces.h
 	src/models/deformables/DeformableSolidsVolumes.cpp
 	src/models/deformables/DeformableSolidsVolumes.h
+	src/models/deformables/Deformables.cpp
+	src/models/deformables/Deformables.h
 )
 
 set(MODELS_RIGIDBODIES_FILES

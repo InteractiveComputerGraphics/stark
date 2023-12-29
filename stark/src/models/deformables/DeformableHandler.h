@@ -17,7 +17,7 @@ namespace stark::models
 		spEnergyPointPrescribedPositions prescribed_positions = nullptr;
 
 	public:
-		DeformableHandler(const int global_idx, spPointDynamics dyn, spEnergyPointInertia inertia, spEnergyPointPrescribedPositions prescribed_positions);
+		DeformableHandler(const Id& id, spPointDynamics dyn, spEnergyPointInertia inertia, spEnergyPointPrescribedPositions prescribed_positions);
 
 		int get_global_idx() const;
 		int get_global_vertex_idx(const int local_vertex) const;

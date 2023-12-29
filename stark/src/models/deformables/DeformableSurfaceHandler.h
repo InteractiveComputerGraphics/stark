@@ -13,7 +13,7 @@ namespace stark::models
 		std::shared_ptr<DeformableSolidsSurfaces> surfaces;
 
 	public:
-		DeformableSurfaceHandler(const int global_idx, std::shared_ptr<DeformableSolidsSurfaces> surfaces);
+		DeformableSurfaceHandler(const Id& id, std::shared_ptr<DeformableSolidsSurfaces> surfaces);
 
 		// Setters
 		DeformableSurfaceHandler& set_area_density(const double density);

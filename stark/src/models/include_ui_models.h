@@ -5,6 +5,14 @@ namespace stark
 {
 	using models::Simulation;
 
+	// Deformables
+	using models::Deformables;
+	using models::DeformableSurfaceHandler;
+	using models::DeformableVolumeHandler;
+	//using models::MaterialLine;
+	using models::MaterialSurface;
+	using models::MaterialVolume;
+
 	// Rigid bodies
 	using models::RigidBodyHandler;
 	using models::RBCGlobalPointHandler;

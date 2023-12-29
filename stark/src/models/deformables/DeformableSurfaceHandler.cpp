@@ -2,8 +2,8 @@
 
 using namespace stark::models;
 
-stark::models::DeformableSurfaceHandler::DeformableSurfaceHandler(const int global_idx, std::shared_ptr<DeformableSolidsSurfaces> surfaces)
-	: surfaces(surfaces), DeformableHandler(global_idx, surfaces->dyn, surfaces->inertia, surfaces->prescribed_positions)
+stark::models::DeformableSurfaceHandler::DeformableSurfaceHandler(const Id& id, std::shared_ptr<DeformableSolidsSurfaces> surfaces)
+	: surfaces(surfaces), DeformableHandler(id, surfaces->dyn, surfaces->inertia, surfaces->prescribed_positions)
 {
 }
 
@@ -60,6 +60,7 @@ DeformableSurfaceHandler& stark::models::DeformableSurfaceHandler::set_bending_d
 DeformableSurfaceHandler& stark::models::DeformableSurfaceHandler::add_to_output_label(const std::string label)
 {
 	this->surfaces->output_groups.add_to_group(label, this->get_surface_index());
+	return *this;
 }
 double stark::models::DeformableSurfaceHandler::get_area_density() const
 {

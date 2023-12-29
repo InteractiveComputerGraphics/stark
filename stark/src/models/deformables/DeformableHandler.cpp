@@ -2,8 +2,8 @@
 
 using namespace stark::models;
 
-DeformableHandler::DeformableHandler(const int global_idx, spPointDynamics dyn, spEnergyPointInertia inertia, spEnergyPointPrescribedPositions prescribed_positions)
-: id(global_idx), dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions)
+DeformableHandler::DeformableHandler(const Id& id, spPointDynamics dyn, spEnergyPointInertia inertia, spEnergyPointPrescribedPositions prescribed_positions)
+: id(id), dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions)
 {
 }
 
@@ -66,27 +66,6 @@ Eigen::Vector3d DeformableHandler::get_acceleration(const int local_vertex)
 Eigen::Vector3d stark::models::DeformableHandler::get_force(const int local_vertex)
 {
 	return this->dyn->f[this->get_global_vertex_idx(local_vertex)];
-}
-
-void stark::models::DeformableHandler::set_density(const double density)
-{
-	const int local_idx = this->id.get_local_idx("EnergyPointInertia");
-	this->inertia->density[local_idx] = density;
-}
-void stark::models::DeformableHandler::set_inertial_damping(const double inertial_damping)
-{
-	const int local_idx = this->id.get_local_idx("EnergyPointInertia");
-	this->inertia->inertial_damping[local_idx] = inertial_damping;
-}
-double stark::models::DeformableHandler::get_density()
-{
-	const int local_idx = this->id.get_local_idx("EnergyPointInertia");
-	return this->inertia->density[local_idx];
-}
-double stark::models::DeformableHandler::get_inertial_damping()
-{
-	const int local_idx = this->id.get_local_idx("EnergyPointInertia");
-	return this->inertia->inertial_damping[local_idx];
 }
 
 std::shared_ptr<PrescribedPointGroup> DeformableHandler::create_prescribed_positions_group(const std::string label)
