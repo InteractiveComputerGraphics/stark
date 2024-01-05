@@ -73,11 +73,46 @@ void stark::models::RigidBodyDynamics::_on_time_step_accepted(stark::core::Stark
 
 symx::Vector stark::models::RigidBodyDynamics::get_x1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Scalar& dt)
 {
+	return this->get_x1(energy, rb_idx, std::vector<symx::Vector>({ x_loc }), dt)[0];
+}
+std::vector<symx::Vector> stark::models::RigidBodyDynamics::get_x1(symx::Energy& energy, const symx::Index& rb_idx, const std::vector<symx::Vector>& x_loc, const symx::Scalar& dt)
+{
 	symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
 	symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
 	symx::Vector t0 = energy.make_vector(this->t0, rb_idx);
 	symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
-	return integrate_loc_point(x_loc, t0, q0, v1, w1, dt);
+
+	symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
+	symx::Vector t1 = time_integration(t0, v1, dt);
+
+	std::vector<symx::Vector> x1;
+	for (const symx::Vector& x_loc_a : x_loc) {
+		x1.push_back(local_to_global_point(x_loc_a, t1, R1));
+	}
+	return x1;
+}
+symx::Vector stark::models::RigidBodyDynamics::get_v1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Scalar& dt)
+{
+	return this->get_v1(energy, rb_idx, std::vector<symx::Vector>({ x_loc }), dt)[0];
+}
+std::vector<symx::Vector> stark::models::RigidBodyDynamics::get_v1(symx::Energy& energy, const symx::Index& rb_idx, const std::vector<symx::Vector>& x_loc, const symx::Scalar& dt)
+{
+	symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
+	symx::Vector w1 = energy.make_dof_vector(this->dof_w, this->w1, rb_idx);
+	symx::Vector t0 = energy.make_vector(this->t0, rb_idx);
+	symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
+
+	symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
+	symx::Vector t1 = time_integration(t0, v1, dt);
+
+	std::vector<symx::Vector> v1_glob;
+	for (const symx::Vector& x_loc_a : x_loc) {
+		symx::Vector x1a = local_to_global_point(x_loc_a, t1, R1);
+		symx::Vector r1a = x1a - t1;
+		symx::Vector v1a = global_point_velocity_in_rigib_body(v1, w1, r1a);
+		v1_glob.push_back(v1a);
+	}
+	return v1_glob;
 }
 symx::Vector stark::models::RigidBodyDynamics::get_d1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& d_loc, const symx::Scalar& dt)
 {

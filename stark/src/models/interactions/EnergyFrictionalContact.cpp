@@ -12,7 +12,7 @@ stark::models::EnergyFrictionalContact::EnergyFrictionalContact(core::Stark& sta
 	// Callbacks
 	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step__update_friction_contacts(stark); });
 	stark.callbacks.before_energy_evaluation.push_back([&]() { this->_before_energy_evaluation__update_contacts(stark); });
-	stark.callbacks.is_state_valid.push_back([&]() { return this->_is_valid_configuration(stark); });
+	stark.callbacks.is_intermidiate_state_valid.push_back([&]() { return this->_is_valid_configuration(stark); });
 
 	// Energy declarations
 	this->_energies_contact_deformables(stark);
@@ -191,7 +191,7 @@ stark::models::ProximityHelper<1> stark::models::EnergyFrictionalContact::_get_p
 
 	return helper;
 }
-stark::models::ProximityHelper<2> stark::models::EnergyFrictionalContact::_get_proximity_helper_edge(const tmcd::Edge& edge)
+stark::models::ProximityHelper<2> stark::models::EnergyFrictionalContact::_get_proximity_helper_edge(const tmcd::TriangleEdge::Edge& edge)
 {
 	ProximityHelper<2> helper;
 	helper.collision_set = edge.set;
@@ -248,9 +248,9 @@ stark::models::ProximityHelper<3> stark::models::EnergyFrictionalContact::_get_p
 /* ======================================================================================== */
 /* ===================================  SYMX CALLBACKS  =================================== */
 /* ======================================================================================== */
-void stark::models::EnergyFrictionalContact::_before_time_step__update_friction_contacts(core::Stark& stark)
+void stark::models::EnergyFrictionalContact::_before_energy_evaluation__update_contacts(core::Stark& stark)
 {
-	using namespace tmcd;
+	if (!stark.settings.contact.collisions_enabled) { return; }
 
 	// Clear contact connectivity
 	this->contacts_deformables.clear();
@@ -284,9 +284,64 @@ void stark::models::EnergyFrictionalContact::_before_time_step__update_friction_
 		}
 	}
 
+	//// Point - Edge
+	for (const auto& pair : proximity.point_triangle.point_edge) {
+		const ProximityHelper<1> A = this->_get_proximity_helper_point(pair.first);
+		const ProximityHelper<2> B = this->_get_proximity_helper_edge(pair.second.edge);
+
+		if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+			this->contacts_deformables.point_triangle.point_edge.push_back({ A.verts[0], B.verts[0], B.verts[1] });
+		}
+		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+			this->contacts_rb.point_triangle.point_edge.push_back({ A.ps_set, B.ps_set, A.verts[0], B.verts[0], B.verts[1] });
+		}
+		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+			this->contacts_rb_deformables.point_triangle.rb_d_point_edge.push_back({ A.ps_set, A.verts[0], B.verts[0], B.verts[1] });
+		}
+		else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+			this->contacts_rb_deformables.point_triangle.rb_d_point_edge.push_back({ B.ps_set, B.verts[0], A.verts[0], B.verts[1] });
+		}
+		else {
+			stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
+			exit(-1);
+		}
+	}
+
+	//// Point - Triangle
+	for (const auto& pair : proximity.point_triangle.point_triangle) {
+		const ProximityHelper<1> A = this->_get_proximity_helper_point(pair.first);
+		const ProximityHelper<3> B = this->_get_proximity_helper_triangle(pair.second);
+
+		if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+			this->contacts_deformables.point_triangle.point_triangle.push_back({ A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
+		}
+		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+			this->contacts_rb.point_triangle.point_triangle.push_back({ A.ps_set, B.ps_set, A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
+		}
+		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+			this->contacts_rb_deformables.point_triangle.rb_d_point_triangle.push_back({ A.ps_set, A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
+		}
+		else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+			this->contacts_rb_deformables.point_triangle.rb_d_point_triangle.push_back({ B.ps_set, B.verts[0], A.verts[0], B.verts[1], B.verts[2] });
+		}
+		else {
+			stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
+			exit(-1);
+		}
+	}
+}
+void stark::models::EnergyFrictionalContact::_before_time_step__update_friction_contacts(core::Stark& stark)
+{
 
 }
+bool stark::models::EnergyFrictionalContact::_is_valid_configuration(core::Stark& stark)
+{
+	if (!stark.settings.contact.collisions_enabled) { return true; }
+	if (!stark.settings.contact.enable_intersection_test) { return true; }
 
+	const auto& intersections = this->_run_intersection_detection(stark, stark.settings.simulation.adaptive_time_step.value);
+	return intersections.edge_triangle.size() == 0;
+}
 
 /* ========================================================================================== */
 /* ===================================  SYMX DEFINITIONS  =================================== */
@@ -797,48 +852,19 @@ void stark::models::EnergyFrictionalContact::_set_friction_edge_edge(symx::Energ
 /* =================================================================================================== */
 std::vector<symx::Vector> stark::models::EnergyFrictionalContact::_get_rb_v1(symx::Energy& energy, const core::Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn)
 {
-	symx::Vector v1 = energy.make_dof_vector(this->rb->dof_v, this->rb->v1, rb_idx);
-	symx::Vector w1 = energy.make_dof_vector(this->rb->dof_w, this->rb->w1, rb_idx);
-	symx::Vector t0 = energy.make_vector(this->rb->t0, rb_idx);
-	symx::Vector q0 = energy.make_vector(this->rb->q0_, rb_idx);
-
 	symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
-	symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
-	symx::Vector t1 = time_integration(t0, v1, dt);
-
-	std::vector<symx::Vector> x_loc = energy.make_vectors(this->rb->collision_mesh.vertices, conn);
-
-	std::vector<symx::Vector> v1_glob;
-	for (const symx::Vector& x_loc_a : x_loc) {
-		symx::Vector x1a = local_to_global_point(x_loc_a, t1, R1);
-		symx::Vector r1a = x1a - t1;
-		symx::Vector v1a = global_point_velocity_in_rigib_body(v1, w1, r1a);
-		v1_glob.push_back(v1a);
-	}
-	return v1_glob;
+	std::vector<symx::Vector> x_loc = energy.make_vectors(this->rigidbody_local_vertices.data, conn);
+	return this->rb->get_v1(energy, rb_idx, x_loc, dt);
 }
 std::vector<symx::Vector> stark::models::EnergyFrictionalContact::_get_rb_x1(symx::Energy& energy, const core::Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn)
 {
-	symx::Vector v1 = energy.make_dof_vector(this->rb->dof_v, this->rb->v1, rb_idx);
-	symx::Vector w1 = energy.make_dof_vector(this->rb->dof_w, this->rb->w1, rb_idx);
-	symx::Vector t0 = energy.make_vector(this->rb->t0, rb_idx);
-	symx::Vector q0 = energy.make_vector(this->rb->q0_, rb_idx);
-
 	symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
-	symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
-	symx::Vector t1 = time_integration(t0, v1, dt);
-
-	std::vector<symx::Vector> x_loc = energy.make_vectors(this->rb->collision_mesh.vertices, conn);
-
-	std::vector<symx::Vector> x1;
-	for (const symx::Vector& x_loc_a : x_loc) {
-		x1.push_back(local_to_global_point(x_loc_a, t1, R1));
-	}
-	return x1;
+	std::vector<symx::Vector> x_loc = energy.make_vectors(this->rigidbody_local_vertices.data, conn);
+	return this->rb->get_x1(energy, rb_idx, x_loc, dt);
 }
 std::vector<symx::Vector> stark::models::EnergyFrictionalContact::_get_rb_X(symx::Energy& energy, const std::vector<symx::Index>& conn)
 {
-	return energy.make_vectors(this->rb->collision_mesh.vertices, conn);
+	return energy.make_vectors(this->rigidbody_local_vertices.data, conn);
 }
 std::array<std::vector<symx::Vector>, 2> stark::models::EnergyFrictionalContact::_get_rb_edge(symx::Energy& energy, const core::Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn)
 {

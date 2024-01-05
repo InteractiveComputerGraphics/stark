@@ -30,8 +30,8 @@ namespace stark::models
 		PhysicalSystem ps;
 		int collision_set = -1;  // Index local to the collision set
 		int ps_set = -1;  // Index of the object relative to its physical system (eg. rigid body idx, deformable idx, ...)
-		std::array<int, N> local_verts = -1;  // Indices local to the object
-		std::array<int, N> verts = -1;  // Indices global to the physical system
+		std::array<int, N> local_verts ;  // Indices local to the object
+		std::array<int, N> verts;  // Indices global to the physical system
 	};
 
 

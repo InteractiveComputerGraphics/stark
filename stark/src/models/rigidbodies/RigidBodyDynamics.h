@@ -45,6 +45,9 @@ namespace stark::models
 		// Position and direction getters
 		//// With time integration (used during minimization)
 		symx::Vector get_x1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Scalar& dt);
+		std::vector<symx::Vector> get_x1(symx::Energy& energy, const symx::Index& rb_idx, const std::vector<symx::Vector>& x_loc, const symx::Scalar& dt);
+		symx::Vector get_v1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Scalar& dt);
+		std::vector<symx::Vector> get_v1(symx::Energy& energy, const symx::Index& rb_idx, const std::vector<symx::Vector>& x_loc, const symx::Scalar& dt);
 		symx::Vector get_d1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& d_loc, const symx::Scalar& dt);
 		std::array<symx::Vector, 2> get_x1_d1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Vector& d_loc, const symx::Scalar& dt);
 		std::array<symx::Vector, 2> get_x0_x1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Scalar& dt);

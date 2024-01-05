@@ -89,7 +89,7 @@ namespace stark::models
 
 		// Collision helpers
 		ProximityHelper<1> _get_proximity_helper_point(const tmcd::Point& point);
-		ProximityHelper<2> _get_proximity_helper_edge(const tmcd::Edge& edge);
+		ProximityHelper<2> _get_proximity_helper_edge(const tmcd::TriangleEdge::Edge& edge);
 		ProximityHelper<3> _get_proximity_helper_triangle(const tmcd::Triangle& triangle);
 
 		// SymX callbacks
