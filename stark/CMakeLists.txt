@@ -109,21 +109,22 @@ set(MODELS_RIGIDBODIES_FILES
 )
 
 set(MODELS_INTERACTIONS_FILES
-	src/models/deformables/contact_and_friction_data.h
-	src/models/interactions/EnergyFrictionalContact.cpp
-	src/models/interactions/EnergyFrictionalContact.h
+	src/models/interactions/contact_and_friction_data.h
 	src/models/interactions/friction_geometry.cpp
 	src/models/interactions/friction_geometry.h
+	src/models/interactions/EnergyFrictionalContact.cpp
+	src/models/interactions/EnergyFrictionalContact.h
 )
 
 set(MODELS_FILES
 	${MODELS_DEFORMABLES_FILES}
 	${MODELS_RIGIDBODIES_FILES}
-	#${MODELS_INTERACTIONS_FILES}
+	${MODELS_INTERACTIONS_FILES}
 
 	src/models/distances.cpp
 	src/models/distances.h
 	src/models/include_ui_models.h
+	src/models/IntervalConnectivity.h
 	src/models/IntervalVector.h
 	src/models/MeshOutputGroups.cpp
 	src/models/MeshOutputGroups.h

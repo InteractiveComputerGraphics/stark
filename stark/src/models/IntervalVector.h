@@ -24,6 +24,7 @@ namespace stark::models
 		// Setters
 		void clear();
 		int append(const std::vector<T>& input);
+		int append(const int n, const T& v);
 		int append_empty();
 		void update(const int set_id, const std::vector<T>& input);
 
@@ -74,6 +75,17 @@ namespace stark::models
 	inline int IntervalVector<T>::append(const std::vector<T>& input)
 	{
 		return this->append(input.begin(), input.end());
+	}
+	template<typename T>
+	inline int IntervalVector<T>::append(const int n, const T& v)
+	{
+		const int set_id = this->get_n_sets();
+		for (int i = 0; i < n; i++) {
+			this->data.push_back(v);
+		}
+		if (set_id == 0) { this->offsets.push_back(0); }
+		this->offsets.push_back((int)this->data.size());
+		return set_id;
 	}
 	template<typename T>
 	template<typename T_It>

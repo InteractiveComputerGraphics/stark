@@ -133,8 +133,6 @@ void rubber_block()
 }
 
 
-
-
 int main()
 {
 	//rb();
