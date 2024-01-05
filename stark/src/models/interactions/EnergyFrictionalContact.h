@@ -35,19 +35,6 @@ namespace stark::models
 	class EnergyFrictionalContact
 	{
 	public:
-		enum class PhysicalSystem { Deformable, Rigidbody };
-
-		/*
-		* Local data structure containing the mesh data passed to the collision detection routines.
-		*/
-		struct Mesh
-		{
-			PhysicalSystem ps;
-			int ps_idx = -1;
-			std::vector<Eigen::Vector3d> vertices;
-			std::vector<std::array<int, 2>> edges;  // Local indices
-			std::vector<std::array<int, 3>> triangles;  // Local indices
-		};
 
 
 		/* Fields */
@@ -99,6 +86,11 @@ namespace stark::models
 		void _update_vertices(core::Stark& stark, const double dt);
 		const tmcd::ProximityResults& _run_proximity_detection(core::Stark& stark, const double dt);
 		const tmcd::IntersectionResults& _run_intersection_detection(core::Stark& stark, const double dt);
+
+		// Collision helpers
+		ProximityHelper<1> _get_proximity_helper_point(const tmcd::Point& point);
+		ProximityHelper<2> _get_proximity_helper_edge(const tmcd::Edge& edge);
+		ProximityHelper<3> _get_proximity_helper_triangle(const tmcd::Triangle& triangle);
 
 		// SymX callbacks
 		void _before_time_step__update_friction_contacts(core::Stark& stark);

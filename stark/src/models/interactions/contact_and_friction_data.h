@@ -8,6 +8,34 @@
 namespace stark::models
 {
 	/* ================================================================= */
+	/* ===========================  GENERAL  =========================== */
+	/* ================================================================= */
+	enum class PhysicalSystem { Deformable, Rigidbody };
+
+	struct Mesh
+	{
+		PhysicalSystem ps;
+		int ps_set = -1;  // Index local to the physical system
+		std::vector<Eigen::Vector3d> vertices;
+		std::vector<std::array<int, 2>> edges;  // Local indices
+		std::vector<std::array<int, 3>> triangles;  // Local indices
+	};
+
+	/* ============================================================================= */
+	/* ===========================  COLLISION DETECTION  =========================== */
+	/* ============================================================================= */
+	template<std::size_t N>
+	struct ProximityHelper
+	{
+		PhysicalSystem ps;
+		int collision_set = -1;  // Index local to the collision set
+		int ps_set = -1;  // Index of the object relative to its physical system (eg. rigid body idx, deformable idx, ...)
+		std::array<int, N> local_verts = -1;  // Indices local to the object
+		std::array<int, N> verts = -1;  // Indices global to the physical system
+	};
+
+
+	/* ================================================================= */
 	/* ===========================  CONTACT  =========================== */
 	/* ================================================================= */
 	struct Contacts_Deformables

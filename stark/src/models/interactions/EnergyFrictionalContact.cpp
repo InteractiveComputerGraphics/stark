@@ -61,13 +61,16 @@ void stark::models::EnergyFrictionalContact::disable_collision(const int idx1, c
 	}
 }
 
+/* ================================================================================= */
+/* ===================================  HELPERS  =================================== */
+/* ================================================================================= */
 int stark::models::EnergyFrictionalContact::_add_edges_and_points(const PhysicalSystem& ps, const int idx, const std::vector<std::array<int, 2>>& edges, const int n_points)
 {
 	// Add to local meshes data structures
 	this->meshes.push_back({});
 	auto& mesh = this->meshes.back();
 	mesh.ps = ps;
-	mesh.ps_idx = idx;
+	mesh.ps_set = idx;
 	mesh.vertices.resize(n_points, Eigen::Vector3d::Zero());
 	mesh.edges.insert(mesh.edges.end(), edges.begin(), edges.end());
 	mesh.triangles.push_back({});
@@ -88,7 +91,7 @@ int stark::models::EnergyFrictionalContact::_add_triangles_edges_and_points(cons
 	this->meshes.push_back({});
 	auto& mesh = this->meshes.back();
 	mesh.ps = ps;
-	mesh.ps_idx = idx;
+	mesh.ps_set = idx;
 	mesh.vertices.resize(n_points, Eigen::Vector3d::Zero());
 	mesh.edges.insert(mesh.edges.end(), edges.begin(), edges.end());
 	mesh.triangles.insert(mesh.triangles.end(), triangles.begin(), triangles.end());
@@ -108,8 +111,8 @@ void stark::models::EnergyFrictionalContact::_update_vertices(core::Stark& stark
 
 		// Physical System
 		if (mesh.ps == PhysicalSystem::Deformable) {
-			const int ps_begin = this->dyn->x0.get_begin(mesh.ps_idx);
-			const int ps_end = this->dyn->x0.get_end(mesh.ps_idx);
+			const int ps_begin = this->dyn->x0.get_begin(mesh.ps_set);
+			const int ps_end = this->dyn->x0.get_end(mesh.ps_set);
 			const int ps_n = ps_end - ps_begin;
 
 			if (ps_n != n) {
@@ -122,19 +125,21 @@ void stark::models::EnergyFrictionalContact::_update_vertices(core::Stark& stark
 			}
 		}
 		else if (mesh.ps == PhysicalSystem::Rigidbody) {
-			const auto& local_vertices = this->rigidbody_local_vertices[mesh.ps_idx];
-			if ((int)this->rigidbody_local_vertices[mesh.ps_idx].size() != n) {
+			const int ps_begin = this->rigidbody_local_vertices.get_begin(mesh.ps_set);
+			const int ps_end = this->rigidbody_local_vertices.get_end(mesh.ps_set);
+			const int ps_n = ps_end - ps_begin;
+
+			if (ps_n != n) {
 				stark.console.print("stark error: Number of vertices mismatch found in EnergyFrictionalContact (rigidbodies).\n", core::ConsoleVerbosity::Frames);
 				exit(-1);
 			}
 
 			// Calculate the transformation using Newton's proposed v1.
-			const Eigen::Vector3d t1 = time_integration(this->rb->t0[mesh.ps_idx], this->rb->v1[mesh.ps_idx], dt);
-			const Eigen::Quaterniond q1 = quat_time_integration(this->rb->q0[mesh.ps_idx], this->rb->w1[mesh.ps_idx], dt);
+			const Eigen::Vector3d t1 = time_integration(this->rb->t0[mesh.ps_set], this->rb->v1[mesh.ps_set], dt);
+			const Eigen::Quaterniond q1 = quat_time_integration(this->rb->q0[mesh.ps_set], this->rb->w1[mesh.ps_set], dt);
 			const Eigen::Matrix3d R1 = q1.toRotationMatrix();
 			for (int i = 0; i < n; i++) {
-				const Eigen::Vector3d p = local_to_global_point(local_vertices[i], R1, t1);
-				mesh.vertices[i] = p;
+				mesh.vertices[i] = local_to_global_point(this->rigidbody_local_vertices[ps_begin + i], R1, t1);
 			}
 		}
 		else {
@@ -143,7 +148,6 @@ void stark::models::EnergyFrictionalContact::_update_vertices(core::Stark& stark
 		}
 	}
 }
-
 const tmcd::ProximityResults& stark::models::EnergyFrictionalContact::_run_proximity_detection(core::Stark& stark, const double dt)
 {
 	this->_update_vertices(stark, dt);
@@ -162,6 +166,84 @@ const tmcd::IntersectionResults& stark::models::EnergyFrictionalContact::_run_in
 	return this->id.run();
 }
 
+/* ============================================================================================= */
+/* ===================================  COLLISION DETECTION  =================================== */
+/* ============================================================================================= */
+stark::models::ProximityHelper<1> stark::models::EnergyFrictionalContact::_get_proximity_helper_point(const tmcd::Point& point)
+{
+	ProximityHelper<1> helper;
+	helper.collision_set = point.set;
+	helper.ps = this->meshes[helper.collision_set].ps;
+	helper.ps_set = this->meshes[helper.collision_set].ps_set;
+	helper.local_verts[0] = point.idx;
+
+	switch (helper.ps)
+	{
+	case PhysicalSystem::Deformable:
+		helper.verts[0] = this->dyn->x1.get_global_index(helper.ps_set, helper.local_verts[0]);
+		break;
+	case PhysicalSystem::Rigidbody:
+		helper.verts[0] = this->rigidbody_local_vertices.get_global_index(helper.ps_set, helper.local_verts[0]);
+		break;
+	default:
+		break;
+	}
+
+	return helper;
+}
+stark::models::ProximityHelper<2> stark::models::EnergyFrictionalContact::_get_proximity_helper_edge(const tmcd::Edge& edge)
+{
+	ProximityHelper<2> helper;
+	helper.collision_set = edge.set;
+	helper.ps = this->meshes[helper.collision_set].ps;
+	helper.ps_set = this->meshes[helper.collision_set].ps_set;
+	helper.local_verts[0] = edge.vertices[0];
+	helper.local_verts[1] = edge.vertices[1];
+
+	switch (helper.ps)
+	{
+	case PhysicalSystem::Deformable:
+		helper.verts[0] = this->dyn->x1.get_global_index(helper.ps_set, helper.local_verts[0]);
+		helper.verts[1] = this->dyn->x1.get_global_index(helper.ps_set, helper.local_verts[1]);
+		break;
+	case PhysicalSystem::Rigidbody:
+		helper.verts[0] = this->rigidbody_local_vertices.get_global_index(helper.ps_set, helper.local_verts[0]);
+		helper.verts[1] = this->rigidbody_local_vertices.get_global_index(helper.ps_set, helper.local_verts[1]);
+		break;
+	default:
+		break;
+	}
+
+	return helper;
+}
+stark::models::ProximityHelper<3> stark::models::EnergyFrictionalContact::_get_proximity_helper_triangle(const tmcd::Triangle& triangle)
+{
+	ProximityHelper<3> helper;
+	helper.collision_set = triangle.set;
+	helper.ps = this->meshes[helper.collision_set].ps;
+	helper.ps_set = this->meshes[helper.collision_set].ps_set;
+	helper.local_verts[0] = triangle.vertices[0];
+	helper.local_verts[1] = triangle.vertices[1];
+	helper.local_verts[2] = triangle.vertices[2];
+
+	switch (helper.ps)
+	{
+	case PhysicalSystem::Deformable:
+		helper.verts[0] = this->dyn->x1.get_global_index(helper.ps_set, helper.local_verts[0]);
+		helper.verts[1] = this->dyn->x1.get_global_index(helper.ps_set, helper.local_verts[1]);
+		helper.verts[2] = this->dyn->x1.get_global_index(helper.ps_set, helper.local_verts[2]);
+		break;
+	case PhysicalSystem::Rigidbody:
+		helper.verts[0] = this->rigidbody_local_vertices.get_global_index(helper.ps_set, helper.local_verts[0]);
+		helper.verts[1] = this->rigidbody_local_vertices.get_global_index(helper.ps_set, helper.local_verts[1]);
+		helper.verts[2] = this->rigidbody_local_vertices.get_global_index(helper.ps_set, helper.local_verts[2]);
+		break;
+	default:
+		break;
+	}
+
+	return helper;
+}
 
 /* ======================================================================================== */
 /* ===================================  SYMX CALLBACKS  =================================== */
@@ -179,31 +261,22 @@ void stark::models::EnergyFrictionalContact::_before_time_step__update_friction_
 	const auto& proximity = this->_run_proximity_detection(stark, stark.settings.simulation.adaptive_time_step.value);
 
 	// Process cases
-	//// Pont - Triangle
+	//// Point - Triangle
 	for (const auto& pair : proximity.point_triangle.point_point) {
-		const tmcd::Point& a = pair.first;
-		const tmcd::Point& b = pair.second.point;
-		const PhysicalSystem ps_a = this->meshes[a.set].ps;
-		const PhysicalSystem ps_b = this->meshes[b.set].ps;
+		const ProximityHelper<1> A = this->_get_proximity_helper_point(pair.first);
+		const ProximityHelper<1> B = this->_get_proximity_helper_point(pair.second.point);
 
-
-		// WRONG: indices of deformables are local.
-		
-		if (ps_a == PhysicalSystem::Deformable && ps_b == PhysicalSystem::Deformable) {
-			this->contacts_deformables.point_triangle.point_point.push_back({ a.idx, b.idx });
+		if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+			this->contacts_deformables.point_triangle.point_point.push_back({ A.verts[0], B.verts[0] });
 		}
-		else if (ps_a == PhysicalSystem::Rigidbody && ps_b == PhysicalSystem::Rigidbody) {
-			const int rb_a_idx = this->meshes[a.set].ps_idx;
-			const int rb_b_idx = this->meshes[b.set].ps_idx;
-			this->contacts_rb.point_triangle.point_point.push_back({ rb_a_idx, rb_b_idx, a.idx, b.idx });
+		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+			this->contacts_rb.point_triangle.point_point.push_back({ A.ps_set, B.ps_set, A.verts[0], B.verts[0] });
 		}
-		else if (ps_a == PhysicalSystem::Rigidbody && ps_b == PhysicalSystem::Deformable) {
-			const int rb_idx = this->meshes[a.set].ps_idx;
-			this->contacts_rb_deformables.point_triangle.rb_d_point_point.push_back({ rb_idx, a.idx, b.idx });
+		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+			this->contacts_rb_deformables.point_triangle.rb_d_point_point.push_back({ A.ps_set, A.verts[0], B.verts[0] });
 		}
-		else if (ps_a == PhysicalSystem::Deformable && ps_b == PhysicalSystem::Rigidbody) {
-			const int rb_idx = this->meshes[b.set].ps_idx;
-			this->contacts_rb_deformables.point_triangle.rb_d_point_point.push_back({ rb_idx, b.idx, a.idx });
+		else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+			this->contacts_rb_deformables.point_triangle.rb_d_point_point.push_back({ B.ps_set, B.verts[0], A.verts[0] });
 		}
 		else {
 			stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
@@ -211,34 +284,7 @@ void stark::models::EnergyFrictionalContact::_before_time_step__update_friction_
 		}
 	}
 
-	//// Point - Edge
-	for (const auto& pair : proximity.point_triangle.point_edge) {
-		const tmcd::Point& a = pair.first;
-		const tmcd::TriangleEdge::Edge& b = pair.second.edge;
-		const PhysicalSystem ps_a = this->meshes[a.set].ps;
-		const PhysicalSystem ps_b = this->meshes[b.set].ps;
 
-		if (ps_a == PhysicalSystem::Deformable && ps_b == PhysicalSystem::Deformable) {
-			this->contacts_deformables.point_triangle.point_edge.push_back({ a.idx, b.vertices[0], b.vertices[1] });
-		}
-		else if (ps_a == PhysicalSystem::Rigidbody && ps_b == PhysicalSystem::Rigidbody) {
-			const int rb_a_idx = this->meshes[a.set].ps_idx;
-			const int rb_b_idx = this->meshes[b.set].ps_idx;
-			this->contacts_rb.point_triangle.point_edge.push_back({ rb_a_idx, rb_b_idx, a.idx, b.idx });
-		}
-		else if (ps_a == PhysicalSystem::Rigidbody && ps_b == PhysicalSystem::Deformable) {
-			const int rb_idx = this->meshes[a.set].ps_idx;
-			this->contacts_rb_deformables.point_triangle.rb_d_point_edge.push_back({ rb_idx, a.idx, b.idx });
-		}
-		else if (ps_a == PhysicalSystem::Deformable && ps_b == PhysicalSystem::Rigidbody) {
-			const int rb_idx = this->meshes[b.set].ps_idx;
-			this->contacts_rb_deformables.point_triangle.rb_d_edge_point.push_back({ rb_idx, b.idx, a.idx });
-		}
-		else {
-			stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
-			exit(-1);
-		}
-	}
 }
 
 
