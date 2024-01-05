@@ -4,6 +4,7 @@
 #include "DeformableSolidsLines.h"
 #include "DeformableSolidsSurfaces.h"
 #include "DeformableSolidsVolumes.h"
+#include "../interactions/EnergyFrictionalContact.h"
 
 #include "DeformableLineHandler.h"
 #include "DeformableSurfaceHandler.h"
@@ -18,8 +19,8 @@ namespace stark::models
 		/* Methods */
 		Deformables(
 			stark::core::Stark& stark,
-			spPointDynamics dyn
-			//spEnergyFrictionalContact contact
+			spPointDynamics dyn,
+			spEnergyFrictionalContact contact
 		);
 
 		DeformableLineHandler add_line(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 2>>& segments, const MaterialLine& material);

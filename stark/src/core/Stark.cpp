@@ -191,6 +191,9 @@ void Stark::_initialize()
 
 	// Write frame zero
 	this->_write_frame();
+
+	// Callbacks
+	this->callbacks.run_before_simulation();
 }
 void Stark::_write_frame()
 {

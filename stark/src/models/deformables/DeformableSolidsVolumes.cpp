@@ -6,10 +6,10 @@ stark::models::DeformableSolidsVolumes::DeformableSolidsVolumes(
 	stark::core::Stark& stark, 
 	spPointDynamics dyn, 
 	spEnergyPointInertia inertia, 
-	spEnergyPointPrescribedPositions prescribed_positions
-	//spEnergyFrictionalContact contact
+	spEnergyPointPrescribedPositions prescribed_positions,
+	spEnergyFrictionalContact contact
 )
-	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions) //, contact(contact)
+	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions), contact(contact)
 {
 	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
 	this->strain = std::make_shared<EnergyTetStrain>(stark, dyn);
@@ -41,7 +41,7 @@ stark::models::Id stark::models::DeformableSolidsVolumes::add(const std::vector<
 		material.strain_damping,
 		material.strain_limit,
 		material.strain_limit_stiffness);
-	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
+	this->contact->add_deformable(id.get_global_idx(), surface_triangles, (int)surface_vertices.size());
 
 	id.set_local_idx("DeformableSolidsVolumes", shell_id);
 	return id;

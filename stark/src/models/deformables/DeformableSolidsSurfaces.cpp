@@ -6,10 +6,10 @@ stark::models::DeformableSolidsSurfaces::DeformableSolidsSurfaces(
 	stark::core::Stark& stark, 
 	spPointDynamics dyn, 
 	spEnergyPointInertia inertia, 
-	spEnergyPointPrescribedPositions prescribed_positions
-	//spEnergyFrictionalContact contact
+	spEnergyPointPrescribedPositions prescribed_positions,
+	spEnergyFrictionalContact contact
 )
-	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions) //, contact(contact)
+	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions), contact(contact)
 {
 	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
 
@@ -39,7 +39,7 @@ stark::models::Id stark::models::DeformableSolidsSurfaces::add(const std::vector
 	this->bending_grispun_03->add(id, triangles, 
 		material.bending_stiffness,
 		material.bending_damping);
-	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
+	this->contact->add_deformable(id.get_global_idx(), triangles, size);
 
 	id.set_local_idx("DeformableSolidsSurfaces", shell_id);
 	return id;

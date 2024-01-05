@@ -35,8 +35,6 @@ namespace stark::models
 	class EnergyFrictionalContact
 	{
 	public:
-
-
 		/* Fields */
 		const spPointDynamics dyn;
 		const spRigidBodyDynamics rb;
@@ -49,12 +47,9 @@ namespace stark::models
 		std::vector<Mesh> meshes;
 		IntervalVector<Eigen::Vector3d> rigidbody_local_vertices;
 
-		//IntervalVector<Eigen::Vector3d> vertices;  // All vertices concatenated
-
-		////// Connectivities
-		//// Note: All have the same number of sets, even if empty (edge sets not having triangles)
-		//IntervalConnectivity<2> edges;
-		//IntervalConnectivity<3> triangles;
+		// Mappings
+		std::vector<int> rigidbody_global_idx;
+		std::vector<int> deformable_global_idx;
 
 		// Collision detection
 		tmcd::IntersectionDetection id;
@@ -71,6 +66,8 @@ namespace stark::models
 
 		/* Methods */
 		EnergyFrictionalContact(core::Stark& stark, const spPointDynamics dyn, const spRigidBodyDynamics rb);
+		void set_barrier_type(const IPCBarrierType type);
+		void set_friction_type(const IPCFrictionType type);
 		int add_rigid_body(const int idx, const std::vector<std::array<int, 3>>& triangles, const std::vector<Eigen::Vector3d>& vertices);
 		int add_rigid_body(const int idx, const std::vector<std::array<int, 2>>& edges, const std::vector<Eigen::Vector3d>& vertices);
 		int add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const int n_points);

@@ -4,42 +4,17 @@
 stark::models::Simulation::Simulation(const core::Settings& settings)
 	: stark(settings)
 {
-	// Base definitions
+	// Base dynamics
 	spPointDynamics point_dynamics = std::make_shared<PointDynamics>(this->stark);
 	spRigidBodyDynamics rb_dynamics = std::make_shared<RigidBodyDynamics>(this->stark);
 
 	// Common energies
-	//auto energy_frictional_contact = std::make_shared<EnergyFrictionalContact>(this->stark, point_dynamics, rb);
+	spEnergyFrictionalContact contact = std::make_shared<EnergyFrictionalContact>(this->stark, point_dynamics, rb_dynamics);
 
 	// Physical Systems
-	this->deformables = std::make_shared<Deformables>(
-		this->stark,
-		point_dynamics
-		//energy_frictional_contact
-	);
-	//this->lines = std::make_shared<DeformableSolidsLines>(
-	//	this->stark,
-	//	point_dynamics,
-	//	energy_point_inertia,
-	//	energy_point_prescribed_positions
-	//	//energy_frictional_contact
-	//	);
-	//this->surfaces = std::make_shared<DeformableSolidsSurfaces>(
-	//	this->stark,
-	//	point_dynamics,
-	//	energy_point_inertia,
-	//	energy_point_prescribed_positions
-	//	//energy_frictional_contact
-	//	);
-	//this->volumes = std::make_shared<DeformableSolidsVolumes>(
-	//	this->stark,
-	//	point_dynamics,
-	//	energy_point_inertia,
-	//	energy_point_prescribed_positions
-	//	//energy_frictional_contact
-	//	);
-	this->rigidbodies = std::make_shared<RigidBodies>(
-		this->stark,
-		rb_dynamics
-	);
+	//this->deformables = std::make_shared<Deformables>(this->stark, point_dynamics, contact);  // DEBUG
+	this->rigidbodies = std::make_shared<RigidBodies>(this->stark, rb_dynamics, contact);
+
+	// Interactions
+	this->interactions = std::make_shared<Interactions>(this->stark, contact);
 }

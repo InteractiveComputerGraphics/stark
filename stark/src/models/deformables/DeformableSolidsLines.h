@@ -8,7 +8,7 @@
 #include "EnergyPointInertia.h"
 #include "EnergyPointPrescribedPositions.h"
 #include "EnergyEdgeStrain.h"
-//#include "EnergyFrictionalContact.h"
+#include "../interactions/EnergyFrictionalContact.h"
 
 
 namespace stark::models
@@ -35,8 +35,8 @@ namespace stark::models
 			stark::core::Stark& stark,
 			spPointDynamics dyn, 
 			spEnergyPointInertia inertia,
-			spEnergyPointPrescribedPositions prescribed_positions
-			//spEnergyFrictionalContact contact
+			spEnergyPointPrescribedPositions prescribed_positions,
+			spEnergyFrictionalContact contact
 		);
 
 		Id add(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 2>>& edges, const MaterialLine& material);
@@ -48,7 +48,7 @@ namespace stark::models
 		spEnergyPointInertia inertia;
 		spEnergyPointPrescribedPositions prescribed_positions;
 		spEnergyEdgeStrain strain;
-		//spEnergyFrictionalContact contact;
+		spEnergyFrictionalContact contact;
 		std::vector<int> global_indices;
 
 		// Output

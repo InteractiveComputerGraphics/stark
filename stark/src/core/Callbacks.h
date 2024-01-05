@@ -10,6 +10,7 @@ namespace stark::core
 	*/
 	struct Callbacks
 	{
+		std::vector<std::function<void()>> before_simulation;
 		std::vector<std::function<void()>> before_time_step;
 		std::vector<std::function<void()>> after_time_step;
 		std::vector<std::function<void()>> before_energy_evaluation;
@@ -20,6 +21,7 @@ namespace stark::core
 		std::vector<std::function<void()>> on_time_step_accepted;
 		std::vector<std::function<void()>> write_frame;
 		
+		void run_before_simulation() const { for (auto f : this->before_simulation) { f(); } };
 		void run_before_time_step() const { for (auto f : this->before_time_step) { f(); } };
 		void run_after_time_step() const { for (auto f : this->after_time_step) { f(); } };
 		void run_before_energy_evaluation() const { for (auto f : this->before_energy_evaluation) { f(); } };

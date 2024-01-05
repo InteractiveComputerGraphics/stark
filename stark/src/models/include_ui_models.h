@@ -37,4 +37,7 @@ namespace stark
 	using models::RBCPrismaticSliderHandler;
 	using models::RBCPrismaticPressHandler;
 	using models::RBCMotorHandler;
+
+	// Interactions
+	using models::Interactions;
 }

@@ -6,10 +6,10 @@ stark::models::DeformableSolidsLines::DeformableSolidsLines(
 	stark::core::Stark& stark, 
 	spPointDynamics dyn, 
 	spEnergyPointInertia inertia, 
-	spEnergyPointPrescribedPositions prescribed_positions
-	//spEnergyFrictionalContact contact
+	spEnergyPointPrescribedPositions prescribed_positions,
+	spEnergyFrictionalContact contact
 )
-	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions) //, contact(contact)
+	: dyn(dyn), inertia(inertia), prescribed_positions(prescribed_positions), contact(contact)
 {
 	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
 
@@ -38,7 +38,7 @@ stark::models::Id stark::models::DeformableSolidsLines::add(const std::vector<Ei
 		material.strain_limit,
 		material.strain_limit_stiffness,
 		material.strain_damping);
-	//this->contact->add_triangles_edges_and_points(id, triangles, size, offset);
+	this->contact->add_deformable(id.get_global_idx(), edges, size);
 
 	id.set_local_idx("DeformableSolidsLines", shell_id);
 	return id;

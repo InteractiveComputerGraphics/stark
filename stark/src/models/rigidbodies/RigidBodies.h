@@ -24,7 +24,7 @@ namespace stark::models
 
 	public:
 		/* Methods */
-		RigidBodies(stark::core::Stark& stark, spRigidBodyDynamics dyn);
+		RigidBodies(stark::core::Stark& stark, spRigidBodyDynamics dyn, spEnergyFrictionalContact contact);
 		void write_render_meshes(bool boolean = true);
 		void write_collision_meshes(bool boolean = true);
 

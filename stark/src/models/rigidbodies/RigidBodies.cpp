@@ -4,9 +4,9 @@
 #include "inertia_tensors.h"
 #include "../../utils/mesh_utils.h"
 
-stark::models::RigidBodies::RigidBodies(stark::core::Stark& stark, spRigidBodyDynamics dyn)
+stark::models::RigidBodies::RigidBodies(stark::core::Stark& stark, spRigidBodyDynamics dyn, spEnergyFrictionalContact contact)
 {
-	this->rb = std::make_shared<RigidBodiesInternal>(stark, dyn);
+	this->rb = std::make_shared<RigidBodiesInternal>(stark, dyn, contact);
 }
 void stark::models::RigidBodies::write_render_meshes(bool boolean)
 {
