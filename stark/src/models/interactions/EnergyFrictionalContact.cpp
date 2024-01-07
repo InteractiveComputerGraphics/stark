@@ -172,79 +172,66 @@ const tmcd::IntersectionResults& stark::models::EnergyFrictionalContact::_run_in
 /* ============================================================================================= */
 /* ===================================  COLLISION DETECTION  =================================== */
 /* ============================================================================================= */
-stark::models::ProximityHelper<1> stark::models::EnergyFrictionalContact::_get_proximity_helper_point(const tmcd::Point& point)
+template<std::size_t N>
+std::array<int, N> stark::models::EnergyFrictionalContact::_local_to_ps_global_indices(const PhysicalSystem& ps, const int set_idx, const std::array<int, N>& local)
 {
-	ProximityHelper<1> helper;
-	helper.collision_set = point.set;
-	helper.ps = this->meshes[helper.collision_set].ps;
-	helper.ps_set = this->meshes[helper.collision_set].ps_set;
-	helper.local_verts[0] = point.idx;
-
-	switch (helper.ps)
+	std::array<int, N> global;
+	switch (ps)
 	{
 	case PhysicalSystem::Deformable:
-		helper.verts[0] = this->dyn->x1.get_global_index(helper.ps_set, helper.local_verts[0]);
+		for (int i = 0; i < N; i++) {
+			global[i] = this->dyn->x1.get_global_index(set_idx, local[i]);
+		}
 		break;
 	case PhysicalSystem::Rigidbody:
-		helper.verts[0] = this->rigidbody_local_vertices.get_global_index(helper.ps_set, helper.local_verts[0]);
+		for (int i = 0; i < N; i++) {
+			global[i] = this->rigidbody_local_vertices.get_global_index(set_idx, local[i]);
+		}
 		break;
 	default:
 		break;
 	}
-
+	return global;
+}
+template std::array<int, 1> stark::models::EnergyFrictionalContact::_local_to_ps_global_indices<1>(const PhysicalSystem& ps, const int set_idx, const std::array<int, 1>& local);
+template std::array<int, 2> stark::models::EnergyFrictionalContact::_local_to_ps_global_indices<2>(const PhysicalSystem& ps, const int set_idx, const std::array<int, 2>& local);
+template std::array<int, 3> stark::models::EnergyFrictionalContact::_local_to_ps_global_indices<3>(const PhysicalSystem& ps, const int set_idx, const std::array<int, 3>& local);
+stark::models::ProximityHelper<1> stark::models::EnergyFrictionalContact::_get_proximity_helper_point(const tmcd::Point& point)
+{
+	ProximityHelper<1> helper;
+	helper.ps = this->meshes[point.set].ps;
+	helper.ps_set = this->meshes[point.set].ps_set;
+	helper.verts = this->_local_to_ps_global_indices<1>(helper.ps, helper.ps_set, { point.idx });
 	return helper;
 }
 stark::models::ProximityHelper<2> stark::models::EnergyFrictionalContact::_get_proximity_helper_edge(const tmcd::TriangleEdge::Edge& edge)
 {
 	ProximityHelper<2> helper;
-	helper.collision_set = edge.set;
-	helper.ps = this->meshes[helper.collision_set].ps;
-	helper.ps_set = this->meshes[helper.collision_set].ps_set;
-	helper.local_verts[0] = edge.vertices[0];
-	helper.local_verts[1] = edge.vertices[1];
-
-	switch (helper.ps)
-	{
-	case PhysicalSystem::Deformable:
-		helper.verts[0] = this->dyn->x1.get_global_index(helper.ps_set, helper.local_verts[0]);
-		helper.verts[1] = this->dyn->x1.get_global_index(helper.ps_set, helper.local_verts[1]);
-		break;
-	case PhysicalSystem::Rigidbody:
-		helper.verts[0] = this->rigidbody_local_vertices.get_global_index(helper.ps_set, helper.local_verts[0]);
-		helper.verts[1] = this->rigidbody_local_vertices.get_global_index(helper.ps_set, helper.local_verts[1]);
-		break;
-	default:
-		break;
-	}
-
+	helper.ps = this->meshes[edge.set].ps;
+	helper.ps_set = this->meshes[edge.set].ps_set;
+	helper.verts = this->_local_to_ps_global_indices(helper.ps, helper.ps_set, edge.vertices);
 	return helper;
 }
 stark::models::ProximityHelper<3> stark::models::EnergyFrictionalContact::_get_proximity_helper_triangle(const tmcd::Triangle& triangle)
 {
 	ProximityHelper<3> helper;
-	helper.collision_set = triangle.set;
-	helper.ps = this->meshes[helper.collision_set].ps;
-	helper.ps_set = this->meshes[helper.collision_set].ps_set;
-	helper.local_verts[0] = triangle.vertices[0];
-	helper.local_verts[1] = triangle.vertices[1];
-	helper.local_verts[2] = triangle.vertices[2];
-
-	switch (helper.ps)
-	{
-	case PhysicalSystem::Deformable:
-		helper.verts[0] = this->dyn->x1.get_global_index(helper.ps_set, helper.local_verts[0]);
-		helper.verts[1] = this->dyn->x1.get_global_index(helper.ps_set, helper.local_verts[1]);
-		helper.verts[2] = this->dyn->x1.get_global_index(helper.ps_set, helper.local_verts[2]);
-		break;
-	case PhysicalSystem::Rigidbody:
-		helper.verts[0] = this->rigidbody_local_vertices.get_global_index(helper.ps_set, helper.local_verts[0]);
-		helper.verts[1] = this->rigidbody_local_vertices.get_global_index(helper.ps_set, helper.local_verts[1]);
-		helper.verts[2] = this->rigidbody_local_vertices.get_global_index(helper.ps_set, helper.local_verts[2]);
-		break;
-	default:
-		break;
-	}
-
+	helper.ps = this->meshes[triangle.set].ps;
+	helper.ps_set = this->meshes[triangle.set].ps_set;
+	helper.verts = this->_local_to_ps_global_indices(helper.ps, helper.ps_set, triangle.vertices);
+	return helper;
+}
+stark::models::ProximityHelper<1> stark::models::EnergyFrictionalContact::_get_proximity_helper_edge_point(const tmcd::EdgePoint& edge_point)
+{
+	ProximityHelper<1> helper = this->_get_proximity_helper_point(edge_point.point);
+	helper.edge = this->_local_to_ps_global_indices(helper.ps, helper.ps_set, edge_point.edge.vertices);
+	return helper;
+}
+stark::models::ProximityHelper<2> stark::models::EnergyFrictionalContact::_get_proximity_helper_edge(const tmcd::Edge& edge)
+{
+	ProximityHelper<2> helper;
+	helper.ps = this->meshes[edge.set].ps;
+	helper.ps_set = this->meshes[edge.set].ps_set;
+	helper.verts = this->_local_to_ps_global_indices(helper.ps, helper.ps_set, edge.vertices);
 	return helper;
 }
 
@@ -302,7 +289,7 @@ void stark::models::EnergyFrictionalContact::_before_energy_evaluation__update_c
 			this->contacts_rb_deformables.point_triangle.rb_d_point_edge.push_back({ A.ps_set, A.verts[0], B.verts[0], B.verts[1] });
 		}
 		else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
-			this->contacts_rb_deformables.point_triangle.rb_d_point_edge.push_back({ B.ps_set, B.verts[0], A.verts[0], B.verts[1] });
+			this->contacts_rb_deformables.point_triangle.rb_d_edge_point.push_back({ B.ps_set, B.verts[0], B.verts[1], A.verts[0] });
 		}
 		else {
 			stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
@@ -325,11 +312,81 @@ void stark::models::EnergyFrictionalContact::_before_energy_evaluation__update_c
 			this->contacts_rb_deformables.point_triangle.rb_d_point_triangle.push_back({ A.ps_set, A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
 		}
 		else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
-			this->contacts_rb_deformables.point_triangle.rb_d_point_triangle.push_back({ B.ps_set, B.verts[0], A.verts[0], B.verts[1], B.verts[2] });
+			this->contacts_rb_deformables.point_triangle.rb_d_triangle_point.push_back({ B.ps_set, B.verts[0], B.verts[1], B.verts[2], A.verts[0] });
 		}
 		else {
 			stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
 			exit(-1);
+		}
+	}
+
+	// Edge - Edge
+	//// Point - Point
+	for (const auto& pair : proximity.edge_edge.point_point) {
+		const ProximityHelper<1> A = this->_get_proximity_helper_edge_point(pair.first);
+		const ProximityHelper<1> B = this->_get_proximity_helper_edge_point(pair.second);
+
+		if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+			this->contacts_deformables.edge_edge.point_point.push_back({ A.edge[0], A.edge[1], A.verts[0], B.edge[0], B.edge[1], B.verts[0] });
+		}
+		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+			this->contacts_rb.edge_edge.point_point.push_back({ A.ps_set, B.ps_set, A.edge[0], A.edge[1], A.verts[0], B.edge[0], B.edge[1], B.verts[0] });
+		}
+		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+			this->contacts_rb_deformables.edge_edge.rb_d_point_point.push_back({ A.ps_set, A.edge[0], A.edge[1], A.verts[0], B.edge[0], B.edge[1], B.verts[0] });
+		}
+		else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+			this->contacts_rb_deformables.edge_edge.rb_d_point_point.push_back({ B.ps_set, B.edge[0], B.edge[1], B.verts[0], A.edge[0], A.edge[1], A.verts[0] });
+		}
+		else {
+			stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
+			exit(-1);
+		}
+
+		//// Point - Edge
+		for (const auto& pair : proximity.edge_edge.point_edge) {
+			const ProximityHelper<1> A = this->_get_proximity_helper_edge_point(pair.first);
+			const ProximityHelper<2> B = this->_get_proximity_helper_edge(pair.second);
+
+			if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+				this->contacts_deformables.edge_edge.point_edge.push_back({ A.edge[0], A.edge[1], A.verts[0], B.edge[0], B.edge[1] });
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+				this->contacts_rb.edge_edge.point_edge.push_back({ A.ps_set, B.ps_set, A.edge[0], A.edge[1], A.verts[0], B.edge[0], B.edge[1] });
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+				this->contacts_rb_deformables.edge_edge.rb_d_point_edge.push_back({ A.ps_set, A.edge[0], A.edge[1], A.verts[0], B.edge[0], B.edge[1] });
+			}
+			else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+				this->contacts_rb_deformables.edge_edge.rb_d_edge_point.push_back({ B.ps_set, B.edge[0], B.edge[1], A.edge[0], A.edge[1], A.verts[0] });
+			}
+			else {
+				stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
+				exit(-1);
+			}
+		}
+
+		//// Edge - Edge
+		for (const auto& pair : proximity.edge_edge.edge_edge) {
+			const ProximityHelper<2> A = this->_get_proximity_helper_edge(pair.first);
+			const ProximityHelper<2> B = this->_get_proximity_helper_edge(pair.second);
+
+			if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+				this->contacts_deformables.edge_edge.edge_edge.push_back({ A.edge[0], A.edge[1], B.edge[0], B.edge[1] });
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+				this->contacts_rb.edge_edge.edge_edge.push_back({ A.ps_set, B.ps_set, A.edge[0], A.edge[1], B.edge[0], B.edge[1] });
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+				this->contacts_rb_deformables.edge_edge.rb_d_edge_edge.push_back({ A.ps_set, A.edge[0], A.edge[1], B.edge[0], B.edge[1] });
+			}
+			else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+				this->contacts_rb_deformables.edge_edge.rb_d_edge_edge.push_back({ B.ps_set, B.edge[0], B.edge[1], A.edge[0], A.edge[1] });
+			}
+			else {
+				stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
+				exit(-1);
+			}
 		}
 	}
 }
@@ -386,39 +443,39 @@ void stark::models::EnergyFrictionalContact::_energies_contact_deformables(core:
 	);
 
 
+	// Edge - Edge
+	//// Point - Point
+	stark.global_energy.add_energy(this->_get_contact_label("d_d", "ee_pp"), this->contacts_deformables.edge_edge.point_point,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto [ea, ea_rest, p] = this->_get_d_edge_point(energy, stark, { conn["ea0"], conn["ea1"], conn["p"] });
+			auto [eb, eb_rest, q] = this->_get_d_edge_point(energy, stark, { conn["eb0"], conn["eb1"], conn["q"] });
+			symx::Scalar d = distance_point_point(p[0], q[0]);
+			this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
+		}
+	);
+
+	//// Point - Edge
+	stark.global_energy.add_energy(this->_get_contact_label("d_d", "ee_pe"), this->contacts_deformables.edge_edge.point_edge,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto [ea, ea_rest, p] = this->_get_d_edge_point(energy, stark, { conn["ea0"], conn["ea1"], conn["p"] });
+			auto [eb, eb_rest] = this->_get_d_edge(energy, stark, { conn["eb0"], conn["eb1"] });
+			symx::Scalar d = distance_point_line(p[0], eb[0], eb[1]);
+			this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
+		}
+	);
+
 	//// Edge - Edge
-	////// Point - Point
-	//stark.global_energy.add_energy(this->_get_contact_label("d_d", "ee_pp"), this->contacts_deformables.edge_edge.point_point,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto [ea, ea_rest, p] = this->_get_d_edge_point(energy, stark, { conn["ea0"], conn["ea1"], conn["p"] });
-	//		auto [eb, eb_rest, q] = this->_get_d_edge_point(energy, stark, { conn["eb0"], conn["eb1"], conn["q"] });
-	//		symx::Scalar d = distance_point_point(p[0], q[0]);
-	//		this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
-	//	}
-	//);
-
-	////// Point - Edge
-	//stark.global_energy.add_energy(this->_get_contact_label("d_d", "ee_pe"), this->contacts_deformables.edge_edge.point_edge,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto [ea, ea_rest, p] = this->_get_d_edge_point(energy, stark, { conn["ea0"], conn["ea1"], conn["p"] });
-	//		auto [eb, eb_rest] = this->_get_d_edge(energy, stark, { conn["eb0"], conn["eb1"] });
-	//		symx::Scalar d = distance_point_line(p[0], eb[0], eb[1]);
-	//		this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
-	//	}
-	//);
-
-	////// Edge - Edge
-	//stark.global_energy.add_energy(this->_get_contact_label("d_d", "ee_ee"), this->contacts_deformables.edge_edge.edge_edge,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto [ea, ea_rest] = this->_get_d_edge(energy, stark, { conn["ea0"], conn["ea1"] });
-	//		auto [eb, eb_rest] = this->_get_d_edge(energy, stark, { conn["eb0"], conn["eb1"] });
-	//		symx::Scalar d = distance_line_line(ea[0], ea[1], eb[0], eb[1]);
-	//		this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
-	//	}
-	//);
+	stark.global_energy.add_energy(this->_get_contact_label("d_d", "ee_ee"), this->contacts_deformables.edge_edge.edge_edge,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto [ea, ea_rest] = this->_get_d_edge(energy, stark, { conn["ea0"], conn["ea1"] });
+			auto [eb, eb_rest] = this->_get_d_edge(energy, stark, { conn["eb0"], conn["eb1"] });
+			symx::Scalar d = distance_line_line(ea[0], ea[1], eb[0], eb[1]);
+			this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
+		}
+	);
 }
 void stark::models::EnergyFrictionalContact::_energies_contact_rb(core::Stark& stark)
 {
@@ -456,39 +513,42 @@ void stark::models::EnergyFrictionalContact::_energies_contact_rb(core::Stark& s
 		}
 	);
 
+	// Edge - Edge
+	//// Point - Point
+	stark.global_energy.add_energy(this->_get_contact_label("rb_rb", "ee_pp"), this->contacts_rb.edge_edge.point_point,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			energy.disable_check_for_duplicate_dofs();
+			auto [ea, ea_rest, p] = this->_get_rb_edge_point(energy, stark, conn["a"], { conn["ea0"], conn["ea1"], conn["p"] });
+			auto [eb, eb_rest, q] = this->_get_rb_edge_point(energy, stark, conn["b"], { conn["eb0"], conn["eb1"], conn["q"] });
+			symx::Scalar d = distance_point_point(p[0], q[0]);
+			this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
+		}
+	);
+
+	//// Point - Edge
+	stark.global_energy.add_energy(this->_get_contact_label("rb_rb", "ee_pe"), this->contacts_rb.edge_edge.point_edge,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			energy.disable_check_for_duplicate_dofs();
+			auto [ea, ea_rest, p] = this->_get_rb_edge_point(energy, stark, conn["a"], { conn["ea0"], conn["ea1"], conn["p"] });
+			auto [eb, eb_rest] = this->_get_rb_edge(energy, stark, conn["b"], { conn["eb0"], conn["eb1"] });
+			symx::Scalar d = distance_point_line(p[0], eb[0], eb[1]);
+			this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
+		}
+	);
+
 	//// Edge - Edge
-	////// Point - Point
-	//stark.global_energy.add_energy(this->_get_contact_label("rb_rb", "ee_pp"), this->contacts_rb.edge_edge.point_point,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto [ea, ea_rest, p] = this->_get_rb_edge_point(energy, stark, conn["a"], { conn["ea0"], conn["ea1"], conn["p"] });
-	//		auto [eb, eb_rest, q] = this->_get_rb_edge_point(energy, stark, conn["b"], { conn["eb0"], conn["eb1"], conn["q"] });
-	//		symx::Scalar d = distance_point_point(p[0], q[0]);
-	//		this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
-	//	}
-	//);
-
-	////// Point - Edge
-	//stark.global_energy.add_energy(this->_get_contact_label("rb_rb", "ee_pe"), this->contacts_rb.edge_edge.point_edge,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto [ea, ea_rest, p] = this->_get_rb_edge_point(energy, stark, conn["a"], { conn["ea0"], conn["ea1"], conn["p"] });
-	//		auto [eb, eb_rest] = this->_get_rb_edge(energy, stark, conn["b"], { conn["eb0"], conn["eb1"] });
-	//		symx::Scalar d = distance_point_line(p[0], eb[0], eb[1]);
-	//		this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
-	//	}
-	//);
-
-	////// Edge - Edge
-	//stark.global_energy.add_energy(this->_get_contact_label("rb_rb", "ee_ee"), this->contacts_rb.edge_edge.edge_edge,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto [ea, ea_rest] = this->_get_rb_edge(energy, stark, conn["a"], { conn["ea0"], conn["ea1"] });
-	//		auto [eb, eb_rest] = this->_get_rb_edge(energy, stark, conn["b"], { conn["eb0"], conn["eb1"] });
-	//		symx::Scalar d = distance_line_line(ea[0], ea[1], eb[0], eb[1]);
-	//		this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
-	//	}
-	//);
+	stark.global_energy.add_energy(this->_get_contact_label("rb_rb", "ee_ee"), this->contacts_rb.edge_edge.edge_edge,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			energy.disable_check_for_duplicate_dofs();
+			auto [ea, ea_rest] = this->_get_rb_edge(energy, stark, conn["a"], { conn["ea0"], conn["ea1"] });
+			auto [eb, eb_rest] = this->_get_rb_edge(energy, stark, conn["b"], { conn["eb0"], conn["eb1"] });
+			symx::Scalar d = distance_line_line(ea[0], ea[1], eb[0], eb[1]);
+			this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
+		}
+	);
 }
 void stark::models::EnergyFrictionalContact::_energies_contact_rb_deformables(core::Stark& stark)
 {
@@ -549,50 +609,52 @@ void stark::models::EnergyFrictionalContact::_energies_contact_rb_deformables(co
 	);
 
 
+	// Edge - Edge
+	//// Point - Point
+	stark.global_energy.add_energy(this->_get_contact_label("rb_d", "ee_pp"), this->contacts_rb_deformables.edge_edge.rb_d_point_point,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			energy.disable_check_for_duplicate_dofs();
+			auto [ea, ea_rest, p] = this->_get_rb_edge_point(energy, stark, conn["rb"], { conn["ea0"], conn["ea1"], conn["p"] });
+			auto [eb, eb_rest, q] = this->_get_d_edge_point(energy, stark, { conn["eb0"], conn["eb1"], conn["q"] });
+			symx::Scalar d = distance_point_point(p[0], q[0]);
+			this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
+		}
+	);
+
+	//// Point - Edge
+	stark.global_energy.add_energy(this->_get_contact_label("rb_d", "ee_pe"), this->contacts_rb_deformables.edge_edge.rb_d_point_edge,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			energy.disable_check_for_duplicate_dofs();
+			auto [ea, ea_rest, p] = this->_get_rb_edge_point(energy, stark, conn["rb"], { conn["ea0"], conn["ea1"], conn["p"] });
+			auto [eb, eb_rest] = this->_get_d_edge(energy, stark, { conn["eb0"], conn["eb1"] });
+			symx::Scalar d = distance_point_line(p[0], eb[0], eb[1]);
+			this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
+		}
+	);
+
 	//// Edge - Edge
-	////// Point - Point
-	//stark.global_energy.add_energy(this->_get_contact_label("rb_d", "ee_pp"), this->contacts_rb_deformables.edge_edge.rb_d_point_point,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto [ea, ea_rest, p] = this->_get_rb_edge_point(energy, stark, conn["rb"], { conn["ea0"], conn["ea1"], conn["p"] });
-	//		auto [eb, eb_rest, q] = this->_get_d_edge_point(energy, stark, { conn["eb0"], conn["eb1"], conn["q"] });
-	//		symx::Scalar d = distance_point_point(p[0], q[0]);
-	//		this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
-	//	}
-	//);
+	stark.global_energy.add_energy(this->_get_contact_label("rb_d", "ee_ee"), this->contacts_rb_deformables.edge_edge.rb_d_edge_edge,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto [ea, ea_rest] = this->_get_rb_edge(energy, stark, conn["rb"], { conn["ea0"], conn["ea1"] });
+			auto [eb, eb_rest] = this->_get_d_edge(energy, stark, { conn["eb0"], conn["eb1"] });
+			symx::Scalar d = distance_line_line(ea[0], ea[1], eb[0], eb[1]);
+			this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
+		}
+	);
 
-	////// Point - Edge
-	//stark.global_energy.add_energy(this->_get_contact_label("rb_d", "ee_pe"), this->contacts_rb_deformables.edge_edge.rb_d_point_edge,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto [ea, ea_rest, p] = this->_get_rb_edge_point(energy, stark, conn["rb"], { conn["ea0"], conn["ea1"], conn["p"] });
-	//		auto [eb, eb_rest] = this->_get_d_edge(energy, stark, { conn["eb0"], conn["eb1"] });
-	//		symx::Scalar d = distance_point_line(p[0], eb[0], eb[1]);
-	//		this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
-	//	}
-	//);
-
-	////// Edge - Edge
-	//stark.global_energy.add_energy(this->_get_contact_label("rb_d", "ee_ee"), this->contacts_rb_deformables.edge_edge.rb_d_edge_edge,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto [ea, ea_rest] = this->_get_rb_edge(energy, stark, conn["rb"], { conn["ea0"], conn["ea1"] });
-	//		auto [eb, eb_rest] = this->_get_d_edge(energy, stark, { conn["eb0"], conn["eb1"] });
-	//		symx::Scalar d = distance_line_line(ea[0], ea[1], eb[0], eb[1]);
-	//		this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
-	//	}
-	//);
-
-	////// D -> RB: Point - Edge
-	//stark.global_energy.add_energy(this->_get_contact_label("rb_d", "ee_ep"), this->contacts_rb_deformables.edge_edge.rb_d_edge_point,
-	//	[&](symx::Energy& energy, symx::Element& conn)
-	//	{
-	//		auto [ea, ea_rest] = this->_get_rb_edge(energy, stark, conn["rb"], { conn["ea0"], conn["ea1"] });
-	//		auto [eb, eb_rest, q] = this->_get_d_edge_point(energy, stark, { conn["eb0"], conn["eb1"], conn["q"]});
-	//		symx::Scalar d = distance_point_line(q[0], ea[0], ea[1]);
-	//		this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
-	//	}
-	//);
+	//// D -> RB: Point - Edge
+	stark.global_energy.add_energy(this->_get_contact_label("rb_d", "ee_ep"), this->contacts_rb_deformables.edge_edge.rb_d_edge_point,
+		[&](symx::Energy& energy, symx::Element& conn)
+		{
+			auto [ea, ea_rest] = this->_get_rb_edge(energy, stark, conn["rb"], { conn["ea0"], conn["ea1"] });
+			auto [eb, eb_rest, q] = this->_get_d_edge_point(energy, stark, { conn["eb0"], conn["eb1"], conn["q"]});
+			symx::Scalar d = distance_point_line(q[0], ea[0], ea[1]);
+			this->_set_edge_edge_mollified_barrier_potential(energy, stark, d, ea, eb, ea_rest, eb_rest);
+		}
+	);
 }
 
 void stark::models::EnergyFrictionalContact::_energies_friction_deformables(core::Stark& stark)

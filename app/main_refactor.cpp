@@ -138,13 +138,13 @@ void simple_collision()
 	settings.output.output_directory = OUTPUT_PATH + "/simple_collision";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
-	settings.execution.n_threads = 1;
+	//settings.execution.n_threads = 1;
 	settings.execution.end_simulation_time = 5.0;
 
 
 	settings.contact.collisions_enabled = true;
 	settings.contact.friction_enabled = false;
-	settings.contact.dhat = 0.01;
+	settings.contact.dhat = 0.005;
 
 	settings.debug.symx_check_for_NaNs = true;
 

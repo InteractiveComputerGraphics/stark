@@ -39,6 +39,7 @@ namespace symx
 		uint64_t n_bytes_symbols = 0;
 		bool project_to_PD = false;
 		bool is_active = true;
+		bool check_for_duplicate_dofs = true;
 
 		// Symbols
 		SymbolicWorkSpace sws;
@@ -68,6 +69,7 @@ namespace symx
 		bool is_expression_set() const;
 		void deferred_init(std::vector<std::function<double* ()>> dof_arrays, const bool force_compilation, const bool suppress_compiler_output);
 		void activate(const bool activate);
+		void disable_check_for_duplicate_dofs();
 	
 		// Make fixed Scalar
 		Scalar make_scalar(std::function<const double* ()> data, const std::string name = "");

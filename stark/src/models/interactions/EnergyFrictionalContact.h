@@ -85,9 +85,13 @@ namespace stark::models
 		const tmcd::IntersectionResults& _run_intersection_detection(core::Stark& stark, const double dt);
 
 		// Collision helpers
+		template<std::size_t N>
+		std::array<int, N> _local_to_ps_global_indices(const PhysicalSystem& ps, const int set_idx, const std::array<int, N>& local);
 		ProximityHelper<1> _get_proximity_helper_point(const tmcd::Point& point);
 		ProximityHelper<2> _get_proximity_helper_edge(const tmcd::TriangleEdge::Edge& edge);
 		ProximityHelper<3> _get_proximity_helper_triangle(const tmcd::Triangle& triangle);
+		ProximityHelper<1> _get_proximity_helper_edge_point(const tmcd::EdgePoint& edge_point);
+		ProximityHelper<2> _get_proximity_helper_edge(const tmcd::Edge& edge);
 
 		// SymX callbacks
 		void _before_time_step__update_friction_contacts(core::Stark& stark);

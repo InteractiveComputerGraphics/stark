@@ -73,6 +73,10 @@ void symx::Energy::activate(const bool activate)
 {
 	this->is_active = activate;
 }
+void symx::Energy::disable_check_for_duplicate_dofs()
+{
+	this->check_for_duplicate_dofs = false;
+}
 bool symx::Energy::is_expression_set() const
 {
 	return this->expr != nullptr;
@@ -117,10 +121,12 @@ symx::Vector symx::Energy::make_vector(std::function<const double*()> data, std:
 symx::Vector symx::Energy::make_dof_vector(const DoF& dof, std::function<const double* ()> data, std::function<int32_t()> size, const int32_t stride, const Index& idx, const std::string name)
 {
 	// Check that this dof has not been created yet
-	for (const auto& dof_block : this->dof_block_global_index) {
-		if (dof_block.dof_set == dof.idx && dof_block.conn_idx == idx.idx) {
-			std::cout << "symx error: Energy::make_dof_vector() tried to create a symbol for a DoF that already exists for energy " + this->name << std::endl;
-			exit(-1);
+	if (this->check_for_duplicate_dofs) {
+		for (const auto& dof_block : this->dof_block_global_index) {
+			if (dof_block.dof_set == dof.idx && dof_block.conn_idx == idx.idx) {
+				std::cout << "symx error: Energy::make_dof_vector() tried to create a symbol for a DoF that already exists for energy " + this->name << std::endl;
+				exit(-1);
+			}
 		}
 	}
 
