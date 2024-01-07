@@ -103,7 +103,7 @@ stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::add_rotation(c
 	const Eigen::Matrix3d R = q_.toRotationMatrix();
 	this->rb->dyn->t0[this->idx] = R * this->rb->dyn->t0[this->idx];
 	this->rb->dyn->t1[this->idx] = R * this->rb->dyn->t1[this->idx];
-	this->set_rotation(this->rb->dyn->q0[this->idx] * q_);
+	this->set_rotation(q_ * this->rb->dyn->q0[this->idx]);
 	return (*this);
 }
 stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::add_rotation(const double& angle_deg, const Eigen::Vector3d& axis)

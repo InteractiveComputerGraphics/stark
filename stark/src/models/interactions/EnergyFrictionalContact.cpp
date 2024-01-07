@@ -232,6 +232,7 @@ stark::models::ProximityHelper<2> stark::models::EnergyFrictionalContact::_get_p
 	helper.ps = this->meshes[edge.set].ps;
 	helper.ps_set = this->meshes[edge.set].ps_set;
 	helper.verts = this->_local_to_ps_global_indices(helper.ps, helper.ps_set, edge.vertices);
+	helper.edge = helper.verts;
 	return helper;
 }
 
@@ -815,6 +816,10 @@ symx::Scalar stark::models::EnergyFrictionalContact::_barrier_potential(const sy
 	else if (this->ipc_barrier_type == IPCBarrierType::Log) {
 		return -k * (dhat - d).powN(2) * log(d / dhat);
 	}
+	else {
+		std::cout << "stark error: Unknown IPC barrier type." << std::endl;
+		exit(-1);
+	}
 }
 symx::Scalar stark::models::EnergyFrictionalContact::_edge_edge_mollifier(const std::vector<symx::Vector>& ea, const std::vector<symx::Vector>& eb, const std::vector<symx::Vector>& ea_rest, const std::vector<symx::Vector>& eb_rest)
 {
@@ -849,6 +854,10 @@ symx::Scalar stark::models::EnergyFrictionalContact::_friction_potential(const s
 		symx::Scalar E_slide = mu * fn * u;
 		symx::Scalar E = symx::branch(u < epsu, E_stick, E_slide);
 		return E;
+	}
+	else {
+		std::cout << "stark error: Unknown IPC friction type." << std::endl;
+		exit(-1);
 	}
 }
 

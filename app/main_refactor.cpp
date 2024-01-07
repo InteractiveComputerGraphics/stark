@@ -151,9 +151,44 @@ void simple_collision()
 	stark::Simulation simulation(settings);
 
 	// Objects
-	stark::RigidBodyHandler box0 = simulation.rigidbodies->add_box(1.0, { 1.0, 1.0, 0.1 });
+	stark::RigidBodyHandler box0 = simulation.rigidbodies->add_box(1.0, { 0.5, 0.5, 0.1 });
 	stark::RigidBodyHandler box1 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 		.add_displacement({ 0.1, 0, 0.2 });
+
+	// Constraints
+	simulation.rigidbodies->add_constraint_fix(box0);
+
+	// Run
+	simulation.stark.run();
+}
+void edge_edge_collision()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "edge_edge_collision";
+	settings.output.output_directory = OUTPUT_PATH + "/edge_edge_collision";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
+	//settings.execution.n_threads = 1;
+	settings.execution.end_simulation_time = 1.0;
+	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
+
+	settings.contact.collisions_enabled = true;
+	settings.contact.friction_enabled = false;
+	settings.contact.dhat = 0.01;
+	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
+
+	settings.debug.symx_check_for_NaNs = true;
+	settings.debug.line_search_output = true;
+
+	stark::Simulation simulation(settings);
+
+	// Objects
+	stark::RigidBodyHandler box0 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
+		.set_rotation(45.0, Eigen::Vector3d::UnitY());
+	stark::RigidBodyHandler box1 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
+		.add_rotation(45.0, Eigen::Vector3d::UnitY())
+		.add_rotation(90.0, Eigen::Vector3d::UnitZ())
+		.add_displacement({ 0.01, 0, 0.2 });
 
 	// Constraints
 	simulation.rigidbodies->add_constraint_fix(box0);
@@ -169,7 +204,8 @@ int main()
 	//net();
 	//hanging_cloth();
 	//rubber_block();
-	simple_collision();
+	//simple_collision();
+	edge_edge_collision();
 
 	//rb_constraints_all();
 }
