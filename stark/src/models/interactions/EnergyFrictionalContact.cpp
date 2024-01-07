@@ -251,97 +251,101 @@ void stark::models::EnergyFrictionalContact::_before_energy_evaluation__update_c
 	// Run proximity detection
 	const auto& proximity = this->_run_proximity_detection(stark, stark.settings.simulation.adaptive_time_step.value);
 
-	// Process cases
-	//// Point - Triangle
-	for (const auto& pair : proximity.point_triangle.point_point) {
-		const ProximityHelper<1> A = this->_get_proximity_helper_point(pair.first);
-		const ProximityHelper<1> B = this->_get_proximity_helper_point(pair.second.point);
+	// Point - Triangle
+	{
+		// Point - Triangle
+		for (const auto& pair : proximity.point_triangle.point_point) {
+			const ProximityHelper<1> A = this->_get_proximity_helper_point(pair.first);
+			const ProximityHelper<1> B = this->_get_proximity_helper_point(pair.second.point);
 
-		if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
-			this->contacts_deformables.point_triangle.point_point.push_back({ A.verts[0], B.verts[0] });
+			if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+				this->contacts_deformables.point_triangle.point_point.push_back({ A.verts[0], B.verts[0] });
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+				this->contacts_rb.point_triangle.point_point.push_back({ A.ps_set, B.ps_set, A.verts[0], B.verts[0] });
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+				this->contacts_rb_deformables.point_triangle.rb_d_point_point.push_back({ A.ps_set, A.verts[0], B.verts[0] });
+			}
+			else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+				this->contacts_rb_deformables.point_triangle.rb_d_point_point.push_back({ B.ps_set, B.verts[0], A.verts[0] });
+			}
+			else {
+				stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
+				exit(-1);
+			}
 		}
-		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
-			this->contacts_rb.point_triangle.point_point.push_back({ A.ps_set, B.ps_set, A.verts[0], B.verts[0] });
-		}
-		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
-			this->contacts_rb_deformables.point_triangle.rb_d_point_point.push_back({ A.ps_set, A.verts[0], B.verts[0] });
-		}
-		else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
-			this->contacts_rb_deformables.point_triangle.rb_d_point_point.push_back({ B.ps_set, B.verts[0], A.verts[0] });
-		}
-		else {
-			stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
-			exit(-1);
-		}
-	}
 
-	//// Point - Edge
-	for (const auto& pair : proximity.point_triangle.point_edge) {
-		const ProximityHelper<1> A = this->_get_proximity_helper_point(pair.first);
-		const ProximityHelper<2> B = this->_get_proximity_helper_edge(pair.second.edge);
+		//// Point - Edge
+		for (const auto& pair : proximity.point_triangle.point_edge) {
+			const ProximityHelper<1> A = this->_get_proximity_helper_point(pair.first);
+			const ProximityHelper<2> B = this->_get_proximity_helper_edge(pair.second.edge);
 
-		if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
-			this->contacts_deformables.point_triangle.point_edge.push_back({ A.verts[0], B.verts[0], B.verts[1] });
+			if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+				this->contacts_deformables.point_triangle.point_edge.push_back({ A.verts[0], B.verts[0], B.verts[1] });
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+				this->contacts_rb.point_triangle.point_edge.push_back({ A.ps_set, B.ps_set, A.verts[0], B.verts[0], B.verts[1] });
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+				this->contacts_rb_deformables.point_triangle.rb_d_point_edge.push_back({ A.ps_set, A.verts[0], B.verts[0], B.verts[1] });
+			}
+			else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+				this->contacts_rb_deformables.point_triangle.rb_d_edge_point.push_back({ B.ps_set, B.verts[0], B.verts[1], A.verts[0] });
+			}
+			else {
+				stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
+				exit(-1);
+			}
 		}
-		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
-			this->contacts_rb.point_triangle.point_edge.push_back({ A.ps_set, B.ps_set, A.verts[0], B.verts[0], B.verts[1] });
-		}
-		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
-			this->contacts_rb_deformables.point_triangle.rb_d_point_edge.push_back({ A.ps_set, A.verts[0], B.verts[0], B.verts[1] });
-		}
-		else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
-			this->contacts_rb_deformables.point_triangle.rb_d_edge_point.push_back({ B.ps_set, B.verts[0], B.verts[1], A.verts[0] });
-		}
-		else {
-			stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
-			exit(-1);
-		}
-	}
 
-	//// Point - Triangle
-	for (const auto& pair : proximity.point_triangle.point_triangle) {
-		const ProximityHelper<1> A = this->_get_proximity_helper_point(pair.first);
-		const ProximityHelper<3> B = this->_get_proximity_helper_triangle(pair.second);
+		//// Point - Triangle
+		for (const auto& pair : proximity.point_triangle.point_triangle) {
+			const ProximityHelper<1> A = this->_get_proximity_helper_point(pair.first);
+			const ProximityHelper<3> B = this->_get_proximity_helper_triangle(pair.second);
 
-		if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
-			this->contacts_deformables.point_triangle.point_triangle.push_back({ A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
+			if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+				this->contacts_deformables.point_triangle.point_triangle.push_back({ A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+				this->contacts_rb.point_triangle.point_triangle.push_back({ A.ps_set, B.ps_set, A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+				this->contacts_rb_deformables.point_triangle.rb_d_point_triangle.push_back({ A.ps_set, A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
+			}
+			else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+				this->contacts_rb_deformables.point_triangle.rb_d_triangle_point.push_back({ B.ps_set, B.verts[0], B.verts[1], B.verts[2], A.verts[0] });
+			}
+			else {
+				stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
+				exit(-1);
+			}
 		}
-		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
-			this->contacts_rb.point_triangle.point_triangle.push_back({ A.ps_set, B.ps_set, A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
-		}
-		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
-			this->contacts_rb_deformables.point_triangle.rb_d_point_triangle.push_back({ A.ps_set, A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
-		}
-		else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
-			this->contacts_rb_deformables.point_triangle.rb_d_triangle_point.push_back({ B.ps_set, B.verts[0], B.verts[1], B.verts[2], A.verts[0] });
-		}
-		else {
-			stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
-			exit(-1);
-		}
-	}
+	} // Point - Triangle
 
 	// Edge - Edge
-	//// Point - Point
-	for (const auto& pair : proximity.edge_edge.point_point) {
-		const ProximityHelper<1> A = this->_get_proximity_helper_edge_point(pair.first);
-		const ProximityHelper<1> B = this->_get_proximity_helper_edge_point(pair.second);
+	{
+		//// Point - Point
+		for (const auto& pair : proximity.edge_edge.point_point) {
+			const ProximityHelper<1> A = this->_get_proximity_helper_edge_point(pair.first);
+			const ProximityHelper<1> B = this->_get_proximity_helper_edge_point(pair.second);
 
-		if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
-			this->contacts_deformables.edge_edge.point_point.push_back({ A.edge[0], A.edge[1], A.verts[0], B.edge[0], B.edge[1], B.verts[0] });
-		}
-		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
-			this->contacts_rb.edge_edge.point_point.push_back({ A.ps_set, B.ps_set, A.edge[0], A.edge[1], A.verts[0], B.edge[0], B.edge[1], B.verts[0] });
-		}
-		else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
-			this->contacts_rb_deformables.edge_edge.rb_d_point_point.push_back({ A.ps_set, A.edge[0], A.edge[1], A.verts[0], B.edge[0], B.edge[1], B.verts[0] });
-		}
-		else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
-			this->contacts_rb_deformables.edge_edge.rb_d_point_point.push_back({ B.ps_set, B.edge[0], B.edge[1], B.verts[0], A.edge[0], A.edge[1], A.verts[0] });
-		}
-		else {
-			stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
-			exit(-1);
+			if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+				this->contacts_deformables.edge_edge.point_point.push_back({ A.edge[0], A.edge[1], A.verts[0], B.edge[0], B.edge[1], B.verts[0] });
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+				this->contacts_rb.edge_edge.point_point.push_back({ A.ps_set, B.ps_set, A.edge[0], A.edge[1], A.verts[0], B.edge[0], B.edge[1], B.verts[0] });
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+				this->contacts_rb_deformables.edge_edge.rb_d_point_point.push_back({ A.ps_set, A.edge[0], A.edge[1], A.verts[0], B.edge[0], B.edge[1], B.verts[0] });
+			}
+			else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+				this->contacts_rb_deformables.edge_edge.rb_d_point_point.push_back({ B.ps_set, B.edge[0], B.edge[1], B.verts[0], A.edge[0], A.edge[1], A.verts[0] });
+			}
+			else {
+				stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
+				exit(-1);
+			}
 		}
 
 		//// Point - Edge
@@ -389,7 +393,7 @@ void stark::models::EnergyFrictionalContact::_before_energy_evaluation__update_c
 				exit(-1);
 			}
 		}
-	}
+	} // Edge - Edge
 }
 void stark::models::EnergyFrictionalContact::_before_time_step__update_friction_contacts(core::Stark& stark)
 {
