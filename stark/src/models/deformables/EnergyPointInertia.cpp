@@ -68,8 +68,8 @@ void stark::models::EnergyPointInertia::add(Id& id, const std::vector<std::array
 		const Eigen::Vector3d& B = this->dyn->X[conn_glob[1]];
 
 		const double lumped = (A - B).norm()/2.0;
-		lumped_volume[conn_glob[0]] += lumped;
-		lumped_volume[conn_glob[1]] += lumped;
+		lumped_volume[conn[0]] += lumped;
+		lumped_volume[conn[1]] += lumped;
 	}
 	this->add(id, lumped_volume, line_density, inertial_damping);
 }
@@ -89,9 +89,9 @@ void stark::models::EnergyPointInertia::add(Id& id, const std::vector<std::array
 		const Eigen::Vector3d& C = this->dyn->X[conn_glob[2]];
 
 		const double lumped = utils::triangle_area(A, B, C)/3.0;
-		lumped_volume[conn_glob[0]] += lumped;
-		lumped_volume[conn_glob[1]] += lumped;
-		lumped_volume[conn_glob[2]] += lumped;
+		lumped_volume[conn[0]] += lumped;
+		lumped_volume[conn[1]] += lumped;
+		lumped_volume[conn[2]] += lumped;
 	}
 	this->add(id, lumped_volume, area_density, inertial_damping);
 }
@@ -99,10 +99,10 @@ void stark::models::EnergyPointInertia::add(Id& id, const std::vector<std::array
 {
 	const int n = this->dyn->size(id);
 	std::vector<double> lumped_volume(n, 0.0);
-	for (int tri_i = 0; tri_i < (int)tets.size(); tri_i++) {
+	for (int tet_i = 0; tet_i < (int)tets.size(); tet_i++) {
 
 		// Connectivity
-		const std::array<int, 4>& conn = tets[tri_i];
+		const std::array<int, 4>& conn = tets[tet_i];
 		const std::array<int, 4> conn_glob = this->dyn->X.get_global_indices(id.get_global_idx(), conn);
 
 		// Fetch coordinates
@@ -112,10 +112,10 @@ void stark::models::EnergyPointInertia::add(Id& id, const std::vector<std::array
 		const Eigen::Vector3d& D = this->dyn->X[conn_glob[3]];
 
 		const double lumped = utils::unsigned_tetra_volume(A, B, C, D)/4.0;
-		lumped_volume[conn_glob[0]] += lumped;
-		lumped_volume[conn_glob[1]] += lumped;
-		lumped_volume[conn_glob[2]] += lumped;
-		lumped_volume[conn_glob[3]] += lumped;
+		lumped_volume[conn[0]] += lumped;
+		lumped_volume[conn[1]] += lumped;
+		lumped_volume[conn[2]] += lumped;
+		lumped_volume[conn[3]] += lumped;
 	}
 	this->add(id, lumped_volume, volume_density, inertial_damping);
 }
