@@ -204,6 +204,8 @@ void heavy_box_rigid_and_deformable()
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
+	//settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
+	//settings.output.fps = 120.0;
 
 	settings.contact.collisions_enabled = true;
 	settings.contact.friction_enabled = false;
@@ -218,9 +220,13 @@ void heavy_box_rigid_and_deformable()
 
 	//// Base
 	{
-		const int n = 1;
+		const int n = 10;
 		auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w, -0.5*w, -0.5*w }, { 0.5*w, 0.5*w, 0.5*w }, { n, n, n });
 		auto material = stark::models::MaterialVolume::soft_rubber();
+		material.strain_young_modulus = 1e4;
+		material.inertia_damping = 1.0;
+		material.strain_damping = 1.0;
+		material.strain_limit = 999.0;
 		auto block = simulation.deformables->add_volume(vertices, tets, material);
 		auto bc = block.create_prescribed_positions_group_with_transformation();
 		bc->add_vertices_in_aabb({ 0.0, 0.0, -0.5*w }, { 1.0, 1.0, 0.01 });
@@ -229,11 +235,14 @@ void heavy_box_rigid_and_deformable()
 	//// Top deformable
 	{
 		const int n = 1;
-		const double w2 = 0.5*w;
+		const double w2 = 0.3*w;
 		auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w2, -0.5*w2, -0.5*w2 }, { 0.5*w2, 0.5*w2, 0.5*w2 }, { n, n, n });
 		stark::utils::move(vertices, { 0.01, 0.0, 0.5*w + 0.5*w2 + 2.0*settings.contact.dhat });
 		auto material = stark::models::MaterialVolume::soft_rubber();
 		material.density *= 10.0;
+		material.inertia_damping = 1.0;
+		material.strain_damping = 1.0;
+		material.strain_limit = 999.0;
 		auto block = simulation.deformables->add_volume(vertices, tets, material);
 	}
 

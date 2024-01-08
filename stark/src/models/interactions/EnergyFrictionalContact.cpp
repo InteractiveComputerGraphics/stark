@@ -215,8 +215,15 @@ std::array<int, N> stark::models::EnergyFrictionalContact::_local_to_ps_global_i
 	switch (ps)
 	{
 	case PhysicalSystem::Deformable:
-		for (int i = 0; i < N; i++) {
-			global[i] = this->dyn->x1.get_global_index(set_idx, local[i]);
+		if (this->surface_node_maps[set_idx].size() == 0) {  // All nodes are surface nodes
+			for (int i = 0; i < N; i++) {
+				global[i] = this->dyn->x1.get_global_index(set_idx, local[i]);
+			}
+		}
+		else {
+			for (int i = 0; i < N; i++) {
+				global[i] = this->dyn->x1.get_global_index(set_idx, this->surface_node_maps[set_idx][local[i]]);
+			}
 		}
 		break;
 	case PhysicalSystem::Rigidbody:

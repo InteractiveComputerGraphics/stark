@@ -14,6 +14,8 @@ Oct unification
 	* Consistent error messages. Either all to std::out (likely) or to stark.console (have to pass stark everywhere.)
 	
 	* OOP UI to the creation and transformation of surface and volume meshes.
+	
+	* New strain material doesnt converge for large steps...
 
 	* I can set BC for volumetrics from surfaces...
 	* Vehicle! https://www.reddit.com/r/interestingasfuck/comments/18p75uj/turning_diameter_comparison_of_lego_steering/
