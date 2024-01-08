@@ -16,6 +16,10 @@ Oct unification
 	* OOP UI to the creation and transformation of surface and volume meshes.
 	
 	* New strain material doesnt converge for large steps...
+	
+	* Check log barriers give the same result than cubic
+	
+	* Parallel contact data structure fill
 
 	* I can set BC for volumetrics from surfaces...
 	* Vehicle! https://www.reddit.com/r/interestingasfuck/comments/18p75uj/turning_diameter_comparison_of_lego_steering/

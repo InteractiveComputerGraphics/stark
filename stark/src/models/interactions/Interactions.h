@@ -11,7 +11,7 @@ namespace stark::models
 
 		// TODO: setters for friction and collision pairs
 
-	private:
+	//private:
 		spEnergyFrictionalContact contact = nullptr;
 	};
 }

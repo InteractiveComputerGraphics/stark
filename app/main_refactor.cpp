@@ -208,8 +208,8 @@ void heavy_box_rigid_and_deformable()
 	//settings.output.fps = 120.0;
 
 	settings.contact.collisions_enabled = true;
-	settings.contact.friction_enabled = false;
-	settings.contact.dhat = 0.005;
+	settings.contact.friction_enabled = true;
+	settings.contact.dhat = 0.01;
 
 	settings.debug.symx_check_for_NaNs = true;
 
@@ -239,12 +239,14 @@ void heavy_box_rigid_and_deformable()
 		auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w2, -0.5*w2, -0.5*w2 }, { 0.5*w2, 0.5*w2, 0.5*w2 }, { n, n, n });
 		stark::utils::move(vertices, { 0.01, 0.0, 0.5*w + 0.5*w2 + 2.0*settings.contact.dhat });
 		auto material = stark::models::MaterialVolume::soft_rubber();
-		material.density *= 10.0;
+		material.density *= 5.0;
 		material.inertia_damping = 1.0;
 		material.strain_damping = 1.0;
 		material.strain_limit = 999.0;
 		auto block = simulation.deformables->add_volume(vertices, tets, material);
 	}
+
+	simulation.interactions->contact->set_coulomb_friction_pair(0, 1, 0.5);  // TODO: Proper UI
 
 	// Run
 	simulation.stark.run();

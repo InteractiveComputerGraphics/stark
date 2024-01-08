@@ -28,9 +28,9 @@ namespace stark::models
 	struct ProximityHelper
 	{
 		PhysicalSystem ps;
-		//int collision_set = -1;  // Index local to the collision set
+		int set = -1;  // Set index relative to all collision sets declared
 		int ps_set = -1;  // Index of the object relative to its physical system (eg. rigid body idx, deformable idx, ...)
-		//std::array<int, N> local_verts ;  // Indices local to the object
+		std::array<int, N> local_verts ;  // Indices local to the object
 		std::array<int, N> verts;  // Indices global to the physical system
 		std::array<int, 2> edge;  // Edge corresponding to the vertices (only used in EdgePoint)
 	};

@@ -74,8 +74,8 @@ namespace stark::models
 		int add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const std::vector<int>& surface_node_map);
 		int add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const int n_points);
 		int add_deformable(const int idx, const std::vector<std::array<int, 2>>& edges, const int n_points);
-		void set_coulomb_friction(const int idx1, const int idx2, const double mu);
-		void disable_collision(const int idx1, const int idx2);
+		void set_coulomb_friction_pair(const int idx0, const int idx1, const double mu);
+		void disable_collision(const int idx0, const int idx1);
 		// void enable_collision(const int idx1, const int idx2); // Not available in collision detection !
 
 	private:
@@ -94,6 +94,7 @@ namespace stark::models
 		ProximityHelper<3> _get_proximity_helper_triangle(const tmcd::Triangle& triangle);
 		ProximityHelper<1> _get_proximity_helper_edge_point(const tmcd::EdgePoint& edge_point);
 		ProximityHelper<2> _get_proximity_helper_edge(const tmcd::Edge& edge);
+		double _get_friction(const int idx0, const int idx1);
 
 		// SymX callbacks
 		void _before_time_step__update_friction_contacts(core::Stark& stark);
@@ -111,6 +112,7 @@ namespace stark::models
 
 		// IPC
 		symx::Scalar _barrier_potential(const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k);
+		double _barrier_force(const double d, const double dhat, const double k);
 		symx::Scalar _edge_edge_mollifier(const std::vector<symx::Vector>& ea, const std::vector<symx::Vector>& eb, const std::vector<symx::Vector>& ea_rest, const std::vector<symx::Vector>& eb_rest);
 		symx::Scalar _friction_potential(const symx::Vector& v, const symx::Scalar& fn, const symx::Scalar& mu, const symx::Matrix& T, const symx::Scalar& epsv, const symx::Scalar& dt);
 

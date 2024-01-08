@@ -4,6 +4,7 @@
 #include "../distances.h"
 #include "../rigidbodies/rigidbody_transformations.h"
 #include "../../utils/mesh_utils.h"
+#include "friction_geometry.h"
 
 
 stark::models::EnergyFrictionalContact::EnergyFrictionalContact(core::Stark& stark, const spPointDynamics dyn, const spRigidBodyDynamics rb)
@@ -19,9 +20,9 @@ stark::models::EnergyFrictionalContact::EnergyFrictionalContact(core::Stark& sta
 	this->_energies_contact_rb(stark);
 	this->_energies_contact_rb_deformables(stark);
 
-	//this->_energies_friction_deformables(stark);
-	//this->_energies_friction_rb(stark);
-	//this->_energies_friction_rb_deformables(stark);
+	this->_energies_friction_deformables(stark);
+	this->_energies_friction_rb(stark);
+	this->_energies_friction_rb_deformables(stark);
 }
 
 int stark::models::EnergyFrictionalContact::add_rigid_body(const int idx, const std::vector<std::array<int, 2>>& edges, const std::vector<Eigen::Vector3d>& vertices)
@@ -73,9 +74,9 @@ int stark::models::EnergyFrictionalContact::add_deformable(const int idx, const 
 	this->deformable_global_idx.push_back(idx);
 	return this->_add_edges_and_points(PhysicalSystem::Deformable, idx, edges, n_points);
 }
-void stark::models::EnergyFrictionalContact::set_coulomb_friction(const int idx1, const int idx2, const double mu)
+void stark::models::EnergyFrictionalContact::set_coulomb_friction_pair(const int idx0, const int idx1, const double mu)
 {
-	this->pair_coulombs_mu[{ idx1, idx2 }] = mu;
+	this->pair_coulombs_mu[{ idx0, idx1 }] = mu;
 }
 void stark::models::EnergyFrictionalContact::disable_collision(const int idx1, const int idx2)
 {
@@ -138,18 +139,6 @@ void stark::models::EnergyFrictionalContact::_update_vertices(core::Stark& stark
 		// Physical System
 		if (mesh.ps == PhysicalSystem::Deformable) {
 			const int ps_begin = this->dyn->x0.get_begin(mesh.ps_set);
-			//const int ps_end = this->dyn->x0.get_end(mesh.ps_set);
-			//const int ps_n = ps_end - ps_begin;
-
-			//if (ps_n != n) {
-			//	stark.console.print("stark error: Number of vertices mismatch found in EnergyFrictionalContact (deformables).\n", core::ConsoleVerbosity::Frames);
-			//	exit(-1);
-			//}
-
-			//for (int i = 0; i < n; i++) {
-			//	mesh.vertices[i] = time_integration(this->dyn->x0[ps_begin + i], this->dyn->v1[ps_begin + i], dt);
-			//}
-
 			const std::vector<int>& surface_node_map = this->surface_node_maps[mesh.ps_set];
 			if (surface_node_map.size() == 0) {  // All nodes are surface nodes
 				for (int i = 0; i < n; i++) {
@@ -242,25 +231,31 @@ template std::array<int, 3> stark::models::EnergyFrictionalContact::_local_to_ps
 stark::models::ProximityHelper<1> stark::models::EnergyFrictionalContact::_get_proximity_helper_point(const tmcd::Point& point)
 {
 	ProximityHelper<1> helper;
+	helper.set = point.set;
 	helper.ps = this->meshes[point.set].ps;
 	helper.ps_set = this->meshes[point.set].ps_set;
-	helper.verts = this->_local_to_ps_global_indices<1>(helper.ps, helper.ps_set, { point.idx });
+	helper.local_verts = { point.idx };
+	helper.verts = this->_local_to_ps_global_indices<1>(helper.ps, helper.ps_set, helper.local_verts);
 	return helper;
 }
 stark::models::ProximityHelper<2> stark::models::EnergyFrictionalContact::_get_proximity_helper_edge(const tmcd::TriangleEdge::Edge& edge)
 {
 	ProximityHelper<2> helper;
+	helper.set = edge.set;
 	helper.ps = this->meshes[edge.set].ps;
 	helper.ps_set = this->meshes[edge.set].ps_set;
-	helper.verts = this->_local_to_ps_global_indices(helper.ps, helper.ps_set, edge.vertices);
+	helper.local_verts = edge.vertices;
+	helper.verts = this->_local_to_ps_global_indices(helper.ps, helper.ps_set, helper.local_verts);
 	return helper;
 }
 stark::models::ProximityHelper<3> stark::models::EnergyFrictionalContact::_get_proximity_helper_triangle(const tmcd::Triangle& triangle)
 {
 	ProximityHelper<3> helper;
+	helper.set = triangle.set;
 	helper.ps = this->meshes[triangle.set].ps;
 	helper.ps_set = this->meshes[triangle.set].ps_set;
-	helper.verts = this->_local_to_ps_global_indices(helper.ps, helper.ps_set, triangle.vertices);
+	helper.local_verts = triangle.vertices;
+	helper.verts = this->_local_to_ps_global_indices(helper.ps, helper.ps_set, helper.local_verts);
 	return helper;
 }
 stark::models::ProximityHelper<1> stark::models::EnergyFrictionalContact::_get_proximity_helper_edge_point(const tmcd::EdgePoint& edge_point)
@@ -272,12 +267,26 @@ stark::models::ProximityHelper<1> stark::models::EnergyFrictionalContact::_get_p
 stark::models::ProximityHelper<2> stark::models::EnergyFrictionalContact::_get_proximity_helper_edge(const tmcd::Edge& edge)
 {
 	ProximityHelper<2> helper;
+	helper.set = edge.set;
 	helper.ps = this->meshes[edge.set].ps;
 	helper.ps_set = this->meshes[edge.set].ps_set;
-	helper.verts = this->_local_to_ps_global_indices(helper.ps, helper.ps_set, edge.vertices);
+	helper.local_verts = edge.vertices;
+	helper.verts = this->_local_to_ps_global_indices(helper.ps, helper.ps_set, helper.local_verts);
 	helper.edge = helper.verts;
 	return helper;
 }
+double stark::models::EnergyFrictionalContact::_get_friction(const int idx0, const int idx1)
+{
+	const std::array<int, 2> pair = { std::min(idx0, idx1), std::max(idx0, idx1) };
+	auto it = this->pair_coulombs_mu.find(pair);
+	if (it == this->pair_coulombs_mu.end()) {
+		return 0.0;
+	}
+	else {
+		return it->second;
+	}
+}
+
 
 /* ======================================================================================== */
 /* ===================================  SYMX CALLBACKS  =================================== */
@@ -440,7 +449,140 @@ void stark::models::EnergyFrictionalContact::_before_energy_evaluation__update_c
 }
 void stark::models::EnergyFrictionalContact::_before_time_step__update_friction_contacts(core::Stark& stark)
 {
+	if (!stark.settings.contact.collisions_enabled) { return; }
+	if (!stark.settings.contact.friction_enabled) { return; }
 
+	// Clear contact connectivity
+	this->friction_deformables.clear();
+	this->friction_rb.clear();
+	this->friction_rb_deformables.clear();
+
+	// Run proximity detection
+	const auto& proximity = this->_run_proximity_detection(stark, /* dt = */ 0.0);
+
+	// Lambdas
+	const double k = stark.settings.contact.adaptive_contact_stiffness.value;
+	const double dhat = stark.settings.contact.dhat;
+	auto force = [&](double d) { return this->_barrier_force(d, dhat, k); };
+	auto point_point = [&](FrictionContact& contact, const double mu, const double d, const ProximityHelper<1>& A, const ProximityHelper<1>& B)
+	{
+		const Eigen::Vector3d& P = this->meshes[A.set].vertices[A.local_verts[0]];
+		const Eigen::Vector3d& Q = this->meshes[B.set].vertices[B.local_verts[0]];
+		contact.T.push_back(projection_matrix_point_point(P, Q));
+		contact.mu.push_back(mu);
+		contact.fn.push_back(force(d));
+	};
+	auto point_edge = [&](FrictionPointEdge& friction, const double mu, const double d, const ProximityHelper<1>& A, const ProximityHelper<2>& B)
+	{
+		const Eigen::Vector3d& P = this->meshes[A.set].vertices[A.local_verts[0]];
+		const Eigen::Vector3d& E0 = this->meshes[B.set].vertices[B.local_verts[0]];
+		const Eigen::Vector3d& E1 = this->meshes[B.set].vertices[B.local_verts[1]];
+		friction.bary.push_back(barycentric_point_edge(P, E0, E1));
+		friction.contact.T.push_back(projection_matrix_point_edge(P, E0, E1));
+		friction.contact.mu.push_back(mu);
+		friction.contact.fn.push_back(force(d));
+	};
+	auto point_triangle = [&](FrictionPointTriangle& friction, const double mu, const double d, const ProximityHelper<1>& A, const ProximityHelper<3>& B)
+	{
+		const Eigen::Vector3d& P  = this->meshes[A.set].vertices[A.local_verts[0]]; 
+		const Eigen::Vector3d& T0 = this->meshes[B.set].vertices[B.local_verts[0]]; 
+		const Eigen::Vector3d& T1 = this->meshes[B.set].vertices[B.local_verts[1]];
+		const Eigen::Vector3d& T2 = this->meshes[B.set].vertices[B.local_verts[2]];
+		friction.bary.push_back(barycentric_point_triangle(P, T0, T1, T2));
+		friction.contact.T.push_back(projection_matrix_triangle(T0, T1, T2));
+		friction.contact.mu.push_back(mu);
+		friction.contact.fn.push_back(force(d));
+	};
+
+	// Point - Triangle
+	{
+		//// Point - Point
+		for (const auto& pair : proximity.point_triangle.point_point) {
+			const ProximityHelper<1> A = this->_get_proximity_helper_point(pair.first);
+			const ProximityHelper<1> B = this->_get_proximity_helper_point(pair.second.point);
+			const double mu = this->_get_friction(A.set, B.set);
+			if (mu == 0.0) { continue; }
+
+			if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+				this->friction_deformables.point_point.conn.numbered_push_back({ A.verts[0], B.verts[0] });
+				point_point(this->friction_deformables.point_point.contact, mu, pair.distance, A, B);
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+				this->friction_rb.point_point.conn.numbered_push_back({ A.ps_set, B.ps_set, A.verts[0], B.verts[0] });
+				point_point(this->friction_rb.point_point.contact, mu, pair.distance, A, B);
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+				this->friction_rb_deformables.point_point.conn.numbered_push_back({ A.ps_set, A.verts[0], B.verts[0] });
+				point_point(this->friction_rb_deformables.point_point.contact, mu, pair.distance, A, B);
+			}
+			else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+				this->friction_rb_deformables.point_point.conn.numbered_push_back({ B.ps_set, B.verts[0], A.verts[0] });
+				point_point(this->friction_rb_deformables.point_point.contact, mu, pair.distance, A, B);
+			}
+			else {
+				stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
+				exit(-1);
+			}
+		}
+
+		//// Point - Edge
+		for (const auto& pair : proximity.point_triangle.point_edge) {
+			const ProximityHelper<1> A = this->_get_proximity_helper_point(pair.first);
+			const ProximityHelper<2> B = this->_get_proximity_helper_edge(pair.second.edge);
+			const double mu = this->_get_friction(A.set, B.set);
+			if (mu == 0.0) { continue; }
+
+			if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+				this->friction_deformables.point_edge.conn.numbered_push_back({ A.verts[0], B.verts[0], B.verts[1] });
+				point_edge(this->friction_deformables.point_edge.data, mu, pair.distance, A, B);
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+				this->friction_rb.point_edge.conn.numbered_push_back({ A.ps_set, B.ps_set, A.verts[0], B.verts[0], B.verts[1] });
+				point_edge(this->friction_rb.point_edge.data, mu, pair.distance, A, B);
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+				this->friction_rb_deformables.point_edge.conn.numbered_push_back({ A.ps_set, A.verts[0], B.verts[0], B.verts[1] });
+				point_edge(this->friction_rb_deformables.point_edge.data, mu, pair.distance, A, B);
+			}
+			else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+				this->friction_rb_deformables.edge_point.conn.numbered_push_back({ B.ps_set, B.verts[0], B.verts[1], A.verts[0] });
+				point_edge(this->friction_rb_deformables.edge_point.data, mu, pair.distance, A, B);
+			}
+			else {
+				stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
+				exit(-1);
+			}
+		}
+
+		//// Point - Triangle
+		for (const auto& pair : proximity.point_triangle.point_triangle) {
+			const ProximityHelper<1> A = this->_get_proximity_helper_point(pair.first);
+			const ProximityHelper<3> B = this->_get_proximity_helper_triangle(pair.second);
+			const double mu = this->_get_friction(A.set, B.set);
+			if (mu == 0.0) { continue; }
+
+			if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Deformable) {
+				this->friction_deformables.point_triangle.conn.numbered_push_back({ A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
+				point_triangle(this->friction_deformables.point_triangle.data, mu, pair.distance, A, B);
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Rigidbody) {
+				this->friction_rb.point_triangle.conn.numbered_push_back({ A.ps_set, B.ps_set, A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
+				point_triangle(this->friction_rb.point_triangle.data, mu, pair.distance, A, B);
+			}
+			else if (A.ps == PhysicalSystem::Rigidbody && B.ps == PhysicalSystem::Deformable) {
+				this->friction_rb_deformables.point_triangle.conn.numbered_push_back({ A.ps_set, A.verts[0], B.verts[0], B.verts[1], B.verts[2] });
+				point_triangle(this->friction_rb_deformables.point_triangle.data, mu, pair.distance, A, B);
+			}
+			else if (A.ps == PhysicalSystem::Deformable && B.ps == PhysicalSystem::Rigidbody) {
+				this->friction_rb_deformables.triangle_point.conn.numbered_push_back({ B.ps_set, B.verts[0], B.verts[1], B.verts[2], A.verts[0] });
+				point_triangle(this->friction_rb_deformables.triangle_point.data, mu, pair.distance, A, B);
+			}
+			else {
+				stark.console.print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", core::ConsoleVerbosity::Frames);
+				exit(-1);
+			}
+		}
+	} // Point - Triangle
 }
 bool stark::models::EnergyFrictionalContact::_is_valid_configuration(core::Stark& stark)
 {
@@ -450,6 +592,7 @@ bool stark::models::EnergyFrictionalContact::_is_valid_configuration(core::Stark
 	const auto& intersections = this->_run_intersection_detection(stark, stark.settings.simulation.adaptive_time_step.value);
 	return intersections.edge_triangle.size() == 0;
 }
+
 
 /* ========================================================================================== */
 /* ===================================  SYMX DEFINITIONS  =================================== */
@@ -858,10 +1001,23 @@ void stark::models::EnergyFrictionalContact::_energies_friction_rb_deformables(c
 symx::Scalar stark::models::EnergyFrictionalContact::_barrier_potential(const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k)
 {
 	if (this->ipc_barrier_type == IPCBarrierType::Cubic) {
-		return k * (dhat - d).powN(3);
+		return k * (dhat - d).powN(3)/3.0;
 	}
 	else if (this->ipc_barrier_type == IPCBarrierType::Log) {
 		return -k * (dhat - d).powN(2) * log(d / dhat);
+	}
+	else {
+		std::cout << "stark error: Unknown IPC barrier type." << std::endl;
+		exit(-1);
+	}
+}
+double stark::models::EnergyFrictionalContact::_barrier_force(const double d, const double dhat, const double k)
+{
+	if (this->ipc_barrier_type == IPCBarrierType::Cubic) {
+		return k * std::pow(dhat - d, 2);
+	}
+	else if (this->ipc_barrier_type == IPCBarrierType::Log) {
+		return (k*(dhat - d)*(2.0*d*std::log(d / dhat) + d - dhat)) / d;
 	}
 	else {
 		std::cout << "stark error: Unknown IPC barrier type." << std::endl;
