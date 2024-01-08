@@ -46,6 +46,7 @@ namespace stark::models
 		// Meshes
 		std::vector<Mesh> meshes;
 		IntervalVector<Eigen::Vector3d> rigidbody_local_vertices;
+		std::vector<std::vector<int>> surface_node_maps;
 
 		// Mappings
 		std::vector<int> rigidbody_global_idx;
@@ -70,6 +71,7 @@ namespace stark::models
 		void set_friction_type(const IPCFrictionType type);
 		int add_rigid_body(const int idx, const std::vector<std::array<int, 3>>& triangles, const std::vector<Eigen::Vector3d>& vertices);
 		int add_rigid_body(const int idx, const std::vector<std::array<int, 2>>& edges, const std::vector<Eigen::Vector3d>& vertices);
+		int add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const std::vector<int>& surface_node_map);
 		int add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const int n_points);
 		int add_deformable(const int idx, const std::vector<std::array<int, 2>>& edges, const int n_points);
 		void set_coulomb_friction(const int idx1, const int idx2, const double mu);

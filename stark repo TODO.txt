@@ -8,6 +8,12 @@ Oct unification
 		Probably I should add another callback `.before_run()`
 
 	* Drop `IntervalConnectivity`, I don't need it. smash will do the job.
+	
+	* Add debug option to load the DLL directly without checking.
+	
+	* Consistent error messages. Either all to std::out (likely) or to stark.console (have to pass stark everywhere.)
+	
+	* OOP UI to the creation and transformation of surface and volume meshes.
 
 	* I can set BC for volumetrics from surfaces...
 	* Vehicle! https://www.reddit.com/r/interestingasfuck/comments/18p75uj/turning_diameter_comparison_of_lego_steering/

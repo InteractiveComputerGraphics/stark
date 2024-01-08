@@ -174,7 +174,7 @@ void edge_edge_collision()
 
 	settings.contact.collisions_enabled = true;
 	settings.contact.friction_enabled = false;
-	settings.contact.dhat = 0.01;
+	settings.contact.dhat = 0.03;
 	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
 
 	settings.debug.symx_check_for_NaNs = true;
@@ -188,10 +188,54 @@ void edge_edge_collision()
 	stark::RigidBodyHandler box1 = simulation.rigidbodies->add_box(1.0, { 0.1, 0.1, 0.1 })
 		.add_rotation(45.0, Eigen::Vector3d::UnitY())
 		.add_rotation(90.0, Eigen::Vector3d::UnitZ())
-		.add_displacement({ 0.01, 0, 0.2 });
+		.add_displacement({ 0.01, 0, 0.165 });
 
 	// Constraints
 	simulation.rigidbodies->add_constraint_fix(box0);
+
+	// Run
+	simulation.stark.run();
+}
+void heavy_box_rigid_and_deformable()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "heavy_box_rigid_and_deformable";
+	settings.output.output_directory = OUTPUT_PATH + "/heavy_box_rigid_and_deformable";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
+	settings.execution.end_simulation_time = 5.0;
+
+	settings.contact.collisions_enabled = true;
+	settings.contact.friction_enabled = false;
+	settings.contact.dhat = 0.005;
+
+	settings.debug.symx_check_for_NaNs = true;
+
+	stark::Simulation simulation(settings);
+
+	// Add objects
+	const double w = 0.3;
+
+	//// Base
+	{
+		const int n = 1;
+		auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w, -0.5*w, -0.5*w }, { 0.5*w, 0.5*w, 0.5*w }, { n, n, n });
+		auto material = stark::models::MaterialVolume::soft_rubber();
+		auto block = simulation.deformables->add_volume(vertices, tets, material);
+		auto bc = block.create_prescribed_positions_group_with_transformation();
+		bc->add_vertices_in_aabb({ 0.0, 0.0, -0.5*w }, { 1.0, 1.0, 0.01 });
+	}
+
+	//// Top deformable
+	{
+		const int n = 1;
+		const double w2 = 0.5*w;
+		auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w2, -0.5*w2, -0.5*w2 }, { 0.5*w2, 0.5*w2, 0.5*w2 }, { n, n, n });
+		stark::utils::move(vertices, { 0.01, 0.0, 0.5*w + 0.5*w2 + 2.0*settings.contact.dhat });
+		auto material = stark::models::MaterialVolume::soft_rubber();
+		material.density *= 10.0;
+		auto block = simulation.deformables->add_volume(vertices, tets, material);
+	}
 
 	// Run
 	simulation.stark.run();
@@ -205,7 +249,8 @@ int main()
 	//hanging_cloth();
 	//rubber_block();
 	//simple_collision();
-	edge_edge_collision();
+	//edge_edge_collision();
+	heavy_box_rigid_and_deformable();
 
 	//rb_constraints_all();
 }

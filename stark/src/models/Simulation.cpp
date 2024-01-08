@@ -12,7 +12,7 @@ stark::models::Simulation::Simulation(const core::Settings& settings)
 	spEnergyFrictionalContact contact = std::make_shared<EnergyFrictionalContact>(this->stark, point_dynamics, rb_dynamics);
 
 	// Physical Systems
-	//this->deformables = std::make_shared<Deformables>(this->stark, point_dynamics, contact);  // DEBUG
+	this->deformables = std::make_shared<Deformables>(this->stark, point_dynamics, contact);
 	this->rigidbodies = std::make_shared<RigidBodies>(this->stark, rb_dynamics, contact);
 
 	// Interactions

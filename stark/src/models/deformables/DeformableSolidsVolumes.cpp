@@ -41,7 +41,7 @@ stark::models::Id stark::models::DeformableSolidsVolumes::add(const std::vector<
 		material.strain_damping,
 		material.strain_limit,
 		material.strain_limit_stiffness);
-	this->contact->add_deformable(id.get_global_idx(), surface_triangles, (int)surface_vertices.size());
+	this->contact->add_deformable(id.get_global_idx(), surface_triangles, triangle_to_tet_node_map);
 
 	id.set_local_idx("DeformableSolidsVolumes", shell_id);
 	return id;

@@ -26,6 +26,10 @@ stark::models::EnergyFrictionalContact::EnergyFrictionalContact(core::Stark& sta
 
 int stark::models::EnergyFrictionalContact::add_rigid_body(const int idx, const std::vector<std::array<int, 2>>& edges, const std::vector<Eigen::Vector3d>& vertices)
 {
+	if (this->rigidbody_local_vertices.get_n_sets() != idx) {
+		std::cout << "stark error: Rigid bodies must be passed in creation order to EnergyFrictionalContact." << std::endl;
+		exit(-1);
+	}
 	this->rigidbody_global_idx.push_back(idx);
 	this->rigidbody_local_vertices.append(vertices);
 	const int mesh_idx = this->_add_edges_and_points(PhysicalSystem::Rigidbody, idx, edges, (int)vertices.size());
@@ -34,15 +38,34 @@ int stark::models::EnergyFrictionalContact::add_rigid_body(const int idx, const 
 }
 int stark::models::EnergyFrictionalContact::add_rigid_body(const int idx, const std::vector<std::array<int, 3>>& triangles, const std::vector<Eigen::Vector3d>& vertices)
 {
+	if (this->rigidbody_local_vertices.get_n_sets() != idx) {
+		std::cout << "stark error: Rigid bodies must be passed in creation order to EnergyFrictionalContact." << std::endl;
+		exit(-1);
+	}
 	this->rigidbody_global_idx.push_back(idx);
 	this->rigidbody_local_vertices.append(vertices);
 	const int mesh_idx = this->_add_triangles_edges_and_points(PhysicalSystem::Rigidbody, idx, triangles, (int)vertices.size());
 	this->disable_collision(mesh_idx, mesh_idx);
 	return mesh_idx;
 }
+int stark::models::EnergyFrictionalContact::add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const std::vector<int>& surface_node_map)
+{
+	if ((int)this->surface_node_maps.size() != idx) {
+		std::cout << "stark error: Deformables must be passed in creation order to EnergyFrictionalContact." << std::endl;
+		exit(-1);
+	}
+	this->deformable_global_idx.push_back(idx);
+	this->surface_node_maps.push_back(surface_node_map); // Keep the map from all the vertices of the simulation mesh to the contact mesh (e.g. tetrahedral meshes)
+	return this->_add_triangles_edges_and_points(PhysicalSystem::Deformable, idx, triangles, (int)surface_node_map.size());
+}
 int stark::models::EnergyFrictionalContact::add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const int n_points)
 {
+	if ((int)this->surface_node_maps.size() != idx) {
+		std::cout << "stark error: Deformables must be passed in creation order to EnergyFrictionalContact." << std::endl;
+		exit(-1);
+	}
 	this->deformable_global_idx.push_back(idx);
+	this->surface_node_maps[idx] = {};  // All nodes are in the contact mesh
 	return this->_add_triangles_edges_and_points(PhysicalSystem::Deformable, idx, triangles, n_points);
 }
 int stark::models::EnergyFrictionalContact::add_deformable(const int idx, const std::vector<std::array<int, 2>>& edges, const int n_points)
@@ -115,16 +138,29 @@ void stark::models::EnergyFrictionalContact::_update_vertices(core::Stark& stark
 		// Physical System
 		if (mesh.ps == PhysicalSystem::Deformable) {
 			const int ps_begin = this->dyn->x0.get_begin(mesh.ps_set);
-			const int ps_end = this->dyn->x0.get_end(mesh.ps_set);
-			const int ps_n = ps_end - ps_begin;
+			//const int ps_end = this->dyn->x0.get_end(mesh.ps_set);
+			//const int ps_n = ps_end - ps_begin;
 
-			if (ps_n != n) {
-				stark.console.print("stark error: Number of vertices mismatch found in EnergyFrictionalContact (deformables).\n", core::ConsoleVerbosity::Frames);
-				exit(-1);
+			//if (ps_n != n) {
+			//	stark.console.print("stark error: Number of vertices mismatch found in EnergyFrictionalContact (deformables).\n", core::ConsoleVerbosity::Frames);
+			//	exit(-1);
+			//}
+
+			//for (int i = 0; i < n; i++) {
+			//	mesh.vertices[i] = time_integration(this->dyn->x0[ps_begin + i], this->dyn->v1[ps_begin + i], dt);
+			//}
+
+			const std::vector<int>& surface_node_map = this->surface_node_maps[mesh.ps_set];
+			if (surface_node_map.size() == 0) {  // All nodes are surface nodes
+				for (int i = 0; i < n; i++) {
+					mesh.vertices[i] = time_integration(this->dyn->x0[ps_begin + i], this->dyn->v1[ps_begin + i], dt);
+				}
 			}
-
-			for (int i = 0; i < n; i++) {
-				mesh.vertices[i] = time_integration(this->dyn->x0[ps_begin + i], this->dyn->v1[ps_begin + i], dt);
+			else {
+				for (int surf_i = 0; surf_i < (int)surface_node_map.size(); surf_i++) {  // Use only the surface nodes
+					const int i = surface_node_map[surf_i];
+					mesh.vertices[surf_i] = time_integration(this->dyn->x0[ps_begin + i], this->dyn->v1[ps_begin + i], dt);
+				}
 			}
 		}
 		else if (mesh.ps == PhysicalSystem::Rigidbody) {

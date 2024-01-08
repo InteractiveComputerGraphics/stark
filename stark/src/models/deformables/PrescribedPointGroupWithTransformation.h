@@ -42,7 +42,7 @@ namespace stark::models
 
 	private:
 		const spPointDynamics& dyn;
-		double stiffness = 1e3;
+		double stiffness = 1e6;
 		const int obj_idx;
 		std::string label;
 		std::vector<int> loc_indices;
