@@ -19,7 +19,7 @@ namespace stark::models
 	public:
 		DeformableHandler(const Id& id, spPointDynamics dyn, spEnergyPointInertia inertia, spEnergyPointPrescribedPositions prescribed_positions);
 
-		int get_global_idx() const;
+		int get_deformable_idx() const;
 		int get_global_vertex_idx(const int local_vertex) const;
 		const std::unordered_map<std::string, int>& get_local_indices() const;
 

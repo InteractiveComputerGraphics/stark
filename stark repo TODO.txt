@@ -9,7 +9,20 @@ Oct unification
 
 	* Drop `IntervalConnectivity`, I don't need it. smash will do the job.
 	
+	* Console and Logger are just wrong.
+		- They are part of the core but know too much about the models.
+			I should have core stuff (output, newton...) but also model stuff.
+		- SymX energy initializations should be declared just before the simulation executes, not when the simulation object is created.
+			Otherwise I cannot set things like IPC barrier type. 
+				-> Move declarations to a lambda that gets executed sometime before the sim.
+					`callbacks.energy_declaration`
+			Actually... this is already happening!
+					
+	* Better output for symx compilation. At the moment is just waiting.
+		Probably better to pass a lambda for custom print.
+	
 	* Add debug option to load the DLL directly without checking.
+		Otherwise it's hard to work if I have to wait 1 min
 	
 	* Consistent error messages. Either all to std::out (likely) or to stark.console (have to pass stark everywhere.)
 	

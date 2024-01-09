@@ -7,7 +7,7 @@ DeformableHandler::DeformableHandler(const Id& id, spPointDynamics dyn, spEnergy
 {
 }
 
-int DeformableHandler::get_global_idx() const
+int DeformableHandler::get_deformable_idx() const
 {
 	return this->id.get_global_idx();
 }
@@ -43,12 +43,12 @@ void DeformableHandler::set_force(const int local_vertex, const Eigen::Vector3d&
 }
 void DeformableHandler::clear_forces()
 {
-	const int set_id = this->get_global_idx();
+	const int set_id = this->get_deformable_idx();
 	std::fill(this->dyn->f.get_begin_ptr(set_id), this->dyn->f.get_end_ptr(set_id), Eigen::Vector3d::Zero());
 }
 void DeformableHandler::clear_accelerations()
 {
-	const int set_id = this->get_global_idx();
+	const int set_id = this->get_deformable_idx();
 	std::fill(this->dyn->f.get_begin_ptr(set_id), this->dyn->f.get_end_ptr(set_id), Eigen::Vector3d::Zero());
 }
 Eigen::Vector3d DeformableHandler::get_velocity(const int local_vertex)

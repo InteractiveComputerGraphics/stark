@@ -31,10 +31,10 @@ int stark::models::EnergyFrictionalContact::add_rigid_body(const int idx, const 
 		std::cout << "stark error: Rigid bodies must be passed in creation order to EnergyFrictionalContact." << std::endl;
 		exit(-1);
 	}
-	this->rigidbody_global_idx.push_back(idx);
 	this->rigidbody_local_vertices.append(vertices);
 	const int mesh_idx = this->_add_edges_and_points(PhysicalSystem::Rigidbody, idx, edges, (int)vertices.size());
 	this->disable_collision(mesh_idx, mesh_idx);
+	this->rigidbody_idx_collision_idx_map[idx] = mesh_idx;
 	return mesh_idx;
 }
 int stark::models::EnergyFrictionalContact::add_rigid_body(const int idx, const std::vector<std::array<int, 3>>& triangles, const std::vector<Eigen::Vector3d>& vertices)
@@ -43,10 +43,10 @@ int stark::models::EnergyFrictionalContact::add_rigid_body(const int idx, const 
 		std::cout << "stark error: Rigid bodies must be passed in creation order to EnergyFrictionalContact." << std::endl;
 		exit(-1);
 	}
-	this->rigidbody_global_idx.push_back(idx);
 	this->rigidbody_local_vertices.append(vertices);
 	const int mesh_idx = this->_add_triangles_edges_and_points(PhysicalSystem::Rigidbody, idx, triangles, (int)vertices.size());
 	this->disable_collision(mesh_idx, mesh_idx);
+	this->rigidbody_idx_collision_idx_map[idx] = mesh_idx;
 	return mesh_idx;
 }
 int stark::models::EnergyFrictionalContact::add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const std::vector<int>& surface_node_map)
@@ -55,9 +55,10 @@ int stark::models::EnergyFrictionalContact::add_deformable(const int idx, const 
 		std::cout << "stark error: Deformables must be passed in creation order to EnergyFrictionalContact." << std::endl;
 		exit(-1);
 	}
-	this->deformable_global_idx.push_back(idx);
 	this->surface_node_maps.push_back(surface_node_map); // Keep the map from all the vertices of the simulation mesh to the contact mesh (e.g. tetrahedral meshes)
-	return this->_add_triangles_edges_and_points(PhysicalSystem::Deformable, idx, triangles, (int)surface_node_map.size());
+	const int mesh_idx = this->_add_triangles_edges_and_points(PhysicalSystem::Deformable, idx, triangles, (int)surface_node_map.size());
+	this->deformable_idx_collision_idx_map[idx] = mesh_idx;
+	return mesh_idx;
 }
 int stark::models::EnergyFrictionalContact::add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const int n_points)
 {
@@ -65,32 +66,69 @@ int stark::models::EnergyFrictionalContact::add_deformable(const int idx, const 
 		std::cout << "stark error: Deformables must be passed in creation order to EnergyFrictionalContact." << std::endl;
 		exit(-1);
 	}
-	this->deformable_global_idx.push_back(idx);
 	this->surface_node_maps[idx] = {};  // All nodes are in the contact mesh
-	return this->_add_triangles_edges_and_points(PhysicalSystem::Deformable, idx, triangles, n_points);
+	const int mesh_idx = this->_add_triangles_edges_and_points(PhysicalSystem::Deformable, idx, triangles, n_points);
+	this->deformable_idx_collision_idx_map[idx] = mesh_idx;
+	return mesh_idx;
 }
 int stark::models::EnergyFrictionalContact::add_deformable(const int idx, const std::vector<std::array<int, 2>>& edges, const int n_points)
 {
-	this->deformable_global_idx.push_back(idx);
-	return this->_add_edges_and_points(PhysicalSystem::Deformable, idx, edges, n_points);
+	if ((int)this->surface_node_maps.size() != idx) {
+		std::cout << "stark error: Deformables must be passed in creation order to EnergyFrictionalContact." << std::endl;
+		exit(-1);
+	}
+	this->surface_node_maps[idx] = {};  // All nodes are in the contact mesh
+	const int mesh_idx = this->_add_edges_and_points(PhysicalSystem::Deformable, idx, edges, n_points);
+	this->deformable_idx_collision_idx_map[idx] = mesh_idx;
+	return mesh_idx;
+}
+void stark::models::EnergyFrictionalContact::set_coulomb_friction_pair(const PhysicalSystem& ps0, const int idx0_in_ps, const PhysicalSystem& ps1, const int idx1_in_ps, const double mu)
+{
+	this->set_coulomb_friction_pair(this->_get_collision_idx(ps0, idx0_in_ps), this->_get_collision_idx(ps1, idx1_in_ps), mu);
 }
 void stark::models::EnergyFrictionalContact::set_coulomb_friction_pair(const int idx0, const int idx1, const double mu)
 {
-	this->pair_coulombs_mu[{ idx0, idx1 }] = mu;
+	const std::array<int, 2> pair = { std::min(idx0, idx1), std::max(idx0, idx1) };
+	this->pair_coulombs_mu[pair] = mu;
 }
-void stark::models::EnergyFrictionalContact::disable_collision(const int idx1, const int idx2)
+void stark::models::EnergyFrictionalContact::disable_collision(const int idx0, const int idx1)
 {
-	const std::array<int, 2> pair = { std::min(idx1, idx2), std::max(idx1, idx2) };
+	const std::array<int, 2> pair = { std::min(idx0, idx1), std::max(idx0, idx1) };
 	if (this->disabled_collision_pairs.find(pair) == this->disabled_collision_pairs.end()) {
 		this->disabled_collision_pairs.insert(pair);
 		this->pd.add_blacklist(pair[0], pair[1]);
 		this->id.add_blacklist(pair[0], pair[1]);
 	}
 }
+void stark::models::EnergyFrictionalContact::disable_collision(const PhysicalSystem& ps0, const int idx0_in_ps, const PhysicalSystem& ps1, const int idx1_in_ps)
+{
+	this->disable_collision(this->_get_collision_idx(ps0, idx0_in_ps), this->_get_collision_idx(ps1, idx1_in_ps));
+}
 
 /* ================================================================================= */
 /* ===================================  HELPERS  =================================== */
 /* ================================================================================= */
+int stark::models::EnergyFrictionalContact::_get_collision_idx(const PhysicalSystem& ps, const int idx_in_ps)
+{
+	if (ps == PhysicalSystem::Deformable) {
+		if (this->deformable_idx_collision_idx_map.find(idx_in_ps) == this->deformable_idx_collision_idx_map.end()) {
+			std::cout << "stark error: Deformable idx not found in EnergyFrictionalContact::disable_collision()." << std::endl;
+			exit(-1);
+		}
+		return this->deformable_idx_collision_idx_map[idx_in_ps];
+	}
+	else if (ps == PhysicalSystem::Rigidbody) {
+		if (this->rigidbody_idx_collision_idx_map.find(idx_in_ps) == this->rigidbody_idx_collision_idx_map.end()) {
+			std::cout << "stark error: Rigidbody idx not found in EnergyFrictionalContact::disable_collision()." << std::endl;
+			exit(-1);
+		}
+		return this->rigidbody_idx_collision_idx_map[idx_in_ps];
+	}
+	else {
+		std::cout << "stark error: Unknown physical system found in EnergyFrictionalContact::disable_collision()." << std::endl;
+		exit(-1);
+	}
+}
 int stark::models::EnergyFrictionalContact::_add_edges_and_points(const PhysicalSystem& ps, const int idx, const std::vector<std::array<int, 2>>& edges, const int n_points)
 {
 	// Add to local meshes data structures

@@ -49,8 +49,8 @@ namespace stark::models
 		std::vector<std::vector<int>> surface_node_maps;
 
 		// Mappings
-		std::vector<int> rigidbody_global_idx;
-		std::vector<int> deformable_global_idx;
+		std::unordered_map<int, int> rigidbody_idx_collision_idx_map;
+		std::unordered_map<int, int> deformable_idx_collision_idx_map;
 
 		// Collision detection
 		tmcd::IntersectionDetection id;
@@ -67,19 +67,20 @@ namespace stark::models
 
 		/* Methods */
 		EnergyFrictionalContact(core::Stark& stark, const spPointDynamics dyn, const spRigidBodyDynamics rb);
-		void set_barrier_type(const IPCBarrierType type);
-		void set_friction_type(const IPCFrictionType type);
 		int add_rigid_body(const int idx, const std::vector<std::array<int, 3>>& triangles, const std::vector<Eigen::Vector3d>& vertices);
 		int add_rigid_body(const int idx, const std::vector<std::array<int, 2>>& edges, const std::vector<Eigen::Vector3d>& vertices);
 		int add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const std::vector<int>& surface_node_map);
 		int add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const int n_points);
 		int add_deformable(const int idx, const std::vector<std::array<int, 2>>& edges, const int n_points);
+		void set_coulomb_friction_pair(const PhysicalSystem& ps0, const int idx0_in_ps, const PhysicalSystem& ps1, const int idx1_in_ps, const double mu);
 		void set_coulomb_friction_pair(const int idx0, const int idx1, const double mu);
 		void disable_collision(const int idx0, const int idx1);
+		void disable_collision(const PhysicalSystem& ps0, const int idx0_in_ps, const PhysicalSystem& ps1, const int idx1_in_ps);
 		// void enable_collision(const int idx1, const int idx2); // Not available in collision detection !
 
 	private:
 		// Helpers
+		int _get_collision_idx(const PhysicalSystem& ps, const int idx_in_ps);
 		int _add_edges_and_points(const PhysicalSystem& ps, const int idx, const std::vector<std::array<int, 2>>& edges, const int n_points);
 		int _add_triangles_edges_and_points(const PhysicalSystem& ps, const int idx, const std::vector<std::array<int, 3>>& triangles, const int n_points);
 		void _update_vertices(core::Stark& stark, const double dt);
