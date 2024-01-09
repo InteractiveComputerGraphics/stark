@@ -236,12 +236,6 @@ Eigen::Matrix3d stark::models::RigidBodyHandler::global_to_local_matrix(const Ei
 	return stark::models::global_to_local_matrix(A, this->rb->dyn->R1[this->idx]);
 }
 
-stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::set_collision_mesh(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles)
-{
-	this->rb->collision_meshes[this->idx].vertices = vertices;
-	this->rb->collision_meshes[this->idx].conn = triangles;
-	return (*this);
-}
 stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::set_render_mesh(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles)
 {
 	this->rb->render_meshes[this->idx].vertices = vertices;

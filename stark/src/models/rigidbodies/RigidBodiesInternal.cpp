@@ -9,7 +9,6 @@ stark::models::RigidBodiesInternal::RigidBodiesInternal(stark::core::Stark& star
 	this->inertia = std::make_shared<EnergyRigidBodyInertia>(stark, dyn);
 	this->constraints = std::make_shared<EnergyRigidBodyConstraints>(stark, dyn);
 
-	stark.callbacks.before_simulation.push_back([&]() { this->_before_simulation__init_collision_meshes(stark); });
 	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
 }
 
@@ -84,13 +83,5 @@ void stark::models::RigidBodiesInternal::_write_frame(stark::core::Stark& stark)
 		}
 
 		seq.logger.save_to_disk(stark.settings.output.output_directory + "/" + stark.settings.output.simulation_name + "_rb_" + seq.label + ".rbseq");
-	}
-}
-void stark::models::RigidBodiesInternal::_before_simulation__init_collision_meshes(core::Stark& stark)
-{
-	// Note: this is delayed to just before the simulation to let the user set custom collision meshes
-	for (int i = 0; i < (int)this->collision_meshes.size(); i++) {
-		const utils::Mesh<3>& mesh = this->collision_meshes[i];
-		this->contact->add_rigid_body(i, mesh.conn, mesh.vertices);
 	}
 }

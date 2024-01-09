@@ -47,7 +47,6 @@ namespace stark::models
 	private:
 		// Stark callbacks
 		void _write_frame(stark::core::Stark& stark);
-		void _before_simulation__init_collision_meshes(core::Stark& stark);
 	};
 	using spRigidBodiesInternal = std::shared_ptr<RigidBodiesInternal>;
 }

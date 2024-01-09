@@ -36,12 +36,17 @@ namespace stark::models
 		double get_default_constraint_angle_tolerance() const;
 
 		// Add rigid bodies
-		RigidBodyHandler add(const double mass, const Eigen::Matrix3d& inertia_local);
+		RigidBodyHandler add(const double mass, const Eigen::Matrix3d& inertia_local, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
 		RigidBodyHandler add_sphere(const double mass, const double radius, const int subdivisions = 2);
+		RigidBodyHandler add_sphere(const double mass, const double radius, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
 		RigidBodyHandler add_box(const double mass, const Eigen::Vector3d& size);
+		RigidBodyHandler add_box(const double mass, const Eigen::Vector3d& size, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
 		RigidBodyHandler add_box(const double mass, const double size);
+		RigidBodyHandler add_box(const double mass, const double size, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
 		RigidBodyHandler add_cylinder(const double mass, const double radius, const double full_height, const int slices = 16, const int stacks = 1);
+		RigidBodyHandler add_cylinder(const double mass, const double radius, const double full_height, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
 		RigidBodyHandler add_torus(const double mass, const double outer_radius, const double inner_radius, const int slices = 16, const int stacks = 32);
+		RigidBodyHandler add_torus(const double mass, const double outer_radius, const double inner_radius, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
 
 		// Add constraints
 		//// Base

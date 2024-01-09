@@ -78,7 +78,6 @@ namespace stark::models
 		Eigen::Vector3d global_to_local_direction(const Eigen::Vector3d& d) const;
 		Eigen::Matrix3d global_to_local_matrix(const Eigen::Matrix3d& A) const;
 
-		RigidBodyHandler& set_collision_mesh(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
 		RigidBodyHandler& set_render_mesh(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
 		RigidBodyHandler& add_to_output_label(const std::string label);
 		RigidBodyHandler& enable_writing_transformation_sequence(const std::string label);
