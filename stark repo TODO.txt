@@ -3,6 +3,13 @@ stark repo TODO
 
 Oct unification
 ---------------
+	* Attachments
+		- Attach by distance
+			This can be used to automatically stitch all the pieces of cloth of a dress.
+		- Tolerance
+
+	* Add inspection to boundary conditions and attachments?
+
 	* Set collision meshes in a callback function `before_time_step()` when not initalized.
 		This way the user can set whatever needed before the simulation, and everything sets built just once.
 		Probably I should add another callback `.before_run()`
@@ -17,6 +24,10 @@ Oct unification
 				-> Move declarations to a lambda that gets executed sometime before the sim.
 					`callbacks.energy_declaration`
 			Actually... this is already happening!
+			
+	* For truly usable attachments I need to disable initial collisions.
+		Cloth stitching, for example.
+		At the moment is impossible to make a dress by stitching pieces of cloth.
 					
 	* Better output for symx compilation. At the moment is just waiting.
 		Probably better to pass a lambda for custom print.

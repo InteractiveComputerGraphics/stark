@@ -247,6 +247,7 @@ void heavy_box_rigid_and_deformable()
 		auto top = simulation.deformables->add_volume(vertices, tets, material);
 
 		simulation.interactions->set_friction(base, top, 0.5);
+		//simulation.interactions->disable_collision(base, top);
 	}
 
 	//// Top rigid
@@ -255,7 +256,7 @@ void heavy_box_rigid_and_deformable()
 			.set_translation({ 0.01, 0.0, 0.5*w + 0.5*w2 + 2.0*settings.contact.dhat });
 
 		simulation.interactions->set_friction(base, top, 0.5);
-		simulation.interactions->disable_collision(base, top);
+		//simulation.interactions->disable_collision(base, top);
 	}
 
 	// Run

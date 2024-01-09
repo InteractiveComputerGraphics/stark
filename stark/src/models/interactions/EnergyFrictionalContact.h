@@ -1,31 +1,11 @@
 #pragma once
-#include <vector>
-#include <string>
-#include <memory>
-
-#include <Eigen/Dense>
-#include <symx>
 #include <TriangleMeshCollisionDetection>
 
-#include "../../core/Stark.h"
 #include "../../utils/unordered_array_set_and_map.h"
-#include "../IntervalConnectivity.h"
 #include "../deformables/PointDynamics.h"
 #include "../rigidbodies/RigidBodyDynamics.h"
 #include "contact_and_friction_data.h"
 
-
-
-/*
-	HOW ALL THIS WORKS
-	==================
-		- There is no tracking of outter types in the interface. The user declares meshes with their physical system and a index is returned. 
-			Handling of these indices must be done in a higher layer of abstraction.
-		- There is no order in the meshes.
-		- Contact pair deactivation and pair friction must be done using the returned indices.
-		- Obviously, this class needs to know where each mesh comes from and has hardcoded routines to the Deformable and RigidBody classes.
-
-*/
 
 namespace stark::models
 {
@@ -76,7 +56,6 @@ namespace stark::models
 		void set_coulomb_friction_pair(const int idx0, const int idx1, const double mu);
 		void disable_collision(const int idx0, const int idx1);
 		void disable_collision(const PhysicalSystem& ps0, const int idx0_in_ps, const PhysicalSystem& ps1, const int idx1_in_ps);
-		// void enable_collision(const int idx1, const int idx2); // Not available in collision detection !
 
 	private:
 		// Helpers

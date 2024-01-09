@@ -114,6 +114,8 @@ set(MODELS_INTERACTIONS_FILES
 	src/models/interactions/friction_geometry.h
 	src/models/interactions/EnergyFrictionalContact.cpp
 	src/models/interactions/EnergyFrictionalContact.h
+	src/models/interactions/EnergyAttachments.cpp
+	src/models/interactions/EnergyAttachments.h
 	src/models/interactions/Interactions.cpp
 	src/models/interactions/Interactions.h
 )
@@ -126,7 +128,6 @@ set(MODELS_FILES
 	src/models/distances.cpp
 	src/models/distances.h
 	src/models/include_ui_models.h
-	src/models/IntervalConnectivity.h
 	src/models/IntervalVector.h
 	src/models/MeshOutputGroups.cpp
 	src/models/MeshOutputGroups.h
