@@ -1,12 +1,29 @@
 stark repo TODO
 ===============
 
+Release
+-------
+	- Non-AVX2 mode for Mac
+	- Error messages and logging.
+	- Documentation.
+	- Examples.
+	- Tutorials.
+	- Gallery.
+	- Sanitize all the UI.
+	- Remove research materials.
+	
+	Comming
+		- Locally disabled collisions for attachments
+		- Generalize attachments beyond point-point -> point-triangle, point-edge... and other combinations between RB and deformables.
+
 Oct unification
 ---------------
 	* Attachments
 		- Attach by distance
 			This can be used to automatically stitch all the pieces of cloth of a dress.
 		- Tolerance
+
+	* Get collision mesh and distance of all deformables as well
 
 	* Add inspection to boundary conditions and attachments?
 

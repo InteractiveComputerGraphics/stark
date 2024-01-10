@@ -235,6 +235,14 @@ Eigen::Matrix3d stark::models::RigidBodyHandler::global_to_local_matrix(const Ei
 {
 	return stark::models::global_to_local_matrix(A, this->rb->dyn->R1[this->idx]);
 }
+const stark::utils::Mesh<3>& stark::models::RigidBodyHandler::get_collision_mesh_local() const
+{
+	return this->rb->collision_meshes[this->idx];
+}
+const stark::utils::Mesh<3>& stark::models::RigidBodyHandler::get_render_mesh_local() const
+{
+	return this->rb->render_meshes[this->idx];
+}
 
 stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::set_render_mesh(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles)
 {
@@ -253,4 +261,41 @@ stark::models::RigidBodyHandler& stark::models::RigidBodyHandler::enable_writing
 	this->rb->transformation_sequences.back().body_idx = this->index();
 	this->rb->transformation_sequences.back().label = label;
 	return (*this);
+}
+
+stark::utils::Mesh<3> stark::models::RigidBodyHandler::get_collision_mesh_global() const
+{
+	utils::Mesh<3> mesh = this->rb->collision_meshes[this->idx];
+	for (Eigen::Vector3d& v : mesh.vertices) {
+		v = this->local_to_global_point(v);
+	}
+	return mesh;
+}
+stark::utils::Mesh<3> stark::models::RigidBodyHandler::get_render_mesh_global() const
+{
+	utils::Mesh<3> mesh = this->rb->render_meshes[this->idx];
+	for (Eigen::Vector3d& v : mesh.vertices) {
+		v = this->local_to_global_point(v);
+	}
+	return mesh;
+}
+tmd::TriangleMeshDistance stark::models::RigidBodyHandler::get_collision_mesh_local_distance() const
+{
+	utils::Mesh<3> mesh = this->get_collision_mesh_local();
+	return tmd::TriangleMeshDistance(mesh.vertices, mesh.conn);
+}
+tmd::TriangleMeshDistance stark::models::RigidBodyHandler::get_collision_mesh_global_distance() const
+{
+	utils::Mesh<3> mesh = this->get_collision_mesh_global();
+	return tmd::TriangleMeshDistance(mesh.vertices, mesh.conn);
+}
+tmd::TriangleMeshDistance stark::models::RigidBodyHandler::get_render_mesh_local_distance() const
+{
+	utils::Mesh<3> mesh = this->get_render_mesh_local();
+	return tmd::TriangleMeshDistance(mesh.vertices, mesh.conn);
+}
+tmd::TriangleMeshDistance stark::models::RigidBodyHandler::get_render_mesh_global_distance() const
+{
+	utils::Mesh<3> mesh = this->get_render_mesh_global();
+	return tmd::TriangleMeshDistance(mesh.vertices, mesh.conn);
 }

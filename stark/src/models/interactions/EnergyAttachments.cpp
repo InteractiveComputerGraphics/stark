@@ -1,6 +1,7 @@
 #include "EnergyAttachments.h"
 
 #include "../time_integration.h"
+#include "../rigidbodies/rigidbody_transformations.h"
 
 
 stark::models::EnergyAttachments::EnergyAttachments(core::Stark& stark, const spPointDynamics dyn, const spRigidBodyDynamics rb)
@@ -47,4 +48,22 @@ stark::models::EnergyAttachments::EnergyAttachments(core::Stark& stark, const sp
 			energy.set(E);
 		}
 	);
+}
+
+void stark::models::EnergyAttachments::add_deformable_deformable(const std::vector<std::array<int, 2>>& pairs, const double stiffness)
+{
+	const int group = (int)this->stiffness_d_d.size();
+	this->stiffness_d_d.push_back(stiffness);
+	for (const std::array<int, 2>& pair : pairs) {
+		this->conn_d_d.push_back({ group, pair[0], pair[1] });
+	}
+}
+void stark::models::EnergyAttachments::add_rigidbody_deformable(const int rb_idx, const std::vector<int>& d_points, const double stiffness)
+{
+	const int group = (int)this->stiffness_rb_d.size();
+	this->stiffness_rb_d.push_back(stiffness);
+	for (const int d_point : d_points) {
+		this->conn_rb_d.numbered_push_back({ group, rb_idx, d_point });
+		this->rb_points_loc.push_back(global_to_local_point(this->dyn->x1[d_point], this->rb->R1[rb_idx], this->rb->t1[rb_idx]));
+	}
 }

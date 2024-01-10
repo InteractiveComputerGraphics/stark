@@ -23,5 +23,7 @@ namespace stark::models
 
 		/* Methods */
 		EnergyAttachments(core::Stark& stark, const spPointDynamics dyn, const spRigidBodyDynamics rb);
+		void add_deformable_deformable(const std::vector<std::array<int, 2>>& pairs, const double stiffness);
+		void add_rigidbody_deformable(const int rb_idx, const std::vector<int>& d_points, const double stiffness);
 	};
 }

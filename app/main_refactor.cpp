@@ -262,6 +262,51 @@ void heavy_box_rigid_and_deformable()
 	// Run
 	simulation.stark.run();
 }
+void attachments()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "attachments";
+	settings.output.output_directory = OUTPUT_PATH + "/attachments";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
+	settings.execution.end_simulation_time = 5.0;
+	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
+	settings.debug.symx_check_for_NaNs = true;
+	stark::models::Simulation simulation(settings);
+
+	const double w = 0.1;
+	const int n = 5;
+
+	// Base block
+	auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5 * w, -0.5 * w, -0.5 * w }, { 0.5 * w, 0.5 * w, 0.5 * w }, { n, n, n });
+	auto material = stark::models::MaterialVolume::soft_rubber();
+	auto block0 = simulation.deformables->add_volume(vertices, tets, material);
+
+	// BC
+	auto bc = block0.create_prescribed_positions_group_with_transformation();
+	bc->set_stiffness(1e6);
+	bc->add_vertices_in_aabb({ -0.5*w, 0.0, 0.0 }, { 0.001, 2.0 * w, 2.0 * w });
+
+	// Second block
+	stark::utils::move(vertices, { w, 0.0, -w });
+	auto block1 = simulation.deformables->add_volume(vertices, tets, material);
+	simulation.interactions->attach_by_distance(block0, block1);
+
+	// Cloth
+	auto [c_vertices, c_triangles] = stark::utils::generate_triangular_grid({ -0.5 * w, -0.5 * w }, { 0.5 * w, 0.5 * w }, { n, n });
+	stark::utils::move(c_vertices, { 2.0*w, 0.0, -0.5*w });
+	auto c_material = stark::MaterialSurface::towel();
+	auto cloth = simulation.deformables->add_surface(c_vertices, c_triangles, c_material);
+	simulation.interactions->attach_by_distance(block1, cloth);
+
+	// Rigid body
+	auto rigid = simulation.rigidbodies->add_box(1.0, w)
+		.set_translation({3.0*w, 0.0, 0.0});
+	simulation.interactions->attach_by_distance(rigid, cloth);
+
+	// Run
+	simulation.stark.run();
+}
 
 
 int main()
@@ -272,7 +317,8 @@ int main()
 	//rubber_block();
 	//simple_collision();
 	//edge_edge_collision();
-	heavy_box_rigid_and_deformable();
+	//heavy_box_rigid_and_deformable();
+	attachments();
 
 	//rb_constraints_all();
 }

@@ -1,8 +1,8 @@
 #pragma once
+#include <fmt/chrono.h>
+#include <tmd/TriangleMeshDistance.h>
 
 #include "RigidBodiesInternal.h"
-#include <fmt/chrono.h>
-
 
 namespace stark::models
 {
@@ -81,5 +81,14 @@ namespace stark::models
 		RigidBodyHandler& set_render_mesh(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
 		RigidBodyHandler& add_to_output_label(const std::string label);
 		RigidBodyHandler& enable_writing_transformation_sequence(const std::string label);
+
+		const utils::Mesh<3>& get_collision_mesh_local() const;
+		const utils::Mesh<3>& get_render_mesh_local() const;
+		utils::Mesh<3> get_collision_mesh_global() const;
+		utils::Mesh<3> get_render_mesh_global() const;
+		tmd::TriangleMeshDistance get_collision_mesh_local_distance() const;
+		tmd::TriangleMeshDistance get_collision_mesh_global_distance() const;
+		tmd::TriangleMeshDistance get_render_mesh_local_distance() const;
+		tmd::TriangleMeshDistance get_render_mesh_global_distance() const;
 	};
 }

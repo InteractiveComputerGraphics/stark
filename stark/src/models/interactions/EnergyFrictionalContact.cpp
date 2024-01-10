@@ -66,7 +66,7 @@ int stark::models::EnergyFrictionalContact::add_deformable(const int idx, const 
 		std::cout << "stark error: Deformables must be passed in creation order to EnergyFrictionalContact." << std::endl;
 		exit(-1);
 	}
-	this->surface_node_maps[idx] = {};  // All nodes are in the contact mesh
+	this->surface_node_maps.push_back({});  // All nodes are in the contact mesh
 	const int mesh_idx = this->_add_triangles_edges_and_points(PhysicalSystem::Deformable, idx, triangles, n_points);
 	this->deformable_idx_collision_idx_map[idx] = mesh_idx;
 	return mesh_idx;
@@ -77,7 +77,7 @@ int stark::models::EnergyFrictionalContact::add_deformable(const int idx, const 
 		std::cout << "stark error: Deformables must be passed in creation order to EnergyFrictionalContact." << std::endl;
 		exit(-1);
 	}
-	this->surface_node_maps[idx] = {};  // All nodes are in the contact mesh
+	this->surface_node_maps.push_back({});  // All nodes are in the contact mesh
 	const int mesh_idx = this->_add_edges_and_points(PhysicalSystem::Deformable, idx, edges, n_points);
 	this->deformable_idx_collision_idx_map[idx] = mesh_idx;
 	return mesh_idx;
