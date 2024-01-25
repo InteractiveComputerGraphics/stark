@@ -3,6 +3,7 @@ stark repo TODO
 
 Release
 -------
+	- Error in NewtonsMethod: grad is not residual *forces*, as its the derivative of velocities
 	- Non-AVX2 mode for Mac
 	- Error messages and logging.
 	- Documentation.
@@ -18,6 +19,22 @@ Release
 
 Oct unification
 ---------------
+	- Delete Bergou06
+	- Remove labels from energies
+	- Is integration of bending damping consistent?
+	- Damping must be integrated by positions, not velocities!
+	- Bending damping seems to work but it is way too stiff.
+	- Newton max_step should not return double, but directly clamp the step.
+		Need to figure out how to nicely slide du for the user
+	- Why is mass not enough for a simulation??
+	- Clarify the projection matrices for 2D shells according to Fabian findings
+		Mathematical and experimental demonstrations
+		
+	Collision detection (It is quite good overall already)
+		- Parallelism.
+		- CCD.
+		- Disable/Enable pairs should detect redundancies and ignore them.
+
 	* Attachments
 		- Attach by distance
 			This can be used to automatically stitch all the pieces of cloth of a dress.

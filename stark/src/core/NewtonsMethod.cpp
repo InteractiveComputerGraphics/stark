@@ -9,15 +9,22 @@
 stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& global_energy, const Callbacks& callbacks, Settings& settings, Console& console, Logger& logger)
 {
 	const int ndofs = global_energy.get_total_n_dofs();
+	const int n_nodes = ndofs / 3;
 	this->du.resize(ndofs);
 	this->u0.resize(ndofs);
 	this->u1.resize(ndofs);
+
+	std::vector<std::vector<int>> dofs_activation;
 
 	int newton_it = 0;
 	int total_line_search_it = 0;
 	int total_CG_it = 0;
 	double residual = std::numeric_limits<double>::max();
 	while (residual > settings.newton.newton_tol) {
+
+		dofs_activation.push_back({});
+		std::vector<int>& active_nodes = dofs_activation.back();
+		active_nodes.resize(n_nodes, 0);
 		
 		newton_it++;
 		this->it_count++;
@@ -50,9 +57,29 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 			break;
 		}
 
+		// Adaptive DoFs
+		//// Boolean activation flags
+		for (int i = 0; i < ndofs; i++) {
+			if (std::abs((*assembled.grad)[i]) > this->dof_deactivation_tolerance_multiplier *settings.newton.newton_tol) {
+				active_nodes[i / 3] = 1;
+			}
+		}
+
+		//// Mapping
+		this->active_to_global_node_map.clear();
+		this->global_to_active_node_map = std::vector<int>(n_nodes, -1);
+		for (int i = 0; i < n_nodes; i++) {
+			if (active_nodes[i] == 1) {
+				this->global_to_active_node_map[i] = (int)this->active_to_global_node_map.size();
+				this->active_to_global_node_map.push_back(i);
+			}
+		}
+		const int n_active_nodes = (int)this->active_to_global_node_map.size();
+		const int n_active_dofs = 3 * n_active_nodes;
+
 		//// Solve
 		this->du.resize(ndofs);
-		const Eigen::VectorXd rhs = -1.0 * (*assembled.grad);
+		Eigen::VectorXd rhs = -1.0 * (*assembled.grad);
 		if (settings.newton.use_direct_linear_solve) {  // TODO: Clarify that one is directLU and the other is BCG without PSD checks
 			logger.start_timing("directLU");
 			solve_linear_system_with_directLU(this->du, *assembled.hess, rhs);
@@ -64,17 +91,72 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 			// Forcing sequence
 			const double cg_tol = std::min(0.1 /*TODO: arbritrary.*/, grad_norm * std::min(0.5, std::sqrt(grad_norm)));
 
-			this->du.setZero();
-			const int max_iterations = std::max(1000, (int)(settings.newton.cg_max_iterations_multiplier * ndofs)); // Very small sims will need to exceed ndofs iterations
-			const int iterations = solve_linear_system_with_CG(this->du, *assembled.hess, rhs, max_iterations, cg_tol, settings.execution.n_threads);
-			total_CG_it += iterations;
-			logger.stop_timing_add("CG");
+			if (this->run_adaptive_dofs && (double)n_active_dofs < (double)ndofs*this->dofs_percentage_for_full_solve) {
+				logger.append_to_series("active_dofs", n_active_dofs);
 
-			if (iterations == max_iterations) {  // TODO: Check
-				console.print("\n\t\t -> CG didn't converge.\n", ConsoleVerbosity::TimeSteps);
-				return NewtonError::TooManyCGIterations;
+				// Build reduced system
+				//// Hessian
+				this->active_hess_triplets.clear();
+				this->triplet_buffer.clear();
+				assembled.hess->to_triplets(this->triplet_buffer);
+				for (const auto& triplet : this->triplet_buffer) {
+					if (active_nodes[triplet.row() / 3] == 1 && active_nodes[triplet.col() / 3] == 1) {
+						const int row = this->global_to_active_node_map[triplet.row() / 3] * 3 + triplet.row() % 3;
+						const int col = this->global_to_active_node_map[triplet.col() / 3] * 3 + triplet.col() % 3;
+						this->active_hess_triplets.push_back(Eigen::Triplet<double>(row, col, triplet.value()));
+					}
+				}
+				Eigen::SparseMatrix<double, Eigen::RowMajor> s;
+				s.resize(n_active_dofs, n_active_dofs);
+				s.setFromTriplets(this->active_hess_triplets.begin(), this->active_hess_triplets.end());
+				s.makeCompressed();
+
+				//// rhs
+				Eigen::VectorXd active_rhs = Eigen::VectorXd::Zero(n_active_dofs);
+				for (int i = 0; i < n_active_nodes; i++) {
+					for (int j = 0; j < 3; j++) {
+						active_rhs[3*i + j] = rhs[3*this->active_to_global_node_map[i] + j];
+					}
+				}
+				
+				// Solve
+				Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::RowMajor> cg;
+				cg.compute(s);
+				cg.setTolerance(cg_tol);
+				Eigen::VectorXd active_du = cg.solve(active_rhs);
+
+				// Map back
+				for (int i = 0; i < n_active_nodes; i++) {
+					for (int j = 0; j < 3; j++) {
+						this->du[3*this->active_to_global_node_map[i] + j] = active_du[3*i + j];
+					}
+				}
+				for (int i = 0; i < n_nodes; i++) {
+					if (active_nodes[i] == 0) {
+						for (int j = 0; j < 3; j++) {
+							this->du[3*i + j] = 0.0;
+							rhs[3*i + j] = 0.0;
+							(*assembled.grad)[3*i + j] = 0.0;
+						}
+					}
+				}
 			}
+			else {
+				logger.append_to_series("active_dofs", ndofs);
+
+				this->du.setZero();
+				const int max_iterations = std::max(1000, (int)(settings.newton.cg_max_iterations_multiplier * ndofs)); // Very small sims will need to exceed ndofs iterations
+				const int iterations = solve_linear_system_with_CG(this->du, *assembled.hess, rhs, max_iterations, cg_tol, settings.execution.n_threads);
+				total_CG_it += iterations;
+				if (iterations == max_iterations) {  // TODO: Check
+					console.print("\n\t\t -> CG didn't converge.\n", ConsoleVerbosity::TimeSteps);
+					return NewtonError::TooManyCGIterations;
+				}
+			}
+
+			logger.stop_timing_add("CG");
 		}
+		console.print(fmt::format("ndofs = {:d}/{:d} | ", n_active_dofs, ndofs), ConsoleVerbosity::NewtonIterations);
 		console.print(fmt::format("du = {:.2e} | ", this->du.norm()), ConsoleVerbosity::NewtonIterations);
 
 		// Line search (for later use)
@@ -208,6 +290,18 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		total_line_search_it += line_search_it;
 		logger.stop_timing_add("line_search");
 	}
+
+	// Write dofs activation to file
+	std::ofstream file;
+	file.open(settings.output.output_directory + "/dofs_" + std::to_string(this->activation_dof_it_count) + ".txt", std::ios::out | std::ios::app);
+	for (auto& current_dofs_active : dofs_activation) {
+		for (int i : current_dofs_active) {
+			file << i << ", ";
+		}
+		file << "\n";
+	}
+	file.close();
+	this->activation_dof_it_count++;
 
 	if (!callbacks.run_is_converged_state_valid()) {
 		console.print("\n\t\t -> Converged state is not valid.\n", ConsoleVerbosity::TimeSteps);
