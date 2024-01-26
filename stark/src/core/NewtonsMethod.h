@@ -34,7 +34,7 @@ namespace stark::core
 		int it_count = 0;
 		
 		// Adaptive dofs
-		bool run_adaptive_dofs = false;
+		bool run_adaptive_dofs = true;
 		double dof_deactivation_tolerance_multiplier = 0.1;
 		int activation_dof_it_count = 0;
 		double dofs_percentage_for_full_solve = 0.25;

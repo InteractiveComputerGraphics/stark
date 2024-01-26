@@ -210,10 +210,11 @@ void heavy_box_rigid_and_deformable()
 	settings.newton.max_newton_iterations = 100;
 	settings.newton.newton_tol = 1e-1;
 	settings.newton.project_to_PD = true;
+	settings.execution.n_threads = 24;
 
 	settings.contact.collisions_enabled = true;
 	settings.contact.friction_enabled = false;  // No friction to avoid line search problems
-	settings.contact.dhat = 0.01;
+	settings.contact.dhat = 0.001;
 
 	settings.debug.symx_check_for_NaNs = true;
 
@@ -226,7 +227,7 @@ void heavy_box_rigid_and_deformable()
 	const double rho2 = 1e4;
 
 	//// Base
-	const int n = 20;
+	const int n = 30;
 	auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w, -0.5*w, -0.5*w }, { 0.5*w, 0.5*w, 0.5*w }, { n, n, n });
 	auto material = stark::models::MaterialVolume::soft_rubber();
 	//material.density = rho;
