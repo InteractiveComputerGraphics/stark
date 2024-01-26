@@ -35,10 +35,12 @@ namespace stark::core
 		
 		// Adaptive dofs
 		bool run_adaptive_dofs = true;
-		double dof_deactivation_tolerance_multiplier = 0.1;
-		int activation_dof_it_count = 0;
-		double dofs_percentage_for_full_solve = 0.25;
+		double dof_deactivation_tolerance_multiplier = 1.0;
+		double dofs_percentage_for_full_solve = 0.9;
 		int n_rings = 1;
+		int n_full_solve_iterations = 2;
+
+		int activation_dof_it_count = 0;
 		std::vector<int> active_to_global_node_map;
 		std::vector<int> global_to_active_node_map;
 		std::vector<Eigen::Triplet<double>> triplet_buffer;

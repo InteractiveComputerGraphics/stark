@@ -88,7 +88,7 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 			const double cg_tol = std::min(0.1 /*TODO: arbritrary.*/, grad_norm * std::min(0.5, std::sqrt(grad_norm)));
 
 			// N-Rings
-			if (this->run_adaptive_dofs && newton_it >= 3 && (double)n_active_dofs < (double)ndofs * this->dofs_percentage_for_full_solve) {
+			if (this->run_adaptive_dofs && newton_it >= this->n_full_solve_iterations+1 && (double)n_active_dofs < (double)ndofs * this->dofs_percentage_for_full_solve) {
 				this->triplet_buffer.clear();
 				assembled.hess->to_triplets(this->triplet_buffer);
 				for (int ring = 0; ring < this->n_rings; ring++) {
@@ -111,7 +111,7 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 			}
 
 			// Decide adaptive of global
-			if (this->run_adaptive_dofs && newton_it >= 3 && (double)n_active_dofs < (double)ndofs*this->dofs_percentage_for_full_solve) {
+			if (this->run_adaptive_dofs && newton_it >= this->n_full_solve_iterations+1 && (double)n_active_dofs < (double)ndofs*this->dofs_percentage_for_full_solve) {
 				logger.append_to_series("active_dofs", n_active_dofs);
 
 				// Mapping

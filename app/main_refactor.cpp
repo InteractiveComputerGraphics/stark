@@ -227,7 +227,7 @@ void heavy_box_rigid_and_deformable()
 	const double rho2 = 1e4;
 
 	//// Base
-	const int n = 30;
+	const int n = 50;
 	auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w, -0.5*w, -0.5*w }, { 0.5*w, 0.5*w, 0.5*w }, { n, n, n });
 	auto material = stark::models::MaterialVolume::soft_rubber();
 	//material.density = rho;
