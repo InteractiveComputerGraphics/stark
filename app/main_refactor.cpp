@@ -203,14 +203,16 @@ void heavy_box_rigid_and_deformable()
 	settings.output.output_directory = OUTPUT_PATH + "/heavy_box_rigid_and_deformable";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
-	settings.execution.end_simulation_time = 1.0;
-	settings.simulation.adaptive_time_step.set(0.0, 1.0/30.0, 1.0/30.0);
+	settings.execution.end_simulation_time = 0.2;
+	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
 	//settings.output.fps = 120.0;
 
 	settings.newton.max_newton_iterations = 100;
+	settings.newton.newton_tol = 1e-1;
+	settings.newton.project_to_PD = true;
 
 	settings.contact.collisions_enabled = true;
-	settings.contact.friction_enabled = true;
+	settings.contact.friction_enabled = false;  // No friction to avoid line search problems
 	settings.contact.dhat = 0.01;
 
 	settings.debug.symx_check_for_NaNs = true;
@@ -220,45 +222,49 @@ void heavy_box_rigid_and_deformable()
 	// Add objects
 	const double w = 0.3;
 	const double w2 = 0.3 * w;
-	const double rho = 1e3;
+	const double rho = 1e2;
 	const double rho2 = 1e4;
 
 	//// Base
-	const int n = 10;
+	const int n = 20;
 	auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w, -0.5*w, -0.5*w }, { 0.5*w, 0.5*w, 0.5*w }, { n, n, n });
 	auto material = stark::models::MaterialVolume::soft_rubber();
-	material.density = rho;
-	material.strain_young_modulus = 1e4;
-	material.inertia_damping = 1.0;
-	material.strain_damping = 1.0;
-	material.strain_limit = 999.0;
+	//material.density = rho;
+	//material.strain_young_modulus = 1e3;
+	//material.inertia_damping = 1.0;
+	//material.strain_damping = 1.0;
+	//material.strain_limit = 999.0;
 	auto base = simulation.deformables->add_volume(vertices, tets, material);
 	auto bc = base.create_prescribed_positions_group_with_transformation();
 	bc->add_vertices_in_aabb({ 0.0, 0.0, -0.5*w }, { 1.0, 1.0, 0.01 });
 
-	//// Top deformable
-	if (false) {
-		const int n = 1;
-		auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w2, -0.5*w2, -0.5*w2 }, { 0.5*w2, 0.5*w2, 0.5*w2 }, { n, n, n });
-		stark::utils::move(vertices, { 0.01, 0.0, 0.5*w + 0.5*w2 + 2.0*settings.contact.dhat });
-		auto material = stark::models::MaterialVolume::soft_rubber();
-		material.density = rho2;
-		material.inertia_damping = 1.0;
-		material.strain_damping = 1.0;
-		material.strain_limit = 999.0;
-		auto top = simulation.deformables->add_volume(vertices, tets, material);
+	// Top
+	if (true) {
+		//// Top deformable
+		if (true) {
+			const int n = 1;
+			auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5 * w2, -0.5 * w2, -0.5 * w2 }, { 0.5 * w2, 0.5 * w2, 0.5 * w2 }, { n, n, n });
+			stark::utils::move(vertices, { 0.01, 0.0, 0.5 * w + 0.5 * w2 + 2.0 * settings.contact.dhat });
+			auto material = stark::models::MaterialVolume::soft_rubber();
+			material.density *= 100.0;
+			material.strain_young_modulus *= 100.0;
+			//material.inertia_damping = 1.0;
+			//material.strain_damping = 1.0;
+			//material.strain_limit = 999.0;
+			auto top = simulation.deformables->add_volume(vertices, tets, material);
 
-		simulation.interactions->set_friction(base, top, 0.5);
-		//simulation.interactions->disable_collision(base, top);
-	}
+			simulation.interactions->set_friction(base, top, 0.5);
+			//simulation.interactions->disable_collision(base, top);
+		}
 
-	//// Top rigid
-	else {
-		auto top = simulation.rigidbodies->add_box(rho2*std::pow(w2, 3), w2)
-			.set_translation({ 0.01, 0.0, 0.5*w + 0.5*w2 + 2.0*settings.contact.dhat });
+		//// Top rigid
+		else {
+			auto top = simulation.rigidbodies->add_box(rho2 * std::pow(w2, 3), w2)
+				.set_translation({ 0.01, 0.0, 0.5 * w + 0.5 * w2 + 2.0 * settings.contact.dhat });
 
-		simulation.interactions->set_friction(base, top, 0.5);
-		//simulation.interactions->disable_collision(base, top);
+			simulation.interactions->set_friction(base, top, 0.5);
+			//simulation.interactions->disable_collision(base, top);
+		}
 	}
 
 	// Run

@@ -8,6 +8,14 @@
 
 stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& global_energy, const Callbacks& callbacks, Settings& settings, Console& console, Logger& logger)
 {
+	/*
+		Note: 
+			The degrees of freedom are velocities, not displacements.
+			Therefore the residual force used for termination is f = dE/dv * 1.0/time_step_size.
+	*/
+
+	const double dt = settings.simulation.adaptive_time_step.value;
+
 	const int ndofs = global_energy.get_total_n_dofs();
 	const int n_nodes = ndofs / 3;
 	this->du.resize(ndofs);
@@ -60,23 +68,13 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		// Adaptive DoFs
 		//// Boolean activation flags
 		for (int i = 0; i < ndofs; i++) {
-			if (std::abs((*assembled.grad)[i]) > this->dof_deactivation_tolerance_multiplier *settings.newton.newton_tol) {
+			if (std::abs((*assembled.grad)[i]/dt) > this->dof_deactivation_tolerance_multiplier * settings.newton.newton_tol) {
 				active_nodes[i / 3] = 1;
 			}
 		}
-
-		//// Mapping
-		this->active_to_global_node_map.clear();
-		this->global_to_active_node_map = std::vector<int>(n_nodes, -1);
-		for (int i = 0; i < n_nodes; i++) {
-			if (active_nodes[i] == 1) {
-				this->global_to_active_node_map[i] = (int)this->active_to_global_node_map.size();
-				this->active_to_global_node_map.push_back(i);
-			}
-		}
-		const int n_active_nodes = (int)this->active_to_global_node_map.size();
-		const int n_active_dofs = 3 * n_active_nodes;
-
+		int n_active_nodes = (int)std::count(active_nodes.begin(), active_nodes.end(), 1);
+		int n_active_dofs = 3 * n_active_nodes;
+		 
 		//// Solve
 		this->du.resize(ndofs);
 		Eigen::VectorXd rhs = -1.0 * (*assembled.grad);
@@ -86,19 +84,46 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 			logger.stop_timing_add("directLU");
 		}
 		else {
-			logger.start_timing("CG");
-
 			// Forcing sequence
 			const double cg_tol = std::min(0.1 /*TODO: arbritrary.*/, grad_norm * std::min(0.5, std::sqrt(grad_norm)));
 
 			if (this->run_adaptive_dofs && (double)n_active_dofs < (double)ndofs*this->dofs_percentage_for_full_solve) {
+
+				// N-rings
+				this->triplet_buffer.clear();
+				assembled.hess->to_triplets(this->triplet_buffer);
+				for (int ring = 0; ring < this->n_rings; ring++) {
+					std::vector<int> new_active_nodes(active_nodes.size(), 0);
+					for (int triplet_i = 0; triplet_i < (int)this->triplet_buffer.size(); triplet_i += 9) {
+						const auto& triplet = this->triplet_buffer[triplet_i];
+						if (active_nodes[triplet.row() / 3] == 1 || active_nodes[triplet.col() / 3] == 1) {
+							const int row = triplet.row() / 3;
+							const int col = triplet.col() / 3;
+							new_active_nodes[row] = 1;
+							new_active_nodes[col] = 1;
+						}
+					}
+					active_nodes = new_active_nodes;
+				}
+
+				// Compute total n_active_nodes
+				n_active_nodes = (int)std::count(active_nodes.begin(), active_nodes.end(), 1);
+				n_active_dofs = 3 * n_active_nodes;
 				logger.append_to_series("active_dofs", n_active_dofs);
+
+				// Mapping
+				this->active_to_global_node_map.clear();
+				this->global_to_active_node_map = std::vector<int>(n_nodes, -1);
+				for (int i = 0; i < n_nodes; i++) {
+					if (active_nodes[i] == 1) {
+						this->global_to_active_node_map[i] = (int)this->active_to_global_node_map.size();
+						this->active_to_global_node_map.push_back(i);
+					}
+				}
 
 				// Build reduced system
 				//// Hessian
 				this->active_hess_triplets.clear();
-				this->triplet_buffer.clear();
-				assembled.hess->to_triplets(this->triplet_buffer);
 				for (const auto& triplet : this->triplet_buffer) {
 					if (active_nodes[triplet.row() / 3] == 1 && active_nodes[triplet.col() / 3] == 1) {
 						const int row = this->global_to_active_node_map[triplet.row() / 3] * 3 + triplet.row() % 3;
@@ -123,7 +148,11 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 				Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::RowMajor> cg;
 				cg.compute(s);
 				cg.setTolerance(cg_tol);
+				logger.start_timing("CG_total");
 				Eigen::VectorXd active_du = cg.solve(active_rhs);
+				logger.stop_timing_add("CG_total");
+				logger.append_to_series("CG", logger.doubles["CG_total"]);
+				total_CG_it += (int)cg.iterations();
 
 				// Map back
 				for (int i = 0; i < n_active_nodes; i++) {
@@ -140,23 +169,40 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 						}
 					}
 				}
+				console.print(fmt::format("ndofs = {:d}/{:d} | ", n_active_dofs, ndofs), ConsoleVerbosity::NewtonIterations);
 			}
 			else {
 				logger.append_to_series("active_dofs", ndofs);
 
 				this->du.setZero();
-				const int max_iterations = std::max(1000, (int)(settings.newton.cg_max_iterations_multiplier * ndofs)); // Very small sims will need to exceed ndofs iterations
-				const int iterations = solve_linear_system_with_CG(this->du, *assembled.hess, rhs, max_iterations, cg_tol, settings.execution.n_threads);
-				total_CG_it += iterations;
-				if (iterations == max_iterations) {  // TODO: Check
-					console.print("\n\t\t -> CG didn't converge.\n", ConsoleVerbosity::TimeSteps);
-					return NewtonError::TooManyCGIterations;
-				}
-			}
+				//const int max_iterations = std::max(1000, (int)(settings.newton.cg_max_iterations_multiplier * ndofs)); // Very small sims will need to exceed ndofs iterations
+				//const int iterations = solve_linear_system_with_CG(this->du, *assembled.hess, rhs, max_iterations, cg_tol, settings.execution.n_threads);
+				//total_CG_it += iterations;
+				//if (iterations == max_iterations) {  // TODO: Check
+				//	console.print("\n\t\t -> CG didn't converge.\n", ConsoleVerbosity::TimeSteps);
+				//	return NewtonError::TooManyCGIterations;
+				//}
 
-			logger.stop_timing_add("CG");
+				this->triplet_buffer.clear();
+				assembled.hess->to_triplets(this->triplet_buffer);
+				Eigen::SparseMatrix<double, Eigen::RowMajor> s;
+				s.resize(ndofs, ndofs);
+				s.setFromTriplets(this->triplet_buffer.begin(), this->triplet_buffer.end());
+				s.makeCompressed();
+
+				Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::RowMajor> cg;
+				cg.compute(s);
+				cg.setTolerance(cg_tol);
+				logger.start_timing("CG_total");
+				this->du = cg.solve(rhs);
+				logger.stop_timing_add("CG_total");
+				logger.append_to_series("CG", logger.doubles["CG_total"]);
+				total_CG_it += (int)cg.iterations();
+
+				console.print(fmt::format("ndofs = {:d}/{:d} | ", ndofs, ndofs), ConsoleVerbosity::NewtonIterations);
+			}
 		}
-		console.print(fmt::format("ndofs = {:d}/{:d} | ", n_active_dofs, ndofs), ConsoleVerbosity::NewtonIterations);
+		
 		console.print(fmt::format("du = {:.2e} | ", this->du.norm()), ConsoleVerbosity::NewtonIterations);
 
 		// Line search (for later use)
@@ -212,7 +258,7 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		logger.stop_timing_add("after_energy_evaluation");
 
 		logger.add_to_timer("compiled_E_g (acc)", assembled.compiled_runtime);
-		residual = assembled.grad->maxCoeff();
+		residual = assembled.grad->maxCoeff()/dt;
 		console.print(fmt::format("dE1 = {:.2e}", residual), ConsoleVerbosity::NewtonIterations);
 
 		if (residual < settings.newton.newton_tol) {
