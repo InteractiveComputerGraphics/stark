@@ -21,26 +21,27 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 	this->du.resize(ndofs);
 	this->u0.resize(ndofs);
 	this->u1.resize(ndofs);
+	this->active_nodes.resize(n_nodes);
 
-	std::vector<std::vector<int>> dofs_activation;
+	std::vector<Eigen::VectorXd> dofs_du;
+	int adaptive_steps_left = this->adaptive_steps_limit;
+	bool force_full_solve = false;
+	bool was_last_solve_adaptive = false;
 
-	int newton_it = 0;
+	int newton_it = 1;
+	int newton_sub_it = 1;
 	int total_line_search_it = 0;
 	int total_CG_it = 0;
 	double residual = std::numeric_limits<double>::max();
-	while (residual > settings.newton.newton_tol) {
+	while (residual > settings.newton.newton_tol || force_full_solve) {
 
-		dofs_activation.push_back({});
-		std::vector<int>& active_nodes = dofs_activation.back();
-		active_nodes.resize(n_nodes, 0);
-		
-		newton_it++;
+		//newton_it++;
 		this->it_count++;
 		if (newton_it == settings.newton.max_newton_iterations) {
 			console.print(fmt::format("\n\t\t -> Max Newton iterations reached ({:d}) with residual {:.2e}\n", settings.newton.max_newton_iterations, residual), ConsoleVerbosity::TimeSteps);
 			return NewtonError::TooManyNewtonIterations;
 		}
-		console.print(fmt::format("\n\t\t {:d}. ", newton_it), ConsoleVerbosity::NewtonIterations);
+		console.print(fmt::format("\n\t\t {:d}.{:d} ", newton_it, newton_sub_it), ConsoleVerbosity::NewtonIterations);
 
 		// Linear system
 		//// Evaluate and assemble
@@ -57,7 +58,7 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		logger.stop_timing_add("after_energy_evaluation");
 
 		logger.add_to_timer("compiled_E_g_h (acc)", assembled.compiled_runtime);
-		console.print(fmt::format("dE0 = {:.2e} | ", assembled.grad->maxCoeff()), ConsoleVerbosity::NewtonIterations);
+		console.print(fmt::format("dE0 = {:.2e} | ", assembled.grad->maxCoeff()/dt), ConsoleVerbosity::NewtonIterations);
 
 		//// Converged right away? Can happen in the first time step. Avoids unnecessary CG iterations.
 		const double grad_norm = assembled.grad->norm();
@@ -66,13 +67,13 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		}
 
 		// Adaptive DoFs
-		//// Boolean activation flags
+		std::fill(this->active_nodes.begin(), this->active_nodes.end(), 0); 
 		for (int i = 0; i < ndofs; i++) {
 			if (std::abs((*assembled.grad)[i]/dt) > this->dof_deactivation_tolerance_multiplier * settings.newton.newton_tol) {
-				active_nodes[i / 3] = 1;
+				this->active_nodes[i / 3] = 1;
 			}
 		}
-		int n_active_nodes = (int)std::count(active_nodes.begin(), active_nodes.end(), 1);
+		int n_active_nodes = (int)std::count(this->active_nodes.begin(), this->active_nodes.end(), 1);
 		int n_active_dofs = 3 * n_active_nodes;
 		 
 		//// Solve
@@ -92,33 +93,36 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 				this->triplet_buffer.clear();
 				assembled.hess->to_triplets(this->triplet_buffer);
 				for (int ring = 0; ring < this->n_rings; ring++) {
-					std::vector<int> new_active_nodes(active_nodes.size(), 0);
+					std::vector<uint8_t> new_active_nodes(this->active_nodes.size(), 0);
 					for (int triplet_i = 0; triplet_i < (int)this->triplet_buffer.size(); triplet_i += 9) {
 						const auto& triplet = this->triplet_buffer[triplet_i];
-						if (active_nodes[triplet.row() / 3] == 1 || active_nodes[triplet.col() / 3] == 1) {
+						if (this->active_nodes[triplet.row() / 3] == 1 || this->active_nodes[triplet.col() / 3] == 1) {
 							const int row = triplet.row() / 3;
 							const int col = triplet.col() / 3;
 							new_active_nodes[row] = 1;
 							new_active_nodes[col] = 1;
 						}
 					}
-					active_nodes = new_active_nodes;
+					this->active_nodes = new_active_nodes;
 				}
 
 				// Compute total n_active_nodes
-				n_active_nodes = (int)std::count(active_nodes.begin(), active_nodes.end(), 1);
+				n_active_nodes = (int)std::count(this->active_nodes.begin(), this->active_nodes.end(), 1);
 				n_active_dofs = 3 * n_active_nodes;
 			}
 
 			// Decide adaptive of global
-			if (this->run_adaptive_dofs && newton_it >= this->n_full_solve_iterations+1 && (double)n_active_dofs < (double)ndofs*this->dofs_percentage_for_full_solve) {
+			if (!force_full_solve && this->run_adaptive_dofs && adaptive_steps_left > 0 && newton_it >= this->n_full_solve_iterations+1 && (double)n_active_dofs < (double)ndofs*this->dofs_percentage_for_full_solve) {
+				adaptive_steps_left--;
+				was_last_solve_adaptive = true;
+				newton_sub_it++;
 				logger.append_to_series("active_dofs", n_active_dofs);
 
 				// Mapping
 				this->active_to_global_node_map.clear();
 				this->global_to_active_node_map = std::vector<int>(n_nodes, -1);
 				for (int i = 0; i < n_nodes; i++) {
-					if (active_nodes[i] == 1) {
+					if (this->active_nodes[i] == 1) {
 						this->global_to_active_node_map[i] = (int)this->active_to_global_node_map.size();
 						this->active_to_global_node_map.push_back(i);
 					}
@@ -128,7 +132,7 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 				//// Hessian
 				this->active_hess_triplets.clear();
 				for (const auto& triplet : this->triplet_buffer) {
-					if (active_nodes[triplet.row() / 3] == 1 && active_nodes[triplet.col() / 3] == 1) {
+					if (this->active_nodes[triplet.row() / 3] == 1 && this->active_nodes[triplet.col() / 3] == 1) {
 						const int row = this->global_to_active_node_map[triplet.row() / 3] * 3 + triplet.row() % 3;
 						const int col = this->global_to_active_node_map[triplet.col() / 3] * 3 + triplet.col() % 3;
 						this->active_hess_triplets.push_back(Eigen::Triplet<double>(row, col, triplet.value()));
@@ -164,17 +168,23 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 					}
 				}
 				for (int i = 0; i < n_nodes; i++) {
-					if (active_nodes[i] == 0) {
+					if (this->active_nodes[i] == 0) {
 						for (int j = 0; j < 3; j++) {
 							this->du[3*i + j] = 0.0;
-							rhs[3*i + j] = 0.0;
-							(*assembled.grad)[3*i + j] = 0.0;
+
+							// TODO: Not sure about this
+							//rhs[3*i + j] = 0.0;
+							//(*assembled.grad)[3*i + j] = 0.0;
 						}
 					}
 				}
 				console.print(fmt::format("ndofs = {:d}/{:d} | ", n_active_dofs, ndofs), ConsoleVerbosity::NewtonIterations);
 			}
 			else {
+				was_last_solve_adaptive = false;
+				force_full_solve = false;
+				newton_it++;
+				newton_sub_it = 1;
 				logger.append_to_series("active_dofs", ndofs);
 
 				this->du.setZero();
@@ -265,7 +275,13 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		console.print(fmt::format("dE1 = {:.2e}", residual), ConsoleVerbosity::NewtonIterations);
 
 		if (residual < settings.newton.newton_tol) {
-			break;
+			if (was_last_solve_adaptive) {
+				force_full_solve = true;
+				continue;
+			}
+			else {
+				break;
+			}
 		}
 
 		// Line search: Backtracking
@@ -304,6 +320,11 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 			}
 		}
 
+		// Log du
+		if (write_du) {
+			dofs_du.push_back(step * this->du);
+		}
+
 		// Log line search energy profile
 		if (settings.debug.line_search_output) {
 			if (step_valid_configuration > 0.99 && step < 0.99) {
@@ -340,16 +361,17 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		logger.stop_timing_add("line_search");
 	}
 
-	// Write dofs activation to file
-	std::ofstream file;
-	file.open(settings.output.output_directory + "/dofs_" + std::to_string(this->activation_dof_it_count) + ".txt", std::ios::out | std::ios::app);
-	for (auto& current_dofs_active : dofs_activation) {
-		for (int i : current_dofs_active) {
-			file << i << ", ";
+	if (this->write_du) {
+		std::ofstream file;
+		file.open(settings.output.output_directory + "/dofs_du_" + std::to_string(this->activation_dof_it_count) + ".txt", std::ios::out | std::ios::app);
+		for (auto& du : dofs_du) {
+			for (int i = 0; i < ndofs; i++) {
+				file << du[i] << ", ";
+			}
+			file << "\n";
 		}
-		file << "\n";
+		file.close();
 	}
-	file.close();
 	this->activation_dof_it_count++;
 
 	if (!callbacks.run_is_converged_state_valid()) {

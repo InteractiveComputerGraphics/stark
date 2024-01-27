@@ -325,13 +325,14 @@ void laundry_cloth()
 	settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
 
 	settings.execution.n_threads = omp_get_num_procs();
-	settings.execution.end_simulation_time = 1.0;
+	settings.execution.end_simulation_time = 0.21;
 	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
+	//settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
 	settings.newton.max_newton_iterations = 100;
-	settings.newton.newton_tol = 1e-1;
+	settings.newton.newton_tol = 1e-3;
 	settings.newton.project_to_PD = true;
 
-	settings.contact.adaptive_contact_stiffness.set(1e6, 1e6, 1e12);
+	settings.contact.adaptive_contact_stiffness.set(1e4, 1e4, 1e12);
 	//settings.contact.adaptive_contact_stiffness.success_multiplier = 0.8;
 	//settings.contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = 50;
 	settings.contact.friction_stick_slide_threshold = 0.01;
@@ -353,6 +354,7 @@ void laundry_cloth()
 	stark::utils::load_obj(vertices_drum, triangles_drum, MODELS_PATH + "/laundry_drum_2.obj");
 	stark::utils::rotate_deg(vertices_drum, -90.0, Eigen::Vector3d::UnitX());
 	auto drum = simulation.rigidbodies->add_cylinder(1.0, 0.25, 0.25, vertices_drum, triangles_drum)
+		//.set_translation({ 0.0, 0.0, 10.0 })
 		.set_rotation(90.0, Eigen::Vector3d::UnitX());
 	simulation.rigidbodies->add_motor(wall, drum, { 0, 0, 0 }, Eigen::Vector3d::UnitY(), target_w, max_torque, /*delay*/0.01);
 	simulation.interactions->disable_collision(wall, drum);
@@ -361,7 +363,7 @@ void laundry_cloth()
 	// Cloth
 	const double friction = 1.0;
 	const double scale = 0.34;
-	const int n_cloths = 8;
+	const int n_cloths = 8; //8;
 	const double spacing = 0.025;
 	const int cloth_resolution = 100;
 	std::vector<Eigen::Vector3d> vertices_cloth;
