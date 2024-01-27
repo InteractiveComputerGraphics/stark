@@ -199,11 +199,11 @@ void edge_edge_collision()
 void heavy_box_rigid_and_deformable()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "deformable";
+	settings.output.simulation_name = "full";
 	settings.output.output_directory = OUTPUT_PATH + "/heavy_box_rigid_and_deformable";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
-	settings.execution.end_simulation_time = 0.2;
+	settings.execution.end_simulation_time = 0.21;
 	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
 	//settings.output.fps = 120.0;
 
@@ -227,7 +227,7 @@ void heavy_box_rigid_and_deformable()
 	const double rho2 = 1e4;
 
 	//// Base
-	const int n = 50;
+	const int n = 30;
 	auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w, -0.5*w, -0.5*w }, { 0.5*w, 0.5*w, 0.5*w }, { n, n, n });
 	auto material = stark::models::MaterialVolume::soft_rubber();
 	//material.density = rho;
@@ -403,7 +403,7 @@ int main()
 	//simple_collision();
 	//rb_constraints_all();
 	//edge_edge_collision();
-	//heavy_box_rigid_and_deformable();
 	//attachments();
-	laundry_cloth();
+	heavy_box_rigid_and_deformable();
+	//laundry_cloth();
 }

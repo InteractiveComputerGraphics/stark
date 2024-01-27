@@ -111,11 +111,16 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 				n_active_dofs = 3 * n_active_nodes;
 			}
 
+			if (newton_sub_it == this->max_substeps) {
+				force_full_solve = true;
+			}
+
 			// Decide adaptive of global
 			if (!force_full_solve && this->run_adaptive_dofs && adaptive_steps_left > 0 && newton_it >= this->n_full_solve_iterations+1 && (double)n_active_dofs < (double)ndofs*this->dofs_percentage_for_full_solve) {
 				adaptive_steps_left--;
 				was_last_solve_adaptive = true;
 				newton_sub_it++;
+
 				logger.append_to_series("active_dofs", n_active_dofs);
 
 				// Mapping
