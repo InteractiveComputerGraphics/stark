@@ -199,7 +199,7 @@ void edge_edge_collision()
 void heavy_box_rigid_and_deformable()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "full";
+	settings.output.simulation_name = "full-friction";
 	settings.output.output_directory = OUTPUT_PATH + "/heavy_box_rigid_and_deformable";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
@@ -213,7 +213,7 @@ void heavy_box_rigid_and_deformable()
 	settings.execution.n_threads = 24;
 
 	settings.contact.collisions_enabled = true;
-	settings.contact.friction_enabled = false;  // No friction to avoid line search problems
+	settings.contact.friction_enabled = true;  // No friction to avoid line search problems
 	settings.contact.dhat = 0.001;
 
 	settings.debug.symx_check_for_NaNs = true;
@@ -227,7 +227,7 @@ void heavy_box_rigid_and_deformable()
 	const double rho2 = 1e4;
 
 	//// Base
-	const int n = 30;
+	const int n = 50;
 	auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w, -0.5*w, -0.5*w }, { 0.5*w, 0.5*w, 0.5*w }, { n, n, n });
 	auto material = stark::models::MaterialVolume::soft_rubber();
 	//material.density = rho;
