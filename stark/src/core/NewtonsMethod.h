@@ -34,7 +34,7 @@ namespace stark::core
 		int it_count = 0;
 		
 		// Adaptive dofs
-		bool run_adaptive_dofs = true;
+		bool run_adaptive_dofs = false;
 		double dof_deactivation_tolerance_multiplier = 1.0;
 		double dofs_percentage_for_full_solve = 0.9;
 		int n_rings = 1;

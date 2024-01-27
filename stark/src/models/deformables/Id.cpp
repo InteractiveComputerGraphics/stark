@@ -18,7 +18,7 @@ int stark::models::Id::get_global_idx() const
 int stark::models::Id::get_local_idx(const std::string label) const
 {
 	auto it = this->local_indices.find(label);
-	if (it != this->local_indices.end()) {
+	if (it == this->local_indices.end()) {
 		std::cout << "stark error: Id.get_local_idx(label) didn't find " + label << std::endl;
 		exit(-1);
 	}
