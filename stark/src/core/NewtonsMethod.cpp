@@ -77,16 +77,18 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		int n_active_dofs = 3 * n_active_nodes;
 
 		//// DEBUG PRINT INITIAL NODE RESIDUALS
-		//std::vector<double> DEBUG;
-		//for (int i = 0; i < ndofs; i++) {
-		//	DEBUG.push_back(std::abs((*assembled.grad)[i] / dt));
-		//}
-		//std::sort(DEBUG.begin(), DEBUG.end());
-		//std::cout << std::endl;
-		//for (int i = 0; i < ndofs; i++) {
-		//	std::cout << fmt::format("{:.2e} ", DEBUG[i]) << ", ";
-		//}
-		//exit(9);
+		if (this->print_initial_residual) {
+			std::vector<double> DEBUG;
+			for (int i = 0; i < ndofs; i++) {
+				DEBUG.push_back(std::abs((*assembled.grad)[i] / dt));
+			}
+			std::sort(DEBUG.begin(), DEBUG.end());
+			std::cout << std::endl;
+			for (int i = 0; i < ndofs; i++) {
+				std::cout << fmt::format("{:.2e} ", DEBUG[i]) << ", ";
+			}
+			exit(9);
+		}
 		 
 		//// Solve
 		this->du.resize(ndofs);
