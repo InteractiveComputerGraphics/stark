@@ -34,7 +34,7 @@ namespace stark::core
 		int it_count = 0;
 		
 		// Adaptive dofs
-		bool run_adaptive_dofs = true;
+		bool run_adaptive_dofs = false;
 		double dof_deactivation_tolerance_multiplier = 1.0;
 		double dofs_percentage_for_full_solve = 0.25;
 		int n_rings = 1;
@@ -42,6 +42,7 @@ namespace stark::core
 		int adaptive_steps_limit = 999999999;
 		bool write_du = false;
 		int max_substeps = 15;
+		bool do_final_full_solve = false;
 
 		int activation_dof_it_count = 0;
 		std::vector<uint8_t> active_nodes;

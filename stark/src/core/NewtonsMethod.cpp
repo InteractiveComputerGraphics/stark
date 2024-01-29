@@ -75,6 +75,18 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		}
 		int n_active_nodes = (int)std::count(this->active_nodes.begin(), this->active_nodes.end(), 1);
 		int n_active_dofs = 3 * n_active_nodes;
+
+		//// DEBUG PRINT INITIAL NODE RESIDUALS
+		//std::vector<double> DEBUG;
+		//for (int i = 0; i < ndofs; i++) {
+		//	DEBUG.push_back(std::abs((*assembled.grad)[i] / dt));
+		//}
+		//std::sort(DEBUG.begin(), DEBUG.end());
+		//std::cout << std::endl;
+		//for (int i = 0; i < ndofs; i++) {
+		//	std::cout << fmt::format("{:.2e} ", DEBUG[i]) << ", ";
+		//}
+		//exit(9);
 		 
 		//// Solve
 		this->du.resize(ndofs);
@@ -280,7 +292,7 @@ stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		console.print(fmt::format("dE1 = {:.2e}", residual), ConsoleVerbosity::NewtonIterations);
 
 		if (residual < settings.newton.newton_tol) {
-			if (was_last_solve_adaptive) {
+			if (this->do_final_full_solve && was_last_solve_adaptive) {
 				force_full_solve = true;
 				continue;
 			}
