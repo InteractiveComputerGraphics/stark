@@ -109,14 +109,14 @@ bool Stark::run_one_step()
 	// Time step
 	if (this->global_energy.get_total_n_dofs() > 0) {
 		const double t0 = omp_get_wtime();
-		NewtonError err = this->newton.solve(this->global_energy, this->callbacks, this->settings, this->console, this->logger);
+		NewtonState err = this->newton.solve(this->global_energy, this->callbacks, this->settings, this->console, this->logger);
 		const double t1 = omp_get_wtime();
 		const double runtime = t1 - t0;
 
-		if (err == NewtonError::Successful) {
-			const double cr = runtime / this->settings.simulation.adaptive_time_step.value;
+		const double cr = runtime / this->settings.simulation.adaptive_time_step.value;
+		this->console.print(fmt::format(" | runtime: {:.0f} ms | cr: {:.1f}\n", 1000.0 * runtime, cr), ConsoleVerbosity::TimeSteps);
 
-			this->console.print(fmt::format(" | runtime: {:.0f} ms | cr: {:.1f}\n", 1000.0 * runtime, cr), ConsoleVerbosity::TimeSteps);
+		if (err == NewtonState::Successful) {
 			this->logger.add("step", runtime);
 			this->logger.append_to_series("step", runtime);
 			this->logger.append_to_series("cr", cr);
@@ -139,10 +139,10 @@ bool Stark::run_one_step()
 		}
 		else {
 			this->logger.add("failed_steps", runtime);
-			if (err == NewtonError::Restart) {
+			if (err == NewtonState::Restart) {
 				// Do nothing, just restart.
 			}
-			else if (err == NewtonError::InvalidConfiguration) {
+			else if (err == NewtonState::InvalidConfiguration) {
 				const bool out_of_bounds = this->settings.contact.adaptive_contact_stiffness.failed_iteration();
 				if (out_of_bounds) {
 					this->console.print(fmt::format("Adaptive contact stiffness out of bounds ({:.e}). Exiting simulation.\n", this->settings.contact.adaptive_contact_stiffness.value), ConsoleVerbosity::Frames);

@@ -6,406 +6,543 @@
 #include "linear_system.h"
 
 
-stark::core::NewtonError stark::core::NewtonsMethod::solve(symx::GlobalEnergy& global_energy, const Callbacks& callbacks, Settings& settings, Console& console, Logger& logger)
+
+stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& global_energy, Callbacks& callbacks, Settings& settings, Console& console, Logger& logger)
 {
-	/*
-		Note: 
-			The degrees of freedom are velocities, not displacements.
-			Therefore the residual force used for termination is f = dE/dv * 1.0/time_step_size.
-	*/
+	// Set pointers for easy access accross methods
+	this->global_energy = &global_energy;
+	this->callbacks = &callbacks;
+	this->settings = &settings;
+	this->console = &console;
+	this->logger = &logger;
 
+	// Short naming
 	const double dt = settings.simulation.adaptive_time_step.value;
-
 	const int ndofs = global_energy.get_total_n_dofs();
 	const int n_nodes = ndofs / 3;
-	this->du.resize(ndofs);
+
+	// Buffers
 	this->u0.resize(ndofs);
 	this->u1.resize(ndofs);
+	this->residual.resize(ndofs);
+
+	// Adaptive dofs
 	this->active_nodes.resize(n_nodes);
+	std::fill(this->active_nodes.begin(), this->active_nodes.end(), 1);
 
-	std::vector<Eigen::VectorXd> dofs_du;
-	int adaptive_steps_left = this->adaptive_steps_limit;
-	bool force_full_solve = false;
-	bool was_last_solve_adaptive = false;
+	// Counters
+	this->step_newton_it = 1;
+	this->step_newton_sub_it = 1;
+	this->step_newton_sub_it_count = 0;
+	this->step_line_search_count = 0;
+	this->cg_iterations_in_step = 0;
 
-	int newton_it = 1;
-	int newton_sub_it = 1;
-	int total_line_search_it = 0;
-	int total_CG_it = 0;
-	double residual = std::numeric_limits<double>::max();
-	while (residual > settings.newton.newton_tol || force_full_solve) {
+	// Newtons method
+	double residual_max = std::numeric_limits<double>::max();
+	NewtonState newton_state = NewtonState::Running;
+	while (newton_state == NewtonState::Running) {
 
-		//newton_it++;
-		this->it_count++;
-		if (newton_it == settings.newton.max_newton_iterations) {
-			console.print(fmt::format("\n\t\t -> Max Newton iterations reached ({:d}) with residual {:.2e}\n", settings.newton.max_newton_iterations, residual), ConsoleVerbosity::TimeSteps);
-			return NewtonError::TooManyNewtonIterations;
-		}
-		console.print(fmt::format("\n\t\t {:d}.{:d} ", newton_it, newton_sub_it), ConsoleVerbosity::NewtonIterations);
-
-		// Linear system
-		//// Evaluate and assemble
-		logger.start_timing("before_energy_evaluation");
-		callbacks.run_before_energy_evaluation();
-		logger.stop_timing_add("before_energy_evaluation");
-
-		logger.start_timing("evaluate_E_grad_hess");
-		symx::Assembled assembled = global_energy.evaluate_E_grad_hess(settings.debug.symx_check_for_NaNs);
-		logger.stop_timing_add("evaluate_E_grad_hess");
-
-		logger.start_timing("after_energy_evaluation");
-		callbacks.run_after_energy_evaluation();
-		logger.stop_timing_add("after_energy_evaluation");
-
-		logger.add_to_timer("compiled_E_g_h (acc)", assembled.compiled_runtime);
-		console.print(fmt::format("dE0 = {:.2e} | ", assembled.grad->maxCoeff()/dt), ConsoleVerbosity::NewtonIterations);
-
-		//// Converged right away? Can happen in the first time step. Avoids unnecessary CG iterations.
-		const double grad_norm = assembled.grad->norm();
-		if (grad_norm < 1e-10) {
+		// Exit due to max newton iterations
+		if (this->step_newton_it == settings.newton.max_newton_iterations) {
+			console.print(fmt::format("\n\t\t -> Max Newton iterations reached ({:d}) with residual_max {:.2e}\n", settings.newton.max_newton_iterations, residual_max), ConsoleVerbosity::TimeSteps);
+			newton_state = NewtonState::TooManyNewtonIterations;
 			break;
 		}
 
-		// Adaptive DoFs
-		std::fill(this->active_nodes.begin(), this->active_nodes.end(), 0); 
+		// Print line header
+		console.print(fmt::format("\n\t\t {:d}.{:d} ", this->step_newton_it, this->step_newton_sub_it), ConsoleVerbosity::NewtonIterations);
+
+		// Assemble linear system
+		symx::Assembled assembled = this->_evaluate_E_grad_hess();
+
+		// Energy before the step
+		const double E0 = *assembled.E;
+
+		// Residual before the step
+		this->residual = this->_compute_residual(*assembled.grad, dt);
+		residual_max = this->residual.maxCoeff();
+		console.print(fmt::format("dE0 = {:.2e} | ", residual_max), ConsoleVerbosity::NewtonIterations);
+
+		//// [DEBUG] Print non-zero sorted residual values for inspection
+		if (this->settings->newton.debug_print_initial_residual) {
+			this->_debug_print_initial_residual(residual, std::numeric_limits<double>::epsilon());
+			exit(9);
+		}
+
+		//// Converged right away? 
+		//// Can happen in the first time step sometimes (e.g. no gravity). 
+		//// Avoids unnecessary CG iterations and problems with the forcing sequence.
+		if (this->settings->newton.convergence_criteria == ConvergenceCriteria::Residual && residual_max < this->settings->newton.newton_tolerance ||
+			assembled.grad->cwiseAbs().maxCoeff() < this->settings->newton.eps_force_tolerance) {
+			newton_state = NewtonState::Successful;
+			break;
+		}
+
+		// Select active nodes if adaptivity is based on residual
+		if (this->settings->newton.adaptivity == Adaptivity::Yes && this->settings->newton.convergence_criteria == ConvergenceCriteria::Residual) {
+			std::fill(this->active_nodes.begin(), this->active_nodes.end(), 0); 
+			for (int i = 0; i < ndofs; i++) {
+				if (residual[i] > this->settings->newton.dof_deactivation_tolerance_multiplier * this->settings->newton.newton_tolerance) {
+					this->active_nodes[i / 3] = 1;
+				}
+			}
+		}
+
+		// Solve linear system
+		this->du = this->_solve_linear_system_and_tick_adaptivity(assembled, dt);
+		
+		// Correction step
+		const double max_da = this->_compute_acceleration_correction(this->du.cwiseAbs().maxCoeff(), dt);
+		console.print(fmt::format("da = {:.2e} | ", max_da), ConsoleVerbosity::NewtonIterations);
+
+		// Correction convergence
+		//// If the correction is already small enough, we can skip the line search
+		if (this->settings->newton.convergence_criteria == ConvergenceCriteria::Correction) {
+			if (max_da < this->settings->newton.newton_tolerance) {
+				//newton_state = NewtonState::Successful;
+				//break;
+
+				if (this->last_was_full_step) {
+					newton_state = NewtonState::Successful;
+					break;
+				}
+				else {
+					this->force_full_step = true;
+					if (this->_get_active_dofs_count() == 0) {
+						continue;
+					}
+				}
+			}
+		}
+
+		// Sufficient descend
+		const double du_dot_grad = this->du.dot(*assembled.grad);
+		if (du_dot_grad > 0.0) {
+			console.print("\n\t\t -> Line search doesn't descend.\n", ConsoleVerbosity::TimeSteps);
+			newton_state = NewtonState::LineSearchDoesntDescend;
+			break;
+		}
+		//console.print(fmt::format("dE0*du = {:.2e} | ", du_dot_grad), ConsoleVerbosity::NewtonIterations); // Not so necessary
+
+		// Max step in the search direction
+		double step_valid_configuration = this->_inplace_max_step_in_search_direction(this->du);
+		if (step_valid_configuration < 0.01) {
+			this->console->print("\n\t\t -> Valid step too small (less than 1%).\n", ConsoleVerbosity::TimeSteps);
+			newton_state = NewtonState::InvalidConfiguration;
+			break;
+		}
+
+		// Residual after a valid step
+		if (this->settings->newton.convergence_criteria == ConvergenceCriteria::Residual) {
+			assembled = this->_evaluate_E_grad();
+			this->residual = this->_compute_residual(*assembled.grad, dt);
+			residual_max = this->residual.maxCoeff();
+			console.print(fmt::format("dE1 = {:.2e}", residual_max), ConsoleVerbosity::NewtonIterations);
+
+			//// Converged?
+			if (residual_max < this->settings->newton.newton_tolerance) {
+				newton_state = NewtonState::Successful;
+				break;
+			}
+		}
+
+		// Line search: Backtracking (Nocedal)
+		double step_that_worked = this->_inplace_backtracking_line_search(this->du, E0, step_valid_configuration, du_dot_grad);
+		if (step_that_worked == 0.0) {
+			newton_state = NewtonState::TooManyLineSearchIterations;
+			break;
+		}
+	} // Newton iterations
+
+	// Is converged state valid?
+	if (!callbacks.run_is_converged_state_valid()) {
+		console.print("\n\t\t -> Converged state is not valid.\n", ConsoleVerbosity::TimeSteps);
+		newton_state = NewtonState::Restart;
+	}
+
+	// Print
+	console.print("\n\t\t", ConsoleVerbosity::NewtonIterations);
+	console.print(fmt::format("#newton: {:d}/{:d} ", this->step_newton_it, this->step_newton_sub_it_count), ConsoleVerbosity::TimeSteps);
+	console.print(" | #CG/newton: " + std::to_string((int)(this->cg_iterations_in_step / this->step_newton_it)), ConsoleVerbosity::TimeSteps);
+	console.print(" | #line_search/newton: " + std::to_string((int)(this->step_line_search_count / this->step_newton_it)), ConsoleVerbosity::TimeSteps);
+	if (newton_state == NewtonState::Successful) {
+		console.print(" | converged", ConsoleVerbosity::TimeSteps);
+	}
+	else {
+		console.print(" | not converged", ConsoleVerbosity::TimeSteps);
+	}
+
+	// Log
+	logger.add_to_counter("newton_iterations", this->step_newton_it);
+	logger.add_to_counter("newton_sub_iterations", this->step_newton_sub_it_count);
+	logger.add_to_counter("CG_iterations", this->cg_iterations_in_step);
+	logger.add_to_counter("line_search_iterations", this->step_line_search_count);
+
+	// Return
+	return newton_state;
+}
+
+void stark::core::NewtonsMethod::_run_before_evaluation()
+{
+	this->logger->start_timing("before_energy_evaluation");
+	this->callbacks->run_before_energy_evaluation();
+	this->logger->stop_timing_add("before_energy_evaluation");
+}
+void stark::core::NewtonsMethod::_run_after_evaluation()
+{
+	this->logger->start_timing("after_energy_evaluation");
+	this->callbacks->run_after_energy_evaluation();
+	this->logger->stop_timing_add("after_energy_evaluation");
+}
+
+symx::Assembled stark::core::NewtonsMethod::_evaluate_E_grad_hess()
+{
+	this->_run_before_evaluation();
+
+	this->logger->start_timing("evaluate_E_grad_hess");
+	symx::Assembled assembled = this->global_energy->evaluate_E_grad_hess(this->settings->debug.symx_check_for_NaNs);
+	this->logger->stop_timing_add("evaluate_E_grad_hess");
+
+	this->_run_after_evaluation();
+
+	return assembled;
+}
+symx::Assembled stark::core::NewtonsMethod::_evaluate_E_grad()
+{
+	this->_run_before_evaluation();
+
+	this->logger->start_timing("evaluate_E_grad");
+	symx::Assembled assembled = this->global_energy->evaluate_E_grad(this->settings->debug.symx_check_for_NaNs);
+	this->logger->stop_timing_add("evaluate_E_grad");
+
+	this->_run_after_evaluation();
+
+	return assembled;
+}
+symx::Assembled stark::core::NewtonsMethod::_evaluate_E()
+{
+	this->_run_before_evaluation();
+
+	this->logger->start_timing("evaluate_E");
+	symx::Assembled assembled = this->global_energy->evaluate_E(this->settings->debug.symx_check_for_NaNs);
+	this->logger->stop_timing_add("evaluate_E");
+
+	this->_run_after_evaluation();
+
+	return assembled;
+}
+
+Eigen::VectorXd stark::core::NewtonsMethod::_solve_linear_system_and_tick_adaptivity(const symx::Assembled& assembled, double dt)
+{
+	// Conjugate gradient procedure
+	auto solve = [&](std::vector<Eigen::Triplet<double>>& triplets, Eigen::VectorXd& rhs)
+		{
+			// Make sparse matrix
+			Eigen::SparseMatrix<double, Eigen::RowMajor> s;
+			s.resize(rhs.size(), rhs.size());
+			s.setFromTriplets(triplets.begin(), triplets.end());
+			s.makeCompressed();
+
+			// Choose solver
+			if (this->settings->newton.use_direct_linear_solve) {
+				Eigen::SparseLU<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> lu;
+				lu.analyzePattern(s);
+				lu.factorize(s);
+				this->logger->start_timing("directLU");
+				this->du = lu.solve(rhs);
+				this->logger->stop_timing_add("directLU");
+			}
+			else {
+				Eigen::ConjugateGradient<Eigen::SparseMatrix<double, Eigen::RowMajor>> cg;
+				cg.compute(s);
+				cg.setTolerance(this->_forcing_sequence(rhs));
+				this->logger->start_timing("CG_total");
+				this->du = cg.solve(rhs);
+				this->logger->stop_timing_add("CG_total");
+				this->logger->append_to_series("CG", this->logger->doubles["CG_total"]);
+				this->cg_iterations_in_step += (int)cg.iterations();
+			}
+			return this->du;
+		};
+
+	// Forced full?
+	bool force_full_solve = this->force_full_step;
+
+	// Adaptivity?
+	if (this->settings->newton.adaptivity == Adaptivity::No) {
+		force_full_solve = true;
+	}
+
+	// Right hand side
+	Eigen::VectorXd rhs = -1.0 * (*assembled.grad);
+
+	// If adaptive, check if we should run a full solve due to the number of active dofs
+	const int ndofs = (int)rhs.size();
+	const int n_nodes = ndofs / 3;
+	int n_active_dofs = this->_get_active_dofs_count();
+	int n_active_nodes = n_active_dofs / 3;
+	if (this->settings->newton.adaptivity == Adaptivity::Yes && n_active_dofs > (int)(ndofs * this->settings->newton.dofs_percentage_for_full_solve)) {
+		force_full_solve = true;
+	}
+
+	// If reached max substeps, force full solve
+	if (this->step_newton_sub_it == this->settings->newton.max_substeps) {
+		force_full_solve = true;
+	}
+
+	// Solve
+	//// Get global triplets
+	this->triplet_buffer.clear();
+	assembled.hess->to_triplets(this->triplet_buffer);
+
+	//// Full system
+	if (this->settings->newton.adaptivity == Adaptivity::No || force_full_solve) {
+		
+		// Logic
+		this->force_full_step = false;
+		this->last_was_full_step = true;
+		n_active_dofs = ndofs; // for printing
+		this->step_newton_it++;
+		this->step_newton_sub_it = 1;  // Restart substep counter
+
+		// Solve
+		this->du = solve(this->triplet_buffer, rhs);
+	}
+
+	//// Active subsystem (adaptivity)
+	else {
+		// Logic
+		this->last_was_full_step = false;
+		this->step_newton_sub_it++;
+		this->step_newton_sub_it_count++;
+		
+		// Add N-rings to the active nodes
+		for (int ring = 0; ring < this->settings->newton.n_rings; ring++) {
+			std::vector<uint8_t> new_active_nodes(this->active_nodes.size(), 0);
+			for (int triplet_i = 0; triplet_i < (int)this->triplet_buffer.size(); triplet_i += 9) {
+				const auto& triplet = this->triplet_buffer[triplet_i];
+				const int row = triplet.row() / 3;
+				const int col = triplet.col() / 3;
+				if (this->active_nodes[row] == 1 || this->active_nodes[col] == 1) {
+					new_active_nodes[row] = 1;
+					new_active_nodes[col] = 1;
+				}
+			}
+			this->active_nodes = new_active_nodes;
+		}
+		n_active_dofs = this->_get_active_dofs_count();
+		n_active_nodes = n_active_dofs / 3;
+
+		// Mapping
+		this->active_to_global_node_map.clear();
+		this->global_to_active_node_map = std::vector<int>(n_nodes, -1);
+		for (int i = 0; i < n_nodes; i++) {
+			if (this->active_nodes[i] == 1) {
+				this->global_to_active_node_map[i] = (int)this->active_to_global_node_map.size();
+				this->active_to_global_node_map.push_back(i);
+			}
+		}
+
+		// Build reduced system
+		//// Hessian
+		this->active_hess_triplets.clear();
+		for (const auto& triplet : this->triplet_buffer) {
+			if (this->active_nodes[triplet.row() / 3] == 1 && this->active_nodes[triplet.col() / 3] == 1) {
+				const int row = this->global_to_active_node_map[triplet.row() / 3] * 3 + triplet.row() % 3;
+				const int col = this->global_to_active_node_map[triplet.col() / 3] * 3 + triplet.col() % 3;
+				this->active_hess_triplets.push_back(Eigen::Triplet<double>(row, col, triplet.value()));
+			}
+		}
+
+		//// rhs
+		Eigen::VectorXd active_rhs = Eigen::VectorXd::Zero(n_active_dofs);
+		for (int i = 0; i < n_active_nodes; i++) {
+			for (int j = 0; j < 3; j++) {
+				active_rhs[3 * i + j] = rhs[3 * this->active_to_global_node_map[i] + j];
+			}
+		}
+
+		// Solve
+		Eigen::VectorXd active_du = solve(this->active_hess_triplets, active_rhs);
+
+		// Map back
+		this->du.resize(ndofs);
+		for (int i = 0; i < n_active_nodes; i++) {
+			for (int j = 0; j < 3; j++) {
+				this->du[3 * this->active_to_global_node_map[i] + j] = active_du[3 * i + j];
+			}
+		}
+		for (int i = 0; i < n_nodes; i++) {
+			if (this->active_nodes[i] == 0) {
+				for (int j = 0; j < 3; j++) {
+					this->du[3 * i + j] = 0.0;
+				}
+			}
+		}
+	}
+
+	// Log
+	this->console->print(fmt::format("ndofs = {:d}/{:d} | ", n_active_dofs, ndofs), ConsoleVerbosity::NewtonIterations);
+	this->logger->append_to_series("active_dofs", n_active_dofs);
+
+	// Correction based adaptivity
+	if (this->settings->newton.adaptivity == Adaptivity::Yes && this->settings->newton.convergence_criteria == ConvergenceCriteria::Correction) {
+		std::fill(this->active_nodes.begin(), this->active_nodes.end(), 0);
 		for (int i = 0; i < ndofs; i++) {
-			if (std::abs((*assembled.grad)[i]/dt) > this->dof_deactivation_tolerance_multiplier * settings.newton.newton_tol) {
+			const double da = this->_compute_acceleration_correction(this->du[i], dt);
+			if (da > this->settings->newton.dof_deactivation_tolerance_multiplier * this->settings->newton.newton_tolerance) {
 				this->active_nodes[i / 3] = 1;
 			}
 		}
-		int n_active_nodes = (int)std::count(this->active_nodes.begin(), this->active_nodes.end(), 1);
-		int n_active_dofs = 3 * n_active_nodes;
+		int n_active_dofs = this->_get_active_dofs_count();
+		std::cout << n_active_dofs << ", ";
+	}
+	
+	// Return
+	return this->du;
+}
+double stark::core::NewtonsMethod::_inplace_backtracking_line_search(const Eigen::VectorXd& du, double E0, double step_valid_configuration, double du_dot_grad)
+{
+	symx::Assembled assembled = this->_evaluate_E();  // This can technically be avoided for ConvergeCriteria == Residual
 
-		//// DEBUG PRINT INITIAL NODE RESIDUALS
-		if (this->print_initial_residual) {
-			std::vector<double> DEBUG;
-			for (int i = 0; i < ndofs; i++) {
-				DEBUG.push_back(std::abs((*assembled.grad)[i] / dt));
-			}
-			std::sort(DEBUG.begin(), DEBUG.end());
-			std::cout << std::endl;
-			for (int i = 0; i < ndofs; i++) {
-				std::cout << fmt::format("{:.2e} ", DEBUG[i]) << ", ";
-			}
-			exit(9);
-		}
-		 
-		//// Solve
-		this->du.resize(ndofs);
-		Eigen::VectorXd rhs = -1.0 * (*assembled.grad);
-		if (settings.newton.use_direct_linear_solve) {  // TODO: Clarify that one is directLU and the other is BCG without PSD checks
-			logger.start_timing("directLU");
-			solve_linear_system_with_directLU(this->du, *assembled.hess, rhs);
-			logger.stop_timing_add("directLU");
-		}
-		else {
-			// Forcing sequence
-			const double cg_tol = std::min(0.1 /*TODO: arbritrary.*/, grad_norm * std::min(0.5, std::sqrt(grad_norm)));
+	double step = step_valid_configuration;
+	const double suitable_backtracking_energy = E0 + 1e-4 * du_dot_grad;
+	this->logger->start_timing("line_search");
+	int line_search_it = 1;
+	while (*assembled.E > suitable_backtracking_energy) {
+		this->step_line_search_count++;
 
-			// N-Rings
-			if (this->run_adaptive_dofs && newton_it >= this->n_full_solve_iterations+1 && (double)n_active_dofs < (double)ndofs * this->dofs_percentage_for_full_solve) {
-				this->triplet_buffer.clear();
-				assembled.hess->to_triplets(this->triplet_buffer);
-				for (int ring = 0; ring < this->n_rings; ring++) {
-					std::vector<uint8_t> new_active_nodes(this->active_nodes.size(), 0);
-					for (int triplet_i = 0; triplet_i < (int)this->triplet_buffer.size(); triplet_i += 9) {
-						const auto& triplet = this->triplet_buffer[triplet_i];
-						if (this->active_nodes[triplet.row() / 3] == 1 || this->active_nodes[triplet.col() / 3] == 1) {
-							const int row = triplet.row() / 3;
-							const int col = triplet.col() / 3;
-							new_active_nodes[row] = 1;
-							new_active_nodes[col] = 1;
-						}
-					}
-					this->active_nodes = new_active_nodes;
+		// Print
+		this->console->print(fmt::format("\n\t\t\t {:d}. step = {:.2e} | (1.0 - E/E_bt) = {:.2e}", line_search_it, step, 1.0 - (*assembled.E) / suitable_backtracking_energy), ConsoleVerbosity::NewtonIterations);
+
+		// Exit
+		if (line_search_it == this->settings->newton.max_line_search_iterations) {
+			this->console->print(fmt::format("\n\t\t\t\t -> Max line search iterations reached ({:d}).\n", this->settings->newton.max_line_search_iterations), ConsoleVerbosity::TimeSteps);
+			return 0.0;
+		}
+
+		// Reduce step
+		step *= this->settings->newton.line_search_multiplier;
+		this->u1 = this->u0 + step * this->du;
+		this->global_energy->set_dofs(this->u1.data());
+
+		// Evaluate
+		assembled = this->_evaluate_E();
+
+		// Counter
+		line_search_it++;
+	}
+	double step_that_worked = step;
+	this->logger->stop_timing_add("line_search");
+
+
+	// Logging debug info
+	//// This inspection is to find discontinuities in the energies.
+	//// Therefore, we only log when the step is valid, but the line search didn't work.
+	if (this->settings->debug.line_search_output) {
+		if (step_valid_configuration > 0.99 && step_that_worked < 0.99) {
+			const std::string label = std::to_string(this->debug_output_counter);
+
+			this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", E0));
+			this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", 1.0 - suitable_backtracking_energy / E0));
+			this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", this->du.norm()));
+			for (double fstep = -1.0; fstep < 2.0; fstep += 0.01) {
+				if (this->debug_output_counter == 0) {
+					this->line_search_debug_logger.append_to_series("normalized_step_length", fmt::format("{:.6e}", fstep));
 				}
 
-				// Compute total n_active_nodes
-				n_active_nodes = (int)std::count(this->active_nodes.begin(), this->active_nodes.end(), 1);
-				n_active_dofs = 3 * n_active_nodes;
+				this->u1 = this->u0 + fstep * this->du;
+				this->global_energy->set_dofs(this->u1.data());
+				this->callbacks->run_before_energy_evaluation();
+				assembled = this->global_energy->evaluate_E();
+				this->callbacks->run_after_energy_evaluation();
+				const double v = (1.0 - (*assembled.E) / E0);
+				this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", v));
 			}
 
-			if (newton_sub_it == this->max_substeps) {
-				force_full_solve = true;
-			}
+			this->line_search_debug_logger.save_to_disk();
+			this->debug_output_counter++;
 
-			// Decide adaptive of global
-			if (!force_full_solve && this->run_adaptive_dofs && adaptive_steps_left > 0 && newton_it >= this->n_full_solve_iterations+1 && (double)n_active_dofs < (double)ndofs*this->dofs_percentage_for_full_solve) {
-				adaptive_steps_left--;
-				was_last_solve_adaptive = true;
-				newton_sub_it++;
-
-				logger.append_to_series("active_dofs", n_active_dofs);
-
-				// Mapping
-				this->active_to_global_node_map.clear();
-				this->global_to_active_node_map = std::vector<int>(n_nodes, -1);
-				for (int i = 0; i < n_nodes; i++) {
-					if (this->active_nodes[i] == 1) {
-						this->global_to_active_node_map[i] = (int)this->active_to_global_node_map.size();
-						this->active_to_global_node_map.push_back(i);
-					}
-				}
-
-				// Build reduced system
-				//// Hessian
-				this->active_hess_triplets.clear();
-				for (const auto& triplet : this->triplet_buffer) {
-					if (this->active_nodes[triplet.row() / 3] == 1 && this->active_nodes[triplet.col() / 3] == 1) {
-						const int row = this->global_to_active_node_map[triplet.row() / 3] * 3 + triplet.row() % 3;
-						const int col = this->global_to_active_node_map[triplet.col() / 3] * 3 + triplet.col() % 3;
-						this->active_hess_triplets.push_back(Eigen::Triplet<double>(row, col, triplet.value()));
-					}
-				}
-				Eigen::SparseMatrix<double, Eigen::RowMajor> s;
-				s.resize(n_active_dofs, n_active_dofs);
-				s.setFromTriplets(this->active_hess_triplets.begin(), this->active_hess_triplets.end());
-				s.makeCompressed();
-
-				//// rhs
-				Eigen::VectorXd active_rhs = Eigen::VectorXd::Zero(n_active_dofs);
-				for (int i = 0; i < n_active_nodes; i++) {
-					for (int j = 0; j < 3; j++) {
-						active_rhs[3*i + j] = rhs[3*this->active_to_global_node_map[i] + j];
-					}
-				}
-				
-				// Solve
-				Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::RowMajor> cg;
-				cg.compute(s);
-				cg.setTolerance(cg_tol);
-				logger.start_timing("CG_total");
-				Eigen::VectorXd active_du = cg.solve(active_rhs);
-				logger.stop_timing_add("CG_total");
-				logger.append_to_series("CG", logger.doubles["CG_total"]);
-				total_CG_it += (int)cg.iterations();
-
-				// Map back
-				for (int i = 0; i < n_active_nodes; i++) {
-					for (int j = 0; j < 3; j++) {
-						this->du[3*this->active_to_global_node_map[i] + j] = active_du[3*i + j];
-					}
-				}
-				for (int i = 0; i < n_nodes; i++) {
-					if (this->active_nodes[i] == 0) {
-						for (int j = 0; j < 3; j++) {
-							this->du[3*i + j] = 0.0;
-
-							// TODO: Not sure about this
-							//rhs[3*i + j] = 0.0;
-							//(*assembled.grad)[3*i + j] = 0.0;
-						}
-					}
-				}
-				console.print(fmt::format("ndofs = {:d}/{:d} | ", n_active_dofs, ndofs), ConsoleVerbosity::NewtonIterations);
-			}
-			else {
-				was_last_solve_adaptive = false;
-				force_full_solve = false;
-				newton_it++;
-				newton_sub_it = 1;
-				logger.append_to_series("active_dofs", ndofs);
-
-				this->du.setZero();
-				//const int max_iterations = std::max(1000, (int)(settings.newton.cg_max_iterations_multiplier * ndofs)); // Very small sims will need to exceed ndofs iterations
-				//const int iterations = solve_linear_system_with_CG(this->du, *assembled.hess, rhs, max_iterations, cg_tol, settings.execution.n_threads);
-				//total_CG_it += iterations;
-				//if (iterations == max_iterations) {  // TODO: Check
-				//	console.print("\n\t\t -> CG didn't converge.\n", ConsoleVerbosity::TimeSteps);
-				//	return NewtonError::TooManyCGIterations;
-				//}
-
-				this->triplet_buffer.clear();
-				assembled.hess->to_triplets(this->triplet_buffer);
-				Eigen::SparseMatrix<double, Eigen::RowMajor> s;
-				s.resize(ndofs, ndofs);
-				s.setFromTriplets(this->triplet_buffer.begin(), this->triplet_buffer.end());
-				s.makeCompressed();
-
-				Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::RowMajor> cg;
-				cg.compute(s);
-				cg.setTolerance(cg_tol);
-				logger.start_timing("CG_total");
-				this->du = cg.solve(rhs);
-				logger.stop_timing_add("CG_total");
-				logger.append_to_series("CG", logger.doubles["CG_total"]);
-				total_CG_it += (int)cg.iterations();
-
-				console.print(fmt::format("ndofs = {:d}/{:d} | ", ndofs, ndofs), ConsoleVerbosity::NewtonIterations);
-			}
+			// Restore state
+			this->u1 = this->u0 + step_that_worked * this->du;
+			this->global_energy->set_dofs(this->u1.data());
+			this->console->print(fmt::format("\n\t\t\t\t line_search.txt updated [{}]", label), ConsoleVerbosity::NewtonIterations);
 		}
-		
-		console.print(fmt::format("du = {:.2e} | ", this->du.norm()), ConsoleVerbosity::NewtonIterations);
-
-		// Line search (for later use)
-		const double base_E = *assembled.E;
-		const double precomputed_dot = this->du.dot(*assembled.grad);
-		const double suitable_backtracking_energy = base_E + 1e-4 * precomputed_dot;
-		console.print(fmt::format("dE0*du = {:.2e} | ", precomputed_dot), ConsoleVerbosity::NewtonIterations);
-
-		// Sufficient descend
-		if (precomputed_dot > 0.0) {
-			console.print("\n\t\t -> Line search doesn't descend.\n", ConsoleVerbosity::TimeSteps);
-			return NewtonError::LineSearchDoesntDescend;
-		}
-
-		// Max step in the search direction
-		double step = callbacks.run_max_allowed_step();
-
-		// Step and valid step
-		global_energy.get_dofs(this->u0.data());
-		while (true) {
-
-			if (step < 0.01) {
-				console.print("\n\t\t -> Valid step too small (less than 0.1%).\n", ConsoleVerbosity::TimeSteps);
-				return NewtonError::InvalidConfiguration;
-			}
-
-			this->u1 = this->u0 + step * this->du;
-			global_energy.set_dofs(this->u1.data());
-
-			logger.start_timing("is_intermidiate_state_valid");
-			const bool is_valid_state = callbacks.run_is_intermidiate_state_valid();
-			logger.stop_timing_add("is_intermidiate_state_valid");
-
-			if (is_valid_state) {
-				break;
-			}
-
-			step *= 0.5;
-		}
-		console.print(fmt::format("max step = {:.2e} | ", step), ConsoleVerbosity::NewtonIterations);
-
-		// Convergence?
-		logger.start_timing("before_energy_evaluation");
-		callbacks.run_before_energy_evaluation();
-		logger.stop_timing_add("before_energy_evaluation");
-
-		logger.start_timing("evaluate_E_grad");
-		assembled = global_energy.evaluate_E_grad(settings.debug.symx_check_for_NaNs);
-		logger.stop_timing_add("evaluate_E_grad");
-
-		logger.start_timing("after_energy_evaluation");
-		callbacks.run_after_energy_evaluation();
-		logger.stop_timing_add("after_energy_evaluation");
-
-		logger.add_to_timer("compiled_E_g (acc)", assembled.compiled_runtime);
-		residual = assembled.grad->maxCoeff()/dt;
-		console.print(fmt::format("dE1 = {:.2e}", residual), ConsoleVerbosity::NewtonIterations);
-
-		if (residual < settings.newton.newton_tol) {
-			if (this->do_final_full_solve && was_last_solve_adaptive) {
-				force_full_solve = true;
-				continue;
-			}
-			else {
-				break;
-			}
-		}
-
-		// Line search: Backtracking
-		const double step_valid_configuration = step;
-		logger.start_timing("line_search");
-		int line_search_it = 0;
-		while (*assembled.E > suitable_backtracking_energy) {
-			console.print(fmt::format("\n\t\t\t {:d}. step = {:.2e} | (1.0 - E/E_bt) = {:.2e}", line_search_it, step, 1.0 - (*assembled.E)/suitable_backtracking_energy), ConsoleVerbosity::NewtonIterations);
-
-			// Reduce step
-			step *= settings.newton.line_search_multiplier;
-			this->u1 = this->u0 + step * this->du;
-			global_energy.set_dofs(this->u1.data());
-
-			// Sequence
-			logger.start_timing("before_energy_evaluation");
-			callbacks.run_before_energy_evaluation();
-			logger.stop_timing_add("before_energy_evaluation");
-
-			logger.start_timing("evaluate_E");
-			assembled = global_energy.evaluate_E(settings.debug.symx_check_for_NaNs);
-			logger.stop_timing_add("evaluate_E");
-
-			logger.start_timing("after_energy_evaluation");
-			callbacks.run_after_energy_evaluation();
-			logger.stop_timing_add("after_energy_evaluation");
-
-			logger.add_to_timer("compiled_E (acc)", assembled.compiled_runtime);
-
-			// Counters
-			line_search_it++;
-
-			if (line_search_it == settings.newton.max_line_search_iterations) {
-				console.print(fmt::format("\n\t\t\t\t -> Max line search iterations reached ({:d}).\n", settings.newton.max_line_search_iterations), ConsoleVerbosity::TimeSteps);
-				return NewtonError::TooManyLineSearchIterations;
-			}
-		}
-
-		// Log du
-		if (write_du) {
-			dofs_du.push_back(step * this->du);
-		}
-
-		// Log line search energy profile
-		if (settings.debug.line_search_output) {
-			if (step_valid_configuration > 0.99 && step < 0.99) {
-				const std::string label = std::to_string(this->debug_output_counter);
-
-				this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", base_E));
-				this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", 1.0 - suitable_backtracking_energy / base_E));
-				this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", this->du.norm()));
-				for (double fstep = -1.0; fstep < 2.0; fstep += 0.01) {
-					if (this->debug_output_counter == 0) {
-						this->line_search_debug_logger.append_to_series("normalized_step_length", fmt::format("{:.6e}", fstep));
-					}
-
-					this->u1 = this->u0 + fstep * this->du;
-					global_energy.set_dofs(this->u1.data());
-					callbacks.run_before_energy_evaluation();
-					assembled = global_energy.evaluate_E();
-					callbacks.run_after_energy_evaluation();
-					const double v = (1.0 - (*assembled.E) / base_E);
-					this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", v));
-				}
-
-				this->line_search_debug_logger.save_to_disk();
-				this->debug_output_counter++;
-
-				// Restore state
-				this->u1 = this->u0 + step * this->du;
-				global_energy.set_dofs(this->u1.data());
-				console.print(fmt::format("\n\t\t\t\t line_search.txt updated [{}]", label), ConsoleVerbosity::NewtonIterations);
-			}
-		}
-
-		total_line_search_it += line_search_it;
-		logger.stop_timing_add("line_search");
 	}
 
-	if (this->write_du) {
-		std::ofstream file;
-		file.open(settings.output.output_directory + "/dofs_du_" + std::to_string(this->activation_dof_it_count) + ".txt", std::ios::out | std::ios::app);
-		for (auto& du : dofs_du) {
-			for (int i = 0; i < ndofs; i++) {
-				file << du[i] << ", ";
-			}
-			file << "\n";
+	return step;
+}
+
+Eigen::VectorXd stark::core::NewtonsMethod::_compute_residual(const Eigen::VectorXd& grad, double dt)
+{
+	/*
+		Note:
+			The degrees of freedom are velocities, not displacements.
+			Therefore the residual force used for termination is f = dE/dv * 1.0/time_step_size.
+	*/
+	if (this->settings->newton.residual_type == ResidualType::Force) {
+		return grad.cwiseAbs() / dt;
+	}
+	else {
+		std::cout << "stark error: NewtonsMethod::_compute_force_residual(...) does not implement non-force residuals yet." << std::endl;
+		exit(-1);
+	}
+}
+double stark::core::NewtonsMethod::_compute_acceleration_correction(double du, double dt)
+{
+	return du / dt;  // Degrees of freedom are velocities in Stark. Therefore the correction du is also a velocity.
+}
+int stark::core::NewtonsMethod::_get_active_dofs_count()
+{
+	return 3*(int)std::count(this->active_nodes.begin(), this->active_nodes.end(), 1);
+}
+double stark::core::NewtonsMethod::_forcing_sequence(const Eigen::VectorXd& rhs)
+{
+	const double grad_norm = rhs.norm();
+	const double cg_tol = std::min(0.1 /*TODO: arbritrary.*/, grad_norm * std::min(0.5, std::sqrt(grad_norm)));
+	return cg_tol;
+}
+double stark::core::NewtonsMethod::_inplace_max_step_in_search_direction(const Eigen::VectorXd& du)
+{
+	// Max step in the search direction (e.g. CCD)
+	double step = this->callbacks->run_max_allowed_step();
+
+	// Reduce the step until the configuration is valid (e.g. penetration-free)
+	this->global_energy->get_dofs(this->u0.data());
+	while (true) {
+
+		if (step < 0.01) {
+			return 0.0;
 		}
-		file.close();
+
+		this->u1 = this->u0 + step * this->du;
+		this->global_energy->set_dofs(this->u1.data());
+
+		this->logger->start_timing("is_intermidiate_state_valid");
+		const bool is_valid_state = this->callbacks->run_is_intermidiate_state_valid();
+		this->logger->stop_timing_add("is_intermidiate_state_valid");
+
+		if (is_valid_state) {
+			break;
+		}
+
+		step *= 0.5;
 	}
-	this->activation_dof_it_count++;
+	this->console->print(fmt::format("max step = {:.2e} | ", step), ConsoleVerbosity::NewtonIterations);
+	return step;
+}
 
-	if (!callbacks.run_is_converged_state_valid()) {
-		console.print("\n\t\t -> Converged state is not valid.\n", ConsoleVerbosity::TimeSteps);
-		return NewtonError::Restart;
+void stark::core::NewtonsMethod::_debug_print_initial_residual(const Eigen::VectorXd& residual, double min)
+{
+	std::vector<double> res;
+	for (int i = 0; i < (int)residual.size(); i++) {
+		if (residual[i] > min) {
+			res.push_back(residual[i]);
+		}
+		std::sort(res.begin(), res.end());
+		std::cout << std::endl;
+		for (double r : res) {
+			std::cout << fmt::format("{:.2e} ", r) << ", ";
+		}
 	}
-
-	console.print("\n\t\t", ConsoleVerbosity::NewtonIterations);
-	console.print("#newton: " + std::to_string(newton_it), ConsoleVerbosity::TimeSteps);
-	console.print(" | #CG/newton: " + std::to_string((int)(total_CG_it/newton_it)), ConsoleVerbosity::TimeSteps);
-	console.print(" | #line_search/newton: " + std::to_string((int)(total_line_search_it/newton_it)), ConsoleVerbosity::TimeSteps);
-
-	logger.add_to_counter("newton_iterations", newton_it);
-	logger.add_to_counter("CG_iterations", total_CG_it);
-	logger.add_to_counter("line_search_iterations", total_line_search_it);
-
-	return NewtonError::Successful;
 }

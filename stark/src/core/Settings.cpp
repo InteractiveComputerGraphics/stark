@@ -8,6 +8,7 @@
 
 #include <fmt/format.h>
 
+using namespace stark;
 using namespace stark::core;
 
 std::string time_stamp()
@@ -46,6 +47,33 @@ std::string to_string(ConsoleOutputTo v)
 	case ConsoleOutputTo::FileOnly: return "FileOnly"; break;
 	case ConsoleOutputTo::FileAndConsole: return "FileAndConsole"; break;
 	case ConsoleOutputTo::NoOutput: return "NoOutput"; break;
+	default: return ""; break;
+	}
+}
+std::string to_string(ResidualType v)
+{
+	switch (v)
+	{
+	case ResidualType::Force: return "Force"; break;
+	case ResidualType::Acceleration: return "Acceleration"; break;
+	default: return ""; break;
+	}
+}
+std::string to_string(ConvergenceCriteria v)
+{
+	switch (v)
+	{
+	case ConvergenceCriteria::Residual: return "Residual"; break;
+	case ConvergenceCriteria::Correction: return "Correction"; break;
+	default: return ""; break;
+	}
+}
+std::string to_string(Adaptivity v)
+{
+	switch (v)
+	{
+	case Adaptivity::No: return "No"; break;
+	case Adaptivity::Yes: return "Yes"; break;
 	default: return ""; break;
 	}
 }
@@ -133,13 +161,23 @@ std::string Settings::as_string() const
 	out += "\n         enable_intersection_test: " + to_string(this->contact.enable_intersection_test);
 
 	out += "\n     Newton's Method";
-	out += "\n         newton_tol: " + fmt::format("{:.1e}", this->newton.newton_tol);
+	out += "\n         newton_tolerance: " + fmt::format("{:.1e}", this->newton.newton_tolerance);
 	out += "\n         max_newton_iterations: " + std::to_string(this->newton.max_newton_iterations);
+	out += "\n         residual_type: " + to_string(this->newton.residual_type);
+	out += "\n         convergence_criteria: " + to_string(this->newton.convergence_criteria);
+	out += "\n         adaptivity: " + to_string(this->newton.adaptivity);
+	out += "\n         use_direct_linear_solve: " + to_string(this->newton.use_direct_linear_solve);
+	out += "\n         project_to_PD: " + to_string(this->newton.project_to_PD);
 	out += "\n         max_line_search_iterations: " + std::to_string(this->newton.max_line_search_iterations);
 	out += "\n         line_search_multiplier: " + fmt::format("{:f}", this->newton.line_search_multiplier);
 	out += "\n         cg_max_iterations_multiplier: " + fmt::format("{:f}", this->newton.cg_max_iterations_multiplier);
-	out += "\n         use_direct_linear_solve: " + to_string(this->newton.use_direct_linear_solve);
-	out += "\n         project_to_PD: " + to_string(this->newton.project_to_PD);
+	out += "\n         eps_force_tolerance: " + fmt::format("{:.1e}", this->newton.eps_force_tolerance);
+	out += "\n         n_rings: " + std::to_string(this->newton.n_rings);
+	out += "\n         max_substeps: " + std::to_string(this->newton.max_substeps);
+	out += "\n         n_full_solve_iterations_at_the_beginning: " + std::to_string(this->newton.n_full_solve_iterations_at_the_beginning);
+	out += "\n         dof_deactivation_tolerance_multiplier: " + fmt::format("{:f}", this->newton.dof_deactivation_tolerance_multiplier);
+	out += "\n         dofs_percentage_for_full_solve: " + fmt::format("{:f}", this->newton.dofs_percentage_for_full_solve);
+	out += "\n         debug_print_initial_residual: " + to_string(this->newton.debug_print_initial_residual);
 
 	out += "\n     Execution";
 	out += "\n         allowed_execution_time: " + fmt::format("{:.1e}", this->execution.allowed_execution_time);

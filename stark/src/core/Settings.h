@@ -7,6 +7,14 @@
 #include "AdaptiveParameter.h"
 #include "Console.h"
 
+// User facing enums
+namespace stark
+{
+	enum class ResidualType { Force, Acceleration };
+	enum class ConvergenceCriteria { Residual, Correction };
+	enum class Adaptivity { No, Yes };
+}
+
 namespace stark::core
 {
 	struct Settings
@@ -45,15 +53,26 @@ namespace stark::core
 		};
 		struct NewtonsMethod
 		{
-			double newton_tol = 1e-4;
+			double newton_tolerance = 1e-4;
 			int max_newton_iterations = 30;
-			int max_line_search_iterations = 10;
-			double line_search_multiplier = 0.5;
-
-			double cg_max_iterations_multiplier = 1.0;
-
+			ResidualType residual_type = ResidualType::Force;
+			ConvergenceCriteria convergence_criteria = ConvergenceCriteria::Residual;
+			Adaptivity adaptivity = Adaptivity::No;
 			bool use_direct_linear_solve = false;
 			bool project_to_PD = false;
+
+			int max_line_search_iterations = 10;
+			double line_search_multiplier = 0.5;
+			double cg_max_iterations_multiplier = 1.0;
+			double eps_force_tolerance = 1e-10;
+
+			// Adaptivity
+			int n_rings = 1;
+			int max_substeps = 15;
+			int n_full_solve_iterations_at_the_beginning = 0;
+			double dof_deactivation_tolerance_multiplier = 1.0;
+			double dofs_percentage_for_full_solve = 0.5;
+			bool debug_print_initial_residual = false;
 		};
 		struct Execution
 		{

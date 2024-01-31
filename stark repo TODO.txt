@@ -3,6 +3,8 @@ stark repo TODO
 
 Release
 -------
+	- No warnings. Ideally it should compile with -Werror.
+	- Print something while waiting for SymX.
 	- Error in NewtonsMethod: grad is not residual *forces*, as its the derivative of velocities
 	- Non-AVX2 mode for Mac
 	- Error messages and logging.
@@ -34,6 +36,9 @@ Oct unification
 		- Parallelism.
 		- CCD.
 		- Disable/Enable pairs should detect redundancies and ignore them.
+
+	* High level (Stark, Newton, Logger, Console, Callbacks) structures need refactoring.
+	* Is residual better as .norm() or .max()
 
 	* Attachments
 		- Attach by distance
