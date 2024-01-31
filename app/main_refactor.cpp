@@ -322,7 +322,7 @@ void attachments()
 void cloth_floor()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "cloth_floor_0.01g_fine_adaptive_restart";
+	settings.output.simulation_name = "cloth_floor_0.001g_fine_adaptive";
 	settings.output.output_directory = OUTPUT_PATH + "/cloth_floor";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
@@ -330,7 +330,8 @@ void cloth_floor()
 	settings.newton.adaptivity = stark::Adaptivity::Yes;
 	settings.newton.convergence_criteria = stark::ConvergenceCriteria::Correction;
 	settings.newton.n_rings = 1;
-	settings.newton.newton_tolerance = 0.01*std::abs(settings.simulation.gravity.z());
+	//settings.newton.dof_deactivation_tolerance_multiplier = 0.1;
+	settings.newton.newton_tolerance = 0.001*std::abs(settings.simulation.gravity.z());
 	settings.newton.max_newton_iterations = 100;
 	settings.newton.project_to_PD = true;
 

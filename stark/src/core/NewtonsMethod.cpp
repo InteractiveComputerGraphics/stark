@@ -99,19 +99,20 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		//// If the correction is already small enough, we can skip the line search
 		if (this->settings->newton.convergence_criteria == ConvergenceCriteria::Correction) {
 			if (max_da < this->settings->newton.newton_tolerance) {
-				//newton_state = NewtonState::Successful;
-				//break;
+				newton_state = NewtonState::Successful;
+				break;
 
-				if (this->last_was_full_step) {
-					newton_state = NewtonState::Successful;
-					break;
-				}
-				else {
-					this->force_full_step = true;
-					if (this->_get_active_dofs_count() == 0) {
-						continue;
-					}
-				}
+				//// Adaptivity restart
+				//if (this->last_was_full_step) {
+				//	newton_state = NewtonState::Successful;
+				//	break;
+				//}
+				//else {
+				//	this->force_full_step = true;
+				//	if (this->_get_active_dofs_count() == 0) {
+				//		continue;
+				//	}
+				//}
 			}
 		}
 
