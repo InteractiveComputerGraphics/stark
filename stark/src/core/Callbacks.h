@@ -2,8 +2,6 @@
 #include <functional>
 #include <algorithm>
 
-#include <symx>
-
 namespace stark::core
 {
 	/*
@@ -13,7 +11,6 @@ namespace stark::core
 	struct Callbacks
 	{
 		std::vector<std::function<void()>> before_simulation;
-		std::vector<std::function<symx::DoF(Eigen::VectorXd&)>> initial_guess;
 		std::vector<std::function<void()>> before_time_step;
 		std::vector<std::function<void()>> after_time_step;
 		std::vector<std::function<void()>> before_energy_evaluation;
