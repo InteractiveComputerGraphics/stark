@@ -38,6 +38,8 @@ Oct unification
 		- CCD.
 		- Disable/Enable pairs should detect redundancies and ignore them.
 
+	* Time step reduction leads to loss in inertia?? Certainly looks like it!
+		But then it catches up... wut?
 	* High level (Stark, Newton, Logger, Console, Callbacks) structures need refactoring.
 	* Is residual better as .norm() or .max()
 

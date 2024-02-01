@@ -65,7 +65,7 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 
 		//// [DEBUG] Print non-zero sorted residual values for inspection
 		if (this->settings->newton.debug_print_initial_residual) {
-			this->_debug_print_initial_residual(residual, std::numeric_limits<double>::epsilon());
+			this->_debug_print_initial_residual(this->residual, std::numeric_limits<double>::epsilon());
 			exit(9);
 		}
 
@@ -82,7 +82,7 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		if (this->settings->newton.adaptivity == Adaptivity::Yes && this->settings->newton.convergence_criteria == ConvergenceCriteria::Residual) {
 			std::fill(this->active_nodes.begin(), this->active_nodes.end(), 0); 
 			for (int i = 0; i < ndofs; i++) {
-				if (residual[i] > this->settings->newton.dof_deactivation_tolerance_multiplier * this->settings->newton.newton_tolerance) {
+				if (this->residual[i] > this->settings->newton.dof_deactivation_tolerance_multiplier * this->settings->newton.newton_tolerance) {
 					this->active_nodes[i / 3] = 1;
 				}
 			}
@@ -101,18 +101,6 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 			if (max_da < this->settings->newton.newton_tolerance) {
 				newton_state = NewtonState::Successful;
 				break;
-
-				//// Adaptivity restart
-				//if (this->last_was_full_step) {
-				//	newton_state = NewtonState::Successful;
-				//	break;
-				//}
-				//else {
-				//	this->force_full_step = true;
-				//	if (this->_get_active_dofs_count() == 0) {
-				//		continue;
-				//	}
-				//}
 			}
 		}
 
@@ -277,14 +265,10 @@ Eigen::VectorXd stark::core::NewtonsMethod::_solve_linear_system_and_tick_adapti
 	// Right hand side
 	Eigen::VectorXd rhs = -1.0 * (*assembled.grad);
 
-	// If adaptive, check if we should run a full solve due to the number of active dofs
+	// Number of active dofs
 	const int ndofs = (int)rhs.size();
 	const int n_nodes = ndofs / 3;
-	int n_active_dofs = this->_get_active_dofs_count();
-	int n_active_nodes = n_active_dofs / 3;
-	if (this->settings->newton.adaptivity == Adaptivity::Yes && n_active_dofs > (int)(ndofs * this->settings->newton.dofs_percentage_for_full_solve)) {
-		force_full_solve = true;
-	}
+	int n_active_dofs = -1;
 
 	// If reached max substeps, force full solve
 	if (this->step_newton_sub_it == this->settings->newton.max_substeps) {
@@ -296,22 +280,9 @@ Eigen::VectorXd stark::core::NewtonsMethod::_solve_linear_system_and_tick_adapti
 	this->triplet_buffer.clear();
 	assembled.hess->to_triplets(this->triplet_buffer);
 
-	//// Full system
-	if (this->settings->newton.adaptivity == Adaptivity::No || force_full_solve) {
-		
-		// Logic
-		this->force_full_step = false;
-		this->last_was_full_step = true;
-		n_active_dofs = ndofs; // for printing
-		this->step_newton_it++;
-		this->step_newton_sub_it = 1;  // Restart substep counter
-
-		// Solve
-		this->du = solve(this->triplet_buffer, rhs);
-	}
 
 	//// Active subsystem (adaptivity)
-	else {
+	if (this->settings->newton.adaptivity == Adaptivity::Yes && !force_full_solve) {
 		// Logic
 		this->last_was_full_step = false;
 		this->step_newton_sub_it++;
@@ -331,56 +302,79 @@ Eigen::VectorXd stark::core::NewtonsMethod::_solve_linear_system_and_tick_adapti
 			}
 			this->active_nodes = new_active_nodes;
 		}
+
+		// Active dofs count
 		n_active_dofs = this->_get_active_dofs_count();
-		n_active_nodes = n_active_dofs / 3;
+		int n_active_nodes = n_active_dofs / 3;
 
-		// Mapping
-		this->active_to_global_node_map.clear();
-		this->global_to_active_node_map = std::vector<int>(n_nodes, -1);
-		for (int i = 0; i < n_nodes; i++) {
-			if (this->active_nodes[i] == 1) {
-				this->global_to_active_node_map[i] = (int)this->active_to_global_node_map.size();
-				this->active_to_global_node_map.push_back(i);
-			}
+		// Full solve?
+		if (n_active_dofs > (int)(ndofs * this->settings->newton.dofs_percentage_for_full_solve)) {
+			force_full_solve = true;
 		}
-
-		// Build reduced system
-		//// Hessian
-		this->active_hess_triplets.clear();
-		for (const auto& triplet : this->triplet_buffer) {
-			if (this->active_nodes[triplet.row() / 3] == 1 && this->active_nodes[triplet.col() / 3] == 1) {
-				const int row = this->global_to_active_node_map[triplet.row() / 3] * 3 + triplet.row() % 3;
-				const int col = this->global_to_active_node_map[triplet.col() / 3] * 3 + triplet.col() % 3;
-				this->active_hess_triplets.push_back(Eigen::Triplet<double>(row, col, triplet.value()));
+		else {
+			// Mapping
+			this->active_to_global_node_map.clear();
+			this->global_to_active_node_map = std::vector<int>(n_nodes, -1);
+			for (int i = 0; i < n_nodes; i++) {
+				if (this->active_nodes[i] == 1) {
+					this->global_to_active_node_map[i] = (int)this->active_to_global_node_map.size();
+					this->active_to_global_node_map.push_back(i);
+				}
 			}
-		}
 
-		//// rhs
-		Eigen::VectorXd active_rhs = Eigen::VectorXd::Zero(n_active_dofs);
-		for (int i = 0; i < n_active_nodes; i++) {
-			for (int j = 0; j < 3; j++) {
-				active_rhs[3 * i + j] = rhs[3 * this->active_to_global_node_map[i] + j];
+			// Build reduced system
+			//// Hessian
+			this->active_hess_triplets.clear();
+			for (const auto& triplet : this->triplet_buffer) {
+				if (this->active_nodes[triplet.row() / 3] == 1 && this->active_nodes[triplet.col() / 3] == 1) {
+					const int row = this->global_to_active_node_map[triplet.row() / 3] * 3 + triplet.row() % 3;
+					const int col = this->global_to_active_node_map[triplet.col() / 3] * 3 + triplet.col() % 3;
+					this->active_hess_triplets.push_back(Eigen::Triplet<double>(row, col, triplet.value()));
+				}
 			}
-		}
 
-		// Solve
-		Eigen::VectorXd active_du = solve(this->active_hess_triplets, active_rhs);
-
-		// Map back
-		this->du.resize(ndofs);
-		for (int i = 0; i < n_active_nodes; i++) {
-			for (int j = 0; j < 3; j++) {
-				this->du[3 * this->active_to_global_node_map[i] + j] = active_du[3 * i + j];
-			}
-		}
-		for (int i = 0; i < n_nodes; i++) {
-			if (this->active_nodes[i] == 0) {
+			//// rhs
+			Eigen::VectorXd active_rhs = Eigen::VectorXd::Zero(n_active_dofs);
+			for (int i = 0; i < n_active_nodes; i++) {
 				for (int j = 0; j < 3; j++) {
-					this->du[3 * i + j] = 0.0;
+					active_rhs[3 * i + j] = rhs[3 * this->active_to_global_node_map[i] + j];
+				}
+			}
+
+			// Solve
+			Eigen::VectorXd active_du = solve(this->active_hess_triplets, active_rhs);
+
+			// Map back
+			this->du.resize(ndofs);
+			for (int i = 0; i < n_active_nodes; i++) {
+				for (int j = 0; j < 3; j++) {
+					this->du[3 * this->active_to_global_node_map[i] + j] = active_du[3 * i + j];
+				}
+			}
+			for (int i = 0; i < n_nodes; i++) {
+				if (this->active_nodes[i] == 0) {
+					for (int j = 0; j < 3; j++) {
+						this->du[3 * i + j] = 0.0;
+					}
 				}
 			}
 		}
 	}
+
+	//// Full system
+	if (this->settings->newton.adaptivity == Adaptivity::No || force_full_solve) {
+
+		// Logic
+		this->force_full_step = false;
+		this->last_was_full_step = true;
+		n_active_dofs = ndofs; // for printing
+		this->step_newton_it++;
+		this->step_newton_sub_it = 1;  // Restart substep counter
+
+		// Solve
+		this->du = solve(this->triplet_buffer, rhs);
+	}
+
 
 	// Log
 	this->console->print(fmt::format("ndofs = {:d}/{:d} | ", n_active_dofs, ndofs), ConsoleVerbosity::NewtonIterations);
@@ -484,9 +478,29 @@ Eigen::VectorXd stark::core::NewtonsMethod::_compute_residual(const Eigen::Vecto
 	if (this->settings->newton.residual_type == ResidualType::Force) {
 		return grad.cwiseAbs() / dt;
 	}
-	else {
-		std::cout << "stark error: NewtonsMethod::_compute_force_residual(...) does not implement non-force residuals yet." << std::endl;
-		exit(-1);
+	else if (this->settings->newton.residual_type == ResidualType::Acceleration) {
+		std::vector<int> dofs_offsets = this->global_energy->get_dofs_offsets();
+		this->residual = grad.cwiseAbs() / dt; // Force
+		int dof_count = 0;
+		for (auto& pair : this->callbacks->inv_mass) {
+			const int dof = pair.first;
+			auto& inv_mass_application_f = pair.second;
+
+			const int begin = dofs_offsets[dof];
+			const int end = dofs_offsets[dof + 1];
+			const int n = end - begin;
+
+			dof_count += n;
+			inv_mass_application_f(this->residual.data() + begin, this->residual.data() + end);
+		}
+
+		// Check if all dofs were used
+		if (dof_count != (int)this->residual.size()) {
+			std::cout << "Stark error: NewtonsMethod::_compute_residual() found that not all dofs were used." << std::endl;
+			exit(-1);
+		}
+
+		return this->residual;
 	}
 }
 double stark::core::NewtonsMethod::_compute_acceleration_correction(double du, double dt)

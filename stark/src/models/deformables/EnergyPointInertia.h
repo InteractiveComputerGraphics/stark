@@ -22,6 +22,7 @@ namespace stark::models
 		
 		// Computed
 		IntervalVector<double> lumped_volume;  // [V] per vertex
+		std::vector<Eigen::Matrix3d> inv_mass;
 
 		/* Methods */
 		EnergyPointInertia(stark::core::Stark& stark, const spPointDynamics dyn);

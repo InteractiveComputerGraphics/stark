@@ -2,6 +2,8 @@
 #include <functional>
 #include <algorithm>
 
+#include <symx>
+
 namespace stark::core
 {
 	/*
@@ -10,6 +12,7 @@ namespace stark::core
 	*/
 	struct Callbacks
 	{
+		std::unordered_map<int, std::function<void(double*, double*)>> inv_mass;  // TODO: Need interface
 		std::vector<std::function<void()>> before_simulation;
 		std::vector<std::function<void()>> before_time_step;
 		std::vector<std::function<void()>> after_time_step;

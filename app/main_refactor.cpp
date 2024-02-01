@@ -199,21 +199,24 @@ void edge_edge_collision()
 void heavy_box_rigid_and_deformable()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "full-correction";
+	settings.output.simulation_name = "actual_adaptivity_residual_0.9g_subs99";
 	settings.output.output_directory = OUTPUT_PATH + "/heavy_box_rigid_and_deformable";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
 	settings.execution.end_simulation_time = 0.21;
 	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
 	//settings.output.fps = 120.0;
+	settings.execution.n_threads = omp_get_num_procs();
 
 	settings.newton.adaptivity = stark::Adaptivity::Yes;
-	settings.newton.convergence_criteria = stark::ConvergenceCriteria::Correction;
-	settings.newton.n_rings = 0;
-	settings.newton.newton_tolerance = 1e-3; // 1e-4;
+	settings.newton.convergence_criteria = stark::ConvergenceCriteria::Residual;
+	settings.newton.residual_type = stark::ResidualType::Acceleration;
+	settings.newton.newton_tolerance = 0.9*std::abs(settings.simulation.gravity.z());
 	settings.newton.max_newton_iterations = 100;
 	settings.newton.project_to_PD = true;
-	settings.execution.n_threads = 24;
+	settings.newton.max_substeps = 99;
+	settings.newton.dofs_percentage_for_full_solve = 0.5;
+	settings.newton.n_rings = 1;
 
 	settings.contact.collisions_enabled = true;
 	settings.contact.friction_enabled = true;  // No friction to avoid line search problems
@@ -322,16 +325,17 @@ void attachments()
 void cloth_floor()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "cloth_floor_0.001g_fine_adaptive";
+	settings.output.simulation_name = "adaptive_residual_0.9g";
 	settings.output.output_directory = OUTPUT_PATH + "/cloth_floor";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
 
 	settings.newton.adaptivity = stark::Adaptivity::Yes;
-	settings.newton.convergence_criteria = stark::ConvergenceCriteria::Correction;
+	settings.newton.convergence_criteria = stark::ConvergenceCriteria::Residual;
+	settings.newton.residual_type = stark::ResidualType::Acceleration;
 	settings.newton.n_rings = 1;
 	//settings.newton.dof_deactivation_tolerance_multiplier = 0.1;
-	settings.newton.newton_tolerance = 0.001*std::abs(settings.simulation.gravity.z());
+	settings.newton.newton_tolerance = 0.9*std::abs(settings.simulation.gravity.z());
 	settings.newton.max_newton_iterations = 100;
 	settings.newton.project_to_PD = true;
 
@@ -469,7 +473,7 @@ int main()
 	//rb_constraints_all();
 	//edge_edge_collision();
 	//attachments();
-	//heavy_box_rigid_and_deformable();
+	heavy_box_rigid_and_deformable();
 	//laundry_cloth();
-	cloth_floor();
+	//cloth_floor();
 }
