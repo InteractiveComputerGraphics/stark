@@ -47,9 +47,19 @@ void stark::models::RigidBodyDynamics::_before_time_step(stark::core::Stark& sta
 		this->q0_[i] = { q.w(), q.x(), q.y(), q.z() };
 	}
 
-	// Set next time velocities estimation to zero to avoid invalid state outside of the minimzer
-	std::fill(this->v1.begin(), this->v1.end(), Eigen::Vector3d::Zero());
-	std::fill(this->w1.begin(), this->w1.end(), Eigen::Vector3d::Zero());
+	if (false) {
+		// DEBUG
+		const double dt = stark.settings.simulation.adaptive_time_step.value;
+		for (int i = 0; i < this->v1.size(); i++) {
+			this->v1[i] = this->v0[i] + dt * (this->a[i] + stark.settings.simulation.gravity);  // missing force/mass
+			this->w1[i] = this->w1[i] + dt * this->aa[i]; // missing force/mass
+		}
+	}
+	else {
+		// Set next time velocities estimation to zero to avoid invalid state outside of the minimzer
+		std::fill(this->v1.begin(), this->v1.end(), Eigen::Vector3d::Zero());
+		std::fill(this->w1.begin(), this->w1.end(), Eigen::Vector3d::Zero());
+	}
 }
 void stark::models::RigidBodyDynamics::_on_time_step_accepted(stark::core::Stark& stark)
 {

@@ -37,6 +37,14 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 	this->step_line_search_count = 0;
 	this->cg_iterations_in_step = 0;
 
+	////// DEBUG HACK
+	//callbacks.initial_guess[0](this->u1);
+	//this->global_energy->get_dofs(this->u0.data()); // Should be zero
+	//this->du = this->u1 - this->u0;
+	//const double step_0 = this->_inplace_max_step_in_search_direction(this->du);
+	//std::cout << "\nstep_0 = " << step_0 << std::endl;
+	////// 
+
 	// Newtons method
 	double residual_max = std::numeric_limits<double>::max();
 	NewtonState newton_state = NewtonState::Running;
@@ -123,7 +131,6 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 			newton_state = NewtonState::LineSearchDoesntDescend;
 			break;
 		}
-		//console.print(fmt::format("dE0*du = {:.2e} | ", du_dot_grad), ConsoleVerbosity::NewtonIterations); // Not so necessary
 
 		// Max step in the search direction
 		double step_valid_configuration = this->_inplace_max_step_in_search_direction(this->du);

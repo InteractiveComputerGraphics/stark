@@ -7,6 +7,21 @@ stark::models::PointDynamics::PointDynamics(stark::core::Stark& stark)
 	this->dof = stark.global_energy.add_dof_array(this->v1.data, "PointDynamics.v1");
 	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step(stark); });
 	stark.callbacks.on_time_step_accepted.push_back([&]() { this->_on_time_step_accepted(stark); });
+
+	// DEBUG
+	stark.callbacks.initial_guess.push_back(
+		[&](Eigen::VectorXd& v1_guess) 
+		{ 
+			v1_guess.resize(this->size() * 3);
+			const double dt = stark.settings.simulation.adaptive_time_step.value;
+			for (int i = 0; i < this->size(); i++) {
+				for (int j = 0; j < 3; j++) {
+					v1_guess[3*i + j] = this->v0[i][j] + dt * (this->a[i][j] + stark.settings.simulation.gravity[j]); // missing force/mass
+				}
+			}
+			return this->dof;
+		}
+	);
 }
 
 stark::models::Id stark::models::PointDynamics::add(const std::vector<Eigen::Vector3d>& x, const std::vector<Eigen::Vector3d>& v)
@@ -46,8 +61,17 @@ int stark::models::PointDynamics::size() const
 
 void stark::models::PointDynamics::_before_time_step(stark::core::Stark& stark)
 {
-	// Set next time velocities estimation to zero to avoid invalid state outside of the minimzer
-	std::fill(this->v1.data.begin(), this->v1.data.end(), Eigen::Vector3d::Zero());
+	if (false) {
+		// DEBUG
+		const double dt = stark.settings.simulation.adaptive_time_step.value;
+		for (int i = 0; i < this->size(); i++) {
+			this->v1[i] = this->v0[i] + dt * (this->a[i] + stark.settings.simulation.gravity); // missing force/mass
+		}
+	}
+	else {
+		// Set next time velocities estimation to zero to avoid invalid state outside of the minimzer
+		std::fill(this->v1.data.begin(), this->v1.data.end(), Eigen::Vector3d::Zero());
+	}
 }
 
 void stark::models::PointDynamics::_on_time_step_accepted(stark::core::Stark& stark)
