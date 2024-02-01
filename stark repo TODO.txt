@@ -3,6 +3,7 @@ stark repo TODO
 
 Release
 -------
+	- Is `Id::get_local_idx()` fixed?
 	- No warnings. Ideally it should compile with -Werror.
 	- Print something while waiting for SymX.
 	- Error in NewtonsMethod: grad is not residual *forces*, as its the derivative of velocities
