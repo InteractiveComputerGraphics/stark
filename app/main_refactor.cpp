@@ -325,18 +325,21 @@ void attachments()
 void laundry_cloth()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "laundry_adaptivity_1e-05N";
+	//settings.output.simulation_name = "adaptive_residual_0.01g_forcing";
+	settings.output.simulation_name = "adaptive_residual_0.9g";
 	settings.output.output_directory = OUTPUT_PATH + "/laundry_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
 
-	settings.newton.adaptivity = stark::Adaptivity::No;
+	settings.newton.adaptivity = stark::Adaptivity::Yes;
+	settings.newton.forcing_sequence_enabled = false;
+	settings.newton.forcing_sequence_reduction_multiplier = 0.2;
 	settings.newton.convergence_criteria = stark::ConvergenceCriteria::Residual;
-	settings.newton.n_rings = 0;
-	settings.newton.newton_tolerance = 1e-05; //0.01*std::abs(settings.simulation.gravity.z());
+	settings.newton.residual_type = stark::ResidualType::Acceleration;
+	settings.newton.n_rings = 1;
+	settings.newton.newton_tolerance = 0.9 * std::abs(settings.simulation.gravity.z());
 	settings.newton.max_newton_iterations = 100;
 	settings.newton.project_to_PD = true;
-	settings.execution.n_threads = omp_get_num_procs();
 
 	settings.execution.end_simulation_time = 0.2;
 	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
@@ -414,7 +417,6 @@ void cloth_floor()
 	settings.newton.convergence_criteria = stark::ConvergenceCriteria::Residual;
 	settings.newton.residual_type = stark::ResidualType::Acceleration;
 	settings.newton.n_rings = 1;
-	//settings.newton.dof_deactivation_tolerance_multiplier = 0.1;
 	settings.newton.newton_tolerance = 0.01*std::abs(settings.simulation.gravity.z());
 	settings.newton.max_newton_iterations = 100;
 	settings.newton.project_to_PD = true;
@@ -475,6 +477,6 @@ int main()
 	//edge_edge_collision();
 	//attachments();
 	//heavy_box_rigid_and_deformable();
-	//laundry_cloth();
-	cloth_floor();
+	laundry_cloth();
+	//cloth_floor();
 }

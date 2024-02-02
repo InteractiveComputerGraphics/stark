@@ -47,6 +47,48 @@ stark::models::EnergyRigidBodyInertia::EnergyRigidBodyInertia(stark::core::Stark
 			energy.set(E);
 		}
 	);
+
+	// Inverse mass for acceleration residual
+	stark.callbacks.inv_mass[this->dyn->dof_v.idx] = [&](double* begin, double* end)
+		{
+			const int n = std::distance(begin, end);
+			const int n_bodies = this->dyn->get_n_bodies();
+			if (n != 3 * n_bodies) {
+				std::cout << "Stark error: EnergyRigidBodyInertia::inv_mass() found `begin` and `end` with different size than the set nodes." << std::endl;
+				exit(-1);
+			}
+
+			// Apply inverse mass
+			for (int i = 0; i < n_bodies; i++) {
+				const double mass_inv = 1.0/this->mass[i];
+				begin[3 * i + 0] *= mass_inv;
+				begin[3 * i + 1] *= mass_inv;
+				begin[3 * i + 2] *= mass_inv;
+			}
+		};
+	stark.callbacks.inv_mass[this->dyn->dof_w.idx] = [&](double* begin, double* end)
+		{
+			const int n = std::distance(begin, end);
+			const int n_bodies = this->dyn->get_n_bodies();
+			if (n != 3 * n_bodies) {
+				std::cout << "Stark error: EnergyRigidBodyInertia::inv_mass() found `begin` and `end` with different size than the set nodes." << std::endl;
+				exit(-1);
+			}
+
+			// Apply inverse mass
+			for (int i = 0; i < n_bodies; i++) {
+				const std::array<double, 9>& J0_inv_arr = this->J0_inv_glob[i];
+				Eigen::Matrix3d J0_inv;
+				J0_inv << J0_inv_arr[0], J0_inv_arr[1], J0_inv_arr[2],
+						  J0_inv_arr[3], J0_inv_arr[4], J0_inv_arr[5],
+						  J0_inv_arr[6], J0_inv_arr[7], J0_inv_arr[8];
+				const Eigen::Vector3d torque = { begin[3 * i + 0], begin[3 * i + 1], begin[3 * i + 2] };
+				const Eigen::Vector3d aa = J0_inv * torque;
+				begin[3 * i + 0] = aa[0];
+				begin[3 * i + 1] = aa[1];
+				begin[3 * i + 2] = aa[2];
+			}
+		};
 }
 
 void stark::models::EnergyRigidBodyInertia::add(const double mass, const Eigen::Matrix3d& inertia_loc, const double linear_damping, const double angular_damping)

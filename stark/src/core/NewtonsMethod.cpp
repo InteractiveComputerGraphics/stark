@@ -37,6 +37,11 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 	std::fill(this->active_nodes.begin(), this->active_nodes.end(), 1);
 	double forcing_activation_residual = settings.newton.forcing_sequence_max_tol;
 
+	//// Disable forcing sequence by making it already the final value
+	if (settings.newton.forcing_sequence_enabled == false) {
+		forcing_activation_residual = this->settings->newton.newton_tolerance;
+	}
+
 	// Counters
 	this->step_newton_it = 1;
 	this->step_newton_sub_it = 1;
@@ -511,7 +516,7 @@ Eigen::VectorXd stark::core::NewtonsMethod::_compute_residual(const Eigen::Vecto
 
 		// Check if all dofs were used
 		if (dof_count != (int)this->residual.size()) {
-			std::cout << "Stark error: NewtonsMethod::_compute_residual() found that not all dofs were used." << std::endl;
+			std::cout << "Stark error: NewtonsMethod::_compute_residual() found that not all dofs were used for ResidualType::Acceleration." << std::endl;
 			exit(-1);
 		}
 
