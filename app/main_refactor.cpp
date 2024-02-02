@@ -199,7 +199,7 @@ void edge_edge_collision()
 void heavy_box_rigid_and_deformable()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "actual_adaptivity_residual_0.9g_subs99";
+	settings.output.simulation_name = "full_residual_0.9g_subs99";
 	settings.output.output_directory = OUTPUT_PATH + "/heavy_box_rigid_and_deformable";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
@@ -208,10 +208,10 @@ void heavy_box_rigid_and_deformable()
 	//settings.output.fps = 120.0;
 	settings.execution.n_threads = omp_get_num_procs();
 
-	settings.newton.adaptivity = stark::Adaptivity::Yes;
+	settings.newton.adaptivity = stark::Adaptivity::No;
 	settings.newton.convergence_criteria = stark::ConvergenceCriteria::Residual;
 	settings.newton.residual_type = stark::ResidualType::Acceleration;
-	settings.newton.newton_tolerance = 0.9*std::abs(settings.simulation.gravity.z());
+	settings.newton.newton_tolerance = 0.01*std::abs(settings.simulation.gravity.z());
 	settings.newton.max_newton_iterations = 100;
 	settings.newton.project_to_PD = true;
 	settings.newton.max_substeps = 99;
@@ -322,65 +322,6 @@ void attachments()
 	// Run
 	simulation.stark.run();
 }
-void cloth_floor()
-{
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "adaptive_residual_0.9g";
-	settings.output.output_directory = OUTPUT_PATH + "/cloth_floor";
-	settings.output.codegen_directory = COMPILE_PATH;
-	settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
-
-	settings.newton.adaptivity = stark::Adaptivity::Yes;
-	settings.newton.convergence_criteria = stark::ConvergenceCriteria::Residual;
-	settings.newton.residual_type = stark::ResidualType::Acceleration;
-	settings.newton.n_rings = 1;
-	//settings.newton.dof_deactivation_tolerance_multiplier = 0.1;
-	settings.newton.newton_tolerance = 0.9*std::abs(settings.simulation.gravity.z());
-	settings.newton.max_newton_iterations = 100;
-	settings.newton.project_to_PD = true;
-
-	settings.execution.n_threads = omp_get_num_procs();
-	settings.execution.end_simulation_time = 0.501;
-	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
-
-	settings.contact.adaptive_contact_stiffness.set(1e6, 1e6, 1e12);
-	//settings.contact.adaptive_contact_stiffness.success_multiplier = 0.8;
-	//settings.contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = 50;
-	settings.contact.friction_stick_slide_threshold = 0.01;
-	settings.contact.dhat = 0.0005;
-	settings.contact.friction_enabled = true;
-	stark::models::Simulation simulation(settings);
-
-	// Floor
-	const double h = 0.5;
-	std::vector<Eigen::Vector3d> vertices_floor;
-	std::vector<std::array<int, 3>> triangles_floor;
-	stark::utils::generate_triangular_grid(vertices_floor, triangles_floor, { -h, -h }, { h, h }, { 1, 1 });
-	stark::utils::move(vertices_floor, { 0.0, 0.0, -0.2 });
-	auto floor = simulation.deformables->add_surface(vertices_floor, triangles_floor, stark::MaterialSurface::towel());
-
-	auto bc = floor.create_prescribed_positions_group_with_transformation();
-	bc->add_vertices_from_range(0, (int)vertices_floor.size());
-
-	// Cloth
-	const double scale = 0.34;
-	const int n_cloths = 1; //8;
-	const double spacing = 0.025;
-	const int cloth_resolution = 60;
-	std::vector<Eigen::Vector3d> vertices_cloth;
-	std::vector<std::array<int, 3>> triangles_cloth;
-	stark::utils::generate_triangular_grid(vertices_cloth, triangles_cloth, { -0.5 * scale, -0.5 * scale }, { 0.5 * scale, 0.5 * scale }, { cloth_resolution, cloth_resolution });
-	stark::utils::rotate_deg(vertices_cloth, -85.0, Eigen::Vector3d::UnitX());
-
-	auto cloth = simulation.deformables->add_surface(vertices_cloth, triangles_cloth, stark::MaterialSurface::towel()).set_bending_stiffness(1e-6);
-
-	const double friction = 1.0;
-	simulation.interactions->set_friction(floor, cloth, friction);
-	simulation.interactions->set_friction(cloth, cloth, friction);
-
-	// Run
-	simulation.stark.run();
-}
 void laundry_cloth()
 {
 	stark::Settings settings = stark::Settings();
@@ -460,6 +401,66 @@ void laundry_cloth()
 	// Run
 	simulation.stark.run();
 }
+void cloth_floor()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "adaptive_residual_0.01g_forcing";
+	settings.output.output_directory = OUTPUT_PATH + "/cloth_floor";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
+
+	settings.newton.adaptivity = stark::Adaptivity::Yes;
+	settings.newton.forcing_sequence_enabled = true;
+	settings.newton.convergence_criteria = stark::ConvergenceCriteria::Residual;
+	settings.newton.residual_type = stark::ResidualType::Acceleration;
+	settings.newton.n_rings = 1;
+	//settings.newton.dof_deactivation_tolerance_multiplier = 0.1;
+	settings.newton.newton_tolerance = 0.01*std::abs(settings.simulation.gravity.z());
+	settings.newton.max_newton_iterations = 100;
+	settings.newton.project_to_PD = true;
+
+	settings.execution.n_threads = omp_get_num_procs();
+	settings.execution.end_simulation_time = 0.501;
+	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
+
+	settings.contact.adaptive_contact_stiffness.set(1e6, 1e6, 1e12);
+	//settings.contact.adaptive_contact_stiffness.success_multiplier = 0.8;
+	//settings.contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = 50;
+	settings.contact.friction_stick_slide_threshold = 0.01;
+	settings.contact.dhat = 0.0005;
+	settings.contact.friction_enabled = true;
+	stark::models::Simulation simulation(settings);
+
+	// Floor
+	const double h = 0.5;
+	std::vector<Eigen::Vector3d> vertices_floor;
+	std::vector<std::array<int, 3>> triangles_floor;
+	stark::utils::generate_triangular_grid(vertices_floor, triangles_floor, { -h, -h }, { h, h }, { 1, 1 });
+	stark::utils::move(vertices_floor, { 0.0, 0.0, -0.2 });
+	auto floor = simulation.deformables->add_surface(vertices_floor, triangles_floor, stark::MaterialSurface::towel());
+
+	auto bc = floor.create_prescribed_positions_group_with_transformation();
+	bc->add_vertices_from_range(0, (int)vertices_floor.size());
+
+	// Cloth
+	const double scale = 0.34;
+	const int n_cloths = 1; //8;
+	const double spacing = 0.025;
+	const int cloth_resolution = 60;
+	std::vector<Eigen::Vector3d> vertices_cloth;
+	std::vector<std::array<int, 3>> triangles_cloth;
+	stark::utils::generate_triangular_grid(vertices_cloth, triangles_cloth, { -0.5 * scale, -0.5 * scale }, { 0.5 * scale, 0.5 * scale }, { cloth_resolution, cloth_resolution });
+	stark::utils::rotate_deg(vertices_cloth, -85.0, Eigen::Vector3d::UnitX());
+
+	auto cloth = simulation.deformables->add_surface(vertices_cloth, triangles_cloth, stark::MaterialSurface::towel()).set_bending_stiffness(1e-6);
+
+	const double friction = 1.0;
+	simulation.interactions->set_friction(floor, cloth, friction);
+	simulation.interactions->set_friction(cloth, cloth, friction);
+
+	// Run
+	simulation.stark.run();
+}
 
 
 
@@ -473,7 +474,7 @@ int main()
 	//rb_constraints_all();
 	//edge_edge_collision();
 	//attachments();
-	heavy_box_rigid_and_deformable();
+	//heavy_box_rigid_and_deformable();
 	//laundry_cloth();
-	//cloth_floor();
+	cloth_floor();
 }

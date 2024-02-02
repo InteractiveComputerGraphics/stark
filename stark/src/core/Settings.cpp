@@ -172,10 +172,11 @@ std::string Settings::as_string() const
 	out += "\n         line_search_multiplier: " + fmt::format("{:f}", this->newton.line_search_multiplier);
 	out += "\n         cg_max_iterations_multiplier: " + fmt::format("{:f}", this->newton.cg_max_iterations_multiplier);
 	out += "\n         eps_force_tolerance: " + fmt::format("{:.1e}", this->newton.eps_force_tolerance);
+	out += "\n         forcing_sequence_enabled: " + to_string(this->newton.forcing_sequence_enabled);
+	out += "\n         forcing_sequence_reduction_multiplier: " + fmt::format("{:f}", this->newton.forcing_sequence_reduction_multiplier);
 	out += "\n         n_rings: " + std::to_string(this->newton.n_rings);
 	out += "\n         max_substeps: " + std::to_string(this->newton.max_substeps);
 	out += "\n         n_full_solve_iterations_at_the_beginning: " + std::to_string(this->newton.n_full_solve_iterations_at_the_beginning);
-	out += "\n         dof_deactivation_tolerance_multiplier: " + fmt::format("{:f}", this->newton.dof_deactivation_tolerance_multiplier);
 	out += "\n         dofs_percentage_for_full_solve: " + fmt::format("{:f}", this->newton.dofs_percentage_for_full_solve);
 	out += "\n         debug_print_initial_residual: " + to_string(this->newton.debug_print_initial_residual);
 

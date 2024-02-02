@@ -9,6 +9,12 @@
 
 stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& global_energy, Callbacks& callbacks, Settings& settings, Console& console, Logger& logger)
 {
+	// Checks
+	if (settings.newton.forcing_sequence_enabled && settings.newton.convergence_criteria == ConvergenceCriteria::Correction) {
+		std::cout << "Stark error: Can't use forced sequence dof adaptivity with ConvergenceCriteria::Correction." << std::endl;
+		exit(-1);
+	}
+
 	// Set pointers for easy access accross methods
 	this->global_energy = &global_energy;
 	this->callbacks = &callbacks;
@@ -29,6 +35,7 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 	// Adaptive dofs
 	this->active_nodes.resize(n_nodes);
 	std::fill(this->active_nodes.begin(), this->active_nodes.end(), 1);
+	double forcing_activation_residual = settings.newton.forcing_sequence_max_tol;
 
 	// Counters
 	this->step_newton_it = 1;
@@ -80,12 +87,20 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 
 		// Select active nodes if adaptivity is based on residual
 		if (this->settings->newton.adaptivity == Adaptivity::Yes && this->settings->newton.convergence_criteria == ConvergenceCriteria::Residual) {
+			
+			// Update forcing sequence
+			if (residual_max < forcing_activation_residual) {
+				forcing_activation_residual *= settings.newton.forcing_sequence_reduction_multiplier;
+			}
+
+			// Select active nodes
 			std::fill(this->active_nodes.begin(), this->active_nodes.end(), 0); 
 			for (int i = 0; i < ndofs; i++) {
-				if (this->residual[i] > this->settings->newton.dof_deactivation_tolerance_multiplier * this->settings->newton.newton_tolerance) {
+				if (this->residual[i] > forcing_activation_residual) {
 					this->active_nodes[i / 3] = 1;
 				}
 			}
+			console.print(fmt::format("dE_goal = {:.2e} | ", forcing_activation_residual), ConsoleVerbosity::NewtonIterations);
 		}
 
 		// Solve linear system
@@ -385,7 +400,7 @@ Eigen::VectorXd stark::core::NewtonsMethod::_solve_linear_system_and_tick_adapti
 		std::fill(this->active_nodes.begin(), this->active_nodes.end(), 0);
 		for (int i = 0; i < ndofs; i++) {
 			const double da = this->_compute_acceleration_correction(this->du[i], dt);
-			if (da > this->settings->newton.dof_deactivation_tolerance_multiplier * this->settings->newton.newton_tolerance) {
+			if (da > this->settings->newton.newton_tolerance) {
 				this->active_nodes[i / 3] = 1;
 			}
 		}

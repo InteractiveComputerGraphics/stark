@@ -55,9 +55,9 @@ namespace stark::core
 		{
 			double newton_tolerance = 1e-4;
 			int max_newton_iterations = 30;
+			Adaptivity adaptivity = Adaptivity::No;
 			ResidualType residual_type = ResidualType::Force;
 			ConvergenceCriteria convergence_criteria = ConvergenceCriteria::Residual;
-			Adaptivity adaptivity = Adaptivity::No;
 			bool use_direct_linear_solve = false;
 			bool project_to_PD = false;
 
@@ -67,10 +67,12 @@ namespace stark::core
 			double eps_force_tolerance = 1e-10;
 
 			// Adaptivity
+			bool forcing_sequence_enabled = false;
+			double forcing_sequence_reduction_multiplier = 0.5;
 			int n_rings = 1;
-			int max_substeps = 15;
+			int max_substeps = std::numeric_limits<int>::max();
+			double forcing_sequence_max_tol = 0.9*9.81;
 			int n_full_solve_iterations_at_the_beginning = 0;
-			double dof_deactivation_tolerance_multiplier = 1.0;
 			double dofs_percentage_for_full_solve = 0.5;
 			bool debug_print_initial_residual = false;
 		};
