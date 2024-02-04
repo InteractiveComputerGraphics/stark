@@ -466,7 +466,7 @@ void cloth_floor()
 void laundry_rb_boxes()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "adaptive_0.09g_1ms";
+	settings.output.simulation_name = "adaptive_0.09g_2ms";
 	settings.output.output_directory = OUTPUT_PATH + "/laundry_rb_boxes";
 	settings.output.codegen_directory = COMPILE_PATH;
 	//settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
@@ -481,9 +481,9 @@ void laundry_rb_boxes()
 	settings.newton.max_newton_iterations = 99999999;
 	settings.newton.project_to_PD = true;
 
-	settings.execution.end_simulation_time = 5.0;
+	settings.execution.end_simulation_time = 20.0;
 	//settings.simulation.adaptive_time_step.set(0.0, 1.0 / 60.0, 1.0 / 60.0);
-	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
+	settings.simulation.adaptive_time_step.set(0.0, 0.002, 0.002);
 
 	settings.contact.adaptive_contact_stiffness.set(1e6, 1e6, 1e12);
 	settings.contact.adaptive_contact_stiffness.success_multiplier = 0.8;
@@ -500,7 +500,7 @@ void laundry_rb_boxes()
 	wall.add_to_output_label("wall");
 
 	// Drum
-	const double target_w = 0.5 * 3.14;
+	const double target_w = 0.75 * 3.14;
 	const double max_torque = 1.0;
 	std::vector<Eigen::Vector3d> vertices_drum;
 	std::vector<std::array<int, 3>> triangles_drum;
@@ -541,9 +541,9 @@ void laundry_rb_boxes()
 	const double friction = 2.0;
 	for (int i = 0; i < (int)boxes.size(); i++) {
 		simulation.interactions->set_friction(drum, boxes[i], friction);
-		//for (int j = i + 1; j < (int)boxes.size(); j++) {
-		//	simulation.interactions->set_friction(boxes[i], boxes[j], friction);
-		//}
+		for (int j = i + 1; j < (int)boxes.size(); j++) {
+			simulation.interactions->set_friction(boxes[i], boxes[j], friction);
+		}
 	}
 
 	// Run
