@@ -463,6 +463,92 @@ void cloth_floor()
 	// Run
 	simulation.stark.run();
 }
+void laundry_rb_boxes()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "adaptive_0.09g_1ms";
+	settings.output.output_directory = OUTPUT_PATH + "/laundry_rb_boxes";
+	settings.output.codegen_directory = COMPILE_PATH;
+	//settings.output.console_verbosity = stark::ConsoleVerbosity::NewtonIterations;
+
+	settings.newton.adaptivity = stark::Adaptivity::Yes;
+	settings.newton.forcing_sequence_enabled = false;
+	settings.newton.forcing_sequence_reduction_multiplier = 0.2;
+	settings.newton.convergence_criteria = stark::ConvergenceCriteria::Residual;
+	settings.newton.residual_type = stark::ResidualType::Acceleration;
+	settings.newton.n_rings = 1;
+	settings.newton.newton_tolerance = 0.09 * std::abs(settings.simulation.gravity.z());
+	settings.newton.max_newton_iterations = 99999999;
+	settings.newton.project_to_PD = true;
+
+	settings.execution.end_simulation_time = 5.0;
+	//settings.simulation.adaptive_time_step.set(0.0, 1.0 / 60.0, 1.0 / 60.0);
+	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
+
+	settings.contact.adaptive_contact_stiffness.set(1e6, 1e6, 1e12);
+	settings.contact.adaptive_contact_stiffness.success_multiplier = 0.8;
+	settings.contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = 50;
+	settings.contact.friction_stick_slide_threshold = 0.01;// 0.01;
+	settings.contact.dhat = 0.002;
+	settings.contact.friction_enabled = true;
+	stark::models::Simulation simulation(settings);
+
+	// Wall
+	auto wall = simulation.rigidbodies->add_box(50.0, { 2.0, 0.5, 2.0 })
+		.set_translation({ 0.0, -0.5, 0.0 });
+	simulation.rigidbodies->add_constraint_fix(wall);
+	wall.add_to_output_label("wall");
+
+	// Drum
+	const double target_w = 0.5 * 3.14;
+	const double max_torque = 1.0;
+	std::vector<Eigen::Vector3d> vertices_drum;
+	std::vector<std::array<int, 3>> triangles_drum;
+	stark::utils::load_obj(vertices_drum, triangles_drum, MODELS_PATH + "/laundry_drum_2.obj");
+	stark::utils::rotate_deg(vertices_drum, -90.0, Eigen::Vector3d::UnitX());
+	//auto drum = simulation.rigidbodies->add_cylinder(1.0, 0.25, 0.25, vertices_drum, triangles_drum)
+	auto drum = simulation.rigidbodies->add_cylinder(5.0, 0.25, 0.25, 16)
+		.set_rotation(90.0, Eigen::Vector3d::UnitX());
+	simulation.rigidbodies->add_motor(wall, drum, { 0, 0, 0 }, Eigen::Vector3d::UnitY(), target_w, max_torque, /*delay*/0.1);
+	//simulation.rigidbodies->add_constraint_fix(drum);
+	simulation.interactions->disable_collision(wall, drum);
+	drum.add_to_output_label("drum");
+
+	// Boxes
+	const double w = 0.03;
+	const double d = 0.005;
+	const double mass = 200.0*std::pow(w, 3);
+
+	const double h = w + d;
+	const double dx = 0.14;
+	const double dy = 0.09;
+	const double dz = 0.05;// 0.15;
+	std::vector<stark::RigidBodyHandler> boxes;
+	for (double x = -dx; x < dx; x += h) {
+		for (double y = -dy; y < dy; y += h) {
+			for (double z = -dz; z < dz; z += h) {
+				auto box = simulation.rigidbodies->add_box(mass, w)
+				//auto box = simulation.rigidbodies->add_sphere(mass, 0.5*w)
+					.add_to_output_label("boxes")
+					.set_translation({ x, y, z });
+				boxes.push_back(box);
+			}
+		}
+	}
+
+	// Friction
+	simulation.stark.settings.contact.friction_enabled = true;
+	const double friction = 2.0;
+	for (int i = 0; i < (int)boxes.size(); i++) {
+		simulation.interactions->set_friction(drum, boxes[i], friction);
+		//for (int j = i + 1; j < (int)boxes.size(); j++) {
+		//	simulation.interactions->set_friction(boxes[i], boxes[j], friction);
+		//}
+	}
+
+	// Run
+	simulation.stark.run();
+}
 
 
 
@@ -477,6 +563,7 @@ int main()
 	//edge_edge_collision();
 	//attachments();
 	//heavy_box_rigid_and_deformable();
-	laundry_cloth();
+	//laundry_cloth();
 	//cloth_floor();
+	laundry_rb_boxes();
 }
