@@ -30,6 +30,7 @@ Release
 
 Oct unification
 ---------------
+	- Motors are very very stiff and mess the convergence so much.
 	- Delete Bergou06
 	- Remove labels from energies
 	- Is integration of bending damping consistent?
