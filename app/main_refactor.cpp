@@ -361,7 +361,7 @@ void laundry_cloth()
 
 	// Drum
 	const double target_w = 0.75*3.14;
-	const double max_torque = 10.0;
+	const double max_torque = 1.0;
 	std::vector<Eigen::Vector3d> vertices_drum;
 	std::vector<std::array<int, 3>> triangles_drum;
 	stark::utils::load_obj(vertices_drum, triangles_drum, MODELS_PATH + "/laundry_drum_2.obj");
@@ -369,7 +369,7 @@ void laundry_cloth()
 	auto drum = simulation.rigidbodies->add_cylinder(1.0, 0.25, 0.25, vertices_drum, triangles_drum)
 		//.set_translation({ 0.0, 0.0, -0.45 })
 		.set_rotation(90.0, Eigen::Vector3d::UnitX());
-	simulation.rigidbodies->add_motor(wall, drum, { 0, 0, 0 }, Eigen::Vector3d::UnitY(), target_w, max_torque, /*delay*/0.01);
+	simulation.rigidbodies->add_motor(wall, drum, { 0, 0, 0 }, Eigen::Vector3d::UnitY(), target_w, max_torque, /*delay*/1.0);
 	simulation.interactions->disable_collision(wall, drum);
 	drum.add_to_output_label("drum");
 
