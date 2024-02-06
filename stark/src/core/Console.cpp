@@ -47,6 +47,17 @@ void stark::core::Console::print(const std::string& msg, const ConsoleVerbosity 
 	}
 }
 
+void stark::core::Console::add_error_msg(const std::string& msg)
+{
+	this->error_msg += msg;
+}
+
+void stark::core::Console::print_error_msg_and_clear(const ConsoleVerbosity verbosity)
+{
+	this->print(this->error_msg, verbosity);
+	this->error_msg.clear();
+}
+
 void stark::core::Console::_exit_if_no_path()
 {
 	if (this->path.empty()) {

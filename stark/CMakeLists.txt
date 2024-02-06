@@ -35,8 +35,6 @@ set(CORE_FILES
 	src/core/Console.cpp
 	src/core/Console.h
 	src/core/include_ui_core.h
-	src/core/linear_system.cpp
-	src/core/linear_system.h
 	src/core/Logger.cpp
 	src/core/Logger.h
 	src/core/NewtonsMethod.cpp

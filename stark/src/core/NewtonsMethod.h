@@ -10,34 +10,61 @@
 
 namespace stark::core
 {
-	enum class NewtonError
+	enum class NewtonState
 	{
 		Successful = 0,
 		TooManyNewtonIterations = 1,
 		TooManyLineSearchIterations = 2,
-		TooManyCGIterations = 3,
+		LinearSystemFailure = 3,
 		InvalidConfiguration = 4,
 		LineSearchDoesntDescend = 5,
-		Restart = 6
+		ConvergedStateInvalid = 6,
+		Running = 7
 	};
 
 	class NewtonsMethod
 	{
 	public:
+
 		/* Fields */
+
 		// Buffers
 		Eigen::VectorXd du;
 		Eigen::VectorXd u0;
 		Eigen::VectorXd u1;
+		Eigen::VectorXd residual;
 
-		// Misc
-		int it_count = 0;
+		// Counters
+		int step_newton_it = 1;
+		int step_line_search_count = 1;
+		int cg_iterations_in_step = 0;
 
 		// Debug
 		int debug_output_counter = 0;
 		Logger line_search_debug_logger;
 
+		// Pointers for easy access within the methods (TODO: Refactor)
+		symx::GlobalEnergy* global_energy = nullptr;
+		Callbacks* callbacks = nullptr;
+		Settings* settings = nullptr;
+		Console* console = nullptr;
+		Logger* logger = nullptr;
+
 		/* Methods */
-		NewtonError solve(symx::GlobalEnergy& global_energy, const Callbacks& callbacks, Settings& settings, Console& console, Logger& logger);
+		NewtonState solve(symx::GlobalEnergy& global_energy, Callbacks& callbacks, Settings& settings, Console& console, Logger& logger);
+
+	private:
+		void _run_before_evaluation();
+		void _run_after_evaluation();
+		symx::Assembled _evaluate_E_grad_hess();
+		symx::Assembled _evaluate_E_grad();
+		symx::Assembled _evaluate_E();
+		Eigen::VectorXd _compute_residual(const Eigen::VectorXd& grad, double dt);
+		double _compute_acceleration_correction(double du, double dt);
+		double _forcing_sequence(const Eigen::VectorXd& rhs);
+
+		bool _solve_linear_system(Eigen::VectorXd& du, const symx::Assembled& assembled, double dt);
+		double _inplace_max_step_in_search_direction(const Eigen::VectorXd& du);
+		double _inplace_backtracking_line_search(const Eigen::VectorXd& du, double E0, double E, double step_valid_configuration, double du_dot_grad);
 	};
 }

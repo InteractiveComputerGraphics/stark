@@ -5,6 +5,7 @@
 stark::models::EnergyPointInertia::EnergyPointInertia(stark::core::Stark& stark, const spPointDynamics dyn)
 	: dyn(dyn)
 {
+	// Energy definition
 	stark.global_energy.add_energy("EnergyPointInertia", this->conn,
 		[&](symx::Energy& energy, symx::Element& node)
 		{
@@ -32,6 +33,28 @@ stark::models::EnergyPointInertia::EnergyPointInertia(stark::core::Stark& stark,
 			energy.set(E);
 		}
 	);
+
+	// Inverse mass for acceleration residual
+	stark.callbacks.inv_mass[this->dyn->dof.idx] = [&](double* begin, double* end)
+		{
+			const int n = (int)std::distance(begin, end);
+			if (n != 3 * this->dyn->size()) {
+				std::cout << "Stark error: EnergyPointInertia::inv_mass() found `begin` and `end` with different size than the set nodes." << std::endl;
+				exit(-1);
+			}
+
+			// Apply inverse mass
+			for (const std::array<int, 3>&conn : this->conn.data) {
+				const int idx = conn[0];
+				const int glob = conn[1];
+				const int obj = conn[2];
+				const double mass = this->density[obj] * this->lumped_volume[idx];
+				const double mass_inv = 1.0 / mass;
+				begin[3 * glob + 0] *= mass_inv;
+				begin[3 * glob + 1] *= mass_inv;
+				begin[3 * glob + 2] *= mass_inv;
+			}
+		};
 }
 
 void stark::models::EnergyPointInertia::add(Id& id, const std::vector<double>& lumped_volume, const double density, const double inertial_damping)

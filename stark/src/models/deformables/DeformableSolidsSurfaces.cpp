@@ -96,7 +96,7 @@ void stark::models::DeformableSolidsSurfaces::_write_frame(stark::core::Stark& s
 stark::models::MaterialSurface stark::models::MaterialSurface::towel()
 {
 	MaterialSurface material;
-	material.area_density = 0.2;
+	material.area_density = 0.4;
 	material.thickness = 3.2e-3;
 	material.inertia_damping = 2.0;
 	material.strain_young_modulus = 1e3; // 1.56e4;

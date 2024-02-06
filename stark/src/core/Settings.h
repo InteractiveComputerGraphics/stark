@@ -7,6 +7,14 @@
 #include "AdaptiveParameter.h"
 #include "Console.h"
 
+// User facing enums
+namespace stark
+{
+	enum class ResidualType { Force, Acceleration };
+	enum class LinearSystemSolver { CG, DirectLU };
+	struct Residual { ResidualType type; double tolerance; };
+}
+
 namespace stark::core
 {
 	struct Settings
@@ -45,15 +53,14 @@ namespace stark::core
 		};
 		struct NewtonsMethod
 		{
-			double newton_tol = 1e-4;
-			int max_newton_iterations = 30;
+			Residual residual = { ResidualType::Acceleration, 1.0 };
+			LinearSystemSolver linear_system_solver = LinearSystemSolver::CG;
+			bool project_to_PD = true;
+
+			int max_newton_iterations = 100;
 			int max_line_search_iterations = 10;
 			double line_search_multiplier = 0.5;
-
 			double cg_max_iterations_multiplier = 1.0;
-
-			bool use_direct_linear_solve = false;
-			bool project_to_PD = false;
 		};
 		struct Execution
 		{

@@ -51,13 +51,13 @@ Stark::Stark(const Settings& settings)
 bool Stark::run(std::function<void()> callback)
 {
 	const double t0 = omp_get_wtime();
-	
+
 	this->_initialize();
 
 	while (
-		this->current_time < this->settings.execution.end_simulation_time && 
-		this->current_frame < this->settings.execution.end_frame && 
-		(omp_get_wtime() - t0) < this->settings.execution.allowed_execution_time) 
+		this->current_time < this->settings.execution.end_simulation_time &&
+		this->current_frame < this->settings.execution.end_frame &&
+		(omp_get_wtime() - t0) < this->settings.execution.allowed_execution_time)
 	{
 		if (callback != nullptr) { callback(); }
 		bool success = this->run_one_step();
@@ -70,12 +70,12 @@ bool Stark::run(std::function<void()> callback)
 	//// Info
 	this->console.print("\nInfo\n", ConsoleVerbosity::Frames);
 	this->console.print(fmt::format("\t # time_steps: {:d}\n", this->logger.ints["time_steps"]), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t # newton/time_steps: {:.1f}\n", (double)this->logger.ints["newton_iterations"]/(double)this->logger.ints["time_steps"]), ConsoleVerbosity::Frames);
-	if (!this->settings.newton.use_direct_linear_solve) {
-		this->console.print(fmt::format("\t # CG_iterations/newton: {:.1f}\n", (double)this->logger.ints["CG_iterations"]/(double)this->logger.ints["newton_iterations"]), ConsoleVerbosity::Frames);
+	this->console.print(fmt::format("\t # newton/time_steps: {:.1f}\n", (double)this->logger.ints["newton_iterations"] / (double)this->logger.ints["time_steps"]), ConsoleVerbosity::Frames);
+	if (this->settings.newton.linear_system_solver == LinearSystemSolver::CG) {
+		this->console.print(fmt::format("\t # CG_iterations/newton: {:.1f}\n", (double)this->logger.ints["CG_iterations"] / (double)this->logger.ints["newton_iterations"]), ConsoleVerbosity::Frames);
 	}
-	this->console.print(fmt::format("\t # line_search/newton: {:.1f}\n", (double)this->logger.ints["line_search_iterations"]/(double)this->logger.ints["newton_iterations"]), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t avg dt: {:.6f} ms\n", 1000.0*this->logger.doubles["avg dt"]), ConsoleVerbosity::Frames);
+	this->console.print(fmt::format("\t # line_search/newton: {:.1f}\n", (double)this->logger.ints["line_search_iterations"] / (double)this->logger.ints["newton_iterations"]), ConsoleVerbosity::Frames);
+	this->console.print(fmt::format("\t avg dt: {:.6f} ms\n", 1000.0 * this->logger.doubles["avg dt"]), ConsoleVerbosity::Frames);
 	this->console.print(fmt::format("\t cr: {:.1f}\n", this->logger.doubles["cr"]), ConsoleVerbosity::Frames);
 
 	//// Runtime
@@ -84,10 +84,10 @@ bool Stark::run(std::function<void()> callback)
 	this->console.print(fmt::format("\t evaluate_E_grad_hess: {:.3f} s\n", this->logger.doubles["evaluate_E_grad_hess"]), ConsoleVerbosity::Frames);
 	this->console.print(fmt::format("\t evaluate_E_grad: {:.3f} s\n", this->logger.doubles["evaluate_E_grad"]), ConsoleVerbosity::Frames);
 	this->console.print(fmt::format("\t evaluate_E: {:.3f} s\n", this->logger.doubles["evaluate_E"]), ConsoleVerbosity::Frames);
-	if (!this->settings.newton.use_direct_linear_solve) {
+	if (this->settings.newton.linear_system_solver == LinearSystemSolver::CG) {
 		this->console.print(fmt::format("\t CG: {:.3f} s\n", this->logger.doubles["CG"]), ConsoleVerbosity::Frames);
 	}
-	else {
+	else if (this->settings.newton.linear_system_solver == LinearSystemSolver::DirectLU) {
 		this->console.print(fmt::format("\t directLU: {:.3f} s\n", this->logger.doubles["directLU"]), ConsoleVerbosity::Frames);
 	}
 	this->console.print(fmt::format("\t before_energy_evaluation: {:.3f} s\n", this->logger.doubles["before_energy_evaluation"]), ConsoleVerbosity::Frames);
@@ -109,14 +109,15 @@ bool Stark::run_one_step()
 	// Time step
 	if (this->global_energy.get_total_n_dofs() > 0) {
 		const double t0 = omp_get_wtime();
-		NewtonError err = this->newton.solve(this->global_energy, this->callbacks, this->settings, this->console, this->logger);
+		NewtonState newton = this->newton.solve(this->global_energy, this->callbacks, this->settings, this->console, this->logger);
 		const double t1 = omp_get_wtime();
 		const double runtime = t1 - t0;
 
-		if (err == NewtonError::Successful) {
+		if (newton == NewtonState::Successful) {
+			// Print runtime
 			const double cr = runtime / this->settings.simulation.adaptive_time_step.value;
-
 			this->console.print(fmt::format(" | runtime: {:.0f} ms | cr: {:.1f}\n", 1000.0 * runtime, cr), ConsoleVerbosity::TimeSteps);
+			
 			this->logger.add("step", runtime);
 			this->logger.append_to_series("step", runtime);
 			this->logger.append_to_series("cr", cr);
@@ -125,24 +126,24 @@ bool Stark::run_one_step()
 			this->logger.append_to_series("frame", this->current_frame);
 			this->logger.set("avg dt", this->current_time / (double)this->logger.ints["time_steps"]);
 			this->logger.set("cr", this->logger.doubles["step"] / this->current_time);
+			this->logger.add_to_counter("time_steps", 1);
 
+			// After successful time step
 			this->callbacks.run_on_time_step_accepted(); // Sets solution. x0 = x1. Exits minimization.
-
 			this->callbacks.run_after_time_step();  // Can use the converged state x1, v1.
-
 			this->_write_frame();
 			this->settings.contact.adaptive_contact_stiffness.successful_iteration();
 			this->settings.simulation.adaptive_time_step.successful_iteration();
-			this->logger.add_to_counter("time_steps", 1);
 			this->current_time += this->settings.simulation.adaptive_time_step.value;
 			return true;
 		}
 		else {
+			this->console.print("\n", ConsoleVerbosity::TimeSteps);
 			this->logger.add("failed_steps", runtime);
-			if (err == NewtonError::Restart) {
+			if (newton == NewtonState::ConvergedStateInvalid) {
 				// Do nothing, just restart.
 			}
-			else if (err == NewtonError::InvalidConfiguration) {
+			else if (newton == NewtonState::InvalidConfiguration) {
 				const bool out_of_bounds = this->settings.contact.adaptive_contact_stiffness.failed_iteration();
 				if (out_of_bounds) {
 					this->console.print(fmt::format("Adaptive contact stiffness out of bounds ({:.e}). Exiting simulation.\n", this->settings.contact.adaptive_contact_stiffness.value), ConsoleVerbosity::Frames);
@@ -199,13 +200,13 @@ void Stark::_write_frame()
 {
 	if (!this->settings.output.enable_output) { return; }
 
-	auto write_frame_impl = [&]() 
-	{
-		this->callbacks.run_write_frame();
-		this->console.print(fmt::format("Frame: {:d}. Time: {:.3f} s.\n", this->current_frame, this->current_time), ConsoleVerbosity::Frames);
-		this->current_frame++;
-		this->logger.save_to_disk();
-	};
+	auto write_frame_impl = [&]()
+		{
+			this->callbacks.run_write_frame();
+			this->console.print(fmt::format("Frame: {:d}. Time: {:.3f} s.\n", this->current_frame, this->current_time), ConsoleVerbosity::Frames);
+			this->current_frame++;
+			this->logger.save_to_disk();
+		};
 
 	if (this->settings.output.fps < 0) {
 		write_frame_impl();
@@ -213,7 +214,7 @@ void Stark::_write_frame()
 	else {
 		while (this->current_time > this->next_frame_time) {
 			write_frame_impl();
-			this->next_frame_time += 1.0/(double)this->settings.output.fps;
+			this->next_frame_time += 1.0 / (double)this->settings.output.fps;
 		}
 	}
 }

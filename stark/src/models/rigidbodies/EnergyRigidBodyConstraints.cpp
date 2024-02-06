@@ -260,7 +260,11 @@ bool stark::models::EnergyRigidBodyConstraints::_is_converged_state_valid(core::
 		Hardens every constraints that has gone beyond the input tolerance.
 		If no constraint needs to be hardened, return true.
 	*/
-	return this->_adjust_constraints_stiffness_and_log(stark, 1.0, this->stiffness_hard_multiplier, /*log = */ false, /* are_positions_set = */ false);
+	const bool valid = this->_adjust_constraints_stiffness_and_log(stark, 1.0, this->stiffness_hard_multiplier, /*log = */ false, /* are_positions_set = */ false);
+	if (!valid) {
+		stark.console.add_error_msg("Rigid body constraints are not within tolerance. Hardening constraints. ");
+	}
+	return valid;
 }
 
 void stark::models::EnergyRigidBodyConstraints::_on_time_step_accepted(core::Stark& stark)

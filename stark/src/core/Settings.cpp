@@ -8,6 +8,7 @@
 
 #include <fmt/format.h>
 
+using namespace stark;
 using namespace stark::core;
 
 std::string time_stamp()
@@ -49,6 +50,24 @@ std::string to_string(ConsoleOutputTo v)
 	default: return ""; break;
 	}
 }
+std::string to_string(ResidualType v)
+{
+	switch (v)
+	{
+	case ResidualType::Force: return "Force"; break;
+	case ResidualType::Acceleration: return "Acceleration"; break;
+	default: return ""; break;
+	}
+}
+std::string to_string(LinearSystemSolver v)
+{
+	switch (v)
+	{
+	case LinearSystemSolver::CG: return "CG"; break;
+	case LinearSystemSolver::DirectLU: return "DirectLU"; break;
+	default: return ""; break;
+	}
+}
 std::string to_string(const bool v)
 {
 	if (v) {
@@ -77,9 +96,9 @@ std::string to_string(const Eigen::Vector3d& v)
 Settings::Settings()
 {
 	// Initialize default parameters
-	this->execution.n_threads = omp_get_max_threads()/2;
+	this->execution.n_threads = omp_get_max_threads();
 	this->output.time_stamp = time_stamp();
-	
+
 	//// Adaptive Time step
 	this->simulation.adaptive_time_step.value = 0.01; // [s]
 	this->simulation.adaptive_time_step.min = 0.0; // [s]
@@ -88,13 +107,13 @@ Settings::Settings()
 	this->simulation.adaptive_time_step.failure_multiplier = 0.5;
 	this->simulation.adaptive_time_step.n_successful_iterations_to_increase = 5;
 
-	//// Adaptive Contact stiffness
+	//// Adaptive Contact stiffness (mild adaptivity, too strong results in fluctuations)
 	this->contact.adaptive_contact_stiffness.value = 1e6;
 	this->contact.adaptive_contact_stiffness.min = 1e6;
 	this->contact.adaptive_contact_stiffness.max = 1e15;
-	this->contact.adaptive_contact_stiffness.success_multiplier = 1.0;
+	this->contact.adaptive_contact_stiffness.success_multiplier = 0.8;
 	this->contact.adaptive_contact_stiffness.failure_multiplier = 2.0;
-	this->contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = std::numeric_limits<int>::max();
+	this->contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = 50;
 }
 
 std::string Settings::as_string() const
@@ -102,7 +121,7 @@ std::string Settings::as_string() const
 	std::string out;
 
 	out += "\nStark Settings";
-	
+
 	out += "\n     Output";
 	out += "\n         simulation_name: " + fmt::format("\"{}\"", this->output.simulation_name);
 	out += "\n         output_directory: " + fmt::format("\"{}\"", this->output.output_directory);
@@ -133,13 +152,14 @@ std::string Settings::as_string() const
 	out += "\n         enable_intersection_test: " + to_string(this->contact.enable_intersection_test);
 
 	out += "\n     Newton's Method";
-	out += "\n         newton_tol: " + fmt::format("{:.1e}", this->newton.newton_tol);
+	out += "\n         residual_type: " + to_string(this->newton.residual.type);
+	out += "\n         newton_tolerance: " + fmt::format("{:.1e}", this->newton.residual.tolerance);
+	out += "\n         linear_system_solver: " + to_string(this->newton.linear_system_solver);
+	out += "\n         project_to_PD: " + to_string(this->newton.project_to_PD);
 	out += "\n         max_newton_iterations: " + std::to_string(this->newton.max_newton_iterations);
 	out += "\n         max_line_search_iterations: " + std::to_string(this->newton.max_line_search_iterations);
 	out += "\n         line_search_multiplier: " + fmt::format("{:f}", this->newton.line_search_multiplier);
 	out += "\n         cg_max_iterations_multiplier: " + fmt::format("{:f}", this->newton.cg_max_iterations_multiplier);
-	out += "\n         use_direct_linear_solve: " + to_string(this->newton.use_direct_linear_solve);
-	out += "\n         project_to_PD: " + to_string(this->newton.project_to_PD);
 
 	out += "\n     Execution";
 	out += "\n         allowed_execution_time: " + fmt::format("{:.1e}", this->execution.allowed_execution_time);
