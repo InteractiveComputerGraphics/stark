@@ -34,7 +34,7 @@ set(CORE_FILES
 	src/core/Callbacks.h
 	src/core/Console.cpp
 	src/core/Console.h
-	src/core/include_ui_core.h
+	src/core/include_ui.h
 	src/core/Logger.cpp
 	src/core/Logger.h
 	src/core/NewtonsMethod.cpp
@@ -118,14 +118,16 @@ set(MODELS_INTERACTIONS_FILES
 	src/models/interactions/Interactions.h
 )
 
+
 set(MODELS_FILES
 	${MODELS_DEFORMABLES_FILES}
 	${MODELS_RIGIDBODIES_FILES}
 	${MODELS_INTERACTIONS_FILES}
+	${MODELS_CONSTRUCTS_FILES}
 
 	src/models/distances.cpp
 	src/models/distances.h
-	src/models/include_ui_models.h
+	src/models/include_ui.h
 	src/models/IntervalVector.h
 	src/models/MeshOutputGroups.cpp
 	src/models/MeshOutputGroups.h
@@ -144,11 +146,18 @@ set(UTILS_FILES
 	src/utils/unordered_array_set_and_map.h
 	)
 
+set(CONSTRUCTS_FILES
+	src/constructs/include_ui.h
+	src/constructs/VehicleFourWheels.cpp
+	src/constructs/VehicleFourWheels.h
+)
+
 set(ALL_FILES
 	include/stark
 	${CORE_FILES} 
 	${MODELS_FILES} 
 	${UTILS_FILES}
+	${CONSTRUCTS_FILES}
 )
 
 # Create lireary

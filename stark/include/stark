@@ -1,6 +1,8 @@
 #pragma once
-#include "../src/core/include_ui_core.h"
-#include "../src/models/include_ui_models.h"
+#include "../src/core/include_ui.h"
+#include "../src/models/include_ui.h"
 
 #include "../src/utils/mesh_utils.h"
 #include "../src/utils/mesh_generators.h"
+
+#include "../src/constructs/include_ui.h"

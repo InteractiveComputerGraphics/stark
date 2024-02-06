@@ -291,19 +291,19 @@ stark::models::RBCPrismaticSliderHandler stark::models::RigidBodies::add_constra
 	auto dir_lock = this->add_constraint_direction(body_a, body_b, u);
 	return RBCPrismaticSliderHandler(body_a, body_b, slider, dir_lock);
 }
-stark::models::RBCSpringWithLimitsHandler stark::models::RigidBodies::add_spring_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double min_length, double max_length, double damping)
+stark::models::RBCSpringWithLimitsHandler stark::models::RigidBodies::add_constraint_spring_with_limits(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& a_glob, const Eigen::Vector3d& b_glob, double stiffness, double min_length, double max_length, double damping)
 {
 	auto spring = this->add_constraint_spring(body_a, body_b, a_glob, b_glob, stiffness, damping);
 	auto distance_limits = this->add_constraint_distance_limits(body_a, body_b, a_glob, b_glob, min_length, max_length);
 	return RBCSpringWithLimitsHandler(body_a, body_b, spring, distance_limits);
 }
-stark::models::RBCPrismaticPressHandler stark::models::RigidBodies::add_prismatic_press(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double target_v, double max_force, double delay)
+stark::models::RBCPrismaticPressHandler stark::models::RigidBodies::add_constraint_prismatic_press(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double target_v, double max_force, double delay)
 {
 	auto prismatic_slider = this->add_constraint_prismatic_slider(body_a, body_b, p_glob, d_glob);
 	auto linear_velocity = this->add_constraint_linear_velocity(body_a, body_b, d_glob, target_v, max_force, delay);
 	return RBCPrismaticPressHandler(body_a, body_b, prismatic_slider, linear_velocity);
 }
-stark::models::RBCMotorHandler stark::models::RigidBodies::add_motor(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double target_w, double max_torque, double delay)
+stark::models::RBCMotorHandler stark::models::RigidBodies::add_constraint_motor(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob, double target_w, double max_torque, double delay)
 {
 	auto hinge_joint = this->add_constraint_hinge(body_a, body_b, p_glob, d_glob);
 	auto angular_velocity = this->add_constraint_angular_velocity(body_a, body_b, d_glob, target_w, max_torque, delay);

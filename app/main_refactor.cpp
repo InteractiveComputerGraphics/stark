@@ -339,7 +339,7 @@ void laundry_cloth()
 	stark::utils::rotate_deg(vertices_drum, -90.0, Eigen::Vector3d::UnitX());
 	auto drum = simulation.rigidbodies->add_cylinder(1.0, 0.25, 0.25, vertices_drum, triangles_drum)
 		.set_rotation(90.0, Eigen::Vector3d::UnitX());
-	simulation.rigidbodies->add_motor(wall, drum, { 0, 0, 0 }, Eigen::Vector3d::UnitY(), target_w, max_torque, /*delay*/1.0);
+	simulation.rigidbodies->add_constraint_motor(wall, drum, { 0, 0, 0 }, Eigen::Vector3d::UnitY(), target_w, max_torque, /*delay*/1.0);
 	simulation.interactions->disable_collision(wall, drum);
 	drum.add_to_output_label("drum");
 
@@ -408,7 +408,7 @@ void laundry_soft_boxes()
 	//auto drum = simulation.rigidbodies->add_cylinder(1.0, 0.25, 0.25, vertices_drum, triangles_drum)
 	auto drum = simulation.rigidbodies->add_cylinder(1.0, 0.25, 0.25, 128)
 		.set_rotation(90.0, Eigen::Vector3d::UnitX());
-	simulation.rigidbodies->add_motor(wall, drum, { 0, 0, 0 }, Eigen::Vector3d::UnitY(), target_w, max_torque, /*delay*/0.01);
+	simulation.rigidbodies->add_constraint_motor(wall, drum, { 0, 0, 0 }, Eigen::Vector3d::UnitY(), target_w, max_torque, /*delay*/0.01);
 	simulation.interactions->disable_collision(wall, drum);
 	drum.add_to_output_label("drum");
 
@@ -453,6 +453,31 @@ void laundry_soft_boxes()
 	simulation.stark.run();
 }
 
+void car()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "car";
+	settings.output.output_directory = OUTPUT_PATH + "/car";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.execution.end_simulation_time = 1.0;
+	settings.contact.collisions_enabled = true;
+	settings.debug.symx_check_for_NaNs = true;
+
+	stark::Simulation simulation(settings);
+
+	// Ground
+	stark::RigidBodyHandler ground = simulation.rigidbodies->add_box(1000.0, { 10.0, 10.1, 0.1 })
+		.set_translation({ 0.0, 0.0, -0.1 })
+		.add_to_output_label("ground");
+	simulation.rigidbodies->add_constraint_fix(ground);
+
+	// Car
+	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "car");
+
+	// Run
+	simulation.stark.run();
+}
+
 int main()
 {
 	//rb();
@@ -464,6 +489,8 @@ int main()
 	//heavy_box_rigid_and_deformable();
 	//rb_constraints_all();
 	//attachments();
-	laundry_cloth();
+	//laundry_cloth();
 	//laundry_soft_boxes();
+
+	car();
 }

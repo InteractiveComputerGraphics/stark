@@ -148,7 +148,7 @@ namespace stark::models
 			const Eigen::Vector3d& d_glob,
 			double admissible_angle_deg
 		);
-		RBCSpringWithLimitsHandler add_spring_with_limits(
+		RBCSpringWithLimitsHandler add_constraint_spring_with_limits(
 			const RigidBodyHandler& body_a,
 			const RigidBodyHandler& body_b, 
 			const Eigen::Vector3d& a_glob, 
@@ -170,7 +170,7 @@ namespace stark::models
 			const Eigen::Vector3d& p_glob, 
 			const Eigen::Vector3d& d_glob
 		);
-		RBCPrismaticPressHandler add_prismatic_press(
+		RBCPrismaticPressHandler add_constraint_prismatic_press(
 			const RigidBodyHandler& body_a, 
 			const RigidBodyHandler& body_b,
 			const Eigen::Vector3d& p_glob, 
@@ -179,7 +179,7 @@ namespace stark::models
 			double max_force,
 			double delay = 0.01
 		);
-		RBCMotorHandler add_motor(
+		RBCMotorHandler add_constraint_motor(
 			const RigidBodyHandler& body_a, 
 			const RigidBodyHandler& body_b,
 			const Eigen::Vector3d& p_glob,
