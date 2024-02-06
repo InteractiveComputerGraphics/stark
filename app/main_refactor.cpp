@@ -310,7 +310,7 @@ void attachments()
 void laundry_cloth()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "laundry_cloth_full";
+	settings.output.simulation_name = "8_cloth_1acc";
 	settings.output.output_directory = OUTPUT_PATH + "/laundry_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
@@ -320,7 +320,7 @@ void laundry_cloth()
 	settings.newton.residual = { stark::ResidualType::Acceleration, 1.0 };
 
 	settings.contact.adaptive_contact_stiffness.set(1e4, 1e4, 1e12);
-	settings.contact.friction_stick_slide_threshold = 0.1;
+	settings.contact.friction_stick_slide_threshold = 0.01;
 	settings.contact.dhat = 0.002;
 	stark::models::Simulation simulation(settings);
 
@@ -346,7 +346,7 @@ void laundry_cloth()
 	// Cloth
 	const double friction = 1.0;
 	const double scale = 0.34;
-	const int n_cloths = 6; //8;
+	const int n_cloths = 8; //8;
 	const double spacing = 0.025;
 	const int cloth_resolution = 60;
 	std::vector<Eigen::Vector3d> vertices_cloth;
@@ -359,7 +359,6 @@ void laundry_cloth()
 	for (size_t i = 0; i < n_cloths; i++) {
 		cloths.push_back(
 			simulation.deformables->add_surface(vertices_cloth, triangles_cloth, stark::MaterialSurface::towel())
-			//.set_bending_stiffness(1e-6)
 		);
 		stark::utils::move(vertices_cloth, { 0.0, spacing, 0.0 });
 	}
