@@ -1,28 +1,29 @@
 # -*- coding: utf-8 -*-
+import tkinter as tk
+from tkinter import filedialog
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use('seaborn-v0_8')
 
-folder = r"D:\builds\stark\output\car"
-# filename = "logger_car_16ms_0.01ra__2024-02-07__16-11-29.txt"
-filename = "logger_car_1ms_0.01ra_noPD__2024-02-07__16-00-50.txt"
-ylabels = ["car_velocity_kmh", "car_wheel_3_torque", "car_spring_3_force", "car_wheel_3_dw"]
+# folder = r"D:\builds\stark\output\car"
+# # filename = "logger_car_16ms_0.01ra__2024-02-07__16-11-29.txt"
+# filename = "logger_car_16ms_1.0ra__2024-02-07__20-56-28.txt"
+ylabels = ["car_velocity_kmh", "car_wheel_3_torque", "car_spring_3_force", "car_wheel_3_w"]
 xlabel = "car_time"
 
 # =============================================================================
+def select_file():
+    root = tk.Tk()
+    root.withdraw()  # Hide the main tkinter window
+    file_path = filedialog.askopenfilename()  # Open the dialog and store the selected file path
+    return file_path
+
+file_path = select_file()
+folder, filename = os.path.split(file_path)
 with open(folder + os.sep + filename, "r") as f:
     txt = f.read()
 lines = {l.split(": ")[0]: np.array([float(n) for n in l.split(": ")[1].split(", ") if n]) for l in txt.split("\n") if ":" in l}
-
-# plt.figure()
-# if xlabel == "":
-#     plt.plot(lines[ylabel])
-# else:
-#     plt.plot(lines[xlabel], lines[ylabel])
-    
-# plt.xlabel(xlabel)
-# plt.ylabel(ylabel)
 
 
 # Determine the grid size for subplots

@@ -455,30 +455,44 @@ void laundry_soft_boxes()
 void car()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "car_16ms_0.01ra";
+	settings.output.simulation_name = "car";
 	settings.output.output_directory = OUTPUT_PATH + "/car";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
+	settings.execution.end_simulation_time = 15.0;
 	settings.contact.collisions_enabled = true;
 	settings.debug.symx_check_for_NaNs = true;
 
 	// Better energy conservation = higher velocity?
-	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
+	settings.simulation.adaptive_time_step.set(0.0, 0.002, 0.002);
 	settings.newton.residual = { stark::ResidualType::Acceleration, 0.01 };
 	settings.newton.project_to_PD = true;
+	settings.newton.max_line_search_iterations = 100; // wow, we need this!
 
 	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
-	settings.contact.dhat = 0.01;
+	settings.contact.dhat = 0.02;
 	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
 	stark::Simulation simulation(settings);
 
+	// TODO: Depending on the time step size, the motors go backwards
+	// TODO: The w plot doesnt work. That is showing the arbitrary target velocity
 
 	// Car
 	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "car");
+	car.set_target_velocity_in_km_per_h(900.0);
 
 	// Environment
 	stark::StaticPlaneHandler ground = simulation.interactions->add_static_plane({ 0.0, 0.0, -0.02 }, Eigen::Vector3d::UnitZ());
 	car.set_wheels_friction(simulation, ground, 1.0);
+
+	auto obstacle = simulation.rigidbodies->add_box(1000.0, 1.0)
+		.set_rotation(45.0, Eigen::Vector3d::UnitX())
+		.set_translation({ 0.8, 50.0, 0.0 })
+		.add_to_output_label("obstacle");
+	simulation.rigidbodies->add_constraint_fix(obstacle)
+		.set_stiffness(1e8)
+		.set_tolerance_in_deg(60.0)
+		.set_tolerance_in_m(1.0);
+	simulation.interactions->disable_collision(ground, obstacle);
 
 	// Run
 	bool braked = false;
@@ -487,18 +501,19 @@ void car()
 		{
 			car.append_to_logger(simulation);
 
-			const double t = simulation.stark.current_time;
-			const double v = car.get_linear_velocity_in_km_per_h();
-			if (!braked && t > 2.0) {
-				if (t < 3.0) {
-					car.set_target_velocity_in_km_per_h(900.0);
-				}
-				else {
-					car.brake();
-					braked = true;
-					std::cout << "\nBRAKE" << std::endl;
-				}
-			}
+			//const double t = simulation.stark.current_time;
+			//const double v = car.get_linear_velocity_in_km_per_h();
+			//if (!braked && t > 1.0) {
+			//	if (v < 100.0) {
+			//		car.set_target_velocity_in_km_per_h(900.0);
+			//	}
+			//	else {
+			//		car.brake();
+			//		braked = true;
+			//		std::cout << "\nBRAKE" << std::endl;
+			//		exit(9);
+			//	}
+			//}
 		}
 	);
 }
