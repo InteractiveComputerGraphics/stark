@@ -28,6 +28,11 @@ namespace stark::models
 		IntervalVector<Eigen::Vector3d> rigidbody_local_vertices;
 		std::vector<std::vector<int>> surface_node_maps;
 
+		// Static objects
+		StaticPlanes static_planes;
+		utils::unordered_array_map<int, 2, double> static_pair_coulombs_mu;
+		utils::unordered_array_set<int, 2> static_disabled_collision_pairs;
+
 		// Mappings
 		std::unordered_map<int, int> rigidbody_idx_collision_idx_map;
 		std::unordered_map<int, int> deformable_idx_collision_idx_map;
@@ -40,9 +45,11 @@ namespace stark::models
 		Contacts_Deformables contacts_deformables;
 		Contacts_RB contacts_rb;
 		Contacts_RB_Deformables contacts_rb_deformables;
+		Contacts_Static contacts_static;
 		Friction_Deformables friction_deformables;
 		Friction_RB friction_rb;
 		Friction_RB_Deformables friction_rb_deformables;
+		Friction_Static friction_static;
 
 
 		/* Methods */
@@ -52,10 +59,13 @@ namespace stark::models
 		int add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const std::vector<int>& surface_node_map);
 		int add_deformable(const int idx, const std::vector<std::array<int, 3>>& triangles, const int n_points);
 		int add_deformable(const int idx, const std::vector<std::array<int, 2>>& edges, const int n_points);
+		int add_static_plane(const Eigen::Vector3d& point, const Eigen::Vector3d& normal);
 		void set_coulomb_friction_pair(const PhysicalSystem& ps0, const int idx0_in_ps, const PhysicalSystem& ps1, const int idx1_in_ps, const double mu);
 		void set_coulomb_friction_pair(const int idx0, const int idx1, const double mu);
+		void set_coulomb_friction_pair_static(const int static_idx, const PhysicalSystem& ps, const int idx_in_ps, const double mu);
 		void disable_collision(const int idx0, const int idx1);
 		void disable_collision(const PhysicalSystem& ps0, const int idx0_in_ps, const PhysicalSystem& ps1, const int idx1_in_ps);
+		void disable_collision_static(int static_idx, const PhysicalSystem& ps, const int idx_in_ps);
 
 	private:
 		// Helpers
@@ -63,6 +73,9 @@ namespace stark::models
 		int _add_edges_and_points(const PhysicalSystem& ps, const int idx, const std::vector<std::array<int, 2>>& edges, const int n_points);
 		int _add_triangles_edges_and_points(const PhysicalSystem& ps, const int idx, const std::vector<std::array<int, 3>>& triangles, const int n_points);
 		void _update_vertices(core::Stark& stark, const double dt);
+		void _update_contacts_static(core::Stark& stark);
+		bool _intersection_static(core::Stark& stark);
+		void _update_friction_static(core::Stark& stark);
 		const tmcd::ProximityResults& _run_proximity_detection(core::Stark& stark, const double dt);
 		const tmcd::IntersectionResults& _run_intersection_detection(core::Stark& stark, const double dt);
 
@@ -75,6 +88,8 @@ namespace stark::models
 		ProximityHelper<1> _get_proximity_helper_edge_point(const tmcd::EdgePoint& edge_point);
 		ProximityHelper<2> _get_proximity_helper_edge(const tmcd::Edge& edge);
 		double _get_friction(const int idx0, const int idx1);
+		double _get_friction_static(const int static_idx, const int object_idx);
+		bool _is_disabled_collision_pair_static(const int static_idx, const int object_idx);
 
 		// SymX callbacks
 		void _before_time_step__update_friction_contacts(core::Stark& stark);
@@ -85,10 +100,12 @@ namespace stark::models
 		void _energies_contact_deformables(core::Stark& stark);
 		void _energies_contact_rb(core::Stark& stark);
 		void _energies_contact_rb_deformables(core::Stark& stark);
+		void _energies_contact_static(core::Stark& stark);
 
 		void _energies_friction_deformables(core::Stark& stark);
 		void _energies_friction_rb(core::Stark& stark);
 		void _energies_friction_rb_deformables(core::Stark& stark);
+		void _energies_friction_static(core::Stark& stark);
 
 		// IPC
 		symx::Scalar _barrier_potential(const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k);

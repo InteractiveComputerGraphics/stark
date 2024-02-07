@@ -40,4 +40,5 @@ namespace stark
 
 	// Interactions
 	using models::Interactions;
+	using models::StaticPlaneHandler;
 }

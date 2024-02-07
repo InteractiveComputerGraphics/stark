@@ -20,7 +20,7 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 	p.suspension.spring_length = 0.2;
 	p.suspension.rear_spring_stiffness = 1e5;
 	p.suspension.front_spring_stiffness = 1.5e5;
-	p.suspension.damping = 20.0;
+	p.suspension.damping = 10.0;
 
 	p.engine.position = { 0.0, 1.4, 0.7 };
 	p.engine.mass = 500.0;

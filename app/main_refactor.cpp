@@ -464,28 +464,21 @@ void car()
 	settings.debug.symx_check_for_NaNs = true;
 
 	// Better energy conservation = higher velocity?
-	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
+	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
 	settings.newton.residual = { stark::ResidualType::Acceleration, 0.01 };
-	settings.newton.project_to_PD = false;
+	settings.newton.project_to_PD = true; 
 
 	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
 	settings.contact.dhat = 0.01;
 	settings.contact.adaptive_contact_stiffness.set(1e9, 1e9, 1e12);
 	stark::Simulation simulation(settings);
 
-	// Ground
-	stark::RigidBodyHandler ground = simulation.rigidbodies->add_box(1000.0, { 10.0, 200.1, 0.1 })
-		.set_translation({ 0.0, 95.0, -0.07 })
-		.add_to_output_label("ground");
-	simulation.rigidbodies->add_constraint_fix(ground)
-		.set_stiffness(1e6)
-		.set_tolerance_in_m(0.001)
-		.set_tolerance_in_deg(0.01);
 
 	// Car
 	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "car");
 
 	// Environment
+	stark::StaticPlaneHandler ground = simulation.interactions->add_static_plane({ 0.0, 0.0, -0.02 }, Eigen::Vector3d::UnitZ());
 	car.set_wheels_friction(simulation, ground, 1.0);
 
 	// Run
@@ -501,7 +494,7 @@ void car()
 
 			if (!braked && t > 2.0) {
 				if (v < 100.0) {
-					car.set_target_velocity_in_km_per_h(100.0);
+					car.set_target_velocity_in_km_per_h(900.0);
 				}
 				else {
 					car.brake();

@@ -10,6 +10,11 @@
 
 namespace stark::models
 {
+	struct StaticPlaneHandler
+	{
+		int idx;
+	};
+
 	class Interactions
 	{
 	public:
@@ -32,11 +37,12 @@ namespace stark::models
 		// Contact and Friction
 		template<typename OBJECT_HANDLER_0, typename OBJECT_HANDLER_1>
 		void set_friction(const OBJECT_HANDLER_0& object0, const OBJECT_HANDLER_1& object1, double coulombs_mu);
-		void set_friction(const int global_obj_idx0, const int global_obj_idx1, double coulombs_mu);
 
 		template<typename OBJECT_HANDLER_0, typename OBJECT_HANDLER_1>
 		void disable_collision(const OBJECT_HANDLER_0& object0, const OBJECT_HANDLER_1& object1);
-		void disable_collision(const int global_idx0, const int global_idx1);
+
+		// Static objects
+		StaticPlaneHandler add_static_plane(const Eigen::Vector3d& point, const Eigen::Vector3d& normal);
 
 	private:
 		/* Fields */
@@ -108,16 +114,36 @@ namespace stark::models
 	template<typename OBJECT_HANDLER_0, typename OBJECT_HANDLER_1>
 	inline void Interactions::set_friction(const OBJECT_HANDLER_0& object0, const OBJECT_HANDLER_1& object1, double coulombs_mu)
 	{
-		auto [ps0, idx_in_ps0] = this->_get_physical_system_and_index(object0);
-		auto [ps1, idx_in_ps1] = this->_get_physical_system_and_index(object1);
-		this->contact->set_coulomb_friction_pair(ps0, idx_in_ps0, ps1, idx_in_ps1, coulombs_mu);
+		if constexpr (std::is_same_v<OBJECT_HANDLER_0, StaticPlaneHandler>) {
+			auto [ps1, idx_in_ps1] = this->_get_physical_system_and_index(object1);
+			this->contact->set_coulomb_friction_pair_static(object0.idx, ps1, idx_in_ps1, coulombs_mu);
+		}
+		else if constexpr (std::is_same_v<OBJECT_HANDLER_1, StaticPlaneHandler>) {
+			auto [ps0, idx_in_ps0] = this->_get_physical_system_and_index(object0);
+			this->contact->set_coulomb_friction_pair_static(object1.idx, ps0, idx_in_ps0, coulombs_mu);
+		}
+		else {
+			auto [ps0, idx_in_ps0] = this->_get_physical_system_and_index(object0);
+			auto [ps1, idx_in_ps1] = this->_get_physical_system_and_index(object1);
+			this->contact->set_coulomb_friction_pair(ps0, idx_in_ps0, ps1, idx_in_ps1, coulombs_mu);
+		}
 	}
 	template<typename OBJECT_HANDLER_0, typename OBJECT_HANDLER_1>
 	inline void Interactions::disable_collision(const OBJECT_HANDLER_0& object0, const OBJECT_HANDLER_1& object1)
 	{
-		auto [ps0, idx_in_ps0] = this->_get_physical_system_and_index(object0);
-		auto [ps1, idx_in_ps1] = this->_get_physical_system_and_index(object1);
-		this->contact->disable_collision(ps0, idx_in_ps0, ps1, idx_in_ps1);
+		if constexpr (std::is_same_v<OBJECT_HANDLER_0, StaticPlaneHandler>) {
+			auto [ps1, idx_in_ps1] = this->_get_physical_system_and_index(object1);
+			this->contact->disable_collision_static(object0.idx, ps1, idx_in_ps1);
+		}
+		else if constexpr (std::is_same_v<OBJECT_HANDLER_1, StaticPlaneHandler>) {
+			auto [ps0, idx_in_ps0] = this->_get_physical_system_and_index(object0);
+			this->contact->disable_collision_static(object1.idx, ps0, idx_in_ps0);
+		}
+		else {
+			auto [ps0, idx_in_ps0] = this->_get_physical_system_and_index(object0);
+			auto [ps1, idx_in_ps1] = this->_get_physical_system_and_index(object1);
+			this->contact->disable_collision(ps0, idx_in_ps0, ps1, idx_in_ps1);
+		}
 	}
 	template<typename OBJECT_HANDLER>
 	inline std::pair<PhysicalSystem, int> Interactions::_get_physical_system_and_index(const OBJECT_HANDLER& object)

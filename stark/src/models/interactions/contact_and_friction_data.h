@@ -21,6 +21,12 @@ namespace stark::models
 		std::vector<std::array<int, 3>> triangles;  // Local indices
 	};
 
+	struct StaticPlanes
+	{
+		std::vector<Eigen::Vector3d> point;
+		std::vector<Eigen::Vector3d> normal;
+	};
+
 	/* ============================================================================= */
 	/* ===========================  COLLISION DETECTION  =========================== */
 	/* ============================================================================= */
@@ -131,6 +137,17 @@ namespace stark::models
 		}
 	};
 
+	struct Contacts_Static
+	{
+		symx::LabelledConnectivity<2> deformable_point{ { "plane", "a" } };
+		symx::LabelledConnectivity<3> rb_point{ { "plane", "rb", "a" } };
+
+		void clear()
+		{
+			this->deformable_point.clear();
+			this->rb_point.clear();
+		}
+	};
 
 	/* ================================================================== */
 	/* ===========================  FRICTION  =========================== */
@@ -329,4 +346,31 @@ namespace stark::models
 			this->triangle_point.conn.clear();
 		}
 	};
+
+	struct Friction_Static
+	{
+		struct DeformablePoint
+		{
+			FrictionContact contact;
+			symx::LabelledConnectivity<2> conn{ { "idx", "a" } };
+		};
+		struct RBPoint
+		{
+			FrictionContact contact;
+			symx::LabelledConnectivity<3> conn{ { "idx", "rb", "a" } };
+		};
+
+		DeformablePoint deformable_point;
+		RBPoint rb_point;
+
+		void clear()
+		{
+			this->deformable_point.contact.clear();
+			this->deformable_point.conn.clear();
+
+			this->rb_point.contact.clear();
+			this->rb_point.conn.clear();
+		}
+	};
+
 }

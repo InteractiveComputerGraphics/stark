@@ -8,14 +8,9 @@ stark::models::Interactions::Interactions(core::Stark& stark, spEnergyFrictional
 	this->attachments = std::make_shared<EnergyAttachments>(stark, contact->dyn, contact->rb);
 }
 
-void stark::models::Interactions::set_friction(const int global_idx0, const int global_idx1, double coulombs_mu)
+StaticPlaneHandler stark::models::Interactions::add_static_plane(const Eigen::Vector3d& point, const Eigen::Vector3d& normal)
 {
-	this->contact->set_coulomb_friction_pair(global_idx0, global_idx1, coulombs_mu);
-}
-
-void stark::models::Interactions::disable_collision(const int global_idx0, const int global_idx1)
-{
-	this->contact->disable_collision(global_idx0, global_idx1);
+	return StaticPlaneHandler{ this->contact->add_static_plane(point, normal) };
 }
 
 void stark::models::Interactions::_attach_rb_deformable_by_distance(const RigidBodyHandler& rigidbody, const int deformable_idx, const double distance, const double stiffness)
