@@ -73,7 +73,7 @@ namespace stark
 		double get_linear_velocity_in_km_per_h() const;
 		template<typename RBHandler>
 		void set_wheels_friction(Simulation& simulation, const RBHandler& object, double friction);
-		void add_to_logger(Simulation& simulation) const;
+		void append_to_logger(Simulation& simulation) const;
 		void rotate_deg(double angle, const Eigen::Vector3d& axis);
 		void set_position(const Eigen::Vector3d& position);
 		void move(const Eigen::Vector3d& displacement);

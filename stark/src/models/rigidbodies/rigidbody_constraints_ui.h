@@ -43,7 +43,7 @@ namespace stark::models
 		inline double get_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
 		inline auto& set_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
+		inline std::array<double, 2> get_violation_in_m_and_force() const
 		{ 
 			return RigidBodyConstraints::GlobalPoints::violation_in_m_and_force(get_stiffness(), get_global_target_point(), rb.local_to_global_point(get_local_point()));
 		};
@@ -80,7 +80,7 @@ namespace stark::models
 		inline double get_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
 		inline auto& set_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> get_violation_in_deg_and_torque() const
+		inline std::array<double, 2> get_violation_in_deg_and_torque() const
 		{
 			return RigidBodyConstraints::GlobalDirections::violation_in_deg_and_torque(get_stiffness(), get_global_target_direction(), rb.local_to_global_direction(get_local_direction()));
 		};
@@ -119,7 +119,7 @@ namespace stark::models
 		inline double get_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
 		inline auto& set_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
+		inline std::array<double, 2> get_violation_in_m_and_force() const
 		{
 			return RigidBodyConstraints::Points::violation_in_m_and_force(get_stiffness(),
 				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()));
@@ -159,7 +159,7 @@ namespace stark::models
 		inline double get_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
 		inline auto& set_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
+		inline std::array<double, 2> get_violation_in_m_and_force() const
 		{
 			return RigidBodyConstraints::PointOnAxes::violation_in_m_and_force(get_stiffness(),
 				rb_a.local_to_global_point(get_local_point_body_a()), rb_a.local_to_global_direction(get_local_direction_body_a()), rb_b.local_to_global_point(get_local_point_body_b()));
@@ -205,9 +205,9 @@ namespace stark::models
 		inline double get_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
 		inline auto& set_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
+		inline std::array<double, 2> get_signed_violation_in_m_and_force() const
 		{
-			return RigidBodyConstraints::Distance::violation_in_m_and_force(get_stiffness(),
+			return RigidBodyConstraints::Distance::signed_violation_in_m_and_force(get_stiffness(),
 				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()), get_target_distance());
 		};
 
@@ -248,9 +248,9 @@ namespace stark::models
 		inline double get_tolerance_in_m() const { return this->constraints->tolerance_in_m[this->idx]; };
 		inline auto& set_tolerance_in_m(double tolerance_in_m) { this->constraints->tolerance_in_m[this->idx] = tolerance_in_m; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> get_violation_in_m_and_force() const
+		inline std::array<double, 2> get_signed_violation_in_m_and_force() const
 		{
-			return RigidBodyConstraints::DistanceLimits::violation_in_m_and_force(get_stiffness(),
+			return RigidBodyConstraints::DistanceLimits::signed_violation_in_m_and_force(get_stiffness(),
 				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()), get_min_distance(), get_max_distance());
 		};
 
@@ -288,7 +288,7 @@ namespace stark::models
 		inline double get_tolerance_in_deg() const { return this->constraints->tolerance_in_deg[this->idx]; };
 		inline auto& set_tolerance_in_deg(double tolerance_in_deg) { this->constraints->tolerance_in_deg[this->idx] = tolerance_in_deg; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> get_violation_in_deg_and_torque() const
+		inline std::array<double, 2> get_violation_in_deg_and_torque() const
 		{
 			return RigidBodyConstraints::Directions::violation_in_deg_and_torque(get_stiffness(), 
 				rb_a.local_to_global_direction(get_local_direction_body_a()), rb_b.local_to_global_direction(get_local_direction_body_b()));
@@ -338,7 +338,7 @@ namespace stark::models
 			return (*this);
 		};
 
-		inline std::pair<double, Eigen::Vector3d> get_violation_in_deg_and_torque() const
+		inline std::array<double, 2> get_violation_in_deg_and_torque() const
 		{
 			return RigidBodyConstraints::AngleLimits::violation_in_deg_and_torque(get_stiffness(),
 				rb_a.local_to_global_direction(get_local_direction_body_a()), rb_b.local_to_global_direction(get_local_direction_body_b()), 
@@ -386,15 +386,15 @@ namespace stark::models
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> get_spring_displacement_in_m_and_force() const
+		inline std::array<double, 2> get_signed_spring_displacement_in_m_and_force() const
 		{
-			return RigidBodyConstraints::DampedSprings::spring_violation_in_m_and_force(get_stiffness(),
+			return RigidBodyConstraints::DampedSprings::signed_spring_violation_in_m_and_force(get_stiffness(),
 				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()), get_rest_length());
 		};
 
-		inline std::pair<double, Eigen::Vector3d> get_damper_velocity_and_force() const
+		inline std::array<double, 2> get_signed_damper_velocity_and_force() const
 		{
-			return RigidBodyConstraints::DampedSprings::damper_velocity_and_force(get_damping(),
+			return RigidBodyConstraints::DampedSprings::signed_damper_velocity_and_force(get_damping(),
 				rb_a.local_to_global_point(get_local_point_body_a()), rb_b.local_to_global_point(get_local_point_body_b()), 
 				rb_a.get_velocity_at(get_local_point_body_a()), rb_b.get_velocity_at(get_local_point_body_b()),
 				get_rest_length());
@@ -429,14 +429,23 @@ namespace stark::models
 		inline auto& set_target_velocity_in_m_per_s(double velocity) { this->constraints->target_v[this->idx] = velocity; return (*this); };
 
 		inline double get_max_force() const { return this->constraints->max_force[this->idx]; };
-		inline auto& set_max_force(double force) { this->constraints->max_force[this->idx] = force; return (*this); };
+		inline auto& set_max_force(double force) { 
+			// Check that force is not negative
+			if (force < 0.0) {
+				std::cout << "stark error: RBCLinearVelocityHandler.set_max_force() found a negative force" << std::endl;
+				exit(-1);
+			}
+
+			this->constraints->max_force[this->idx] = force; 
+			return (*this); 
+		};
 
 		inline double get_delay() const { return this->constraints->delay[this->idx]; };
 		inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> get_velocity_violation_and_force() const
+		inline std::array<double, 2> get_signed_velocity_violation_and_force() const
 		{
-			return RigidBodyConstraints::LinearVelocity::velocity_violation_and_force(
+			return RigidBodyConstraints::LinearVelocity::signed_velocity_violation_and_force(
 				rb_a.local_to_global_direction(get_local_direction_body_a()),
 				rb_a.get_velocity(),
 				rb_b.get_velocity(),
@@ -474,14 +483,23 @@ namespace stark::models
 		inline auto& set_target_angular_velocity_in_deg_per_s(double w) { this->constraints->target_w[this->idx] = utils::deg2rad(w); return (*this); };
 
 		inline double get_max_torque() const { return this->constraints->max_torque[this->idx]; };
-		inline auto& set_max_torque(double torque) { this->constraints->max_torque[this->idx] = torque; return (*this); };
+		inline auto& set_max_torque(double torque) { 
+			// Check that torque is not negative
+			if (torque < 0.0) { 
+				std::cout << "stark error: RBCAngularVelocityHandler.set_max_abs_torque() found a negative torque" << std::endl;
+				exit(-1);
+			}
+
+			this->constraints->max_torque[this->idx] = torque; 
+			return (*this);
+		};
 
 		inline double get_delay() const { return this->constraints->delay[this->idx]; };
 		inline auto& set_delay(double delay) { this->constraints->delay[this->idx] = delay; return (*this); };
 
-		inline std::pair<double, Eigen::Vector3d> get_angular_velocity_violation_in_deg_per_s_and_torque() const
+		inline std::array<double, 2> get_signed_angular_velocity_violation_in_deg_per_s_and_torque() const
 		{
-			return RigidBodyConstraints::AngularVelocity::angular_velocity_violation_in_deg_per_s_and_torque(
+			return RigidBodyConstraints::AngularVelocity::signed_angular_velocity_violation_in_deg_per_s_and_torque(
 				rb_a.local_to_global_direction(get_local_direction_body_a()),
 				rb_a.get_velocity(),
 				rb_b.get_velocity(),

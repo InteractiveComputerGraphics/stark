@@ -319,10 +319,7 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_an
 			log_parameters(this->logger, "absolute_position", idx, data->labels[idx], 
 				"violation [m]", C, 
 				"stiffness [N/m]", data->stiffness[idx], 
-				"force [N]", f.norm(), 
-				"force_x [N]", f[0], 
-				"force_y [N]", f[1], 
-				"force_z [N]", f[2], 
+				"force [N]", f, 
 				"tolerance [m]", data->tolerance_in_m[idx],
 				"is_active", data->is_active[idx]);
 		}
@@ -344,10 +341,7 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_an
 			log_parameters(this->logger, "absolute_direction", idx, data->labels[idx],
 				"violation [deg]", C,
 				"stiffness [N/m]", data->stiffness[idx],
-				"torque [Nm]", t.norm(),
-				"torque_x [Nm]", t[0],
-				"torque_y [Nm]", t[1],
-				"torque_z [Nm]", t[2],
+				"torque [Nm]", t,
 				"tolerance [deg]", data->tolerance_in_deg[idx],
 				"is_active", data->is_active[idx]);
 		}
@@ -370,10 +364,7 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_an
 			log_parameters(this->logger, "point", idx, data->labels[idx],
 				"violation [m]", C,
 				"stiffness [N/m]", data->stiffness[idx],
-				"force [N]", f.norm(),
-				"force_x [N]", f[0],
-				"force_y [N]", f[1],
-				"force_z [N]", f[2],
+				"force [N]", f,
 				"tolerance [m]", data->tolerance_in_m[idx],
 				"is_active", data->is_active[idx]);
 		}
@@ -397,10 +388,7 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_an
 			log_parameters(this->logger, "point_on_axis", idx, data->labels[idx],
 				"violation [m]", C,
 				"stiffness [N/m]", data->stiffness[idx],
-				"force [N]", f.norm(),
-				"force_x [N]", f[0],
-				"force_y [N]", f[1],
-				"force_z [N]", f[2],
+				"force [N]", f,
 				"tolerance [m]", data->tolerance_in_m[idx],
 				"is_active", data->is_active[idx]);
 		}
@@ -417,21 +405,18 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_an
 		auto [idx, a, b] = data->conn[i];
 		const Eigen::Vector3d a1 = get_x1(a, data->a_loc[idx]);
 		const Eigen::Vector3d b1 = get_x1(b, data->b_loc[idx]);
-		auto [C, f] = RigidBodyConstraints::Distance::violation_in_m_and_force(data->stiffness[idx], a1, b1, data->target_distance[idx]);
+		auto [C, f] = RigidBodyConstraints::Distance::signed_violation_in_m_and_force(data->stiffness[idx], a1, b1, data->target_distance[idx]);
 
 		if (log) {
 			log_parameters(this->logger, "distance", idx, data->labels[idx],
 				"violation [m]", C,
 				"stiffness [N/m]", data->stiffness[idx],
-				"force [N]", f.norm(),
-				"force_x [N]", f[0],
-				"force_y [N]", f[1],
-				"force_z [N]", f[2],
+				"force [N]", f,
 				"tolerance [m]", data->tolerance_in_m[idx],
 				"is_active", data->is_active[idx]);
 		}
 
-		if (C > data->tolerance_in_m[idx]) {
+		if (std::abs(C) > data->tolerance_in_m[idx]) {
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
 		}
@@ -443,21 +428,19 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_an
 		auto [idx, a, b] = data->conn[i];
 		const Eigen::Vector3d a1 = get_x1(a, data->a_loc[idx]);
 		const Eigen::Vector3d b1 = get_x1(b, data->b_loc[idx]);
-		auto [C, f] = RigidBodyConstraints::DistanceLimits::violation_in_m_and_force(data->stiffness[idx], a1, b1, data->min_distance[idx], data->max_distance[idx]);
+		auto [C, f] = RigidBodyConstraints::DistanceLimits::signed_violation_in_m_and_force(data->stiffness[idx], a1, b1, data->min_distance[idx], data->max_distance[idx]);
 
 		if (log) {
 			log_parameters(this->logger, "distance_limits", idx, data->labels[idx],
 				"violation [m]", C,
 				"stiffness [N/m]", data->stiffness[idx],
-				"force [N]", f.norm(),
-				"force_x [N]", f[0],
-				"force_y [N]", f[1],
-				"force_z [N]", f[2],
+				"force [N]", f,
 				"tolerance [m]", data->tolerance_in_m[idx],
 				"is_active", data->is_active[idx]);
 		}
 
-		if (C > data->tolerance_in_m[idx]) {
+		if (std::abs(C) > data->tolerance_in_m[idx]) {
+			std::cout << " " << std::abs(C) << " > " << data->tolerance_in_m[idx] << " . " << data->stiffness[idx] << std::endl;
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
 		}
@@ -475,10 +458,7 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_an
 			log_parameters(this->logger, "direction", idx, data->labels[idx],
 				"violation [deg]", C,
 				"stiffness [N/m]", data->stiffness[idx],
-				"torque [Nm]", t.norm(),
-				"torque_x [Nm]", t[0],
-				"torque_y [Nm]", t[1],
-				"torque_z [Nm]", t[2],
+				"torque [Nm]", t,
 				"tolerance [deg]", data->tolerance_in_deg[idx],
 				"is_active", data->is_active[idx]);
 		}
@@ -501,10 +481,7 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_an
 			log_parameters(this->logger, "angle_limit", idx, data->labels[idx],
 				"violation [deg]", C,
 				"stiffness [N/m]", data->stiffness[idx],
-				"torque [Nm]", t.norm(),
-				"torque_x [Nm]", t[0],
-				"torque_y [Nm]", t[1],
-				"torque_z [Nm]", t[2],
+				"torque [Nm]", t,
 				"tolerance [deg]", data->tolerance_in_deg[idx],
 				"is_active", data->is_active[idx]);
 		}
@@ -527,20 +504,14 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_an
 			const Eigen::Vector3d b1 = get_x1(b, data->b_loc[idx]);
 			const Eigen::Vector3d va1 = this->dyn->get_v1(a, data->a_loc[idx]);
 			const Eigen::Vector3d vb1 = this->dyn->get_v1(b, data->b_loc[idx]);
-			auto [dC, df] = RigidBodyConstraints::DampedSprings::damper_velocity_and_force(data->damping[idx], a1, b1, va1, vb1, data->rest_length[idx]);
-			auto [C, f] = RigidBodyConstraints::DampedSprings::spring_violation_in_m_and_force(data->stiffness[idx], a1, b1, data->rest_length[idx]);
+			auto [dC, df] = RigidBodyConstraints::DampedSprings::signed_damper_velocity_and_force(data->damping[idx], a1, b1, va1, vb1, data->rest_length[idx]);
+			auto [C, f] = RigidBodyConstraints::DampedSprings::signed_spring_violation_in_m_and_force(data->stiffness[idx], a1, b1, data->rest_length[idx]);
 			log_parameters(this->logger, "damped_spring", idx, data->labels[idx],
 				"violation [m]", C,
 				"stiffness [N/m]", data->stiffness[idx],
-				"force [N]", f.norm(),
-				"force_x [N]", f[0],
-				"force_y [N]", f[1],
-				"force_z [N]", f[2],
+				"force [N]", f,
 				"damping [Ns/m]", data->damping[idx],
-				"damping_force [N]", df.norm(),
-				"damping_force_x [N]", df[0],
-				"damping_force_y [N]", df[1],
-				"damping_force_z [N]", df[2],
+				"damping_force [N]", df,
 				"is_active", data->is_active[idx]);
 		}
 
@@ -551,13 +522,10 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_an
 			const Eigen::Vector3d da1 = get_d1(a, data->da_loc[idx]);
 			const Eigen::Vector3d va1 = this->dyn->v1[a];
 			const Eigen::Vector3d vb1 = this->dyn->v1[b];
-			auto [C, f] = RigidBodyConstraints::LinearVelocity::velocity_violation_and_force(da1, va1, vb1, data->target_v[idx], data->max_force[idx], data->delay[idx]);
+			auto [C, f] = RigidBodyConstraints::LinearVelocity::signed_velocity_violation_and_force(da1, va1, vb1, data->target_v[idx], data->max_force[idx], data->delay[idx]);
 			log_parameters(this->logger, "linear_velocity", idx, data->labels[idx],
 				"violation [m/s]", C,
-				"force [N]", f.norm(),
-				"force_x [N]", f[0],
-				"force_y [N]", f[1],
-				"force_z [N]", f[2],
+				"force [N]", f,
 				"target_v [m/s]", data->target_v[idx],
 				"max_force [N]", data->max_force[idx],
 				"delay [s]", data->delay[idx],
@@ -571,13 +539,10 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_an
 			const Eigen::Vector3d da1 = get_d1(a, data->da_loc[idx]);
 			const Eigen::Vector3d wa1 = this->dyn->w1[a];
 			const Eigen::Vector3d wb1 = this->dyn->w1[b];
-			auto [C, t] = RigidBodyConstraints::AngularVelocity::angular_velocity_violation_in_deg_per_s_and_torque(da1, wa1, wb1, data->target_w[idx], data->max_torque[idx], data->delay[idx]);
+			auto [C, t] = RigidBodyConstraints::AngularVelocity::signed_angular_velocity_violation_in_deg_per_s_and_torque(da1, wa1, wb1, data->target_w[idx], data->max_torque[idx], data->delay[idx]);
 			log_parameters(this->logger, "angular_velocity", idx, data->labels[idx],
 				"violation [deg/s]", C,
-				"torque [Nm]", t.norm(),
-				"torque_x [Nm]", t[0],
-				"torque_y [Nm]", t[1],
-				"torque_z [Nm]", t[2],
+				"torque [Nm]", t,
 				"target_w [deg/s]", data->target_w[idx],
 				"max_torque [Nm]", data->max_torque[idx],
 				"delay [s]", data->delay[idx],

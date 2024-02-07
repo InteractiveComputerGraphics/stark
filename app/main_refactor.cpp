@@ -452,14 +452,13 @@ void laundry_soft_boxes()
 	// Run
 	simulation.stark.run();
 }
-
 void car()
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "car_16ms_0.01ra";
 	settings.output.output_directory = OUTPUT_PATH + "/car";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 15.0;
+	settings.execution.end_simulation_time = 5.0;
 	settings.contact.collisions_enabled = true;
 	settings.debug.symx_check_for_NaNs = true;
 
@@ -474,8 +473,6 @@ void car()
 	stark::Simulation simulation(settings);
 
 
-	// TODO: The motor doesn't impose negative torques
-
 	// Car
 	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "car");
 
@@ -488,12 +485,12 @@ void car()
 	simulation.stark.run(
 		[&]()
 		{
-			car.add_to_logger(simulation);
+			car.append_to_logger(simulation);
 
 			const double t = simulation.stark.current_time;
 			const double v = car.get_linear_velocity_in_km_per_h();
 			if (!braked && t > 2.0) {
-				if (v < 100.0) {
+				if (t < 3.0) {
 					car.set_target_velocity_in_km_per_h(900.0);
 				}
 				else {

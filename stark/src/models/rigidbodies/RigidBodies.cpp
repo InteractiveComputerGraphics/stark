@@ -221,6 +221,12 @@ stark::models::RBCDampedSpringHandler stark::models::RigidBodies::add_constraint
 }
 stark::models::RBCLinearVelocityHandler stark::models::RigidBodies::add_constraint_linear_velocity(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double target_v, double max_force, double delay)
 {
+	// Check force is positive
+	if (max_force < 0.0) {
+		std::cout << "stark error: RigidBodies::add_constraint_linear_velocity() got a negative force for bodies " << body_a.get_label() << " and " << body_b.get_label() << std::endl;
+		exit(-1);
+	}
+
 	const int idx = this->rb->constraints->linear_velocity->add(
 		body_a.index(),
 		body_b.index(),
@@ -231,14 +237,20 @@ stark::models::RBCLinearVelocityHandler stark::models::RigidBodies::add_constrai
 	);
 	return RBCLinearVelocityHandler(body_a, body_b, this->rb->constraints->linear_velocity, idx);
 }
-stark::models::RBCAngularVelocityHandler stark::models::RigidBodies::add_constraint_angular_velocity(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double target_w, double max_torque, double delay)
+stark::models::RBCAngularVelocityHandler stark::models::RigidBodies::add_constraint_angular_velocity(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& d_glob, double target_w, double max_abs_torque, double delay)
 {
+	// Check torque is positive
+	if (max_abs_torque < 0.0) {
+		std::cout << "stark error: RigidBodies::add_constraint_angular_velocity() got a negative torque for bodies " << body_a.get_label() << " and " << body_b.get_label() << std::endl;
+		exit(-1);
+	}
+
 	const int idx = this->rb->constraints->angular_velocity->add(
 		body_a.index(),
 		body_b.index(),
 		body_a.global_to_local_direction(d_glob),
 		target_w,
-		max_torque,
+		max_abs_torque,
 		delay
 	);
 	return RBCAngularVelocityHandler(body_a, body_b, this->rb->constraints->angular_velocity, idx);

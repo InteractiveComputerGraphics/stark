@@ -30,10 +30,16 @@ stark::Settings test_settings(std::string name)
 	settings.output.output_directory = OUTPUT_PATH + "/test_output";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::NoOutput;
-	settings.output.enable_output = false;
+	settings.output.enable_output = true;
 	settings.execution.end_simulation_time = 3.0;
 	settings.simulation.gravity = {0, 0, 0};
 	settings.contact.collisions_enabled = false;
+
+	// High resolution for accurate results
+	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
+	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
+	settings.newton.residual = { stark::ResidualType::Force, 1e-6 };
+
 	return settings;
 }
 TEST_CASE("inertia", "[rb_constraints]") 
@@ -47,9 +53,7 @@ TEST_CASE("inertia", "[rb_constraints]")
 	simulation.stark.run();
 	auto [C, f] = constraint.get_violation_in_m_and_force();
 	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
-	REQUIRE_THAT(f[0], WithinRel(-PERTURBATION*MASS, 1e-3));
-	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f, WithinRel(PERTURBATION*MASS, 1e-3));
 }
 
 TEST_CASE("global_point", "[rb_constraints]") 
@@ -63,9 +67,7 @@ TEST_CASE("global_point", "[rb_constraints]")
 	simulation.stark.run();
 	auto [C, f] = constraint.get_violation_in_m_and_force();
 	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
-	REQUIRE_THAT(f[0], WithinRel(-PERTURBATION, 1e-3));
-	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f, WithinRel(PERTURBATION, 1e-3));
 }
 
 TEST_CASE("global_direction", "[rb_constraints]") 
@@ -79,9 +81,7 @@ TEST_CASE("global_direction", "[rb_constraints]")
 	simulation.stark.run();
 	auto [C, t] = constraint.get_violation_in_deg_and_torque();
 	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_deg()));
-	REQUIRE_THAT(t[0], WithinRel(-PERTURBATION, 1e-3));
-	REQUIRE_THAT(t[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(t[2], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(t, WithinRel(PERTURBATION, 1e-3));
 }
 
 TEST_CASE("point", "[rb_constraints]")
@@ -98,9 +98,7 @@ TEST_CASE("point", "[rb_constraints]")
 	simulation.stark.run();
 	auto [C, f] = constraint.get_violation_in_m_and_force();
 	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
-	REQUIRE_THAT(f[0], WithinRel(-PERTURBATION, 1e-3));
-	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f, WithinRel(PERTURBATION, 1e-3));
 }
 
 TEST_CASE("point_on_axis", "[rb_constraints]")
@@ -117,9 +115,7 @@ TEST_CASE("point_on_axis", "[rb_constraints]")
 	simulation.stark.run();
 	auto [C, f] = constraint.get_violation_in_m_and_force();
 	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
-	REQUIRE_THAT(f[0], WithinRel(-PERTURBATION, 1e-3));
-	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f, WithinRel(PERTURBATION, 1e-3));
 }
 
 TEST_CASE("distance", "[rb_constraints]")
@@ -134,11 +130,9 @@ TEST_CASE("distance", "[rb_constraints]")
 
 	box1.add_force_at_centroid({ PERTURBATION, 0, 0 });
 	simulation.stark.run();
-	auto [C, f] = constraint.get_violation_in_m_and_force();
+	auto [C, f] = constraint.get_signed_violation_in_m_and_force();
 	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
-	REQUIRE_THAT(f[0], WithinRel(-PERTURBATION, 1e-3));
-	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f, WithinRel(-PERTURBATION, 1e-3));
 }
 
 TEST_CASE("distance_limits_max", "[rb_constraints]")
@@ -153,11 +147,9 @@ TEST_CASE("distance_limits_max", "[rb_constraints]")
 
 	box1.add_force_at_centroid({ PERTURBATION, 0, 0 });
 	simulation.stark.run();
-	auto [C, f] = constraint.get_violation_in_m_and_force();
+	auto [C, f] = constraint.get_signed_violation_in_m_and_force();
 	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
-	REQUIRE_THAT(f[0], WithinRel(-PERTURBATION, 1e-3));
-	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f, WithinRel(-PERTURBATION, 1e-3));
 }
 
 TEST_CASE("distance_limits_min", "[rb_constraints]")
@@ -172,11 +164,9 @@ TEST_CASE("distance_limits_min", "[rb_constraints]")
 
 	box1.add_force_at_centroid({ -PERTURBATION, 0, 0 });
 	simulation.stark.run();
-	auto [C, f] = constraint.get_violation_in_m_and_force();
+	auto [C, f] = constraint.get_signed_violation_in_m_and_force();
 	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_m()));
-	REQUIRE_THAT(f[0], WithinRel(PERTURBATION, 1e-3));
-	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(f, WithinRel(PERTURBATION, 1e-3));
 }
 
 TEST_CASE("direction", "[rb_constraints]")
@@ -189,13 +179,11 @@ TEST_CASE("direction", "[rb_constraints]")
 	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({0.0, 0.0, 0.1});
 	auto constraint = simulation.rigidbodies->add_constraint_direction(box0, box1, Eigen::Vector3d::UnitZ());
 
-	box1.add_torque({ -PERTURBATION, 0, 0 });
+	box1.add_torque({ PERTURBATION, 0, 0 });
 	simulation.stark.run();
 	auto [C, t] = constraint.get_violation_in_deg_and_torque();
 	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_deg()));
-	REQUIRE_THAT(t[0], WithinRel(PERTURBATION, 1e-3));
-	REQUIRE_THAT(t[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(t[2], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(t, WithinRel(PERTURBATION, 1e-3));
 }
 
 TEST_CASE("angle_limit", "[rb_constraints]")
@@ -208,13 +196,11 @@ TEST_CASE("angle_limit", "[rb_constraints]")
 	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({0.0, 0.0, 0.1});
 	auto constraint = simulation.rigidbodies->add_constraint_angle_limit(box0, box1, Eigen::Vector3d::UnitZ(), 25.0);
 
-	box1.add_torque({ -PERTURBATION, 0, 0 });
+	box1.add_torque({ PERTURBATION, 0, 0 });
 	simulation.stark.run();
 	auto [C, t] = constraint.get_violation_in_deg_and_torque();
 	REQUIRE_THAT(C, WithinAbs(0.0, constraint.get_tolerance_in_deg()));
-	REQUIRE_THAT(t[0], WithinRel(PERTURBATION, 1e-3));
-	REQUIRE_THAT(t[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(t[2], WithinAbs(0.0, 1e-3));
+	REQUIRE_THAT(t, WithinRel(PERTURBATION, 1e-3));
 }
 
 TEST_CASE("spring", "[rb_constraints]")
@@ -224,7 +210,7 @@ TEST_CASE("spring", "[rb_constraints]")
 	const double stiffness = 1000.0; // 1000.0;
 	const double perturbation = 1.0; // PERTURBATION / 100.0;
 	const double mass = 1.0;
-	const double damping = 0.0;
+	const double damping = 1.0;
 
 	auto box0 = simulation.rigidbodies->add_box(mass, { 0.1, 0.1, 0.1 });
 	simulation.rigidbodies->add_constraint_fix(box0);
@@ -235,18 +221,12 @@ TEST_CASE("spring", "[rb_constraints]")
 	simulation.stark.run();
 
 	// Damper
-	auto [dC, df] = constraint.get_damper_velocity_and_force();
-	REQUIRE_THAT(dC, WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(df[0], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(df[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(df[2], WithinAbs(0.0, 1e-3));
+	auto [dC, df] = constraint.get_signed_damper_velocity_and_force();
+	REQUIRE_THAT(-dC*damping, WithinAbs(df, 1e-3));
 
 	// Spring
-	auto [C, f] = constraint.get_spring_displacement_in_m_and_force();
-	REQUIRE_THAT(-C*stiffness, WithinRel(f[0], 1e-3));
-	REQUIRE_THAT(f[0], WithinRel(-perturbation, 1e-2));  // NOTE: Not sure why this is so inaccurate
-	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+	auto [C, f] = constraint.get_signed_spring_displacement_in_m_and_force();
+	REQUIRE_THAT(-C*stiffness, WithinRel(f, 1e-3));
 }
 
 TEST_CASE("linear_velocity", "[rb_constraints]")
@@ -265,10 +245,8 @@ TEST_CASE("linear_velocity", "[rb_constraints]")
 	simulation.stark.run();
 
 	auto [bC, bf] = ball_joint.get_violation_in_m_and_force();
-	auto [C, f] = constraint.get_velocity_violation_and_force();
-	REQUIRE_THAT(f[0], WithinRel(-bf[0], 1e-3));
-	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+	auto [C, f] = constraint.get_signed_velocity_violation_and_force();
+	REQUIRE_THAT(f, WithinRel(-bf, 1e-3));
 }
 
 TEST_CASE("angular_velocity", "[rb_constraints]")
@@ -287,10 +265,8 @@ TEST_CASE("angular_velocity", "[rb_constraints]")
 	simulation.stark.run();
 
 	auto [bC, bf] = attachment.get_z_lock().get_violation_in_deg_and_torque();
-	auto [C, f] = constraint.get_angular_velocity_violation_in_deg_per_s_and_torque();
-	REQUIRE_THAT(f[0], WithinRel(-bf[0], 1e-3));
-	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
-	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));
+	auto [C, f] = constraint.get_signed_angular_velocity_violation_in_deg_per_s_and_torque();
+	REQUIRE_THAT(f, WithinRel(-bf, 1e-3));
 }
 
 

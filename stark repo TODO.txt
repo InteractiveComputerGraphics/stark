@@ -10,6 +10,7 @@ Release
 		In general, rigid body sim is tough in this framework. Need to probably run much smaller dt.
 		
 		We need to really clarify a lot of stuff to set up expectations. Mass ratios, huge forces, runtimes, repulsions... But it works, look at the gallerie!
+	- Unclear deg/s is a good idea. Maybe we just make everything rad/s.
 	- We need to check for penetrations in the rest configuration. People need this.
 	- Is `Id::get_local_idx()` fixed?
 	- No warnings. Ideally it should compile with -Werror.

@@ -199,22 +199,22 @@ double stark::VehicleFourWheels::get_linear_velocity_in_km_per_h() const
 	return this->get_linear_velocity_in_m_per_s() * 3.6;
 }
 
-void stark::VehicleFourWheels::add_to_logger(Simulation& simulation) const
+void stark::VehicleFourWheels::append_to_logger(Simulation& simulation) const
 {
 	simulation.stark.logger.append_to_series(this->label + "_time", simulation.stark.current_time);
 	simulation.stark.logger.append_to_series(this->label + "_velocity_kmh", this->get_linear_velocity_in_km_per_h());
 	for (size_t i = 0; i < 4; i++){
-		auto motor_status = this->wheel_motors[i]->get_angular_velocity_violation_in_deg_per_s_and_torque();
-		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_dw", motor_status.first);
-		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_torque", motor_status.second.norm());
+		auto motor_status = this->wheel_motors[i]->get_signed_angular_velocity_violation_in_deg_per_s_and_torque();
+		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_w", motor_status[0]);
+		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_torque", motor_status[1]);
 		
-		auto damper_status = this->spring_dampers[i]->get_damper_velocity_and_force();
-		simulation.stark.logger.append_to_series(this->label + "_damper_" + std::to_string(i) + "_v", damper_status.first);
-		simulation.stark.logger.append_to_series(this->label + "_damper_" + std::to_string(i) + "_force", damper_status.second.norm());
+		auto damper_status = this->spring_dampers[i]->get_signed_damper_velocity_and_force();
+		simulation.stark.logger.append_to_series(this->label + "_damper_" + std::to_string(i) + "_v", damper_status[0]);
+		simulation.stark.logger.append_to_series(this->label + "_damper_" + std::to_string(i) + "_force", damper_status[1]);
 
-		auto spring_status = this->spring_dampers[i]->get_spring_displacement_in_m_and_force();
-		simulation.stark.logger.append_to_series(this->label + "_spring_" + std::to_string(i) + "_dx", spring_status.first);
-		simulation.stark.logger.append_to_series(this->label + "_spring_" + std::to_string(i) + "_force", spring_status.second.norm());
+		auto spring_status = this->spring_dampers[i]->get_signed_spring_displacement_in_m_and_force();
+		simulation.stark.logger.append_to_series(this->label + "_spring_" + std::to_string(i) + "_dx", spring_status[0]);
+		simulation.stark.logger.append_to_series(this->label + "_spring_" + std::to_string(i) + "_force", spring_status[1]);
 
 		// TODO: Wheel direction
 	}

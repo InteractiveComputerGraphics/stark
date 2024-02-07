@@ -64,17 +64,28 @@ namespace stark::models
 			symx::Scalar E = symx::branch(dv < delay, E_l, E_r);
 			return E;
 		}
-		static std::pair<double, Eigen::Vector3d> c1_controller_violation_and_force(const Eigen::Vector3d& da1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double target_v, const double max_force, const double delay)
+		static std::array<double, 2> signed_c1_controller_violation_and_force(const Eigen::Vector3d& da1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double target_v, const double max_force, const double delay)
 		{
 			const double v = da1.dot(vb1 - va1);
 			const double k = max_force / delay;
 			const double eps = max_force / (2.0 * k);
-			const double dv = std::abs(target_v - v);
-			if (dv < delay) {
-				return { dv, k * dv * da1.normalized() };  // { [m], [N] }
+			const double dv = v - target_v;
+
+			if (dv < 0.0) { // Forward motor
+				if (std::abs(dv) < delay) { // In the delay zone
+					return { dv, -k*dv };  // { [m], [N] }  Negative C, Positive restoration force
+				}
+				else {
+					return { dv, -max_force };  // { [m], [N] }  Negative C, Positive restoration force
+				}
 			}
-			else {
-				return { dv, max_force * da1.normalized() };  // { [m], [N] }
+			else {  // Reverse motor (also used for braking)
+				if (std::abs(dv) < delay) { // In the delay zone
+					return { -dv, k*dv };  // { [m], [N] }  Positive C, Negative restoration force
+				}
+				else {
+					return { -dv, max_force };  // { [m], [N] }  Positive C, Negative restoration force
+				}
 			}
 		}
 
@@ -105,11 +116,11 @@ namespace stark::models
 			{
 				return 0.5 * k * (target - p).squared_norm();  // E = 0.5*k*u.norm()**2
 			}
-			static std::pair<double, Eigen::Vector3d> violation_in_m_and_force(double k, const Eigen::Vector3d& target, const Eigen::Vector3d& p)
+			static std::array<double, 2> violation_in_m_and_force(double k, const Eigen::Vector3d& target, const Eigen::Vector3d& p)
 			{
 				const Eigen::Vector3d u = p - target;
 				const double C = u.norm();
-				return { C, -k * C * u/(C + EPS) };  // { [m], [N] }
+				return { C, k * C };  // { [m], [N] }
 			}
 		};
 
@@ -143,7 +154,7 @@ namespace stark::models
 			{
 				return 0.5 * k * (d_target - d).squared_norm();
 			}
-			static std::pair<double, Eigen::Vector3d> violation_in_deg_and_torque(double k, const Eigen::Vector3d& d_target, const Eigen::Vector3d& d)
+			static std::array<double, 2> violation_in_deg_and_torque(double k, const Eigen::Vector3d& d_target, const Eigen::Vector3d& d)
 			{
 				const Eigen::Vector3d u = d - d_target;
 				const double C = u.norm();
@@ -152,7 +163,7 @@ namespace stark::models
 				const double angle_deg = utils::rad2deg(std::asin(C));
 				const Eigen::Vector3d torque = d_target.cross(force);
 
-				return { angle_deg, torque };  // { [deg], [Nm] }
+				return { angle_deg, torque.norm() };  // { [deg], [Nm] }
 			}
 		};
 
@@ -184,11 +195,11 @@ namespace stark::models
 			{
 				return 0.5 * k * (b - a).squared_norm();
 			}
-			static std::pair<double, Eigen::Vector3d> violation_in_m_and_force(double k, const Eigen::Vector3d& a, const Eigen::Vector3d& b)
+			static std::array<double, 2> violation_in_m_and_force(double k, const Eigen::Vector3d& a, const Eigen::Vector3d& b)
 			{
 				const Eigen::Vector3d u = b - a;
 				const double C = u.norm();
-				return { C, -k * C * u / (C + EPS) };  // { [m], [N] }
+				return { C, k * C };  // { [m], [N] }
 			}
 		};
 
@@ -221,11 +232,10 @@ namespace stark::models
 			{
 				return 0.5 * k * sq_distance_point_line(b, a, a + da);
 			}
-			static std::pair<double, Eigen::Vector3d> violation_in_m_and_force(double k, const Eigen::Vector3d& a, const Eigen::Vector3d& da, const Eigen::Vector3d& b)
+			static std::array<double, 2> violation_in_m_and_force(double k, const Eigen::Vector3d& a, const Eigen::Vector3d& da, const Eigen::Vector3d& b)
 			{
 				const double C = std::sqrt(sq_distance_point_line(b, a, a + da));
-				const Eigen::Vector3d u = da.cross(b - a).cross(da).normalized();
-				return { C, -k * C * u };  // { [m], [N] }
+				return { C, k * C };  // { [m], [N] }
 			}
 		};
 
@@ -259,12 +269,12 @@ namespace stark::models
 			{
 				return 0.5 * k * (target_distance - (b - a).norm()).powN(2);
 			}
-			static std::pair<double, Eigen::Vector3d> violation_in_m_and_force(double k, const Eigen::Vector3d& a, const Eigen::Vector3d& b, double target_distance)
+			static std::array<double, 2> signed_violation_in_m_and_force(double k, const Eigen::Vector3d& a, const Eigen::Vector3d& b, double target_distance)
 			{
 				const Eigen::Vector3d u = b - a;
 				const double d = u.norm();
 				const double C = d - target_distance;
-				return { C, -k * C * u / (d + EPS) };  // { [m], [N] }
+				return { C, -k * C };  // { [m], [N] }  When compression: Negative C, Positive restoration force
 			}
 		};
 
@@ -298,25 +308,24 @@ namespace stark::models
 			static symx::Scalar energy(const symx::Scalar& k, const symx::Vector& a, const symx::Vector& b, const symx::Scalar& min_distance, const symx::Scalar& max_distance)
 			{
 				const symx::Scalar length = (b - a).norm();
-				const symx::Scalar E_min = symx::branch(length < min_distance, k * symx::powN(min_distance - length, 3) / 3.0, 0.0);
-				const symx::Scalar E_max = symx::branch(length > max_distance, k * symx::powN(length - max_distance, 3) / 3.0, 0.0);
+				const symx::Scalar E_min = symx::branch(length < min_distance, k * symx::powN(min_distance - length, 2) / 2.0, 0.0);
+				const symx::Scalar E_max = symx::branch(length > max_distance, k * symx::powN(length - max_distance, 2) / 2.0, 0.0);
 				return E_min + E_max;
 			}
-			static std::pair<double, Eigen::Vector3d> violation_in_m_and_force(double k, const Eigen::Vector3d& a, const Eigen::Vector3d& b, double min_distance, double max_distance)
+			static std::array<double, 2> signed_violation_in_m_and_force(double k, const Eigen::Vector3d& a, const Eigen::Vector3d& b, double min_distance, double max_distance)
 			{
-				const Eigen::Vector3d u = b - a;
-				const double d = u.norm();
+				const double d = (b - a).norm();
 
 				if (d < min_distance) {
-					const double C = min_distance - d;
-					return { C, k * std::pow(C, 2) * u / (d + EPS) };  // { [m], [N] }  (doesn't need the minus as the direction u should also be flipped)
+					const double C = d - min_distance;
+					return { C, -k * C };  // { [m], [N] }  Compression: Negative C, Positive restoration force
 				}
 				else if (d > max_distance) {
 					const double C = d - max_distance;
-					return { C, -k * std::pow(C, 2) * u / (d + EPS) };  // { [m], [N] }
+					return { C, -k * C };  // { [m], [N] }  Extension: Positive C, Negative restoration force
 				}
 				else {
-					return {0.0, Eigen::Vector3d::Zero()};
+					return { 0.0, 0.0 };
 				}
 			}
 		};
@@ -350,16 +359,16 @@ namespace stark::models
 			{
 				return 0.5 * k * (db - da).squared_norm();
 			}
-			static std::pair<double, Eigen::Vector3d> violation_in_deg_and_torque(double k, const Eigen::Vector3d& da, const Eigen::Vector3d& db)
+			static std::array<double, 2> violation_in_deg_and_torque(double k, const Eigen::Vector3d& da, const Eigen::Vector3d& db)
 			{
 				const Eigen::Vector3d u = db - da;
 				const double C = u.norm();
-				const Eigen::Vector3d force = -k * C * u / (C + EPS);
+				const Eigen::Vector3d force = k * C * u / (C + EPS);
 
 				const double angle_deg = utils::rad2deg(std::asin(C));
 				const Eigen::Vector3d torque = da.cross(force);
 
-				return { angle_deg, torque };  // { [deg], [Nm] }
+				return { angle_deg, torque.norm() };  // { [deg], [Nm] }
 			}
 		};
 
@@ -403,18 +412,18 @@ namespace stark::models
 				const symx::Scalar length = (db - da).norm();
 				return symx::branch(length > max_distance, k * symx::powN(length - max_distance, 3) / 3.0, 0.0);
 			}
-			static std::pair<double, Eigen::Vector3d> violation_in_deg_and_torque(double k, const Eigen::Vector3d& da, const Eigen::Vector3d& db, double max_distance)
+			static std::array<double, 2> violation_in_deg_and_torque(double k, const Eigen::Vector3d& da, const Eigen::Vector3d& db, double max_distance)
 			{
 				const Eigen::Vector3d u = db - da;
 				const double d = u.norm();
 
 				if (d > max_distance) {
 					const double C = d - max_distance;
-					const Eigen::Vector3d force = -k * std::pow(C, 2) * u / (d + EPS);
-					return { angle_of_opening_distance(C), da.cross(force) };  // { [deg], [Nm] }
+					const Eigen::Vector3d force = k * std::pow(C, 2) * u / (d + EPS);
+					return { angle_of_opening_distance(C), da.cross(force).norm()};  // { [deg], [Nm] }
 				}
 				else {
-					return { 0.0, Eigen::Vector3d::Zero() };
+					return { 0.0, 0.0 };
 				}
 			}
 		};
@@ -451,24 +460,24 @@ namespace stark::models
 				symx::Scalar l1 = r1.norm();
 				symx::Scalar l0 = r0.norm();
 
-				symx::Scalar E_spring = 0.5 * stiffness * (rest_length - l1).powN(2);
+				symx::Scalar E_spring = 0.5 * stiffness * (l1 - rest_length).powN(2);
 				symx::Scalar E_damper = 0.5 * damping * ((l1 - l0) / dt).powN(2);
 
 				return E_spring + E_damper;
 			}
-			static std::pair<double, Eigen::Vector3d> spring_violation_in_m_and_force(const double stiffness, const Eigen::Vector3d& a1, const Eigen::Vector3d& b1, const double rest_length)
+			static std::array<double, 2> signed_spring_violation_in_m_and_force(const double stiffness, const Eigen::Vector3d& a1, const Eigen::Vector3d& b1, const double rest_length)
 			{
 				const Eigen::Vector3d r1 = b1 - a1;
 				const double l1 = r1.norm();
 				const double C = l1 - rest_length;
-				const Eigen::Vector3d f = -stiffness * C * r1 / (l1 + EPS);
+				const double f = -stiffness * C;
 				return { C, f };  // { [m], [N] }
 			}
-			static std::pair<double, Eigen::Vector3d> damper_velocity_and_force(const double damping, const Eigen::Vector3d& a1, const Eigen::Vector3d& b1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double rest_length)
+			static std::array<double, 2> signed_damper_velocity_and_force(const double damping, const Eigen::Vector3d& a1, const Eigen::Vector3d& b1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double rest_length)
 			{
 				const Eigen::Vector3d r1 = (b1 - a1).normalized();
 				const double dv = (vb1 - va1).transpose() *  r1;
-				const Eigen::Vector3d f = -damping * dv * r1;
+				const double f = -damping * dv;
 				return { dv, f };  // { [m/s], [N] }
 			}
 		};
@@ -500,9 +509,9 @@ namespace stark::models
 			{
 				return c1_controller_energy(da1, va1, vb1, target_v, max_force, delay, dt);
 			}
-			static std::pair<double, Eigen::Vector3d> velocity_violation_and_force(const Eigen::Vector3d& da1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double target_v, const double max_force, const double delay)
+			static std::array<double, 2> signed_velocity_violation_and_force(const Eigen::Vector3d& da1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double target_v, const double max_force, const double delay)
 			{
-				return c1_controller_violation_and_force(da1, va1, vb1, target_v, max_force, delay);
+				return signed_c1_controller_violation_and_force(da1, va1, vb1, target_v, max_force, delay);
 			}
 		};
 
@@ -533,9 +542,9 @@ namespace stark::models
 			{
 				return c1_controller_energy(da1, wa1, wb1, target_w, max_torque, delay, dt);
 			}
-			static std::pair<double, Eigen::Vector3d> angular_velocity_violation_in_deg_per_s_and_torque(const Eigen::Vector3d& da1, const Eigen::Vector3d& wa1, const Eigen::Vector3d& wb1, const double target_w, const double max_torque, const double delay)
+			static std::array<double, 2> signed_angular_velocity_violation_in_deg_per_s_and_torque(const Eigen::Vector3d& da1, const Eigen::Vector3d& wa1, const Eigen::Vector3d& wb1, const double target_w, const double max_torque, const double delay)
 			{
-				auto [C, t] = c1_controller_violation_and_force(da1, wa1, wb1, target_w, max_torque, delay);
+				auto [C, t] = signed_c1_controller_violation_and_force(da1, wa1, wb1, target_w, max_torque, delay);
 				return { utils::rad2deg(C), t };
 			}
 		};

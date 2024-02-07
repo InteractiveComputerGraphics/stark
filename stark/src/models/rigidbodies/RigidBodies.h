@@ -108,7 +108,7 @@ namespace stark::models
 			const RigidBodyHandler& body_b,
 			const Eigen::Vector3d& d_glob, 
 			double target_v, 
-			double max_force,
+			double max_abs_force,
 			double delay = 0.01
 		);
 		RBCAngularVelocityHandler add_constraint_angular_velocity(
@@ -116,7 +116,7 @@ namespace stark::models
 			const RigidBodyHandler& body_b,
 			const Eigen::Vector3d& d_glob, 
 			double target_w, 
-			double max_torque, 
+			double max_abs_torque, 
 			double delay = 0.01
 		);
 		
