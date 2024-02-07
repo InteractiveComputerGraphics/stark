@@ -39,6 +39,8 @@ stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrizat
 		TODO:
 			All constraints are too weak. Set some reasonable stiffness.
 	*/
+	const double TOLERANCE_IN_M = 0.005;
+	const double HARD_STIFFNESS = 1e6; // TODO: Do not hardcode this value
 
 	this->params = params;
 	this->label = label;
@@ -69,7 +71,9 @@ stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrizat
 		.set_translation(params.engine.position)
 		.add_to_output_label(label + "_engine")
 	);
-	simulation.rigidbodies->add_constraint_attachment(*this->chassis, *this->engine);
+	simulation.rigidbodies->add_constraint_attachment(*this->chassis, *this->engine)
+		.set_tolerance_in_m(TOLERANCE_IN_M)
+		.set_stiffness(HARD_STIFFNESS);
 	disable_collision(this->chassis, this->engine);
 
 	//// Wheels
@@ -101,13 +105,18 @@ stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrizat
 				simulation.rigidbodies->add_constraint_prismatic_slider(*this->chassis, *this->suspension_blocks[idx],
 					wheel_position,
 					Eigen::Vector3d::UnitZ()
-				).get_direction_lock()
+				)
+				.set_tolerance_in_m(TOLERANCE_IN_M)
+				.set_stiffness(HARD_STIFFNESS)
+				.get_direction_lock()
 			);
-			simulation.rigidbodies->add_constraint_spring(*this->chassis, *this->suspension_blocks[idx],
-				wheel_position,
-				wheel_position + params.suspension.spring_length * Eigen::Vector3d::UnitZ(),
-				spring_stiffness,
-				params.suspension.damping);
+			this->spring_dampers[idx] = std::make_shared<RBCDampedSpringHandler>(
+				simulation.rigidbodies->add_constraint_spring(*this->chassis, *this->suspension_blocks[idx],
+					wheel_position,
+					wheel_position + params.suspension.spring_length * Eigen::Vector3d::UnitZ(),
+					spring_stiffness,
+					params.suspension.damping)
+			);
 			this->wheel_motors[idx] = std::make_shared<RBCAngularVelocityHandler>(
 				simulation.rigidbodies->add_constraint_motor(*this->suspension_blocks[idx], *this->wheels[idx], 
 					wheel_position, 
@@ -115,6 +124,8 @@ stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrizat
 					0.0, // Target angular velocity
 					params.engine.max_torque, 
 					params.engine.delay)
+				.set_tolerance_in_m(TOLERANCE_IN_M)
+				.set_stiffness(HARD_STIFFNESS)
 				.get_angular_velocity_constraint().enable(false)
 			);
 			// Disable collisions
@@ -186,4 +197,25 @@ double stark::VehicleFourWheels::get_linear_velocity_in_m_per_s() const
 double stark::VehicleFourWheels::get_linear_velocity_in_km_per_h() const
 {
 	return this->get_linear_velocity_in_m_per_s() * 3.6;
+}
+
+void stark::VehicleFourWheels::add_to_logger(Simulation& simulation) const
+{
+	simulation.stark.logger.append_to_series(this->label + "_time", simulation.stark.current_time);
+	simulation.stark.logger.append_to_series(this->label + "_velocity_kmh", this->get_linear_velocity_in_km_per_h());
+	for (size_t i = 0; i < 4; i++){
+		auto motor_status = this->wheel_motors[i]->get_angular_velocity_violation_in_deg_per_s_and_torque();
+		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_dw", motor_status.first);
+		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_torque", motor_status.second.norm());
+		
+		auto damper_status = this->spring_dampers[i]->get_damper_velocity_and_force();
+		simulation.stark.logger.append_to_series(this->label + "_damper_" + std::to_string(i) + "_v", damper_status.first);
+		simulation.stark.logger.append_to_series(this->label + "_damper_" + std::to_string(i) + "_force", damper_status.second.norm());
+
+		auto spring_status = this->spring_dampers[i]->get_spring_displacement_in_m_and_force();
+		simulation.stark.logger.append_to_series(this->label + "_spring_" + std::to_string(i) + "_dx", spring_status.first);
+		simulation.stark.logger.append_to_series(this->label + "_spring_" + std::to_string(i) + "_force", spring_status.second.norm());
+
+		// TODO: Wheel direction
+	}
 }

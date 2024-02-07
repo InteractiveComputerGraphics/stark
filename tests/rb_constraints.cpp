@@ -287,7 +287,7 @@ TEST_CASE("angular_velocity", "[rb_constraints]")
 	simulation.stark.run();
 
 	auto [bC, bf] = attachment.get_z_lock().get_violation_in_deg_and_torque();
-	auto [C, f] = constraint.get_angular_velocity_violation_and_torque();
+	auto [C, f] = constraint.get_angular_velocity_violation_in_deg_per_s_and_torque();
 	REQUIRE_THAT(f[0], WithinRel(-bf[0], 1e-3));
 	REQUIRE_THAT(f[1], WithinAbs(0.0, 1e-3));
 	REQUIRE_THAT(f[2], WithinAbs(0.0, 1e-3));

@@ -59,6 +59,7 @@ namespace stark
 		std::array<std::shared_ptr<RigidBodyHandler>, 4> wheels;
 		std::array<std::shared_ptr<RigidBodyHandler>, 4> suspension_blocks;
 		std::shared_ptr<RigidBodyHandler> engine;
+		std::array<std::shared_ptr<RBCDampedSpringHandler>, 4> spring_dampers;
 		std::array<std::shared_ptr<RBCAngularVelocityHandler>, 4> wheel_motors;
 		std::array<std::shared_ptr<RBCDirectionHandler>, 4> wheel_direction;
 		std::array<bool, 4> is_wheel_powered = { false, false, false, false };
@@ -72,6 +73,7 @@ namespace stark
 		double get_linear_velocity_in_km_per_h() const;
 		template<typename RBHandler>
 		void set_wheels_friction(Simulation& simulation, const RBHandler& object, double friction);
+		void add_to_logger(Simulation& simulation) const;
 		void rotate_deg(double angle, const Eigen::Vector3d& axis);
 		void set_position(const Eigen::Vector3d& position);
 		void move(const Eigen::Vector3d& displacement);

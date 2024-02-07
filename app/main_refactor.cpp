@@ -456,7 +456,7 @@ void laundry_soft_boxes()
 void car()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "car";
+	settings.output.simulation_name = "car_16ms_0.01ra";
 	settings.output.output_directory = OUTPUT_PATH + "/car";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 15.0;
@@ -464,15 +464,17 @@ void car()
 	settings.debug.symx_check_for_NaNs = true;
 
 	// Better energy conservation = higher velocity?
-	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
+	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
 	settings.newton.residual = { stark::ResidualType::Acceleration, 0.01 };
-	settings.newton.project_to_PD = true; 
+	settings.newton.project_to_PD = true;
 
 	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
 	settings.contact.dhat = 0.01;
-	settings.contact.adaptive_contact_stiffness.set(1e9, 1e9, 1e12);
+	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
 	stark::Simulation simulation(settings);
 
+
+	// TODO: The motor doesn't impose negative torques
 
 	// Car
 	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "car");
@@ -486,12 +488,10 @@ void car()
 	simulation.stark.run(
 		[&]()
 		{
+			car.add_to_logger(simulation);
+
 			const double t = simulation.stark.current_time;
 			const double v = car.get_linear_velocity_in_km_per_h();
-			simulation.stark.logger.append_to_series("car_velocity_kmh", v);
-			//auto a = car.wheel_motors[2]->get_angular_velocity_violation_in_deg_per_s_and_torque();
-			//simulation.stark.logger.append_to_series("rear_left_torque", );
-
 			if (!braked && t > 2.0) {
 				if (v < 100.0) {
 					car.set_target_velocity_in_km_per_h(900.0);

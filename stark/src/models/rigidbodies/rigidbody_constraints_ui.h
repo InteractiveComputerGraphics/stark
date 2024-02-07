@@ -818,7 +818,7 @@ namespace stark::models
 		std::string label = "";
 
 	public:
-		RBCSliderHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCPointOnAxisHandler point_on_axes, RBCDirectionHandler direction)
+		RBCSliderHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCPointOnAxisHandler point_on_axis, RBCDirectionHandler direction)
 			: rb_a(rb_a), rb_b(rb_b), point_on_axis(point_on_axis), direction(direction) {};
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
