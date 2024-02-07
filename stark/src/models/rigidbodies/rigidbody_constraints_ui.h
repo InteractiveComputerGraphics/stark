@@ -426,7 +426,7 @@ namespace stark::models
 		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
 
 		inline double get_target_velocity() const { return this->constraints->target_v[this->idx]; };
-		inline auto& set_target_velocity(double velocity) { this->constraints->target_v[this->idx] = velocity; return (*this); };
+		inline auto& set_target_velocity_in_m_per_s(double velocity) { this->constraints->target_v[this->idx] = velocity; return (*this); };
 
 		inline double get_max_force() const { return this->constraints->max_force[this->idx]; };
 		inline auto& set_max_force(double force) { this->constraints->max_force[this->idx] = force; return (*this); };
@@ -823,7 +823,7 @@ namespace stark::models
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
 		inline RBCPointOnAxisHandler& get_point_on_axis() { return this->point_on_axis; };
-		inline RBCDirectionHandler& get_relative_direction_lock() { return this->direction; };
+		inline RBCDirectionHandler& get_direction_lock() { return this->direction; };
 		inline auto& set_stiffness(double stiffness)
 		{
 			this->point_on_axis.set_stiffness(stiffness);
@@ -871,7 +871,7 @@ namespace stark::models
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
 		inline RBCSliderHandler& get_slider() { return this->slider; };
-		inline RBCDirectionHandler& get_relative_direction_lock() { return this->direction; };
+		inline RBCDirectionHandler& get_direction_lock() { return this->direction; };
 		inline auto& set_stiffness(double stiffness)
 		{
 			this->slider.set_stiffness(stiffness);

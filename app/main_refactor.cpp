@@ -459,23 +459,58 @@ void car()
 	settings.output.simulation_name = "car";
 	settings.output.output_directory = OUTPUT_PATH + "/car";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 1.0;
+	settings.execution.end_simulation_time = 15.0;
 	settings.contact.collisions_enabled = true;
 	settings.debug.symx_check_for_NaNs = true;
 
+	// Better energy conservation = higher velocity?
+	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
+	settings.newton.residual = { stark::ResidualType::Acceleration, 0.01 };
+	settings.newton.project_to_PD = false;
+
+	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
+	settings.contact.dhat = 0.01;
+	settings.contact.adaptive_contact_stiffness.set(1e9, 1e9, 1e12);
 	stark::Simulation simulation(settings);
 
 	// Ground
-	stark::RigidBodyHandler ground = simulation.rigidbodies->add_box(1000.0, { 10.0, 10.1, 0.1 })
-		.set_translation({ 0.0, 0.0, -0.1 })
+	stark::RigidBodyHandler ground = simulation.rigidbodies->add_box(1000.0, { 10.0, 200.1, 0.1 })
+		.set_translation({ 0.0, 95.0, -0.07 })
 		.add_to_output_label("ground");
-	simulation.rigidbodies->add_constraint_fix(ground);
+	simulation.rigidbodies->add_constraint_fix(ground)
+		.set_stiffness(1e6)
+		.set_tolerance_in_m(0.001)
+		.set_tolerance_in_deg(0.01);
 
 	// Car
 	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "car");
 
+	// Environment
+	car.set_wheels_friction(simulation, ground, 1.0);
+
 	// Run
-	simulation.stark.run();
+	bool braked = false;
+	simulation.stark.run(
+		[&]()
+		{
+			const double t = simulation.stark.current_time;
+			const double v = car.get_linear_velocity_in_km_per_h();
+			simulation.stark.logger.append_to_series("car_velocity_kmh", v);
+			//auto a = car.wheel_motors[2]->get_angular_velocity_violation_in_deg_per_s_and_torque();
+			//simulation.stark.logger.append_to_series("rear_left_torque", );
+
+			if (!braked && t > 2.0) {
+				if (v < 100.0) {
+					car.set_target_velocity_in_km_per_h(100.0);
+				}
+				else {
+					car.brake();
+					braked = true;
+					std::cout << "\nBRAKE" << std::endl;
+				}
+			}
+		}
+	);
 }
 
 int main()

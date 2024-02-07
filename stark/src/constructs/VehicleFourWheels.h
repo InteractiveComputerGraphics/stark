@@ -31,7 +31,8 @@ namespace stark
 			struct Suspension
 			{
 				double spring_length = 0.0;
-				double spring_stiffness = 0.0;
+				double rear_spring_stiffness = 0.0;
+				double front_spring_stiffness = 0.0;
 				double damping = 0.0;
 			};
 			struct Engine
@@ -53,22 +54,41 @@ namespace stark
 			static Parametrization sedan();
 		};
 
+		// Fields
+		std::shared_ptr<RigidBodyHandler> chassis;
+		std::array<std::shared_ptr<RigidBodyHandler>, 4> wheels;
+		std::array<std::shared_ptr<RigidBodyHandler>, 4> suspension_blocks;
+		std::shared_ptr<RigidBodyHandler> engine;
+		std::array<std::shared_ptr<RBCAngularVelocityHandler>, 4> wheel_motors;
+		std::array<std::shared_ptr<RBCDirectionHandler>, 4> wheel_direction;
+		std::array<bool, 4> is_wheel_powered = { false, false, false, false };
+		
 		// Methods
 		VehicleFourWheels(Simulation& simulation, Parametrization& params, std::string label);
+		void brake();
+		void set_target_velocity_in_m_per_s(double v);
+		void set_target_velocity_in_km_per_h(double v);
+		double get_linear_velocity_in_m_per_s() const;
+		double get_linear_velocity_in_km_per_h() const;
+		template<typename RBHandler>
+		void set_wheels_friction(Simulation& simulation, const RBHandler& object, double friction);
 		void rotate_deg(double angle, const Eigen::Vector3d& axis);
 		void set_position(const Eigen::Vector3d& position);
 		void move(const Eigen::Vector3d& displacement);
 
 	private:
-		// Shorthand
-		using spRBH = std::shared_ptr<RigidBodyHandler>;
-
 		/* Fields */
 		Parametrization params;
 		std::string label;
-		spRBH chassis;
-		std::array<spRBH, 4> wheels;
-		std::array<spRBH, 4> suspension_blocks;
-		spRBH engine;
 	};
+
+
+	// Template implementations
+	template<typename RBHandler>
+	void VehicleFourWheels::set_wheels_friction(Simulation& simulation, const RBHandler& object, double friction)
+	{
+		for (int i = 0; i < 4; i++) {
+			simulation.interactions->set_friction(object, *this->wheels[i], friction);
+		}
+	}
 }
