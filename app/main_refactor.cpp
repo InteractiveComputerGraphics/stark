@@ -549,7 +549,57 @@ void laundry_rb_boxes()
 	// Run
 	simulation.stark.run();
 }
+void sphere_shot()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "corr_0.09g";
+	settings.output.output_directory = OUTPUT_PATH + "/sphere_shot";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
+	settings.execution.end_simulation_time = 5.0;
+	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
+	
+	settings.newton.adaptivity = stark::Adaptivity::No;
+	settings.newton.convergence_criteria = stark::ConvergenceCriteria::Correction;
+	settings.newton.residual_type = stark::ResidualType::Acceleration;
+	settings.newton.newton_tolerance = 0.09 * std::abs(settings.simulation.gravity.z());
+	settings.newton.max_newton_iterations = 99999999;
+	settings.newton.project_to_PD = true;
+	settings.debug.symx_check_for_NaNs = true;
 
+	settings.contact.dhat = 0.001;
+
+	stark::models::Simulation simulation(settings);
+
+
+	// Floor
+	auto [floor_vertices, floor_triagnles] = stark::utils::generate_triangular_grid({ -1.0, -1.0 }, { 1.0, 10.0 }, { 1, 1 });
+	auto floor = simulation.deformables->add_surface(floor_vertices, floor_triagnles, stark::MaterialSurface::towel());
+	floor.create_prescribed_positions_group_with_transformation("")
+		->add_vertices_from_range(0, (int)floor_vertices.size());
+
+	// Load sphere model
+	std::vector<Eigen::Vector3d> vertices;
+	std::vector<std::array<int, 4>> tets;
+	vtkio::VTKFile vtk_file;
+	vtk_file.read(MODELS_PATH + "/sphere3.vtk");
+	vtk_file.get_points_to_twice_indexable(vertices);
+	vtk_file.get_cells_to_twice_indexable(tets);
+	stark::utils::scale(vertices, 0.2);
+	stark::utils::move(vertices, { 0.0, 0.0, 0.11 });
+
+	auto material = stark::models::MaterialVolume::soft_rubber();
+	auto sphere = simulation.deformables->add_volume(vertices, tets, material);
+	for (size_t i = 0; i < vertices.size(); i++) {
+		sphere.set_velocity(i, { 0.0, 10.0, 0.0 });
+	}
+
+	// Interaction
+	simulation.interactions->set_friction(floor, sphere, 1.0);
+
+	// Run
+	simulation.stark.run();
+}
 
 
 int main()
@@ -565,5 +615,6 @@ int main()
 	//heavy_box_rigid_and_deformable();
 	//laundry_cloth();
 	//cloth_floor();
-	laundry_rb_boxes();
+	//laundry_rb_boxes();
+	sphere_shot();
 }
