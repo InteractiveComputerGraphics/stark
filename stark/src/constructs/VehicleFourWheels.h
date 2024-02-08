@@ -69,8 +69,8 @@ namespace stark
 		void brake();
 		void set_target_velocity_in_m_per_s(double v);
 		void set_target_velocity_in_km_per_h(double v);
-		double get_linear_velocity_in_m_per_s() const;
-		double get_linear_velocity_in_km_per_h() const;
+		Eigen::Vector3d get_linear_velocity_in_m_per_s() const;
+		Eigen::Vector3d get_linear_velocity_in_km_per_h() const;
 		template<typename RBHandler>
 		void set_wheels_friction(Simulation& simulation, const RBHandler& object, double friction);
 		void append_to_logger(Simulation& simulation) const;

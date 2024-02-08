@@ -74,6 +74,7 @@ namespace stark::core
 			bool symx_check_for_NaNs = false;
 			bool symx_suppress_compiler_output = true;
 			bool symx_force_compilation = false;
+			bool symx_force_load = false;
 			bool line_search_output = false;
 		};
 

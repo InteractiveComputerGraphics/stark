@@ -175,7 +175,7 @@ void Stark::_initialize()
 
 	// SymX
 	//// Compile
-	const std::string symx_print = this->global_energy.compile(this->settings.output.codegen_directory, this->settings.execution.n_threads, this->settings.debug.symx_force_compilation, this->settings.debug.symx_suppress_compiler_output);
+	const std::string symx_print = this->global_energy.compile(this->settings.output.codegen_directory, this->settings.execution.n_threads, this->settings.debug.symx_force_compilation, this->settings.debug.symx_force_load, this->settings.debug.symx_suppress_compiler_output);
 	this->console.print(symx_print, ConsoleVerbosity::Frames);
 
 	//// Project to PD

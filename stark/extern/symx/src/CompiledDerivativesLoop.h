@@ -28,7 +28,7 @@ namespace symx
 		~CompiledDerivativesLoop() = default;
 		CompiledDerivativesLoop(const CompiledDerivativesLoop&) = delete; // Copying makes unclear who owns the DLL
 		CompiledDerivativesLoop(std::string name, std::string folder, Scalar expr, std::vector<Scalar>& variables, const int block_size, const bool suppress_compiler_output = true);
-		void init(std::string name, std::string folder, Scalar expr, std::vector<Scalar>& variables, const int block_size, const bool force_compilation = false, const bool suppress_compiler_output = false);
+		void init(std::string name, std::string folder, Scalar expr, std::vector<Scalar>& variables, const int block_size, const bool force_compilation = false,  const bool force_load = false, const bool suppress_compiler_output = false);
 
 		// Set connectivity
 		Element set_connectivity(std::function<const int32_t* ()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element);
@@ -96,7 +96,7 @@ namespace symx
 		this->init(name, folder, expr, variables, block_size, suppress_compiler_output);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::init(std::string name, std::string folder, Scalar expr, std::vector<Scalar>& variables, const int block_size, const bool force_compilation, const bool suppress_compiler_output)
+	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::init(std::string name, std::string folder, Scalar expr, std::vector<Scalar>& variables, const int block_size, const bool force_compilation, const bool force_load, const bool suppress_compiler_output)
 	{
 		this->block_size = block_size;
 		this->n_variables = (int)variables.size();
@@ -114,7 +114,7 @@ namespace symx
 		}
 
 		const std::string type_str = get_float_type_as_string<COMPILED_FLOAT>();
-		const std::string id_string = expr.get_checksum() + variables_names;
+		const std::string id_string = (force_load) ? "FORCE_LOAD" : expr.get_checksum() + variables_names;
 
 		bool was_everything_cached = false;
 		if (!force_compilation) {

@@ -171,6 +171,7 @@ std::string Settings::as_string() const
 	out += "\n         symx_check_for_NaNs: " + to_string(this->debug.symx_check_for_NaNs);
 	out += "\n         symx_suppress_compiler_output: " + to_string(this->debug.symx_suppress_compiler_output);
 	out += "\n         symx_force_compilation: " + to_string(this->debug.symx_force_compilation);
+	out += "\n         symx_force_load: " + to_string(this->debug.symx_force_load);
 	out += "\n         debug_line_search_output: " + to_string(this->debug.line_search_output);
 	out += "\n\n";
 	return out;

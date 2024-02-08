@@ -462,23 +462,28 @@ void car()
 	settings.contact.collisions_enabled = true;
 	settings.debug.symx_check_for_NaNs = true;
 
+	//settings.output.fps = 200.0;
+	//settings.debug.symx_force_load = true;
+
 	// Better energy conservation = higher velocity?
-	settings.simulation.adaptive_time_step.set(0.0, 0.002, 0.002);
+	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
 	settings.newton.residual = { stark::ResidualType::Acceleration, 0.01 };
 	settings.newton.project_to_PD = true;
 	settings.newton.max_line_search_iterations = 100; // wow, we need this!
 
 	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
 	settings.contact.dhat = 0.02;
+	//settings.contact.friction_stick_slide_threshold = 0.1;
 	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
 	stark::Simulation simulation(settings);
 
+	// [URGENT] Fix the motors. Important for ICRA
 	// TODO: Depending on the time step size, the motors go backwards
-	// TODO: The w plot doesnt work. That is showing the arbitrary target velocity
+	// TODO: Should we implement traction control? xD
 
 	// Car
 	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "car");
-	car.set_target_velocity_in_km_per_h(900.0);
+	//car.set_target_velocity_in_km_per_h(10.0);
 
 	// Environment
 	stark::StaticPlaneHandler ground = simulation.interactions->add_static_plane({ 0.0, 0.0, -0.02 }, Eigen::Vector3d::UnitZ());
@@ -501,19 +506,23 @@ void car()
 		{
 			car.append_to_logger(simulation);
 
-			//const double t = simulation.stark.current_time;
-			//const double v = car.get_linear_velocity_in_km_per_h();
-			//if (!braked && t > 1.0) {
-			//	if (v < 100.0) {
-			//		car.set_target_velocity_in_km_per_h(900.0);
-			//	}
-			//	else {
-			//		car.brake();
-			//		braked = true;
-			//		std::cout << "\nBRAKE" << std::endl;
-			//		exit(9);
-			//	}
-			//}
+			const double t = simulation.stark.current_time;
+			const double v = car.get_linear_velocity_in_km_per_h().norm();
+			if (!braked && t > 1.0) {
+				if (v < 90.0) {
+					car.set_target_velocity_in_km_per_h(100.0);
+					car.wheels[0]->set_torque(-0.25*Eigen::Vector3d::UnitX());
+					car.wheels[1]->set_torque(-0.25*Eigen::Vector3d::UnitX());
+					car.wheels[2]->set_torque(-0.25*Eigen::Vector3d::UnitX());
+					car.wheels[3]->set_torque(-0.25*Eigen::Vector3d::UnitX());
+				}
+				else {
+					car.brake();
+					braked = true;
+					std::cout << "\nBRAKE" << std::endl;
+					exit(9);
+				}
+			}
 		}
 	);
 }

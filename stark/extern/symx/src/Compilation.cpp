@@ -136,24 +136,31 @@ bool symx::Compilation::load_if_cached(std::string name, std::string folder, std
 		exit(-1);
 	}
 
-	// Load the SHA256 in the DLL
-	std::string dll_sha256_checksum;
-	dll_sha256_checksum.resize(64);
+	bool load = false;
+	if (id == "FORCE_LOAD") {
+		load = true;
+	}
+	else {
+		// Load the SHA256 in the DLL
+		std::string dll_sha256_checksum;
+		dll_sha256_checksum.resize(64);
 #ifdef _MSC_VER
-	void (*get_sha256)(char*) = reinterpret_cast<void(*)(char*)>(GetProcAddress(this->lib, "get_sha256"));
+		void (*get_sha256)(char*) = reinterpret_cast<void(*)(char*)>(GetProcAddress(this->lib, "get_sha256"));
 #else
-	void (*get_sha256)(char*) = reinterpret_cast<void(*)(char*)>(dlsym(this->lib, "get_sha256"));
+		void (*get_sha256)(char*) = reinterpret_cast<void(*)(char*)>(dlsym(this->lib, "get_sha256"));
 #endif
-	get_sha256(dll_sha256_checksum.data());
+		get_sha256(dll_sha256_checksum.data());
 
-	// Reconstruct SHA256
-	id += std::to_string(static_cast<int>(op_type));
-	std::vector<unsigned char> hash(picosha2::k_digest_size);
-	picosha2::hash256(id.begin(), id.end(), hash.begin(), hash.end());
-	std::string sha256_checksum = picosha2::bytes_to_hex_string(hash.begin(), hash.end());
+		// Reconstruct SHA256
+		id += std::to_string(static_cast<int>(op_type));
+		std::vector<unsigned char> hash(picosha2::k_digest_size);
+		picosha2::hash256(id.begin(), id.end(), hash.begin(), hash.end());
+		std::string sha256_checksum = picosha2::bytes_to_hex_string(hash.begin(), hash.end());
+		load = dll_sha256_checksum == sha256_checksum;
+	}
 
 	// checksums match?
-	if (dll_sha256_checksum == sha256_checksum) {
+	if (load) {
 #ifdef _MSC_VER
 		this->compiled_f = GetProcAddress(this->lib, name.c_str());
 		this->n_inputs = reinterpret_cast<int(*)()>(GetProcAddress(this->lib, "get_n_inputs"))();

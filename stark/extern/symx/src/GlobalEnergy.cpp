@@ -82,7 +82,7 @@ void symx::GlobalEnergy::_exit_if_not_initialized() const
 		exit(-1);
 	}
 }
-std::string symx::GlobalEnergy::compile(std::string working_directory, const int n_threads, bool force_compilation, bool suppress_compiler_output)
+std::string symx::GlobalEnergy::compile(std::string working_directory, const int n_threads, bool force_compilation, bool force_load, bool suppress_compiler_output)
 {
 	std::string output;
 	if (this->get_n_dof_sets() == 0) {
@@ -109,7 +109,7 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 		this->energies[i]->working_directory = this->working_directory;
 
 		const double t0 = omp_get_wtime();
-		this->energies[i]->deferred_init(this->dof_data, force_compilation, suppress_compiler_output);
+		this->energies[i]->deferred_init(this->dof_data, force_compilation, force_load, suppress_compiler_output);
 		const double t1 = omp_get_wtime();
 		
 		#pragma omp atomic

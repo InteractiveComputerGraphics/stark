@@ -56,9 +56,9 @@ namespace stark::models
 			// Constraint (Analogous to C1 friction)
 			// Important: derivatives wrt "positions", therefore needed chain rule and resulted in added product by dt
 			symx::Scalar v = da1.dot(vb1 - va1);
-			symx::Scalar k = max_force / delay;
-			symx::Scalar eps = max_force / (2.0 * k);
-			symx::Scalar dv = symx::sqrt((target_v - v).powN(2));
+			symx::Scalar k = max_force / (2.0*delay);
+			symx::Scalar eps = delay / 2.0;
+			symx::Scalar dv = symx::sqrt((v - target_v).powN(2));
 			symx::Scalar E_l = 0.5 * k * dv.powN(2) * dt;
 			symx::Scalar E_r = max_force * (dv - eps) * dt;
 			symx::Scalar E = symx::branch(dv < delay, E_l, E_r);
@@ -67,8 +67,8 @@ namespace stark::models
 		static std::array<double, 2> signed_c1_controller_violation_and_force(const Eigen::Vector3d& da1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double target_v, const double max_force, const double delay)
 		{
 			const double v = da1.dot(vb1 - va1);
-			const double k = max_force / delay;
-			const double eps = max_force / (2.0 * k);
+			const double k = max_force / (2.0*delay);
+			const double eps = delay / 2.0;
 			const double dv = v - target_v;
 
 			if (dv < 0.0) { // Forward motor
@@ -76,7 +76,7 @@ namespace stark::models
 					return { dv, -k*dv };  // { [m], [N] }  Negative C, Positive restoration force
 				}
 				else {
-					return { dv, -max_force };  // { [m], [N] }  Negative C, Positive restoration force
+					return { dv, max_force };  // { [m], [N] }  Negative C, Positive restoration force
 				}
 			}
 			else {  // Reverse motor (also used for braking)
@@ -84,7 +84,7 @@ namespace stark::models
 					return { -dv, k*dv };  // { [m], [N] }  Positive C, Negative restoration force
 				}
 				else {
-					return { -dv, max_force };  // { [m], [N] }  Positive C, Negative restoration force
+					return { -dv, -max_force };  // { [m], [N] }  Positive C, Negative restoration force
 				}
 			}
 		}

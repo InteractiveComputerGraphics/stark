@@ -24,10 +24,10 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 
 	p.engine.position = { 0.0, 1.4, 0.7 };
 	p.engine.mass = 500.0;
-	p.engine.max_torque = 1000.0;
+	p.engine.max_torque = 1.0;
 	p.engine.delay = 0.01;
 	p.engine.is_front_wheel_drive = false;
-	p.engine.is_rear_wheel_drive = true;
+	p.engine.is_rear_wheel_drive = false;
 
 	return p;
 }
@@ -122,7 +122,7 @@ stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrizat
 					wheel_position, 
 					-Eigen::Vector3d::UnitX(), 
 					0.0, // Target angular velocity
-					params.engine.max_torque, 
+					max_torque,
 					params.engine.delay)
 				.set_tolerance_in_m(TOLERANCE_IN_M)
 				.set_stiffness(HARD_STIFFNESS)
@@ -189,12 +189,12 @@ void stark::VehicleFourWheels::set_target_velocity_in_km_per_h(double v)
 	this->set_target_velocity_in_m_per_s(v / 3.6);
 }
 
-double stark::VehicleFourWheels::get_linear_velocity_in_m_per_s() const
+Eigen::Vector3d stark::VehicleFourWheels::get_linear_velocity_in_m_per_s() const
 {
-	return this->chassis->get_velocity().norm();
+	return this->chassis->get_velocity();
 }
 
-double stark::VehicleFourWheels::get_linear_velocity_in_km_per_h() const
+Eigen::Vector3d stark::VehicleFourWheels::get_linear_velocity_in_km_per_h() const
 {
 	return this->get_linear_velocity_in_m_per_s() * 3.6;
 }
@@ -202,14 +202,19 @@ double stark::VehicleFourWheels::get_linear_velocity_in_km_per_h() const
 void stark::VehicleFourWheels::append_to_logger(Simulation& simulation) const
 {
 	simulation.stark.logger.append_to_series(this->label + "_time", simulation.stark.current_time);
-	simulation.stark.logger.append_to_series(this->label + "_velocity_kmh", this->get_linear_velocity_in_km_per_h());
+	const double v = this->get_linear_velocity_in_km_per_h().norm();
+	simulation.stark.logger.append_to_series(this->label + "_velocity_kmh", v);
 	for (size_t i = 0; i < 4; i++){
+		const double w_rad_s = this->wheels[i]->get_angular_velocity().norm();
+		const double wheel_v_hm_h = 3.6 * this->params.wheels.radius*w_rad_s;
+		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_w_rad_s", w_rad_s);
+		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_traction_v_m_s", v - wheel_v_hm_h);
+		
 		auto motor_status = this->wheel_motors[i]->get_signed_angular_velocity_violation_in_deg_per_s_and_torque();
-		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_w", motor_status[0]);
 		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_torque", motor_status[1]);
 		
 		auto damper_status = this->spring_dampers[i]->get_signed_damper_velocity_and_force();
-		simulation.stark.logger.append_to_series(this->label + "_damper_" + std::to_string(i) + "_v", damper_status[0]);
+		simulation.stark.logger.append_to_series(this->label + "_damper_" + std::to_string(i) + "_v_m_s", damper_status[0]);
 		simulation.stark.logger.append_to_series(this->label + "_damper_" + std::to_string(i) + "_force", damper_status[1]);
 
 		auto spring_status = this->spring_dampers[i]->get_signed_spring_displacement_in_m_and_force();

@@ -501,8 +501,8 @@ namespace stark::models
 		{
 			return RigidBodyConstraints::AngularVelocity::signed_angular_velocity_violation_in_deg_per_s_and_torque(
 				rb_a.local_to_global_direction(get_local_direction_body_a()),
-				rb_a.get_velocity(),
-				rb_b.get_velocity(),
+				rb_a.get_angular_velocity(),
+				rb_b.get_angular_velocity(),
 				this->constraints->target_w[this->idx],
 				get_max_torque(),
 				get_delay());
