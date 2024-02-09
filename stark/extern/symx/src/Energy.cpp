@@ -33,16 +33,23 @@ void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arra
 		exit(-1);
 	}
 
+	// All symbols names (to identify if anything changed there)
+	std::string all_symbols_names;
+	for (const std::string& s : this->sws.expressions.symbols){
+		all_symbols_names += s;
+	}
+
+	// Compilation
 	this->has_branches = this->expr->has_branch();
 	if (this->has_branches) {
-		this->compiled_derivatives_d.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, /*TODO:*/ 3, force_compilation, force_load, suppress_compiler_output);
+		this->compiled_derivatives_d.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, all_symbols_names, 3, force_compilation, force_load, suppress_compiler_output);
 		this->was_cached = this->compiled_derivatives_d.was_cached;
 		this->runtime_codegen = this->compiled_derivatives_d.runtime_codegen;
 		this->runtime_compilation = this->compiled_derivatives_d.runtime_compilation;
 		this->runtime_differentiation = this->compiled_derivatives_d.runtime_differentiation;
 	}
 	else {
-		this->compiled_derivatives.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, /*TODO:*/ 3, force_compilation, force_load, suppress_compiler_output);
+		this->compiled_derivatives.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, all_symbols_names, 3, force_compilation, force_load, suppress_compiler_output);
 		this->was_cached = this->compiled_derivatives.was_cached;
 		this->runtime_codegen = this->compiled_derivatives.runtime_codegen;
 		this->runtime_compilation = this->compiled_derivatives.runtime_compilation;
@@ -53,10 +60,11 @@ void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arra
 	if (this->has_condition) {
 
 		if (force_compilation) {
-			this->compiled_condition.compile({ *this->cond }, this->name + "_cond", this->working_directory, this->cond->get_checksum(), suppress_compiler_output);
+			std::string id = this->cond->get_checksum() + all_symbols_names;
+			this->compiled_condition.compile({ *this->cond }, this->name + "_cond", this->working_directory, id, suppress_compiler_output);
 		}
 		else {
-			std::string id = (force_load) ? "FORCE_LOAD" : this->cond->get_checksum();
+			std::string id = (force_load) ? "FORCE_LOAD" : this->cond->get_checksum() + all_symbols_names;
 			this->compiled_condition.try_load_otherwise_compile({ *this->cond }, this->name + "_cond", this->working_directory, id, suppress_compiler_output);
 		}
 
