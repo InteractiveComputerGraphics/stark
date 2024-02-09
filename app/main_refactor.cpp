@@ -466,7 +466,7 @@ void car()
 	//settings.debug.symx_force_load = true;
 
 	// Better energy conservation = higher velocity?
-	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
+	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
 	settings.newton.residual = { stark::ResidualType::Acceleration, 0.01 };
 	settings.newton.project_to_PD = true;
 	settings.newton.max_line_search_iterations = 100; // wow, we need this!
@@ -477,8 +477,6 @@ void car()
 	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
 	stark::Simulation simulation(settings);
 
-	// [URGENT] Fix the motors. Important for ICRA
-	// TODO: Depending on the time step size, the motors go backwards
 	// TODO: Should we implement traction control? xD
 
 	// Car
@@ -487,17 +485,18 @@ void car()
 
 	// Environment
 	stark::StaticPlaneHandler ground = simulation.interactions->add_static_plane({ 0.0, 0.0, -0.02 }, Eigen::Vector3d::UnitZ());
-	car.set_wheels_friction(simulation, ground, 1.0);
+	car.set_wheels_friction(simulation, ground, 2.0);
+	car.brake();
 
-	auto obstacle = simulation.rigidbodies->add_box(1000.0, 1.0)
-		.set_rotation(45.0, Eigen::Vector3d::UnitX())
-		.set_translation({ 0.8, 50.0, 0.0 })
-		.add_to_output_label("obstacle");
-	simulation.rigidbodies->add_constraint_fix(obstacle)
-		.set_stiffness(1e8)
-		.set_tolerance_in_deg(60.0)
-		.set_tolerance_in_m(1.0);
-	simulation.interactions->disable_collision(ground, obstacle);
+	//auto obstacle = simulation.rigidbodies->add_box(1000.0, 1.0)
+	//	.set_rotation(45.0, Eigen::Vector3d::UnitX())
+	//	.set_translation({ 0.8, 50.0, 0.0 })
+	//	.add_to_output_label("obstacle");
+	//simulation.rigidbodies->add_constraint_fix(obstacle)
+	//	.set_stiffness(1e8)
+	//	.set_tolerance_in_deg(60.0)
+	//	.set_tolerance_in_m(1.0);
+	//simulation.interactions->disable_collision(ground, obstacle);
 
 	// Run
 	bool braked = false;
@@ -511,16 +510,16 @@ void car()
 			if (!braked && t > 1.0) {
 				if (v < 90.0) {
 					car.set_target_velocity_in_km_per_h(100.0);
-					car.wheels[0]->set_torque(-0.25*Eigen::Vector3d::UnitX());
-					car.wheels[1]->set_torque(-0.25*Eigen::Vector3d::UnitX());
-					car.wheels[2]->set_torque(-0.25*Eigen::Vector3d::UnitX());
-					car.wheels[3]->set_torque(-0.25*Eigen::Vector3d::UnitX());
+					//car.wheels[0]->set_torque(-0.25*Eigen::Vector3d::UnitX());
+					//car.wheels[1]->set_torque(-0.25*Eigen::Vector3d::UnitX());
+					//car.wheels[2]->set_torque(-0.25*Eigen::Vector3d::UnitX());
+					//car.wheels[3]->set_torque(-0.25*Eigen::Vector3d::UnitX());
 				}
 				else {
 					car.brake();
 					braked = true;
 					std::cout << "\nBRAKE" << std::endl;
-					exit(9);
+					//exit(9);
 				}
 			}
 		}

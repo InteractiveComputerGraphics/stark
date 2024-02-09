@@ -8,7 +8,7 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 	p.chassis.width = 1.8;
 	p.chassis.roof_height = 1.43;
 	p.chassis.floor_height = 0.15;
-	p.chassis.mass = 1500.0;
+	p.chassis.mass = 150.0;
 
 	p.wheels.radius = 0.22;
 	p.wheels.width = 0.2;
@@ -23,11 +23,11 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 	p.suspension.damping = 10.0;
 
 	p.engine.position = { 0.0, 1.4, 0.7 };
-	p.engine.mass = 500.0;
-	p.engine.max_torque = 1.0;
+	p.engine.mass = 50.0;
+	p.engine.max_torque = 600.0;
 	p.engine.delay = 0.01;
 	p.engine.is_front_wheel_drive = false;
-	p.engine.is_rear_wheel_drive = false;
+	p.engine.is_rear_wheel_drive = true;
 
 	return p;
 }
@@ -162,7 +162,7 @@ stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrizat
 void stark::VehicleFourWheels::brake()
 {
 	for (int i = 0; i < 4; i++) {
-		this->wheel_motors[i]->set_target_angular_velocity_in_deg_per_s(0.01);
+		this->wheel_motors[i]->set_target_angular_velocity_in_deg_per_s(0.0);
 		this->wheel_motors[i]->enable(true);
 	}
 }
@@ -208,7 +208,7 @@ void stark::VehicleFourWheels::append_to_logger(Simulation& simulation) const
 		const double w_rad_s = this->wheels[i]->get_angular_velocity().norm();
 		const double wheel_v_hm_h = 3.6 * this->params.wheels.radius*w_rad_s;
 		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_w_rad_s", w_rad_s);
-		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_traction_v_m_s", v - wheel_v_hm_h);
+		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_sliding_v_m_s", v - wheel_v_hm_h);
 		
 		auto motor_status = this->wheel_motors[i]->get_signed_angular_velocity_violation_in_deg_per_s_and_torque();
 		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_torque", motor_status[1]);

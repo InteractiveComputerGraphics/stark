@@ -249,6 +249,8 @@ TEST_CASE("linear_velocity", "[rb_constraints]")
 
 	simulation.stark.run();
 
+	// TODO: FINISH
+
 	//auto [bC, bf] = ball_joint.get_violation_in_m_and_force();
 	auto [sC, sf] = spring.get_signed_spring_displacement_in_m_and_force();
 	auto [C, f] = constraint.get_signed_velocity_violation_and_force();
