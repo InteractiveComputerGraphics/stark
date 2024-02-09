@@ -58,8 +58,7 @@ namespace stark::models
 			symx::Scalar v = da1.dot(vb1 - va1);
 			symx::Scalar k = max_force / delay;
 			symx::Scalar eps = delay/2.0;
-			//symx::Scalar dv = symx::sqrt((v - target_v).powN(2));
-			symx::Scalar dv = v - target_v;
+			symx::Scalar dv = symx::abs(v - target_v);
 			symx::Scalar E_l = 0.5 * k * dv.powN(2) * dt;
 			symx::Scalar E_r = max_force * (dv - eps) * dt;
 			symx::Scalar E = symx::branch(dv < delay, E_l, E_r);

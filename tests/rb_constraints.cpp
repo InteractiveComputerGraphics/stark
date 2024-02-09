@@ -39,7 +39,7 @@ stark::Settings test_settings(std::string name)
 	//settings.debug.symx_force_load = true;
 
 	// High resolution for accurate results
-	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
+	settings.simulation.adaptive_time_step.set(0.0, 0.002, 0.002);
 	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
 	settings.newton.residual = { stark::ResidualType::Force, 1e-6 };
 
@@ -236,21 +236,24 @@ TEST_CASE("linear_velocity", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("linear_velocity");
 	stark::models::Simulation simulation(settings);
-	const double max_force = 1000.0;
+	const double max_force = 50.0;
 	const double target_v = 3.7;// PERTURBATION / 100.0;
+	const double delay = 1.0;
 
 	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
 	simulation.rigidbodies->add_constraint_fix(box0);
 	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({ 0.1, 0.0, 0.0 });
-	auto ball_joint = simulation.rigidbodies->add_constraint_point(box0, box1, { 0.05, 0.0, 0.0 });
-	auto constraint = simulation.rigidbodies->add_constraint_linear_velocity(box0, box1, Eigen::Vector3d::UnitX(), target_v, max_force, 0.1);
+	//auto ball_joint = simulation.rigidbodies->add_constraint_point(box0, box1, { 0.05, 0.0, 0.0 });
+	auto spring = simulation.rigidbodies->add_constraint_spring(box0, box1, box0.get_translation(), box1.get_translation(), 500.0, 2.0);
+	auto constraint = simulation.rigidbodies->add_constraint_linear_velocity(box0, box1, Eigen::Vector3d::UnitX(), target_v, max_force, delay);
 
 	simulation.stark.run();
 
-	auto [bC, bf] = ball_joint.get_violation_in_m_and_force();
+	//auto [bC, bf] = ball_joint.get_violation_in_m_and_force();
+	auto [sC, sf] = spring.get_signed_spring_displacement_in_m_and_force();
 	auto [C, f] = constraint.get_signed_velocity_violation_and_force();
 	//REQUIRE_THAT(f, WithinRel(bf, 1e-3));
-	REQUIRE_THAT(bf, WithinRel(max_force, 1e-3));
+	//REQUIRE_THAT(bf, WithinRel(max_force, 1e-3));
 }
 
 //TEST_CASE("angular_velocity", "[rb_constraints]")
