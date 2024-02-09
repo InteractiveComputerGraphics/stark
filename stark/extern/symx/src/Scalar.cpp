@@ -265,6 +265,11 @@ symx::Scalar symx::Scalar::atan() const
 		return Scalar(this->expressions.add_operation(ExprType::ArcTan, this->expr_id, -1), this->expressions);
 	}
 }
+symx::Scalar symx::Scalar::print() const
+{
+	const Scalar& u = (*this);
+	return Scalar(this->expressions.add_operation(ExprType::Print, this->expr_id, -1), this->expressions);
+}
 symx::Scalar symx::Scalar::inv() const
 {
 	const Scalar& u = (*this);

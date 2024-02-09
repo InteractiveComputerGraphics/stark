@@ -220,6 +220,7 @@ void symx::Compilation::_write_shared_object_code(Sequence& seq, std::string nam
 
 	// Includes
 	code += "#include <cmath>\n";
+	code += "#include <cstdio>\n";
 	if (is_simd) {
 		code += "#include <immintrin.h>\n";
 	}
@@ -373,6 +374,8 @@ void symx::Compilation::_add_instructions_scalar(std::string& code, Sequence& se
 			code += tab() + type + " " + idx(op.dst) + " = std::acos(" + idx(op.a) + ");\n"; break;
 		case ExprType::ArcTan:
 			code += tab() + type + " " + idx(op.dst) + " = std::atan(" + idx(op.a) + ");\n"; break;
+		case ExprType::Print:
+			code += tab() + type + " " + idx(op.dst) + " = 0.0; printf(\"val_" + idx(op.a) + "=%.10e\\n\"," + idx(op.a) + ");\n"; break;
 		case ExprType::Branch:
 			if (op.is_endif()) {
 				indentation--;

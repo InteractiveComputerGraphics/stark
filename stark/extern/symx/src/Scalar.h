@@ -62,6 +62,7 @@ namespace symx
 		Scalar asin() const;
 		Scalar acos() const;
 		Scalar atan() const;
+		Scalar print() const;
 
 		// Functionalities
 		bool is_zero() const;

@@ -38,8 +38,9 @@ namespace symx
 		ArcSin = 18,
 		ArcCos = 19,
 		ArcTan = 20,
+		Print = 21,
 
-		EnumCount = 21 // This entry serves as a marker
+		EnumCount = 22 // This entry serves as a marker
 	};
 	constexpr static bool is_operation(const ExprType& type)
 	{
@@ -52,7 +53,7 @@ namespace symx
 	}
 	static std::vector<std::string> get_expr_type_labels()
 	{
-		std::vector<std::string> labels = { "Zero", "One", "Branch", "ConstantInteger", "ConstantFloat", "Symbol", "Add", "Sub", "Mul", "Inv", "PowN", "PowF", "Sqrt", "Log", "Exp", "Sin", "Cos", "Tan", "ArcSin", "ArcCos", "ArcTan" };
+		std::vector<std::string> labels = { "Zero", "One", "Branch", "ConstantInteger", "ConstantFloat", "Symbol", "Add", "Sub", "Mul", "Inv", "PowN", "PowF", "Sqrt", "Log", "Exp", "Sin", "Cos", "Tan", "ArcSin", "ArcCos", "ArcTan", "Print" };
 		assert(labels.size() == n_expr_types());
 		return labels;
 	}
