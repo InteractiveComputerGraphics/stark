@@ -61,14 +61,14 @@ void symx::Compilation::compile(const std::vector<Scalar>& expr, std::string nam
 	const std::string enable_output = (suppress_compiler_output) ? " >nul 2>nul " : "";
 	command = symx::compiler_command + enable_output;
 	command += " && cd " + folder;
-	command += " && cl " + name + ".cpp /LD /Ox /arch:AVX2 /bigobj" + enable_output;
+	command += " && cl " + name + ".cpp /LD /Ox /arch:AVX2 /bigobj" + enable_output;  // Note: fast-math is not used because it can change the expected results (e.g. sqrt(pow(x, 2)) < 0)
 	command += " && del " + name + ".exp";
 	command += " && del " + name + ".lib";
 	command += " && del " + name + ".obj";
 #else
 	const std::string enable_output = (suppress_compiler_output) ? " > /dev/null " : "";
 	command += "cd " + folder;
-	command += " ; g++ " + name + ".cpp -shared -O3 -march=native -o " + name + ".so" + enable_output;
+	command += " ; g++ " + name + ".cpp -shared -O3 -march=native -o " + name + ".so" + enable_output;  // Note: fast-math is not used because it can change the expected results (e.g. sqrt(pow(x, 2)) < 0)
 #endif
 	t0 = omp_get_wtime();
 	err = system(command.c_str());

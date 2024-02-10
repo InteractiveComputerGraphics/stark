@@ -25,6 +25,16 @@ Release
 	- Sanitize all the UI.
 	- Remove research materials.
 	
+	To clarify for users
+	~~~~~~~~~~~~~~~~~~~~
+		- It's all an approximation (numerical) of the approximation (modeling).
+			Some models and numerical solutions are easy to get to work quite well, others not so much.
+			Friction is particularly problematic in both departments:
+				a) The model is a very rough approximation or reality. Will work well for tidy contacts, but will be problematic for huge velocities and stickiness (despite what papers say).
+					Since it is "lagged", it can be very time step dependent.
+				b) It is numerically challenging, specially when the stick-slide condition is tightly define.
+		- Still sometimes the codegen folder needs to be recomputed or the program run again.
+	
 	Comming
 		- Locally disabled collisions for attachments
 		- Generalize attachments beyond point-point -> point-triangle, point-edge... and other combinations between RB and deformables.

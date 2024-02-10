@@ -102,17 +102,13 @@ std::vector<symx::Vector> stark::models::RigidBodyDynamics::get_v1(symx::Energy&
 	symx::Vector t0 = energy.make_vector(this->t0, rb_idx);
 	symx::Vector q0 = energy.make_vector(this->q0_, rb_idx);
 
-	//symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
-	//symx::Vector t1 = time_integration(t0, v1, dt);
+	symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
+	symx::Vector t1 = time_integration(t0, v1, dt);
 
 	std::vector<symx::Vector> v1_glob;
 	for (const symx::Vector& x_loc_a : x_loc) {
-		// DEBUG
-		//symx::Vector x1a = local_to_global_point(x_loc_a, t1, R1);
-		//symx::Vector r1a = x1a - t1;
-		// TRYING: Using the arm at t0 so the car does not spin
-		symx::Vector x1a = local_to_global_point(x_loc_a, t0, quat_to_rotation(q0));
-		symx::Vector r1a = x1a - t0;
+		symx::Vector x1a = local_to_global_point(x_loc_a, t1, R1);
+		symx::Vector r1a = x1a - t1;
 		symx::Vector v1a = global_point_velocity_in_rigib_body(v1, w1, r1a);
 		v1_glob.push_back(v1a);
 	}

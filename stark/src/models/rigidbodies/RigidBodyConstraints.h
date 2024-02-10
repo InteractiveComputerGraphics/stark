@@ -51,16 +51,11 @@ namespace stark::models
 		*/
 		constexpr static double EPS = 100.0 * std::numeric_limits<double>::epsilon();
 
-		static symx::Scalar c1_controller_energy(
-			const symx::Vector& da1, 
-			const symx::Vector& va1,
-			const symx::Vector& vb1, 
-			const symx::Scalar& target_v, 
-			const symx::Scalar& max_force,
-			const symx::Scalar& delay, 
-			const symx::Scalar& dt)
+		static symx::Scalar c1_controller_energy(const symx::Vector& da1, const symx::Vector& va1,const symx::Vector& vb1, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt)
 		{
 			// Constraint (Analogous to C1 friction)
+			// The force is max_force when the relative velocity is larger than delay (both in positive and negative direction)
+			// Otherwise, the force is proportional to the relative velocity
 			// Important: derivatives wrt "positions", therefore needed chain rule and resulted in added product by dt
 			symx::Scalar v = da1.dot(vb1 - va1);
 			symx::Scalar k = max_force / delay;
@@ -70,7 +65,6 @@ namespace stark::models
 			symx::Scalar E_r = max_force * (dv - eps) * dt;
 			symx::Scalar E_l = -E_r;
 			symx::Scalar E = symx::branch(dv < -delay, E_l, symx::branch(dv < delay, E_c, E_r));
-			//symx::Scalar E = E_c;
 			return E;
 		}
 		static std::array<double, 2> signed_c1_controller_violation_and_force(const Eigen::Vector3d& da1, const Eigen::Vector3d& va1, const Eigen::Vector3d& vb1, const double target_v, const double max_force, const double delay)
@@ -89,26 +83,6 @@ namespace stark::models
 			else {
 				return { dv, max_force };
 			}
-
-
-			// TODO: Clean comments
-
-			//if (dv < 0.0) { // Forward motor
-			//	if (std::abs(dv) < delay) { // In the delay zone
-			//		return { dv, -k*dv };  // { [m], [N] }  Negative C, Positive restoration force
-			//	}
-			//	else {
-			//		return { dv, max_force };  // { [m], [N] }  Negative C, Positive restoration force
-			//	}
-			//}
-			//else {  // Reverse motor (also used for braking)
-			//	if (std::abs(dv) < delay) { // In the delay zone
-			//		return { -dv, k*dv };  // { [m], [N] }  Positive C, Negative restoration force
-			//	}
-			//	else {
-			//		return { -dv, -max_force };  // { [m], [N] }  Positive C, Negative restoration force
-			//	}
-			//}
 		}
 
 		/*
