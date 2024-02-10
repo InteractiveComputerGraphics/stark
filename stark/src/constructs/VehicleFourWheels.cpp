@@ -8,7 +8,7 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 	p.chassis.width = 1.8;
 	p.chassis.roof_height = 1.43;
 	p.chassis.floor_height = 0.15;
-	p.chassis.mass = 150.0;
+	p.chassis.mass = 1500.0;
 
 	p.wheels.radius = 0.22;
 	p.wheels.width = 0.2;
@@ -23,7 +23,7 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 	p.suspension.damping = 10.0;
 
 	p.engine.position = { 0.0, 1.4, 0.7 };
-	p.engine.mass = 50.0;
+	p.engine.mass = 500.0;
 	p.engine.max_torque = 600.0;
 	p.engine.delay = 0.01;
 	p.engine.is_front_wheel_drive = false;
@@ -35,10 +35,6 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 
 stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrization& params, std::string label)
 {
-	/*
-		TODO:
-			All constraints are too weak. Set some reasonable stiffness.
-	*/
 	const double TOLERANCE_IN_M = 0.005;
 	const double HARD_STIFFNESS = 1e6; // TODO: Do not hardcode this value
 

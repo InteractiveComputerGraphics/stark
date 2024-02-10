@@ -455,7 +455,7 @@ void laundry_soft_boxes()
 void car()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "car";
+	settings.output.simulation_name = "car_1ms_explicit";
 	settings.output.output_directory = OUTPUT_PATH + "/car";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 15.0;
@@ -466,9 +466,10 @@ void car()
 	//settings.debug.symx_force_load = true;
 
 	// Better energy conservation = higher velocity?
-	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
+	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
+	//settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
 	settings.newton.residual = { stark::ResidualType::Acceleration, 0.01 };
-	settings.newton.project_to_PD = true;
+	settings.newton.project_to_PD = false;
 	settings.newton.max_line_search_iterations = 100; // wow, we need this!
 
 	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
@@ -477,7 +478,10 @@ void car()
 	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
 	stark::Simulation simulation(settings);
 
+	// Observation: Motors now give identical results than explicit torque. But both result in a very slow car. Is the energy being dissipated? Where?
+	//	I think it could easily be in the IPC friction as contact points go up from the ground in a very non-vertical way.
 	// TODO: Should we implement traction control? xD
+	// TODO: Braking should be a more powerful motor. Or we have a motor with different torque limits.
 
 	// Car
 	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "car");
@@ -508,12 +512,20 @@ void car()
 			const double t = simulation.stark.current_time;
 			const double v = car.get_linear_velocity_in_km_per_h().norm();
 			if (!braked && t > 1.0) {
-				if (v < 90.0) {
-					car.set_target_velocity_in_km_per_h(100.0);
+				if (v < 50.0) {
+					//car.set_target_velocity_in_km_per_h(100.0);
+					
+					// Disable motors
+					for (int i = 0; i < 4; i++) {
+						car.wheel_motors[i]->enable(false);
+					}
+
 					//car.wheels[0]->set_torque(-0.25*Eigen::Vector3d::UnitX());
 					//car.wheels[1]->set_torque(-0.25*Eigen::Vector3d::UnitX());
-					//car.wheels[2]->set_torque(-0.25*Eigen::Vector3d::UnitX());
-					//car.wheels[3]->set_torque(-0.25*Eigen::Vector3d::UnitX());
+					car.wheels[2]->set_torque(-300.0*Eigen::Vector3d::UnitX());
+					car.wheels[3]->set_torque(-300.0*Eigen::Vector3d::UnitX());
+
+
 				}
 				else {
 					car.brake();
