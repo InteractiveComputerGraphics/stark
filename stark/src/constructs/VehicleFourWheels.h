@@ -40,6 +40,7 @@ namespace stark
 				Eigen::Vector3d position;
 				double mass = 0.0;
 				double max_torque = 0.0;
+				double gear_ratio = 0.0;
 				double delay = 0.1;
 				bool is_front_wheel_drive = false;
 				bool is_rear_wheel_drive = false;

@@ -10,7 +10,7 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 	p.chassis.floor_height = 0.15;
 	p.chassis.mass = 1500.0;
 
-	p.wheels.radius = 0.22;
+	p.wheels.radius = 0.3;
 	p.wheels.width = 0.2;
 	p.wheels.width_inset = 0.15;
 	p.wheels.wheelbase = 2.8;
@@ -25,6 +25,7 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 	p.engine.position = { 0.0, 1.4, 0.7 };
 	p.engine.mass = 500.0;
 	p.engine.max_torque = 600.0;
+	p.engine.gear_ratio = 3.5;  // First gear of sports car
 	p.engine.delay = 0.01;
 	p.engine.is_front_wheel_drive = false;
 	p.engine.is_rear_wheel_drive = true;
@@ -140,7 +141,7 @@ stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrizat
 		this->is_wheel_powered[3] = true;
 	}
 	const int n_powered_wheels = 2*(int)params.engine.is_front_wheel_drive + 2*(int)params.engine.is_rear_wheel_drive;
-	const double max_wheel_torque = params.engine.max_torque / n_powered_wheels;
+	const double max_wheel_torque = params.engine.gear_ratio * params.engine.max_torque / n_powered_wheels;
 	const double wheel_distance_on_width = 0.5 * params.chassis.width - params.wheels.width_inset;
 
 	////// Add wheels

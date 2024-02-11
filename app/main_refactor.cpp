@@ -455,7 +455,7 @@ void laundry_soft_boxes()
 void car()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "car_1ms_explicit";
+	settings.output.simulation_name = "car_1ms";
 	settings.output.output_directory = OUTPUT_PATH + "/car";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 15.0;
@@ -513,19 +513,7 @@ void car()
 			const double v = car.get_linear_velocity_in_km_per_h().norm();
 			if (!braked && t > 1.0) {
 				if (v < 50.0) {
-					//car.set_target_velocity_in_km_per_h(100.0);
-					
-					// Disable motors
-					for (int i = 0; i < 4; i++) {
-						car.wheel_motors[i]->enable(false);
-					}
-
-					//car.wheels[0]->set_torque(-0.25*Eigen::Vector3d::UnitX());
-					//car.wheels[1]->set_torque(-0.25*Eigen::Vector3d::UnitX());
-					car.wheels[2]->set_torque(-300.0*Eigen::Vector3d::UnitX());
-					car.wheels[3]->set_torque(-300.0*Eigen::Vector3d::UnitX());
-
-
+					car.set_target_velocity_in_km_per_h(100.0);
 				}
 				else {
 					car.brake();
