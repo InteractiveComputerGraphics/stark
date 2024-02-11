@@ -72,6 +72,7 @@ namespace stark
 		void set_target_velocity_in_km_per_h(double v);
 		Eigen::Vector3d get_linear_velocity_in_m_per_s() const;
 		Eigen::Vector3d get_linear_velocity_in_km_per_h() const;
+		void set_steering_front_wheels(double angle_deg);
 		template<typename RBHandler>
 		void set_wheels_friction(Simulation& simulation, const RBHandler& object, double friction);
 		void append_to_logger(Simulation& simulation) const;
@@ -83,6 +84,9 @@ namespace stark
 		/* Fields */
 		Parametrization params;
 		std::string label;
+
+		/* Methods */
+		void _set_steering(int wheel_idx, double angle_deg);
 	};
 
 

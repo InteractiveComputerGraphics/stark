@@ -466,10 +466,10 @@ void car()
 	//settings.debug.symx_force_load = true;
 
 	// Better energy conservation = higher velocity?
-	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
-	//settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
+	//settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
+	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
 	settings.newton.residual = { stark::ResidualType::Acceleration, 0.01 };
-	settings.newton.project_to_PD = false;
+	settings.newton.project_to_PD = true;
 	settings.newton.max_line_search_iterations = 100; // wow, we need this!
 
 	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
@@ -480,7 +480,9 @@ void car()
 
 	// Observation: Motors now give identical results than explicit torque. But both result in a very slow car. Is the energy being dissipated? Where?
 	//	I think it could easily be in the IPC friction as contact points go up from the ground in a very non-vertical way.
-	// TODO: Should we implement traction control? xD
+	
+	// TODO: Scripting and blend classes.
+	// TODO: Model a collision mesh for the car. It is not a box.
 	// TODO: Braking should be a more powerful motor. Or we have a motor with different torque limits.
 
 	// Car
@@ -490,6 +492,7 @@ void car()
 	// Environment
 	stark::StaticPlaneHandler ground = simulation.interactions->add_static_plane({ 0.0, 0.0, -0.02 }, Eigen::Vector3d::UnitZ());
 	car.set_wheels_friction(simulation, ground, 2.0);
+	simulation.interactions->set_friction(ground, car.chassis, 0.5);
 	car.brake();
 
 	//auto obstacle = simulation.rigidbodies->add_box(1000.0, 1.0)
@@ -511,6 +514,8 @@ void car()
 
 			const double t = simulation.stark.current_time;
 			const double v = car.get_linear_velocity_in_km_per_h().norm();
+
+			car.set_steering_front_wheels(5.0*t);
 			if (!braked && t > 1.0) {
 				if (v < 50.0) {
 					car.set_target_velocity_in_km_per_h(100.0);

@@ -37,6 +37,7 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrization& params, std::string label)
 {
 	const double TOLERANCE_IN_M = 0.005;
+	const double TOLERANCE_IN_DEG = 2.0;
 	const double HARD_STIFFNESS = 1e6; // TODO: Do not hardcode this value
 
 	this->params = params;
@@ -92,21 +93,29 @@ stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrizat
 			// Add suspension block
 			this->suspension_blocks[idx] = std::make_shared<RigidBodyHandler>(
 				simulation.rigidbodies->add_box(params.wheels.mass, params.wheels.radius)
-				.set_rotation(90.0, Eigen::Vector3d::UnitY())
 				.set_translation(wheel_position)
 				.add_to_output_label(label + "_suspension")
 			);
 
 			// Add constraints
+			//// Slider
+			simulation.rigidbodies->add_constraint_slider(*this->chassis, *this->suspension_blocks[idx],
+				wheel_position,
+				Eigen::Vector3d::UnitZ()
+			)
+			.set_tolerance_in_m(TOLERANCE_IN_M)
+			.set_stiffness(HARD_STIFFNESS);
+
+			//// Direction
 			this->wheel_direction[idx] = std::make_shared<RBCDirectionHandler>(
-				simulation.rigidbodies->add_constraint_prismatic_slider(*this->chassis, *this->suspension_blocks[idx],
-					wheel_position,
-					Eigen::Vector3d::UnitZ()
+				simulation.rigidbodies->add_constraint_direction(*this->chassis, *this->suspension_blocks[idx],
+					Eigen::Vector3d::UnitY()  // Forward direction
 				)
-				.set_tolerance_in_m(TOLERANCE_IN_M)
+				.set_tolerance_in_deg(TOLERANCE_IN_DEG)
 				.set_stiffness(HARD_STIFFNESS)
-				.get_direction_lock()
 			);
+
+			//// Spring-damper
 			this->spring_dampers[idx] = std::make_shared<RBCDampedSpringHandler>(
 				simulation.rigidbodies->add_constraint_spring(*this->chassis, *this->suspension_blocks[idx],
 					wheel_position,
@@ -114,6 +123,8 @@ stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrizat
 					spring_stiffness,
 					params.suspension.damping)
 			);
+
+			//// Motor
 			this->wheel_motors[idx] = std::make_shared<RBCAngularVelocityHandler>(
 				simulation.rigidbodies->add_constraint_motor(*this->suspension_blocks[idx], *this->wheels[idx], 
 					wheel_position, 
@@ -125,6 +136,7 @@ stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrizat
 				.set_stiffness(HARD_STIFFNESS)
 				.get_angular_velocity_constraint().enable(false)
 			);
+
 			// Disable collisions
 			disable_collision(this->chassis, this->wheels[idx]);
 			disable_collision(this->chassis, this->suspension_blocks[idx]);
@@ -196,6 +208,12 @@ Eigen::Vector3d stark::VehicleFourWheels::get_linear_velocity_in_km_per_h() cons
 	return this->get_linear_velocity_in_m_per_s() * 3.6;
 }
 
+void stark::VehicleFourWheels::set_steering_front_wheels(double angle_deg)
+{
+	this->_set_steering(0, angle_deg);
+	this->_set_steering(1, angle_deg);
+}
+
 void stark::VehicleFourWheels::append_to_logger(Simulation& simulation) const
 {
 	simulation.stark.logger.append_to_series(this->label + "_time", simulation.stark.current_time);
@@ -220,4 +238,14 @@ void stark::VehicleFourWheels::append_to_logger(Simulation& simulation) const
 
 		// TODO: Wheel direction
 	}
+}
+
+void stark::VehicleFourWheels::_set_steering(int wheel_idx, double angle_deg)
+{
+	// Forward direction is along Y axis positive
+	const double x = std::sin(utils::deg2rad(angle_deg));
+	const double y = std::cos(utils::deg2rad(angle_deg));
+	const double z = 0.0;
+	const Eigen::Vector3d d = { -x, y, z };
+	this->wheel_direction[wheel_idx]->set_local_direction_body_b(d.normalized()); // Body b is the chassis. Negative x because the opposite of the angle must be looking forward.
 }
