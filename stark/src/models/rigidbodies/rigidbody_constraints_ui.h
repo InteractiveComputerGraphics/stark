@@ -479,6 +479,8 @@ namespace stark::models
 		inline Eigen::Vector3d get_local_direction_body_a() const { return this->constraints->da_loc[this->idx]; };
 		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
 
+		inline double get_target_angular_velocity_in_rad_per_s() const { return this->constraints->target_w[this->idx]; };
+		inline auto& set_target_angular_velocity_in_rad_per_s(double w) { this->constraints->target_w[this->idx] = w; return (*this); };
 		inline double get_target_angular_velocity_in_deg_per_s() const { return utils::rad2deg(this->constraints->target_w[this->idx]); };
 		inline auto& set_target_angular_velocity_in_deg_per_s(double w) { this->constraints->target_w[this->idx] = utils::deg2rad(w); return (*this); };
 

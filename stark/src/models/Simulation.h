@@ -30,5 +30,4 @@ namespace stark::models
 	private:
 		core::Stark stark;
 	};
-	using spSimulation = std::shared_ptr<Simulation>;
 }

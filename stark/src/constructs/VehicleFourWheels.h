@@ -66,28 +66,38 @@ namespace stark
 		std::array<bool, 4> is_wheel_powered = { false, false, false, false };
 		
 		// Methods
-		VehicleFourWheels(spSimulation simulation, Parametrization& params, std::string label);
-		void brake();
-		void set_target_velocity_in_m_per_s(double v);
-		void set_target_velocity_in_km_per_h(double v);
-		Eigen::Vector3d get_linear_velocity_in_m_per_s() const;
-		Eigen::Vector3d get_linear_velocity_in_km_per_h() const;
-		void set_steering_front_wheels(double angle_deg);
-		double get_steering_front_wheels() const;
-		template<typename RBHandler>
-		void set_wheels_friction(Simulation& simulation, const RBHandler& object, double friction);
-		void append_to_logger(Simulation& simulation) const;
+		VehicleFourWheels(std::shared_ptr<Simulation> simulation, Parametrization& params, std::string label);
+
+		//// Transformations
 		void rotate_deg(double angle, const Eigen::Vector3d& axis);
 		void set_position(const Eigen::Vector3d& position);
 		void move(const Eigen::Vector3d& displacement);
 
+		// Set behavior
+		template<typename RBHandler>
+		void set_wheels_friction(const RBHandler& object, double friction);
+		template<typename RBHandler>
+		void set_chassis_friction(const RBHandler& object, double friction);
+		void brake();
+		void set_target_velocity_in_km_per_h(double v);
+		Eigen::Vector3d get_forward_velocity_in_km_per_h() const;
+		Eigen::Vector3d get_absolute_velocity_in_km_per_h() const;
+		void set_steering_front_wheels(double angle_deg);
+		double get_steering_front_wheels() const;
+
+		// Script behavior
+
+
 	private:
 		/* Fields */
-		spSimulation simulation;
+		std::shared_ptr<Simulation> simulation;
 		Parametrization params;
 		std::string label;
+		const Eigen::Vector3d LOCAL_FORWARD = Eigen::Vector3d::UnitY();
+		int action_queue_idx = -1;
 
 		/* Methods */
+		void _append_to_logger() const;
 		void _set_steering(int wheel_idx, double angle_deg);
 		double _get_steering(int wheel_idx) const;
 	};
@@ -95,10 +105,15 @@ namespace stark
 
 	// Template implementations
 	template<typename RBHandler>
-	void VehicleFourWheels::set_wheels_friction(Simulation& simulation, const RBHandler& object, double friction)
+	void VehicleFourWheels::set_wheels_friction(const RBHandler& object, double friction)
 	{
 		for (int i = 0; i < 4; i++) {
-			simulation.interactions->set_friction(object, *this->wheels[i], friction);
+			this->simulation->interactions->set_friction(object, *this->wheels[i], friction);
 		}
+	}
+	template<typename RBHandler>
+	inline void VehicleFourWheels::set_chassis_friction(const RBHandler& object, double friction)
+	{
+		this->simulation->interactions->set_friction(object, *this->chassis, friction);
 	}
 }

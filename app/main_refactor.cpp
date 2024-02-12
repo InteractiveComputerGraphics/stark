@@ -475,7 +475,7 @@ void car()
 	//settings.contact.friction_stick_slide_threshold = 0.1;
 	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
 
-	stark::spSimulation simulation = std::make_shared<stark::Simulation>(settings);
+	auto simulation = std::make_shared<stark::Simulation>(settings);
 
 	// Observation: Motors now give identical results than explicit torque. But both result in a very slow car. Is the energy being dissipated? Where?
 	//	I think it could easily be in the IPC friction as contact points go up from the ground in a very non-vertical way.
@@ -486,88 +486,87 @@ void car()
 	// TODO: Test blend strategies.
 
 	// Car
-	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "car");
-	//car.set_target_velocity_in_km_per_h(10.0);
+	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "sedan");
 
 	// Environment
-	stark::StaticPlaneHandler ground = simulation.interactions->add_static_plane({ 0.0, 0.0, -0.02 }, Eigen::Vector3d::UnitZ());
-	car.set_wheels_friction(simulation, ground, 2.0);
-	simulation.interactions->set_friction(ground, *car.chassis, 0.5);
+	stark::StaticPlaneHandler ground = simulation->interactions->add_static_plane({ 0.0, 0.0, -0.02 }, Eigen::Vector3d::UnitZ());
+	car.set_wheels_friction(ground, 2.0);
+	car.set_chassis_friction(ground, 0.5);
 	car.brake();
 
-	//auto obstacle = simulation.rigidbodies->add_box(1000.0, 1.0)
+	//auto obstacle = simulation->rigidbodies->add_box(1000.0, 1.0)
 	//	.set_rotation(45.0, Eigen::Vector3d::UnitX())
 	//	.set_translation({ 0.8, 50.0, 0.0 })
 	//	.add_to_output_label("obstacle");
-	//simulation.rigidbodies->add_constraint_fix(obstacle)
+	//simulation->rigidbodies->add_constraint_fix(obstacle)
 	//	.set_stiffness(1e8)
 	//	.set_tolerance_in_deg(60.0)
 	//	.set_tolerance_in_m(1.0);
-	//simulation.interactions->disable_collision(ground, obstacle);
+	//simulation->interactions->disable_collision(ground, obstacle);
 
 	// Script
-	auto until_time = [&simulation](double v) { return [&simulation, v]() { return simulation.get_time() > v; }; };
-	auto until_velocity = [&car](double v) { return [&car, v]() { return car.get_linear_velocity_in_km_per_h().norm() > v; }; };
+	auto until_time = [&simulation](double v) { return [&simulation, v]() { return simulation->get_time() > v; }; };
+	auto until_velocity = [&car](double v) { return [&car, v]() { return car.get_forward_velocity_in_km_per_h().norm() > v; }; };
 	auto set_velocity = [&car](double v) { return [&car, v]() { car.set_target_velocity_in_km_per_h(v); }; };
 	auto brake = [&car]() { return [&car]() { car.brake(); }; };
 	auto set_steering = [&car](double v) { return [&car, v]() { car.set_steering_front_wheels(v); }; };
 
-	simulation.script.append_ordered_action(
+	simulation->script.append_ordered_action(
 		brake(), 
 		until_time(1.0)
 	);
 
 	double begin_t_a = -1.0;
 	double begin_ang_a = -1.0;
-	simulation.script.append_ordered_action(
+	simulation->script.append_ordered_action(
 		[&]() 
 		{
 			if (begin_t_a < 0.0) {
-				begin_t_a = simulation.get_time();
+				begin_t_a = simulation->get_time();
 				begin_ang_a = car.get_steering_front_wheels();
 			}
 			const double target_angle = 30.0;
 			const double duration = 2.0;
-			const double angle = stark::utils::blend(begin_ang_a, target_angle, duration, begin_t_a, simulation.get_time(), stark::utils::BlendType::Linear);
+			const double angle = stark::utils::blend(begin_ang_a, target_angle, duration, begin_t_a, simulation->get_time(), stark::utils::BlendType::Linear);
 			car.set_steering_front_wheels(angle);
 		},
 		until_time(3.0)
 	);
 
-	simulation.script.append_ordered_action(
+	simulation->script.append_ordered_action(
 		[]() {},  // Wait
 		until_time(4.0)
 	);
 
 	double begin_t_b = -1.0;
 	double begin_ang_b = -1.0;
-	simulation.script.append_ordered_action(
+	simulation->script.append_ordered_action(
 		[&]() 
 		{
 			if (begin_t_b < 0.0) {
-				begin_t_b = simulation.get_time();
+				begin_t_b = simulation->get_time();
 				begin_ang_b = car.get_steering_front_wheels();
 			}
 			const double target_angle = -30.0;
 			const double duration = 2.0;
-			const double angle = stark::utils::blend(begin_ang_b, target_angle, duration, begin_t_b, simulation.get_time(), stark::utils::BlendType::Linear);
+			const double angle = stark::utils::blend(begin_ang_b, target_angle, duration, begin_t_b, simulation->get_time(), stark::utils::BlendType::Linear);
 			car.set_steering_front_wheels(angle);
 		},
 		until_time(6.0)
 	);
 
-	simulation.script.append_ordered_action(
+	simulation->script.append_ordered_action(
 		[]() {},  // Wait
 		until_time(7.0)
 	);
 
-	simulation.script.append_ordered_action(
+	simulation->script.append_ordered_action(
 		set_velocity(100.0),
 		until_time(9999.9)
 	);
 
 	// Run
-	simulation.run();
+	simulation->run();
 }
 
 int main()

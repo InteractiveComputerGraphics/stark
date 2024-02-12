@@ -1,5 +1,7 @@
 #include "EventDrivenScript.h"
 
+#include <iostream>
+
 void stark::models::EventDrivenScript::add_independent_event(std::function<bool()> run_when, std::function<void()> action, Permanence permanence, std::function<bool()> delete_when)
 {
 	Event event_;
@@ -16,54 +18,40 @@ void stark::models::EventDrivenScript::add_recurring_event(std::function<void()>
 	this->add_independent_event(run_when, action, Permanence::PERMANENT);
 }
 
-void stark::models::EventDrivenScript::append_ordered_action(std::function<void()> action, std::function<bool()> run_until)
+int stark::models::EventDrivenScript::make_new_ordered_action_queue()
 {
+	this->ordered_actions.push_back(std::deque<Action>());
+	return (int)this->ordered_actions.size() - 1;
+}
+
+void stark::models::EventDrivenScript::append_ordered_action(int queue_idx, std::function<void()> action, std::function<bool()> run_until)
+{
+	// Error if queue does not exist
+	if (queue_idx >= (int)this->ordered_actions.size()) {
+		std::cout << "stark error: EventDrivenScript::append_ordered_action() queue_idx " << queue_idx << " does not exist" << std::endl;
+		exit(-1);
+	}
+
 	Action action_;
 	action_.run_until = run_until;
 	action_.action = action;
-	this->ordered_actions.push_back(action_);
+	this->ordered_actions[queue_idx].push_back(action_);
 }
-
-//void stark::models::EventDrivenScript::add_exclusive_intervals_script_for_variable(std::function<double()> variable, std::vector<IntervalEventForVariable> events)
-//{
-//	// Add all events except the last one (which will run indefinitely)
-//	for (int i = 0; i < (int)events.size() - 1; i++) {
-//		const double begin = events[i].begin;
-//		const double end = events[i + 1].begin;
-//		const Permanence permanence = events[i].permanence;
-//		const std::function<void()> action = events[i].action;
-//		const std::function<bool()> condition = [variable, begin, end]() {
-//			const double v = variable();
-//			return begin <= v && v < end;
-//		};
-//		const std::function<bool()> delete_when = [variable, end]() {
-//			return variable() > end;
-//		};
-//		this->add_event(condition, action, permanence, delete_when);
-//	}
-//
-//	// Last
-//	const double last_begin = events.back().begin;
-//	const Permanence permanence = events.back().permanence;
-//	const std::function<void()> action = events.back().action;
-//	const std::function<bool()> condition = [variable, last_begin]() {
-//		return last_begin <= variable();
-//		};
-//	this->add_event(condition, action, permanence);
-//}
 
 void stark::models::EventDrivenScript::run_a_cycle()
 {
 	// Ordered action
-	while (!this->ordered_actions.empty()) {
-		auto it = this->ordered_actions.begin();
-		const bool finished = it->run_until();
-		if (finished) {
-			this->ordered_actions.pop_front();
-		}
-		else {
-			it->action();
-			break;
+	for (std::deque<Action>& ordered_action_queue : this->ordered_actions) {
+		while (!ordered_action_queue.empty()) {
+			auto it = ordered_action_queue.begin();
+			const bool finished = it->run_until();
+			if (finished) {
+				ordered_action_queue.pop_front();
+			}
+			else {
+				it->action();
+				break;
+			}
 		}
 	}
 
