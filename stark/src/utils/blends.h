@@ -5,6 +5,7 @@ namespace stark::utils
 {
     enum class BlendType 
     {
+        Instant,
         Linear,
         EaseIn,
         EaseOut,

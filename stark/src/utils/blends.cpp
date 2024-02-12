@@ -14,6 +14,9 @@ double stark::utils::blend(double min, double max, double duration, double begin
     double result = min;
 
     switch (blendType) {
+    case BlendType::Instant:
+        result = max;
+        break;
     case BlendType::Linear:
         result += t * (max - min);
         break;

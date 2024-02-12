@@ -6,6 +6,7 @@ namespace stark
 	// General
 	using models::Simulation;
 	using models::EventDrivenScript;
+	using models::EventInfo;
 
 	// Deformables
 	using models::Deformables;

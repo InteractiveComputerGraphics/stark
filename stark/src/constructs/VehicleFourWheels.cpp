@@ -46,7 +46,8 @@ stark::VehicleFourWheels::VehicleFourWheels(std::shared_ptr<Simulation> simulati
 	simulation->script.add_recurring_event([this](){ this->_append_to_logger(); });
 
 	// Create an action queue for this vehicle
-	this->action_queue_idx = simulation->script.make_new_ordered_action_queue();
+	this->velocity_action_queue_idx = simulation->script.make_new_ordered_action_queue();
+	this->steering_action_queue_idx = simulation->script.make_new_ordered_action_queue();
 
 	// Convenient lambdas
 	auto disable_collision = [&simulation](std::shared_ptr<RigidBodyHandler> a, std::shared_ptr<RigidBodyHandler> b)
@@ -210,15 +211,50 @@ Eigen::Vector3d stark::VehicleFourWheels::get_absolute_velocity_in_km_per_h() co
 	return 3.6 * this->chassis->get_velocity();
 }
 
-void stark::VehicleFourWheels::set_steering_front_wheels(double angle_deg)
+void stark::VehicleFourWheels::set_steering(double angle_deg, std::array<bool, 4> wheels)
 {
-	this->_set_steering(0, angle_deg);
-	this->_set_steering(1, angle_deg);
+	for (int i = 0; i < 4; i++) {
+		if (wheels[i]) {
+			this->_set_steering(i, angle_deg);
+		}
+	}
+}
+double stark::VehicleFourWheels::get_steering(int wheel_idx) const
+{
+	const Eigen::Vector3d d = this->wheel_direction[wheel_idx]->get_local_direction_body_b();
+	const double angle_rad = std::acos(d.dot(Eigen::Vector3d::UnitY())); // Forward is +Y. Negative x because the opposite of the angle must be looking forward.
+	return utils::rad2deg(angle_rad);
 }
 
-double stark::VehicleFourWheels::get_steering_front_wheels() const
+void stark::VehicleFourWheels::append_to_script__steer(double target_angle_deg, double duration, std::array<bool, 4> wheels, utils::BlendType blend, std::function<bool()> exit_early_when)
 {
-	return this->_get_steering(0);
+	this->simulation->script.append_ordered_action(
+		this->action_queue_idx,
+		[target_angle_deg, duration, ]()
+		{
+			if (begin_t_a < 0.0) {
+				begin_t_a = simulation->get_time();
+				begin_ang_a = car.get_steering_front_wheels();
+			}
+			const double target_angle = 30.0;
+			const double duration = 2.0;
+			const double angle = stark::utils::blend(begin_ang_a, target_angle, duration, begin_t_a, simulation->get_time(), stark::utils::BlendType::Linear);
+			car.set_steering_front_wheels(angle);
+		},
+	);
+}
+
+void stark::VehicleFourWheels::append_to_velocity_script__brake(double duration, utils::BlendType blend, std::function<bool()> exit_early_when)
+{
+	this->simulation->script.append_ordered_action(
+		this->velocity_action_queue_idx,
+		[duration]()
+		{
+			if (this->current_velocity_action_idx)
+
+			car.brake();
+		},
+	);
 }
 
 void stark::VehicleFourWheels::_append_to_logger() const
@@ -260,9 +296,3 @@ void stark::VehicleFourWheels::_set_steering(int wheel_idx, double angle_deg)
 	this->wheel_direction[wheel_idx]->set_local_direction_body_b(d.normalized()); // Body a is the chassis. Negative x because the opposite of the angle must be looking forward.
 }
 
-double stark::VehicleFourWheels::_get_steering(int wheel_idx) const
-{
-	const Eigen::Vector3d d = this->wheel_direction[wheel_idx]->get_local_direction_body_b();
-	const double angle_rad = std::acos(d.dot(Eigen::Vector3d::UnitY())); // Forward is +Y. Negative x because the opposite of the angle must be looking forward.
-	return utils::rad2deg(angle_rad);
-}
