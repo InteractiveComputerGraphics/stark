@@ -26,7 +26,7 @@ void stark::models::Simulation::run(std::function<void()> user_callback)
 	this->stark.run(
 		[user_callback, this]()
 		{
-			this->script.run_a_cycle();
+			this->script.run_a_cycle(this->get_time());
 			if (user_callback != nullptr) user_callback();
 		}
 	);

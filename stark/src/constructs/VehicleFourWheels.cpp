@@ -26,7 +26,7 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 	p.engine.mass = 500.0;
 	p.engine.max_torque = 600.0;
 	p.engine.gear_ratio = 3.5;  // First gear of sports car
-	p.engine.delay = 10.0;
+	p.engine.delay = 1.0;
 	p.engine.is_front_wheel_drive = false;
 	p.engine.is_rear_wheel_drive = true;
 
@@ -43,7 +43,7 @@ stark::VehicleFourWheels::VehicleFourWheels(std::shared_ptr<Simulation> simulati
 	const double HARD_STIFFNESS = 1e6; // TODO: Find a more appropriate way to set this value
 
 	// Log car stuff into the logger as a permanent event
-	simulation->script.add_recurring_event([this](){ this->_append_to_logger(); });
+	simulation->script.add_recurring_event([this](EventInfo&){ this->_append_to_logger(); });
 
 	// Create an action queue for this vehicle
 	this->velocity_action_queue_idx = simulation->script.make_new_ordered_action_queue();
@@ -211,7 +211,7 @@ Eigen::Vector3d stark::VehicleFourWheels::get_absolute_velocity_in_km_per_h() co
 	return 3.6 * this->chassis->get_velocity();
 }
 
-void stark::VehicleFourWheels::set_steering(double angle_deg, std::array<bool, 4> wheels)
+void stark::VehicleFourWheels::set_steering_in_deg(double angle_deg, std::array<bool, 4> wheels)
 {
 	for (int i = 0; i < 4; i++) {
 		if (wheels[i]) {
@@ -219,41 +219,74 @@ void stark::VehicleFourWheels::set_steering(double angle_deg, std::array<bool, 4
 		}
 	}
 }
-double stark::VehicleFourWheels::get_steering(int wheel_idx) const
+double stark::VehicleFourWheels::get_steering_in_deg(int wheel_idx) const
 {
 	const Eigen::Vector3d d = this->wheel_direction[wheel_idx]->get_local_direction_body_b();
 	const double angle_rad = std::acos(d.dot(Eigen::Vector3d::UnitY())); // Forward is +Y. Negative x because the opposite of the angle must be looking forward.
 	return utils::rad2deg(angle_rad);
 }
 
-void stark::VehicleFourWheels::append_to_script__steer(double target_angle_deg, double duration, std::array<bool, 4> wheels, utils::BlendType blend, std::function<bool()> exit_early_when)
+void stark::VehicleFourWheels::append_to_steering_script(double target_angle_deg, double duration, std::array<bool, 4> wheels, utils::BlendType blend, std::function<bool()> exit_early_when)
 {
+	/* Appends steering to the steering action queue */
+
 	this->simulation->script.append_ordered_action(
-		this->action_queue_idx,
-		[target_angle_deg, duration, ]()
+		this->steering_action_queue_idx,
+		[this, target_angle_deg, duration, wheels, blend](EventInfo& event_info)
 		{
-			if (begin_t_a < 0.0) {
-				begin_t_a = simulation->get_time();
-				begin_ang_a = car.get_steering_front_wheels();
+			// Store the beginning of the simulation time and initial angle
+			if (event_info.first_call()) {
+				const double ang0 = this->get_steering_in_deg((int)std::distance(wheels.begin(), std::find(wheels.begin(), wheels.end(), true)));
+				event_info.pack<double>(ang0);
 			}
-			const double target_angle = 30.0;
-			const double duration = 2.0;
-			const double angle = stark::utils::blend(begin_ang_a, target_angle, duration, begin_t_a, simulation->get_time(), stark::utils::BlendType::Linear);
-			car.set_steering_front_wheels(angle);
+
+			// Action
+			const double t0 = event_info.get_begin_time();
+			const double ang0 = event_info.unpack<double>();
+			const double t = this->simulation->get_time();
+			const double ang = stark::utils::blend(ang0, target_angle_deg, duration, t0, this->simulation->get_time(), blend);
+			this->set_steering_in_deg(ang, wheels);
 		},
+		this->_generate_stop_at_lambda(duration, exit_early_when)
 	);
 }
 
-void stark::VehicleFourWheels::append_to_velocity_script__brake(double duration, utils::BlendType blend, std::function<bool()> exit_early_when)
+void stark::VehicleFourWheels::append_to_velocity_script__target_velocity_kmh(double target_velocity_in_kmh, double duration, utils::BlendType blend, std::function<bool()> exit_early_when)
 {
+	/* Appends acceleration to the velocity action queue */
+
 	this->simulation->script.append_ordered_action(
 		this->velocity_action_queue_idx,
-		[duration]()
+		[this, duration, target_velocity_in_kmh, blend](EventInfo& event_info)
 		{
-			if (this->current_velocity_action_idx)
+			// It needs to know when it started to know when to stop and the initial velocity for the blend
+			if (event_info.first_call()) {
+				const double v0 = this->get_forward_velocity_in_km_per_h().norm();
+				event_info.pack<double>(v0);
+			}
 
-			car.brake();
+			// Action
+			const double t0 = event_info.get_begin_time();
+			const double v0 = event_info.unpack<double>();
+			const double t = this->simulation->get_time();
+			const double v = stark::utils::blend(v0, target_velocity_in_kmh, duration, t0, this->simulation->get_time(), blend);
+			this->set_target_velocity_in_km_per_h(v);
 		},
+		this->_generate_stop_at_lambda(duration, exit_early_when)
+	);
+}
+
+void stark::VehicleFourWheels::append_to_velocity_script__brake(double duration, std::function<bool()> exit_early_when)
+{
+	/* Appends braking to the velocity action queue */
+
+	this->simulation->script.append_ordered_action(
+		this->velocity_action_queue_idx,
+		[this](EventInfo& event_info)
+		{
+			this->brake();
+		},
+		this->_generate_stop_at_lambda(duration, exit_early_when)
 	);
 }
 
@@ -263,7 +296,7 @@ void stark::VehicleFourWheels::_append_to_logger() const
 
 	logger.append_to_series(this->label + "_time", this->simulation->get_time());
 	const double v = this->get_absolute_velocity_in_km_per_h().norm();
-	logger.append_to_series(this->label + "abs_velocity_kmh", v);
+	logger.append_to_series(this->label + "_abs_velocity_kmh", v);
 
 	for (size_t i = 0; i < 4; i++){
 		const double w_rad_s = this->wheels[i]->get_angular_velocity().norm();
@@ -294,5 +327,29 @@ void stark::VehicleFourWheels::_set_steering(int wheel_idx, double angle_deg)
 	const double z = 0.0;
 	const Eigen::Vector3d d = { -x, y, z };
 	this->wheel_direction[wheel_idx]->set_local_direction_body_b(d.normalized()); // Body a is the chassis. Negative x because the opposite of the angle must be looking forward.
+}
+
+std::function<bool(stark::EventInfo&)> stark::VehicleFourWheels::_generate_stop_at_lambda(double duration, std::function<bool()> exit_early_when)
+{
+	auto stop_at = 
+		[this, duration, exit_early_when](EventInfo& event_info)
+		{
+			bool stop = false;
+
+			// User defined exit
+			if (exit_early_when && exit_early_when()) {
+				stop = true;
+			}
+
+			// Duration exit
+			if (!stop) {
+				const double running_time = this->simulation->get_time() - event_info.get_begin_time();
+				stop = running_time > duration;
+			}
+
+			return stop;
+		};
+
+	return stop_at;
 }
 
