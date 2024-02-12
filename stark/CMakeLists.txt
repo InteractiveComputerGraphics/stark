@@ -146,6 +146,8 @@ set(UTILS_FILES
 	src/utils/mesh_generators.cpp
 	src/utils/mesh_generators.h
 	src/utils/unordered_array_set_and_map.h
+	src/utils/blends.cpp
+	src/utils/blends.h
 	)
 
 set(CONSTRUCTS_FILES

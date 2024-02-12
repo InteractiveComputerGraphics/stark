@@ -6,6 +6,32 @@ const double& stark::models::Simulation::get_time() const
 	return this->stark.current_time;
 }
 
+const double& stark::models::Simulation::get_time_step_size() const
+{
+	return this->stark.settings.simulation.adaptive_time_step.value;
+}
+
+stark::core::Logger& stark::models::Simulation::get_logger()
+{
+	return this->stark.logger;
+}
+
+stark::core::Console& stark::models::Simulation::get_console()
+{
+	return this->stark.console;
+}
+
+void stark::models::Simulation::run(std::function<void()> user_callback)
+{
+	this->stark.run(
+		[user_callback, this]()
+		{
+			this->script.run_a_cycle();
+			if (user_callback != nullptr) user_callback();
+		}
+	);
+}
+
 stark::models::Simulation::Simulation(const core::Settings& settings)
 	: stark(settings)
 {

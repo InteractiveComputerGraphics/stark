@@ -37,7 +37,7 @@ void rb()
 	simulation.rigidbodies->write_collision_meshes(true);
 
 	// Run
-	simulation.stark.run();
+	simulation.run();
 }
 void net()
 {
@@ -69,7 +69,7 @@ void net()
 	}
 
 	// Run
-	simulation.stark.run();
+	simulation.run();
 }
 void hanging_cloth()
 {
@@ -98,7 +98,7 @@ void hanging_cloth()
 	bc->add_vertices_in_aabb({ -l, l, 0.0 }, 0.001);
 
 	// Run
-	simulation.stark.run();
+	simulation.run();
 }
 void rubber_block()
 {
@@ -129,7 +129,7 @@ void rubber_block()
 	bc->add_vertices_in_aabb({ -l, 0.0, 0.0 }, { 0.001, 2.0*w, 2.0*w });
 
 	// Run
-	simulation.stark.run();
+	simulation.run();
 }
 void simple_collision()
 {
@@ -159,7 +159,7 @@ void simple_collision()
 	simulation.rigidbodies->add_constraint_fix(box0);
 
 	// Run
-	simulation.stark.run();
+	simulation.run();
 }
 void edge_edge_collision()
 {
@@ -194,7 +194,7 @@ void edge_edge_collision()
 	simulation.rigidbodies->add_constraint_fix(box0);
 
 	// Run
-	simulation.stark.run();
+	simulation.run();
 }
 void heavy_box_rigid_and_deformable()
 {
@@ -260,7 +260,7 @@ void heavy_box_rigid_and_deformable()
 	}
 
 	// Run
-	simulation.stark.run();
+	simulation.run();
 }
 void attachments()
 {
@@ -305,7 +305,7 @@ void attachments()
 	simulation.interactions->attach_by_distance(rigid, cloth);
 
 	// Run
-	simulation.stark.run();
+	simulation.run();
 }
 void laundry_cloth()
 {
@@ -371,7 +371,7 @@ void laundry_cloth()
 	}
 
 	// Run
-	simulation.stark.run();
+	simulation.run();
 }
 void laundry_soft_boxes()
 {
@@ -440,7 +440,6 @@ void laundry_soft_boxes()
 	}
 
 	// Friction
-	simulation.stark.settings.contact.friction_enabled = true;
 	const double friction = 2.0;
 	for (int i = 0; i < (int)boxes.size(); i++) {
 		simulation.interactions->set_friction(drum, boxes[i], friction);
@@ -450,7 +449,7 @@ void laundry_soft_boxes()
 	}
 
 	// Run
-	simulation.stark.run();
+	simulation.run();
 }
 void car()
 {
@@ -463,7 +462,7 @@ void car()
 	settings.debug.symx_check_for_NaNs = true;
 
 	//settings.output.fps = 200.0;
-	//settings.debug.symx_force_load = true;
+	settings.debug.symx_force_load = true;
 
 	//settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
 	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
@@ -475,7 +474,8 @@ void car()
 	settings.contact.dhat = 0.02;
 	//settings.contact.friction_stick_slide_threshold = 0.1;
 	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
-	stark::Simulation simulation(settings);
+
+	stark::spSimulation simulation = std::make_shared<stark::Simulation>(settings);
 
 	// Observation: Motors now give identical results than explicit torque. But both result in a very slow car. Is the energy being dissipated? Where?
 	//	I think it could easily be in the IPC friction as contact points go up from the ground in a very non-vertical way.
@@ -483,6 +483,7 @@ void car()
 	// TODO: Scripting and blend classes.
 	// TODO: Model a collision mesh for the car. It is not a box.
 	// TODO: Braking should be a more powerful motor. Or we have a motor with different torque limits.
+	// TODO: Test blend strategies.
 
 	// Car
 	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "car");
@@ -505,46 +506,68 @@ void car()
 	//simulation.interactions->disable_collision(ground, obstacle);
 
 	// Script
-	auto get_time = [&]() { return simulation.get_time(); };
-	auto set_velocity = [&](double v) { return [&]() { car.set_target_velocity_in_km_per_h(v); }; };
-	stark::EventDrivenScript::Permanence ONE_OFF = stark::EventDrivenScript::Permanence::ONE_OFF;
-	stark::EventDrivenScript::Permanence PERMANENT = stark::EventDrivenScript::Permanence::PERMANENT;
+	auto until_time = [&simulation](double v) { return [&simulation, v]() { return simulation.get_time() > v; }; };
+	auto until_velocity = [&car](double v) { return [&car, v]() { return car.get_linear_velocity_in_km_per_h().norm() > v; }; };
+	auto set_velocity = [&car](double v) { return [&car, v]() { car.set_target_velocity_in_km_per_h(v); }; };
+	auto brake = [&car]() { return [&car]() { car.brake(); }; };
+	auto set_steering = [&car](double v) { return [&car, v]() { car.set_steering_front_wheels(v); }; };
 
-	stark::EventDrivenScript script;
-	script.add_exclusive_intervals_script([&]() { return simulation.get_time(); },
+	simulation.script.append_ordered_action(
+		brake(), 
+		until_time(1.0)
+	);
+
+	double begin_t_a = -1.0;
+	double begin_ang_a = -1.0;
+	simulation.script.append_ordered_action(
+		[&]() 
 		{
-			{ 1.0, ONE_OFF,		[&]() { car.set_target_velocity_in_km_per_h(100.0); } },
-			{ 3.0, ONE_OFF,		[&]() { car.brake(); } },
-			{ 4.0, PERMANENT,	[&]() { car.set_steering_front_wheels(5.0 * (4.0 - simulation.stark.current_time)); } },
-			{ 5.0, ONE_OFF,		[&]() { car.set_target_velocity_in_km_per_h(100.0); } }
-		}
+			if (begin_t_a < 0.0) {
+				begin_t_a = simulation.get_time();
+				begin_ang_a = car.get_steering_front_wheels();
+			}
+			const double target_angle = 30.0;
+			const double duration = 2.0;
+			const double angle = stark::utils::blend(begin_ang_a, target_angle, duration, begin_t_a, simulation.get_time(), stark::utils::BlendType::Linear);
+			car.set_steering_front_wheels(angle);
+		},
+		until_time(3.0)
+	);
+
+	simulation.script.append_ordered_action(
+		[]() {},  // Wait
+		until_time(4.0)
+	);
+
+	double begin_t_b = -1.0;
+	double begin_ang_b = -1.0;
+	simulation.script.append_ordered_action(
+		[&]() 
+		{
+			if (begin_t_b < 0.0) {
+				begin_t_b = simulation.get_time();
+				begin_ang_b = car.get_steering_front_wheels();
+			}
+			const double target_angle = -30.0;
+			const double duration = 2.0;
+			const double angle = stark::utils::blend(begin_ang_b, target_angle, duration, begin_t_b, simulation.get_time(), stark::utils::BlendType::Linear);
+			car.set_steering_front_wheels(angle);
+		},
+		until_time(6.0)
+	);
+
+	simulation.script.append_ordered_action(
+		[]() {},  // Wait
+		until_time(7.0)
+	);
+
+	simulation.script.append_ordered_action(
+		set_velocity(100.0),
+		until_time(9999.9)
 	);
 
 	// Run
-	bool braked = false;
-	simulation.stark.run(
-		[&]()
-		{
-			car.append_to_logger(simulation);
-			script.run_a_cycle();
-
-			//const double t = simulation.stark.current_time;
-			//const double v = car.get_linear_velocity_in_km_per_h().norm();
-
-			//car.set_steering_front_wheels(5.0*t);
-			//if (!braked && t > 1.0) {
-			//	if (v < 50.0) {
-			//		car.set_target_velocity_in_km_per_h(100.0);
-			//	}
-			//	else {
-			//		car.brake();
-			//		braked = true;
-			//		std::cout << "\nBRAKE" << std::endl;
-			//		//exit(9);
-			//	}
-			//}
-		}
-	);
+	simulation.run();
 }
 
 int main()

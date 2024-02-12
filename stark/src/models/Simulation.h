@@ -16,14 +16,19 @@ namespace stark::models
 		/* Methods */
 		Simulation(const core::Settings& settings);
 		const double& get_time() const;
-		//void run(std::function<void()> callback = nullptr);
-		//void run(EventDrivenScript& script, std::function<void()> callback = nullptr);
+		const double& get_time_step_size() const;
+		core::Logger& get_logger();
+		core::Console& get_console();
+		void run(std::function<void()> callback = nullptr);
 
 		/* Fields */
-		core::Stark stark;
 		std::shared_ptr<Deformables> deformables;
 		std::shared_ptr<RigidBodies> rigidbodies;
 		std::shared_ptr<Interactions> interactions;
+		EventDrivenScript script;
 
+	private:
+		core::Stark stark;
 	};
+	using spSimulation = std::shared_ptr<Simulation>;
 }

@@ -30,7 +30,7 @@ void template_sim(std::string name, std::function<void(stark::models::Simulation
 	callback(simulation, box0);
 
 	// Run
-	simulation.stark.run();
+	simulation.run();
 }
 
 void rb_constraints_point()

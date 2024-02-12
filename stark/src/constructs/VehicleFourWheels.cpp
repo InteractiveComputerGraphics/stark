@@ -26,7 +26,7 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 	p.engine.mass = 500.0;
 	p.engine.max_torque = 600.0;
 	p.engine.gear_ratio = 3.5;  // First gear of sports car
-	p.engine.delay = 0.01;
+	p.engine.delay = 10.0;
 	p.engine.is_front_wheel_drive = false;
 	p.engine.is_rear_wheel_drive = true;
 
@@ -36,12 +36,22 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 
 stark::VehicleFourWheels::VehicleFourWheels(Simulation& simulation, Parametrization& params, std::string label)
 {
+	// Constants
 	const double TOLERANCE_IN_M = 0.005;
 	const double TOLERANCE_IN_DEG = 2.0;
-	const double HARD_STIFFNESS = 1e6; // TODO: Do not hardcode this value
+	const double HARD_STIFFNESS = 1e6; // TODO: Find a more appropriate way to set this value
 
+	// Set fields
 	this->params = params;
 	this->label = label;
+
+	// Log car stuff into the logger as a permanent event
+	simulation.script.add_recurring_event(
+		[this, &simulation]()
+		{
+			this->append_to_logger(simulation);
+		}
+	);
 
 	// Convenient lambdas
 	auto disable_collision = [&simulation](std::shared_ptr<RigidBodyHandler> a, std::shared_ptr<RigidBodyHandler> b)
@@ -214,27 +224,32 @@ void stark::VehicleFourWheels::set_steering_front_wheels(double angle_deg)
 	this->_set_steering(1, angle_deg);
 }
 
+double stark::VehicleFourWheels::get_steering_front_wheels() const
+{
+	return this->_get_steering(0);
+}
+
 void stark::VehicleFourWheels::append_to_logger(Simulation& simulation) const
 {
-	simulation.stark.logger.append_to_series(this->label + "_time", simulation.stark.current_time);
+	simulation.get_logger().append_to_series(this->label + "_time", simulation.get_time());
 	const double v = this->get_linear_velocity_in_km_per_h().norm();
-	simulation.stark.logger.append_to_series(this->label + "_velocity_kmh", v);
+	simulation.get_logger().append_to_series(this->label + "_velocity_kmh", v);
 	for (size_t i = 0; i < 4; i++){
 		const double w_rad_s = this->wheels[i]->get_angular_velocity().norm();
 		const double wheel_v_hm_h = 3.6 * this->params.wheels.radius*w_rad_s;
-		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_w_rad_s", w_rad_s);
-		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_sliding_v_m_s", v - wheel_v_hm_h);
+		simulation.get_logger().append_to_series(this->label + "_wheel_" + std::to_string(i) + "_w_rad_s", w_rad_s);
+		simulation.get_logger().append_to_series(this->label + "_wheel_" + std::to_string(i) + "_sliding_v_m_s", v - wheel_v_hm_h);
 		
 		auto motor_status = this->wheel_motors[i]->get_signed_angular_velocity_violation_in_deg_per_s_and_torque();
-		simulation.stark.logger.append_to_series(this->label + "_wheel_" + std::to_string(i) + "_torque", motor_status[1]);
+		simulation.get_logger().append_to_series(this->label + "_wheel_" + std::to_string(i) + "_torque", motor_status[1]);
 		
 		auto damper_status = this->spring_dampers[i]->get_signed_damper_velocity_and_force();
-		simulation.stark.logger.append_to_series(this->label + "_damper_" + std::to_string(i) + "_v_m_s", damper_status[0]);
-		simulation.stark.logger.append_to_series(this->label + "_damper_" + std::to_string(i) + "_force", damper_status[1]);
+		simulation.get_logger().append_to_series(this->label + "_damper_" + std::to_string(i) + "_v_m_s", damper_status[0]);
+		simulation.get_logger().append_to_series(this->label + "_damper_" + std::to_string(i) + "_force", damper_status[1]);
 
 		auto spring_status = this->spring_dampers[i]->get_signed_spring_displacement_in_m_and_force();
-		simulation.stark.logger.append_to_series(this->label + "_spring_" + std::to_string(i) + "_dx", spring_status[0]);
-		simulation.stark.logger.append_to_series(this->label + "_spring_" + std::to_string(i) + "_force", spring_status[1]);
+		simulation.get_logger().append_to_series(this->label + "_spring_" + std::to_string(i) + "_dx", spring_status[0]);
+		simulation.get_logger().append_to_series(this->label + "_spring_" + std::to_string(i) + "_force", spring_status[1]);
 
 		// TODO: Wheel direction
 	}
@@ -247,5 +262,12 @@ void stark::VehicleFourWheels::_set_steering(int wheel_idx, double angle_deg)
 	const double y = std::cos(utils::deg2rad(angle_deg));
 	const double z = 0.0;
 	const Eigen::Vector3d d = { -x, y, z };
-	this->wheel_direction[wheel_idx]->set_local_direction_body_b(d.normalized()); // Body b is the chassis. Negative x because the opposite of the angle must be looking forward.
+	this->wheel_direction[wheel_idx]->set_local_direction_body_b(d.normalized()); // Body a is the chassis. Negative x because the opposite of the angle must be looking forward.
+}
+
+double stark::VehicleFourWheels::_get_steering(int wheel_idx) const
+{
+	const Eigen::Vector3d d = this->wheel_direction[wheel_idx]->get_local_direction_body_b();
+	const double angle_rad = std::acos(d.dot(Eigen::Vector3d::UnitY())); // Forward is +Y. Negative x because the opposite of the angle must be looking forward.
+	return utils::rad2deg(angle_rad);
 }
