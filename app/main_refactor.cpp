@@ -455,7 +455,7 @@ void laundry_soft_boxes()
 void car()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "car_1ms";
+	settings.output.simulation_name = "car";
 	settings.output.output_directory = OUTPUT_PATH + "/car";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 15.0;
@@ -465,7 +465,6 @@ void car()
 	//settings.output.fps = 200.0;
 	//settings.debug.symx_force_load = true;
 
-	// Better energy conservation = higher velocity?
 	//settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
 	settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
 	settings.newton.residual = { stark::ResidualType::Acceleration, 0.01 };
@@ -492,7 +491,7 @@ void car()
 	// Environment
 	stark::StaticPlaneHandler ground = simulation.interactions->add_static_plane({ 0.0, 0.0, -0.02 }, Eigen::Vector3d::UnitZ());
 	car.set_wheels_friction(simulation, ground, 2.0);
-	simulation.interactions->set_friction(ground, car.chassis, 0.5);
+	simulation.interactions->set_friction(ground, *car.chassis, 0.5);
 	car.brake();
 
 	//auto obstacle = simulation.rigidbodies->add_box(1000.0, 1.0)
@@ -505,28 +504,45 @@ void car()
 	//	.set_tolerance_in_m(1.0);
 	//simulation.interactions->disable_collision(ground, obstacle);
 
+	// Script
+	auto get_time = [&]() { return simulation.get_time(); };
+	auto set_velocity = [&](double v) { return [&]() { car.set_target_velocity_in_km_per_h(v); }; };
+	stark::EventDrivenScript::Permanence ONE_OFF = stark::EventDrivenScript::Permanence::ONE_OFF;
+	stark::EventDrivenScript::Permanence PERMANENT = stark::EventDrivenScript::Permanence::PERMANENT;
+
+	stark::EventDrivenScript script;
+	script.add_exclusive_intervals_script([&]() { return simulation.get_time(); },
+		{
+			{ 1.0, ONE_OFF,		[&]() { car.set_target_velocity_in_km_per_h(100.0); } },
+			{ 3.0, ONE_OFF,		[&]() { car.brake(); } },
+			{ 4.0, PERMANENT,	[&]() { car.set_steering_front_wheels(5.0 * (4.0 - simulation.stark.current_time)); } },
+			{ 5.0, ONE_OFF,		[&]() { car.set_target_velocity_in_km_per_h(100.0); } }
+		}
+	);
+
 	// Run
 	bool braked = false;
 	simulation.stark.run(
 		[&]()
 		{
 			car.append_to_logger(simulation);
+			script.run_a_cycle();
 
-			const double t = simulation.stark.current_time;
-			const double v = car.get_linear_velocity_in_km_per_h().norm();
+			//const double t = simulation.stark.current_time;
+			//const double v = car.get_linear_velocity_in_km_per_h().norm();
 
-			car.set_steering_front_wheels(5.0*t);
-			if (!braked && t > 1.0) {
-				if (v < 50.0) {
-					car.set_target_velocity_in_km_per_h(100.0);
-				}
-				else {
-					car.brake();
-					braked = true;
-					std::cout << "\nBRAKE" << std::endl;
-					//exit(9);
-				}
-			}
+			//car.set_steering_front_wheels(5.0*t);
+			//if (!braked && t > 1.0) {
+			//	if (v < 50.0) {
+			//		car.set_target_velocity_in_km_per_h(100.0);
+			//	}
+			//	else {
+			//		car.brake();
+			//		braked = true;
+			//		std::cout << "\nBRAKE" << std::endl;
+			//		//exit(9);
+			//	}
+			//}
 		}
 	);
 }

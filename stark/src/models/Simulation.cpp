@@ -1,6 +1,11 @@
 #include "Simulation.h"
 
 
+const double& stark::models::Simulation::get_time() const
+{
+	return this->stark.current_time;
+}
+
 stark::models::Simulation::Simulation(const core::Settings& settings)
 	: stark(settings)
 {

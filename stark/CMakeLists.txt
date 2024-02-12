@@ -135,6 +135,8 @@ set(MODELS_FILES
 	src/models/Simulation.h
 	src/models/time_integration.cpp
 	src/models/time_integration.h
+	src/models/EventDrivenScript.cpp
+	src/models/EventDrivenScript.h
 	)
 
 set(UTILS_FILES
