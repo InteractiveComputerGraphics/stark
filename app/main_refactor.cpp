@@ -462,6 +462,7 @@ void car()
 	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
 	settings.debug.symx_check_for_NaNs = true;
 
+	settings.simulation.adaptive_time_step.set(0.0, 0.002, 0.002);
 	settings.contact.dhat = 0.02;
 	settings.contact.friction_stick_slide_threshold = 0.1;
 	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
@@ -472,12 +473,14 @@ void car()
 	// TODO: Model a collision mesh for the car. It is not a box.
 	// TODO: Test blend strategies.
 
+	// TODO: We need small time step sizes. Document this and move on.
+
 	// Car
 	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "sedan");
 
 	// Environment
 	stark::StaticPlaneHandler ground = simulation->interactions->add_static_plane({ 0.0, 0.0, -0.02 }, Eigen::Vector3d::UnitZ());
-	car.set_wheels_friction(ground, 2.0);
+	car.set_wheels_friction(ground, 1.0);
 	car.set_chassis_friction(ground, 0.5);
 
 	//auto obstacle = simulation->rigidbodies->add_box(1000.0, 1.0)
@@ -495,16 +498,16 @@ void car()
 	// Script
 	//// Velocity
 	car.append_to_velocity_script__brake(1.0);
-	car.append_to_velocity_script__target_velocity_kmh(0.0, 30.0, 4.0, stark::utils::BlendType::Linear);
-	car.append_to_velocity_script__target_velocity_kmh(30.0, 30.0, 5.0, stark::utils::BlendType::Linear);
-	car.append_to_velocity_script__brake(1.0);
+	car.append_to_velocity_script__target_velocity_kmh(0.0, 100.0, 40.0, stark::utils::BlendType::Instant);
+	//car.append_to_velocity_script__target_velocity_kmh(100.0, 100.0, 5.0, stark::utils::BlendType::Linear);
+	//car.append_to_velocity_script__brake(1.0);
 
 	//// Steering
 	car.append_to_steering_script(0.0, 0.0, 1.0);
 	car.append_to_steering_script(0.0, 0.0, 4.0);
 	car.append_to_steering_script(0.0, 10.0, 0.5);
 	car.append_to_steering_script(10.0, 10.0, 1.5);
-	car.append_to_steering_script(10.0, -15.0, 0.5);
+	car.append_to_steering_script(10.0, -10.0, 0.5);
 
 	// Run
 	simulation->run();

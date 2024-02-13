@@ -6,7 +6,7 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 	Parametrization p;
 	p.chassis.length = 4.7;
 	p.chassis.width = 1.8;
-	p.chassis.roof_height = 1.43;
+	p.chassis.roof_height = 1.0; // 1.43
 	p.chassis.floor_height = 0.15;
 	p.chassis.mass = 1500.0;
 
