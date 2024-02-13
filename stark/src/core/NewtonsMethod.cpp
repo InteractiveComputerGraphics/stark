@@ -361,11 +361,12 @@ double stark::core::NewtonsMethod::_inplace_backtracking_line_search(const Eigen
 		this->step_line_search_count++;
 
 		// Print
-		this->console->print(fmt::format("\n\t\t\t {:d}. step = {:.2e} | (1.0 - E/E_bt) = {:.2e}", line_search_it, step, 1.0 - E / suitable_backtracking_energy), ConsoleVerbosity::NewtonIterations);
+		this->console->print(fmt::format("\n\t\t\t {:d}. step = {:.2e} | E/E_bt = {:.2e}", line_search_it, step, E / suitable_backtracking_energy), ConsoleVerbosity::NewtonIterations);
 
 		// Exit
 		if (line_search_it == this->settings->newton.max_line_search_iterations) {
-			return 0.0;
+			step = 0.0;
+			break;
 		}
 
 		// Reduce step
@@ -379,42 +380,33 @@ double stark::core::NewtonsMethod::_inplace_backtracking_line_search(const Eigen
 		// Counter
 		line_search_it++;
 	}
-	double step_that_worked = step;
 	this->logger->stop_timing_add("line_search");
 
 
 	// Logging debug info
 	//// This inspection is to find discontinuities in the energies.
-	//// Therefore, we only log when the step is valid, but the line search didn't work.
-	if (this->settings->debug.line_search_output) {
-		if (step_valid_configuration > 0.99 && step_that_worked < 0.99) {
-			const std::string label = std::to_string(this->debug_output_counter);
+	if (step == 0 && this->settings->debug.line_search_output) {
+		const std::string label = std::to_string(this->debug_output_counter);
 
-			this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", E0));
-			this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", 1.0 - suitable_backtracking_energy / E0));
-			this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", this->du.norm()));
-			for (double fstep = -1.0; fstep < 2.0; fstep += 0.01) {
-				if (this->debug_output_counter == 0) {
-					this->line_search_debug_logger.append_to_series("normalized_step_length", fmt::format("{:.6e}", fstep));
-				}
-
-				this->u1 = this->u0 + fstep * this->du;
-				this->global_energy->set_dofs(this->u1.data());
-				this->callbacks->run_before_energy_evaluation();
-				E = *this->global_energy->evaluate_E().E;
-				this->callbacks->run_after_energy_evaluation();
-				const double v = (1.0 - E / E0);
-				this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", v));
+		this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", E0));
+		this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", suitable_backtracking_energy / E0));
+		this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", this->du.norm()));
+		for (double fstep = -1.0; fstep < 2.0; fstep += 0.01) {
+			if (this->debug_output_counter == 0) {
+				this->line_search_debug_logger.append_to_series("normalized_step_length", fmt::format("{:.6e}", fstep * step_valid_configuration));
 			}
 
-			this->line_search_debug_logger.save_to_disk();
-			this->debug_output_counter++;
-
-			// Restore state
-			this->u1 = this->u0 + step_that_worked * this->du;
+			this->u1 = this->u0 + fstep * step_valid_configuration * this->du;
 			this->global_energy->set_dofs(this->u1.data());
-			this->console->print(fmt::format("\n\t\t\t\t line_search.txt updated [{}]", label), ConsoleVerbosity::NewtonIterations);
+			this->callbacks->run_before_energy_evaluation();
+			E = *this->global_energy->evaluate_E().E;
+			this->callbacks->run_after_energy_evaluation();
+			const double v = (E / E0);
+			this->line_search_debug_logger.append_to_series(label, fmt::format("{:.6e}", v));
 		}
+
+		this->line_search_debug_logger.save_to_disk();
+		this->debug_output_counter++;
 	}
 
 	return step;

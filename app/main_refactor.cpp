@@ -457,31 +457,18 @@ void car()
 	settings.output.simulation_name = "car";
 	settings.output.output_directory = OUTPUT_PATH + "/car";
 	settings.output.codegen_directory = COMPILE_PATH;
+	
 	settings.execution.end_simulation_time = 15.0;
-	settings.contact.collisions_enabled = true;
+	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
 	settings.debug.symx_check_for_NaNs = true;
 
-	//settings.output.fps = 200.0;
-	settings.debug.symx_force_load = true;
-
-	//settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
-	//settings.simulation.adaptive_time_step.set(0.0, 1.0/60.0, 1.0/60.0);
-	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
-	settings.newton.residual = { stark::ResidualType::Acceleration, 1.0 };
-	settings.newton.project_to_PD = true;
-	settings.newton.max_line_search_iterations = 100; // wow, we need this!
-
-	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
 	settings.contact.dhat = 0.02;
-	//settings.contact.friction_stick_slide_threshold = 0.1;
+	settings.contact.friction_stick_slide_threshold = 0.1;
 	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
 
 	auto simulation = std::make_shared<stark::Simulation>(settings);
 
-	// Observation: Motors now give identical results than explicit torque. But both result in a very slow car. Is the energy being dissipated? Where?
-	//	I think it could easily be in the IPC friction as contact points go up from the ground in a very non-vertical way.
-	
-	// PROBLEM: I think I can't script the motor target velocity. It suddenly changes dv which creates sudden adjustments every time step.
+	// TODO: Try not "better friction mode"
 	// TODO: Model a collision mesh for the car. It is not a box.
 	// TODO: Braking should be a more powerful motor. Or we have a motor with different torque limits.
 	// TODO: Test blend strategies.
@@ -504,11 +491,13 @@ void car()
 	//	.set_tolerance_in_m(1.0);
 	//simulation->interactions->disable_collision(ground, obstacle);
 
+	//car.wheels[0]->set_torque({-1000.0, 0.0, 0.0});
+
 	// Script
 	//// Velocity
 	car.append_to_velocity_script__brake(1.0);
-	car.append_to_velocity_script__target_velocity_kmh(30.0, 4.0, stark::utils::BlendType::Linear);
-	car.append_to_velocity_script__target_velocity_kmh(30.0, 5.0, stark::utils::BlendType::Linear);
+	car.append_to_velocity_script__target_velocity_kmh(0.0, 30.0, 4.0, stark::utils::BlendType::Linear);
+	car.append_to_velocity_script__target_velocity_kmh(30.0, 30.0, 5.0, stark::utils::BlendType::Linear);
 	car.append_to_velocity_script__brake(1.0);
 
 	// Run

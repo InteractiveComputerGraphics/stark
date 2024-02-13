@@ -9,7 +9,7 @@ plt.style.use('seaborn-v0_8')
 # folder = r"D:\builds\stark\output\car"
 # # filename = "logger_car_16ms_0.01ra__2024-02-07__16-11-29.txt"
 # filename = "logger_car_16ms_1.0ra__2024-02-07__20-56-28.txt"
-ylabels = ["sedan_abs_velocity_kmh", "sedan_wheel_3_torque", "sedan_spring_3_dx", "sedan_wheel_3_w_rad_s", "sedan_wheel_3_sliding_v_m_s"]
+ylabels = ["sedan_abs_velocity_kmh", "sedan_wheel_3_torque", "sedan_spring_3_dx", "sedan_wheel_3_w_rad_s", "sedan_wheel_3_sliding_v_m_s", "dt"]
 xlabel = "sedan_time"
 
 # =============================================================================

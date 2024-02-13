@@ -10,21 +10,46 @@
 stark::models::EnergyFrictionalContact::EnergyFrictionalContact(core::Stark& stark, const spPointDynamics dyn, const spRigidBodyDynamics rb)
 	: dyn(dyn), rb(rb)
 {
-	// Callbacks
-	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step__update_friction_contacts(stark); });
-	stark.callbacks.before_energy_evaluation.push_back([&]() { this->_before_energy_evaluation__update_contacts(stark); });
-	stark.callbacks.is_intermidiate_state_valid.push_back([&]() { return this->_is_valid_configuration(stark); });
+	if (stark.settings.contact.collisions_enabled) {
+		// Check parameters
+		if (stark.settings.contact.dhat <= 0.0) {
+			std::cout << "stark error: EnergyFrictionalContact::EnergyFrictionalContact() got dhat <= 0.0." << std::endl;
+			exit(-1);
+		}
+		if (stark.settings.contact.adaptive_contact_stiffness.value <= 0.0) {
+			std::cout << "stark error: EnergyFrictionalContact::EnergyFrictionalContact() got adaptive_contact_stiffness <= 0.0." << std::endl;
+			exit(-1);
+		}
 
-	// Energy declarations
-	this->_energies_contact_deformables(stark);
-	this->_energies_contact_rb(stark);
-	this->_energies_contact_rb_deformables(stark);
-	this->_energies_contact_static(stark);
+		// Callbacks
+		stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step__update_friction_contacts(stark); });
+		stark.callbacks.before_energy_evaluation.push_back([&]() { this->_before_energy_evaluation__update_contacts(stark); });
+		stark.callbacks.is_intermidiate_state_valid.push_back([&]() { return this->_is_valid_configuration(stark); });
 
-	this->_energies_friction_deformables(stark);
-	this->_energies_friction_rb(stark);
-	this->_energies_friction_rb_deformables(stark);
-	this->_energies_friction_static(stark);
+		// Energy declarations
+		this->_energies_contact_deformables(stark);
+		this->_energies_contact_rb(stark);
+		this->_energies_contact_rb_deformables(stark);
+		this->_energies_contact_static(stark);
+
+
+		if (stark.settings.contact.friction_enabled) {
+			// Check parameters
+			if (stark.settings.contact.friction_stick_slide_threshold <= 0.0) {
+				std::cout << "stark error: EnergyFrictionalContact::EnergyFrictionalContact() got friction_stick_slide_threshold <= 0.0." << std::endl;
+				exit(-1);
+			}
+
+			// Callbacks
+			stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step__update_friction_contacts(stark); });
+
+			// Energy declarations
+			this->_energies_friction_deformables(stark);
+			this->_energies_friction_rb(stark);
+			this->_energies_friction_rb_deformables(stark);
+			this->_energies_friction_static(stark);
+		}
+	}
 }
 
 int stark::models::EnergyFrictionalContact::add_rigid_body(const int idx, const std::vector<std::array<int, 2>>& edges, const std::vector<Eigen::Vector3d>& vertices)

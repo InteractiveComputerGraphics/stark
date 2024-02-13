@@ -86,8 +86,8 @@ namespace stark
 		double get_steering_in_deg(int wheel_idx) const;
 
 		// Script behavior
-		void append_to_steering_script(double target_angle_deg, double duration, std::array<bool, 4> wheels = { true, true, false, false }, utils::BlendType blend = utils::BlendType::Linear, std::function<bool()> exit_early_when = nullptr);
-		void append_to_velocity_script__target_velocity_kmh(double target_velocity_in_kmh, double duration, utils::BlendType blend = utils::BlendType::Instant, std::function<bool()> exit_early_when = nullptr);
+		void append_to_steering_script(double prev_angle_deg, double target_angle_deg, double duration, std::array<bool, 4> wheels = { true, true, false, false }, utils::BlendType blend = utils::BlendType::Linear, std::function<bool()> exit_early_when = nullptr);
+		void append_to_velocity_script__target_velocity_kmh(double prev_velocity_in_kmh, double target_velocity_in_kmh, double duration, utils::BlendType blend = utils::BlendType::Instant, std::function<bool()> exit_early_when = nullptr);
 		void append_to_velocity_script__brake(double duration, std::function<bool()> exit_early_when = nullptr);
 
 

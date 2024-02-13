@@ -35,13 +35,12 @@ namespace stark::core
 		{
 			AdaptiveParameter adaptive_time_step;
 			Eigen::Vector3d gravity = { 0.0, 0.0, -9.81 };
-			double boundary_conditions_stiffness = 1e6;
 		};
 		struct Contact
 		{
 			AdaptiveParameter adaptive_contact_stiffness;
-			double dhat = 1e-3;
-			double friction_stick_slide_threshold = 1e-3;
+			double dhat = -1.0;  // Can't have a good default value. If left at -1.0, the simulation will give an error
+			double friction_stick_slide_threshold = -1.0; // Can't have a good default value. If left at -1.0, the simulation will give an error
 			double edge_edge_cross_norm_sq_cutoff = 1e-30;
 			double friction_displacement_perturbation = 1e-9;
 			bool better_friction_mode = true;

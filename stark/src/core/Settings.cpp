@@ -100,9 +100,9 @@ Settings::Settings()
 	this->output.time_stamp = time_stamp();
 
 	//// Adaptive Time step
-	this->simulation.adaptive_time_step.value = 0.01; // [s]
-	this->simulation.adaptive_time_step.min = 0.0; // [s]
-	this->simulation.adaptive_time_step.max = 0.01; // [s]
+	this->simulation.adaptive_time_step.value = 1.0/60.0; // [s]
+	this->simulation.adaptive_time_step.min = 1e-6; // [s]
+	this->simulation.adaptive_time_step.max = 1.0/60.0; // [s]
 	this->simulation.adaptive_time_step.success_multiplier = 1.2;
 	this->simulation.adaptive_time_step.failure_multiplier = 0.5;
 	this->simulation.adaptive_time_step.n_successful_iterations_to_increase = 5;
@@ -136,7 +136,6 @@ std::string Settings::as_string() const
 	out += "\n     Simulation";
 	out += "\n         adaptive_time_step" + to_string(this->simulation.adaptive_time_step);
 	out += "\n         gravity: " + to_string(this->simulation.gravity);
-	out += "\n         boundary_conditions_stiffness: " + fmt::format("{:.1e}", this->simulation.boundary_conditions_stiffness);
 
 	out += "\n     Contact";
 	out += "\n         adaptive_contact_stiffness" + to_string(this->contact.adaptive_contact_stiffness);
