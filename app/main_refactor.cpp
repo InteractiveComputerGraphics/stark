@@ -470,7 +470,6 @@ void car()
 
 	// TODO: Try not "better friction mode"
 	// TODO: Model a collision mesh for the car. It is not a box.
-	// TODO: Braking should be a more powerful motor. Or we have a motor with different torque limits.
 	// TODO: Test blend strategies.
 
 	// Car
@@ -499,6 +498,13 @@ void car()
 	car.append_to_velocity_script__target_velocity_kmh(0.0, 30.0, 4.0, stark::utils::BlendType::Linear);
 	car.append_to_velocity_script__target_velocity_kmh(30.0, 30.0, 5.0, stark::utils::BlendType::Linear);
 	car.append_to_velocity_script__brake(1.0);
+
+	//// Steering
+	car.append_to_steering_script(0.0, 0.0, 1.0);
+	car.append_to_steering_script(0.0, 0.0, 4.0);
+	car.append_to_steering_script(0.0, 10.0, 0.5);
+	car.append_to_steering_script(10.0, 10.0, 1.5);
+	car.append_to_steering_script(10.0, -15.0, 0.5);
 
 	// Run
 	simulation->run();
