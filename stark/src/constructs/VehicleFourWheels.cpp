@@ -306,21 +306,27 @@ void stark::VehicleFourWheels::_append_to_logger() const
 
 void stark::VehicleFourWheels::_set_steering(int wheel_idx, double angle_deg, bool global)
 {
-	// Forward direction is along Y axis positive
-	const double x = std::sin(utils::deg2rad(angle_deg));
-	const double y = std::cos(utils::deg2rad(angle_deg));
-	const double z = 0.0;
 	if (global) {
 		auto& chassis = this->wheel_direction[wheel_idx]->get_body_a();
-		auto& suspension_block = this->wheel_direction[wheel_idx]->get_body_b();
 
-		const Eigen::Vector3d target = { x, y, z };
-		const Eigen::Vector3d chassis_forward = chassis.local_to_global_direction(this->FORWARD);
-		const double ang_rad = std::acos(target.dot(chassis_forward));
-		this->_set_steering(wheel_idx, utils::rad2deg(ang_rad), false);
+		// Find the global target direction for the wheels
+		const double angle_rad = utils::deg2rad(angle_deg);
+		const Eigen::Matrix3d R = Eigen::AngleAxisd(-angle_rad, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+		const Eigen::Vector3d target = R * this->FORWARD;
+
+		// Find the chassis global forward direction
+		Eigen::Vector3d chassis_forward_glob = chassis.local_to_global_direction(this->FORWARD);
+		
+		// Compute the angle, which will be the steering input
+		const double dot = target.dot(chassis_forward_glob);
+		const double cross_z = target.cross(chassis_forward_glob).z();
+		const double steering_rad = std::atan2(cross_z, dot);
+		const double steering_deg = utils::rad2deg(steering_rad);
+
+		// Set the steering input
+		this->_set_steering(wheel_idx, steering_deg, /* global = */ false);
 	}
 	else {
-		const Eigen::Vector3d target = { -x, y, z };  // Negative x because the opposite of the angle must be looking forward.
-		this->wheel_direction[wheel_idx]->set_local_direction_body_b(target);
+		this->wheel_direction[wheel_idx]->set_opening_angle_deg(angle_deg, Eigen::Vector3d::UnitZ());
 	}
 }

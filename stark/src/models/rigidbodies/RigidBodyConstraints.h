@@ -339,6 +339,7 @@ namespace stark::models
 			std::vector<double> tolerance_in_deg;
 			std::vector<double> is_active;
 			std::vector<std::string> labels;
+			std::vector<Eigen::Vector3d> db_loc_rest;  // Used as reference to dynamically set a target angle
 			inline int add(int rb_a, int rb_b, const Eigen::Vector3d& da_loc, const Eigen::Vector3d& db_loc, double stiffness, double tolerance_in_deg)
 			{
 				const int id = this->conn.numbered_push_back({ rb_a, rb_b });
@@ -348,6 +349,7 @@ namespace stark::models
 				this->tolerance_in_deg.push_back(tolerance_in_deg);
 				this->is_active.push_back(1.0);
 				this->labels.push_back("");
+				this->db_loc_rest.push_back(db_loc.normalized());
 				return id;
 			}
 			static symx::Scalar energy(const symx::Scalar& k, const symx::Vector& da, const symx::Vector& db)

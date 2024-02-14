@@ -2,6 +2,7 @@
 
 #include "../../utils/mesh_utils.h"
 
+#include "rigidbody_transformations.h"
 #include "RigidBodyConstraints.h"
 #include "RigidBodyHandler.h"
 
@@ -293,6 +294,17 @@ namespace stark::models
 			return RigidBodyConstraints::Directions::violation_in_deg_and_torque(get_stiffness(), 
 				rb_a.local_to_global_direction(get_local_direction_body_a()), rb_b.local_to_global_direction(get_local_direction_body_b()));
 		};
+
+		inline auto& set_opening_angle_rad(double angle_rad, const Eigen::Vector3d& normal_loc_a)
+		{
+			const Eigen::Matrix3d R = Eigen::AngleAxisd(angle_rad, normal_loc_a).toRotationMatrix();
+			this->set_local_direction_body_b(R * this->constraints->db_loc_rest[this->idx]);
+			return (*this);
+		}
+		inline auto& set_opening_angle_deg(double angle_deg, const Eigen::Vector3d& normal_loc_a)
+		{
+			return this->set_opening_angle_rad(utils::deg2rad(angle_deg), normal_loc_a);
+		}
 
 		inline double get_stiffness() const { return this->constraints->stiffness[this->idx]; };
 		inline auto& set_stiffness(double stiffness) { this->constraints->stiffness[this->idx] = stiffness; return (*this); };

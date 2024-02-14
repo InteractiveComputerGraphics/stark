@@ -3,6 +3,9 @@ stark repo TODO
 
 Release
 -------
+	// TODO: Try not "better friction mode"
+	// TODO: Test blend strategies.
+
 	[CRITICAL] There is definitely something wrong when reducing time step.
 	- [GENERAL PROBLEM] It is hard to figure out what might be causing convergence problems.
 		In the dryer sim, the motor really struggles, the collision struggles, projection leads to a lot of iterations, CG struggles, unclear if mass ratios are a problem...
@@ -33,6 +36,7 @@ Release
 				a) The model is a very rough approximation or reality. Will work well for tidy contacts, but will be problematic for huge velocities and stickiness (despite what papers say).
 					Since it is "lagged", it can be very time step dependent.
 				b) It is numerically challenging, specially when the stick-slide condition is tightly define.
+			In highly dynamis scenes (car) small time steps and tight tolerances can make a big difference.
 		- Still sometimes the codegen folder needs to be recomputed or the program run again.
 	
 	Comming

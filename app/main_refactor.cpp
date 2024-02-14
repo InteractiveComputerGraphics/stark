@@ -453,6 +453,11 @@ void laundry_soft_boxes()
 }
 void car()
 {
+	/*
+		Important:
+			This simulation is highly dynamic. Tight convergence, small time steps, etc... matters.
+	*/
+
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "car";
 	settings.output.output_directory = OUTPUT_PATH + "/car";
@@ -463,7 +468,7 @@ void car()
 	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
 	settings.debug.symx_check_for_NaNs = true;
 
-	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
+	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
 	settings.newton.project_to_PD = false;
 	settings.contact.dhat = 0.02;
 	settings.contact.friction_stick_slide_threshold = 0.1;
@@ -471,54 +476,39 @@ void car()
 
 	auto simulation = std::make_shared<stark::Simulation>(settings);
 
-	// TODO: Try not "better friction mode"
-	// TODO: Model a collision mesh for the car. It is not a box.
-	// TODO: Test blend strategies.
-
-	// TODO: We need small time step sizes. Document this and move on.
-
 	// Car
 	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "sedan");
 
 	// Environment
 	stark::StaticPlaneHandler ground = simulation->interactions->add_static_plane({ 0.0, 0.0, -0.02 }, Eigen::Vector3d::UnitZ());
-	car.set_wheels_friction(ground, 1.0);
+	car.set_wheels_friction(ground, 1.25);
 	car.set_chassis_friction(ground, 0.5);
 
-	//auto obstacle = simulation->rigidbodies->add_box(1000.0, 1.0)
-	//	.set_rotation(45.0, Eigen::Vector3d::UnitX())
-	//	.set_translation({ 0.8, 50.0, 0.0 })
-	//	.add_to_output_label("obstacle");
-	//simulation->rigidbodies->add_constraint_fix(obstacle)
-	//	.set_stiffness(1e8)
-	//	.set_tolerance_in_deg(60.0)
-	//	.set_tolerance_in_m(1.0);
-	//simulation->interactions->disable_collision(ground, obstacle);
-
-	//car.wheels[0]->set_torque({-1000.0, 0.0, 0.0});
+	// Obstacle
+	if (true) {
+		auto obstacle = simulation->rigidbodies->add_box(1000.0, 1.0)
+			.set_rotation(45.0, Eigen::Vector3d::UnitX())
+			.set_translation({ 0.8, 50.0, 0.0 })
+			.add_to_output_label("obstacle");
+		simulation->rigidbodies->add_constraint_fix(obstacle)
+			.set_stiffness(1e8)
+			.set_tolerance_in_deg(60.0)
+			.set_tolerance_in_m(1.0);
+		simulation->interactions->disable_collision(ground, obstacle);
+	}
 
 	// Script
 	//// Velocity
 	car.add_event_brake(0.0, 1.0);
-	//car.add_event_target_velocity_in_kmh(1.0, 7.0, 0.0, 50.0, stark::utils::BlendType::Instant);
-	//car.add_event_target_velocity_in_kmh(7.5, 99.9, 50.0, 100.0, stark::utils::BlendType::Instant);
-	car.add_event_target_velocity_in_kmh(1.0, 5.0, 0.0, 20.0, stark::utils::BlendType::Linear);
+	car.add_event_target_velocity_in_kmh(1.0, 5.0, 0.0, 50.0, stark::utils::BlendType::Instant);
+	car.add_event_target_velocity_in_kmh(7.1, 99.9, 50.0, 100.0, stark::utils::BlendType::Instant);
 
 	//// Steering
-	const double ang = 15.0;
-	//car.add_event_steering_in_deg(0.0, 5.0, 0.0, 0.0);
-	//car.add_event_steering_in_deg(5.0, 5.5, 0.0, ang, stark::utils::BlendType::Linear);
-	//car.add_event_steering_in_deg(5.5, 7.0, ang, ang, stark::utils::BlendType::Linear);
-	//car.add_event_steering_in_deg(7.0, 7.5, ang, -ang, stark::utils::BlendType::Linear);
-	//car.add_event_steering_in_deg(7.5, 9.0, -ang, -ang, stark::utils::BlendType::Linear);
-	//car.add_event_steering_in_deg(9.0, 9.5, -ang, 0.0, stark::utils::BlendType::Linear);
-	//car.add_event_steering_in_deg(9.5, 99.9, 0.0, 0.0, stark::utils::BlendType::Linear);
-
-	car.add_event_global_steering_in_deg(0.0, 1.0, 0.0, 0.0);
-	car.add_event_global_steering_in_deg(1.0, 10.0, 0.0, 90.0);
-	car.add_event_global_steering_in_deg(10.0, 99.0, 90.0, 90.0);
-	//car.add_event_global_steering_in_deg(5.0, 10.0, 45.0, -45.0);
-
+	car.add_event_global_steering_in_deg(0.0, 5.0, 0.0, 0.0, stark::utils::BlendType::Linear);
+	car.add_event_global_steering_in_deg(5.0, 7.0, 0.0, 120.0, stark::utils::BlendType::Linear);
+	car.add_event_global_steering_in_deg(7.0, 7.2, 120.0, 120.0, stark::utils::BlendType::Linear);
+	car.add_event_global_steering_in_deg(7.2, 10.0, 120.0, 0.0, stark::utils::BlendType::Linear);
+	car.add_event_global_steering_in_deg(10.0, 99.0, 0.0, 0.0, stark::utils::BlendType::Linear);
 
 	// Run
 	simulation->run();
