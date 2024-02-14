@@ -457,12 +457,14 @@ void car()
 	settings.output.simulation_name = "car";
 	settings.output.output_directory = OUTPUT_PATH + "/car";
 	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::Frames;
 	
 	settings.execution.end_simulation_time = 15.0;
 	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
 	settings.debug.symx_check_for_NaNs = true;
 
-	settings.simulation.adaptive_time_step.set(0.0, 0.002, 0.002);
+	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
+	settings.newton.project_to_PD = false;
 	settings.contact.dhat = 0.02;
 	settings.contact.friction_stick_slide_threshold = 0.1;
 	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
@@ -497,17 +499,26 @@ void car()
 
 	// Script
 	//// Velocity
-	car.append_to_velocity_script__brake(1.0);
-	car.append_to_velocity_script__target_velocity_kmh(0.0, 100.0, 40.0, stark::utils::BlendType::Instant);
-	//car.append_to_velocity_script__target_velocity_kmh(100.0, 100.0, 5.0, stark::utils::BlendType::Linear);
-	//car.append_to_velocity_script__brake(1.0);
+	car.add_event_brake(0.0, 1.0);
+	//car.add_event_target_velocity_in_kmh(1.0, 7.0, 0.0, 50.0, stark::utils::BlendType::Instant);
+	//car.add_event_target_velocity_in_kmh(7.5, 99.9, 50.0, 100.0, stark::utils::BlendType::Instant);
+	car.add_event_target_velocity_in_kmh(1.0, 5.0, 0.0, 20.0, stark::utils::BlendType::Linear);
 
 	//// Steering
-	car.append_to_steering_script(0.0, 0.0, 1.0);
-	car.append_to_steering_script(0.0, 0.0, 4.0);
-	car.append_to_steering_script(0.0, 10.0, 0.5);
-	car.append_to_steering_script(10.0, 10.0, 1.5);
-	car.append_to_steering_script(10.0, -10.0, 0.5);
+	const double ang = 15.0;
+	//car.add_event_steering_in_deg(0.0, 5.0, 0.0, 0.0);
+	//car.add_event_steering_in_deg(5.0, 5.5, 0.0, ang, stark::utils::BlendType::Linear);
+	//car.add_event_steering_in_deg(5.5, 7.0, ang, ang, stark::utils::BlendType::Linear);
+	//car.add_event_steering_in_deg(7.0, 7.5, ang, -ang, stark::utils::BlendType::Linear);
+	//car.add_event_steering_in_deg(7.5, 9.0, -ang, -ang, stark::utils::BlendType::Linear);
+	//car.add_event_steering_in_deg(9.0, 9.5, -ang, 0.0, stark::utils::BlendType::Linear);
+	//car.add_event_steering_in_deg(9.5, 99.9, 0.0, 0.0, stark::utils::BlendType::Linear);
+
+	car.add_event_global_steering_in_deg(0.0, 1.0, 0.0, 0.0);
+	car.add_event_global_steering_in_deg(1.0, 10.0, 0.0, 90.0);
+	car.add_event_global_steering_in_deg(10.0, 99.0, 90.0, 90.0);
+	//car.add_event_global_steering_in_deg(5.0, 10.0, 45.0, -45.0);
+
 
 	// Run
 	simulation->run();

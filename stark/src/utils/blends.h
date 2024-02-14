@@ -14,5 +14,5 @@ namespace stark::utils
         Bounce
     };
 
-    double blend(double min, double max, double duration, double begin_time, double current_time, BlendType blendType);
+    double blend(double min, double max, double begin_time, double end_time, double current_time, BlendType blendType);
 }

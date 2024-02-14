@@ -1,7 +1,8 @@
 #include "blends.h"
 
-double stark::utils::blend(double min, double max, double duration, double begin_time, double current_time, BlendType blendType)
+double stark::utils::blend(double min, double max, double begin_time, double end_time, double current_time, BlendType blendType)
 {
+    const double duration = end_time - begin_time;
     const double dt = current_time - begin_time;
 
     // Error exit if time is out of range

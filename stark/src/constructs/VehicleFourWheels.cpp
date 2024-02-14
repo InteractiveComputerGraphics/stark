@@ -43,11 +43,7 @@ stark::VehicleFourWheels::VehicleFourWheels(std::shared_ptr<Simulation> simulati
 	const double HARD_STIFFNESS = 1e6; // TODO: Find a more appropriate way to set this value
 
 	// Log car stuff into the logger as a permanent event
-	simulation->script.add_recurring_event([this](EventInfo&){ this->_append_to_logger(); });
-
-	// Create an action queue for this vehicle
-	this->velocity_action_queue_idx = simulation->script.make_new_ordered_action_queue();
-	this->steering_action_queue_idx = simulation->script.make_new_ordered_action_queue();
+	simulation->get_script().add_recurring_event([this](EventInfo&) { this->_append_to_logger(); });
 
 	// Convenient lambdas
 	auto disable_collision = [&simulation](std::shared_ptr<RigidBodyHandler> a, std::shared_ptr<RigidBodyHandler> b)
@@ -182,7 +178,7 @@ void stark::VehicleFourWheels::brake()
 	}
 }
 
-void stark::VehicleFourWheels::set_target_velocity_in_km_per_h(double v_km_per_h)
+void stark::VehicleFourWheels::set_target_velocity_in_kmh(double v_km_per_h)
 {
 	const double v = v_km_per_h / 3.6;
 
@@ -202,7 +198,7 @@ void stark::VehicleFourWheels::set_target_velocity_in_km_per_h(double v_km_per_h
 
 Eigen::Vector3d stark::VehicleFourWheels::get_forward_velocity_in_km_per_h() const
 {
-	const Eigen::Vector3d chassis_global_direction = this->chassis->local_to_global_direction(this->LOCAL_FORWARD);
+	const Eigen::Vector3d chassis_global_direction = this->chassis->local_to_global_direction(this->FORWARD);
 	return chassis_global_direction.dot(this->get_absolute_velocity_in_km_per_h()) * chassis_global_direction;
 }
 
@@ -215,62 +211,67 @@ void stark::VehicleFourWheels::set_steering_in_deg(double angle_deg, std::array<
 {
 	for (int i = 0; i < 4; i++) {
 		if (wheels[i]) {
-			this->_set_steering(i, angle_deg);
+			this->_set_steering(i, angle_deg, /* global = */ false);
+		}
+	}
+}
+void stark::VehicleFourWheels::set_global_steering_in_deg(double angle_deg, std::array<bool, 4> wheels)
+{
+	for (int i = 0; i < 4; i++) {
+		if (wheels[i]) {
+			this->_set_steering(i, angle_deg, /* global = */ true);
 		}
 	}
 }
 double stark::VehicleFourWheels::get_steering_in_deg(int wheel_idx) const
 {
 	const Eigen::Vector3d d = this->wheel_direction[wheel_idx]->get_local_direction_body_b();
-	const double angle_rad = std::acos(d.dot(Eigen::Vector3d::UnitY())); // Forward is +Y. Negative x because the opposite of the angle must be looking forward.
+	const double angle_rad = std::acos(d.dot(this->FORWARD)); // Forward is +Y. Negative x because the opposite of the angle must be looking forward.
 	return utils::rad2deg(angle_rad);
 }
 
-void stark::VehicleFourWheels::append_to_steering_script(double prev_angle_deg, double target_angle_deg, double duration, std::array<bool, 4> wheels, utils::BlendType blend, std::function<bool()> exit_early_when)
+double stark::VehicleFourWheels::get_global_steering_in_deg(int wheel_idx) const
 {
-	/* Appends steering to the steering action queue */
-
-	this->simulation->script.append_ordered_action(
-		this->steering_action_queue_idx,
-		[this, prev_angle_deg, target_angle_deg, duration, wheels, blend](EventInfo& event_info)
-		{
-			const double t0 = event_info.get_begin_time();
-			const double t = this->simulation->get_time();
-			const double ang = stark::utils::blend(prev_angle_deg, target_angle_deg, duration, t0, this->simulation->get_time(), blend);
-			this->set_steering_in_deg(ang, wheels);
-		},
-		this->_generate_stop_at_lambda(duration, exit_early_when)
-	);
+	const Eigen::Vector3d d = this->wheel_direction[wheel_idx]->get_local_direction_body_b();
+	const Eigen::Vector3d d_global = this->wheel_direction[wheel_idx]->get_body_b().local_to_global_direction(d);
+	const double angle_rad = std::acos(d_global.dot(this->FORWARD)); // Forward is +Y. Negative x because the opposite of the angle must be looking forward.
+	return utils::rad2deg(angle_rad);
 }
 
-void stark::VehicleFourWheels::append_to_velocity_script__target_velocity_kmh(double prev_velocity_in_kmh, double target_velocity_in_kmh, double duration, utils::BlendType blend, std::function<bool()> exit_early_when)
+void stark::VehicleFourWheels::add_event_brake(double t0, double t1)
 {
-	/* Appends acceleration to the velocity action queue */
-
-	this->simulation->script.append_ordered_action(
-		this->velocity_action_queue_idx,
-		[this, duration, prev_velocity_in_kmh, target_velocity_in_kmh, blend](EventInfo& event_info)
-		{
-			const double t0 = event_info.get_begin_time();
-			const double t = this->simulation->get_time();
-			const double v = stark::utils::blend(prev_velocity_in_kmh, target_velocity_in_kmh, duration, t0, this->simulation->get_time(), blend);
-			this->set_target_velocity_in_km_per_h(v);
-		},
-		this->_generate_stop_at_lambda(duration, exit_early_when)
-	);
-}
-
-void stark::VehicleFourWheels::append_to_velocity_script__brake(double duration, std::function<bool()> exit_early_when)
-{
-	/* Appends braking to the velocity action queue */
-
-	this->simulation->script.append_ordered_action(
-		this->velocity_action_queue_idx,
-		[this](EventInfo& event_info)
+	this->simulation->add_time_event(t0, t1,
+		[=](double t)
 		{
 			this->brake();
-		},
-		this->_generate_stop_at_lambda(duration, exit_early_when)
+		}
+	);
+}
+void stark::VehicleFourWheels::add_event_target_velocity_in_kmh(double t0, double t1, double begin_kmh, double end_kmh, utils::BlendType blend)
+{
+	this->simulation->add_time_event(t0, t1,
+		[=](double t)
+		{
+			this->set_target_velocity_in_kmh(stark::utils::blend(begin_kmh, end_kmh, t0, t1, t, blend));
+		}
+	);
+}
+void stark::VehicleFourWheels::add_event_steering_in_deg(double t0, double t1, double begin_deg, double end_deg, utils::BlendType blend)
+{
+	this->simulation->add_time_event(t0, t1,
+		[=](double t)
+		{
+			this->set_steering_in_deg(stark::utils::blend(begin_deg, end_deg, t0, t1, t, blend));
+		}
+	);
+}
+void stark::VehicleFourWheels::add_event_global_steering_in_deg(double t0, double t1, double begin_deg, double end_deg, utils::BlendType blend)
+{
+	this->simulation->add_time_event(t0, t1,
+		[=](double t)
+		{
+			this->set_global_steering_in_deg(stark::utils::blend(begin_deg, end_deg, t0, t1, t, blend));
+		}
 	);
 }
 
@@ -303,37 +304,23 @@ void stark::VehicleFourWheels::_append_to_logger() const
 	}
 }
 
-void stark::VehicleFourWheels::_set_steering(int wheel_idx, double angle_deg)
+void stark::VehicleFourWheels::_set_steering(int wheel_idx, double angle_deg, bool global)
 {
 	// Forward direction is along Y axis positive
 	const double x = std::sin(utils::deg2rad(angle_deg));
 	const double y = std::cos(utils::deg2rad(angle_deg));
 	const double z = 0.0;
-	const Eigen::Vector3d d = { -x, y, z };
-	this->wheel_direction[wheel_idx]->set_local_direction_body_b(d.normalized()); // Body a is the chassis. Negative x because the opposite of the angle must be looking forward.
+	if (global) {
+		auto& chassis = this->wheel_direction[wheel_idx]->get_body_a();
+		auto& suspension_block = this->wheel_direction[wheel_idx]->get_body_b();
+
+		const Eigen::Vector3d target = { x, y, z };
+		const Eigen::Vector3d chassis_forward = chassis.local_to_global_direction(this->FORWARD);
+		const double ang_rad = std::acos(target.dot(chassis_forward));
+		this->_set_steering(wheel_idx, utils::rad2deg(ang_rad), false);
+	}
+	else {
+		const Eigen::Vector3d target = { -x, y, z };  // Negative x because the opposite of the angle must be looking forward.
+		this->wheel_direction[wheel_idx]->set_local_direction_body_b(target);
+	}
 }
-
-std::function<bool(stark::EventInfo&)> stark::VehicleFourWheels::_generate_stop_at_lambda(double duration, std::function<bool()> exit_early_when)
-{
-	auto stop_at = 
-		[this, duration, exit_early_when](EventInfo& event_info)
-		{
-			bool stop = false;
-
-			// User defined exit
-			if (exit_early_when && exit_early_when()) {
-				stop = true;
-			}
-
-			// Duration exit
-			if (!stop) {
-				const double running_time = this->simulation->get_time() - event_info.get_begin_time();
-				stop = running_time > duration;
-			}
-
-			return stop;
-		};
-
-	return stop_at;
-}
-

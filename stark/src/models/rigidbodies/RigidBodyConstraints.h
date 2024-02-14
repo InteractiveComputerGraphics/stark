@@ -71,7 +71,6 @@ namespace stark::models
 		{
 			const double v = da1.dot(vb1 - va1);
 			const double k = max_force / delay;
-			const double eps = delay/2.0;
 			const double dv = v - target_v;
 
 			if (dv < -delay) {

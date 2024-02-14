@@ -79,16 +79,19 @@ namespace stark
 		template<typename RBHandler>
 		void set_chassis_friction(const RBHandler& object, double friction);
 		void brake();
-		void set_target_velocity_in_km_per_h(double v);
+		void set_target_velocity_in_kmh(double v);
 		Eigen::Vector3d get_forward_velocity_in_km_per_h() const;
 		Eigen::Vector3d get_absolute_velocity_in_km_per_h() const;
 		void set_steering_in_deg(double angle_deg, std::array<bool, 4> wheels = { true, true, false, false });
+		void set_global_steering_in_deg(double angle_deg, std::array<bool, 4> wheels = { true, true, false, false });
 		double get_steering_in_deg(int wheel_idx) const;
+		double get_global_steering_in_deg(int wheel_idx) const;
 
 		// Script behavior
-		void append_to_steering_script(double prev_angle_deg, double target_angle_deg, double duration, std::array<bool, 4> wheels = { true, true, false, false }, utils::BlendType blend = utils::BlendType::Linear, std::function<bool()> exit_early_when = nullptr);
-		void append_to_velocity_script__target_velocity_kmh(double prev_velocity_in_kmh, double target_velocity_in_kmh, double duration, utils::BlendType blend = utils::BlendType::Instant, std::function<bool()> exit_early_when = nullptr);
-		void append_to_velocity_script__brake(double duration, std::function<bool()> exit_early_when = nullptr);
+		void add_event_brake(double t0, double t1);
+		void add_event_target_velocity_in_kmh(double t0, double t1, double begin_kmh, double end_kmh, utils::BlendType blend = utils::BlendType::Linear);
+		void add_event_steering_in_deg(double t0, double t1, double begin_deg, double end_deg, utils::BlendType blend = utils::BlendType::Linear);
+		void add_event_global_steering_in_deg(double t0, double t1, double begin_deg, double end_deg, utils::BlendType blend = utils::BlendType::Linear);
 
 
 	private:
@@ -96,16 +99,11 @@ namespace stark
 		std::shared_ptr<Simulation> simulation;
 		Parametrization params;
 		std::string label;
-		const Eigen::Vector3d LOCAL_FORWARD = Eigen::Vector3d::UnitY();
-		
-		// Scripting
-		int velocity_action_queue_idx = -1;
-		int steering_action_queue_idx = -1;
+		const Eigen::Vector3d FORWARD = Eigen::Vector3d::UnitY();
 
 		/* Methods */
 		void _append_to_logger() const;
-		void _set_steering(int wheel_idx, double angle_deg);
-		std::function<bool(EventInfo&)> _generate_stop_at_lambda(double duration, std::function<bool()> exit_early_when);
+		void _set_steering(int wheel_idx, double angle_deg, bool global = false);
 	};
 
 

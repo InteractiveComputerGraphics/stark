@@ -62,14 +62,6 @@ namespace stark::models
 			Event(int id, std::function<bool(EventInfo&)> run_when, std::function<void(EventInfo&)> action, std::function<bool(EventInfo&)> delete_when, bool discard_at_first_check) 
 				: info(id), run_when(run_when), action(action), delete_when(delete_when), discard_at_first_check(discard_at_first_check) {}
 		};
-		struct Action
-		{
-			EventInfo info;
-			std::function<bool(EventInfo&)> stop_at;
-			std::function<void(EventInfo&)> action;
-			Action(int id, std::function<void(EventInfo&)> action, std::function<bool(EventInfo&)> stop_at)
-				: info(id), action(action), stop_at(stop_at) {}
-		};
 
 	public:
 		enum class Permanence { PERMANENT, ONE_OFF };
@@ -83,7 +75,6 @@ namespace stark::models
 
 	private:
 		std::list<Event> independent_events;
-		std::vector<std::deque<Action>> ordered_action_queues;  // Use case: each finger of a hand can be moved independently
 		int event_counter = 0;
 	};
 }
