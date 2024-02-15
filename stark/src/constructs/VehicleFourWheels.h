@@ -66,7 +66,7 @@ namespace stark
 		std::array<bool, 4> is_wheel_powered = { false, false, false, false };
 		
 		// Methods
-		VehicleFourWheels(std::shared_ptr<Simulation> simulation, Parametrization& params, std::string label);
+		VehicleFourWheels(std::shared_ptr<Simulation> simulation, const Parametrization& params, std::string label);
 
 		//// Transformations
 		VehicleFourWheels& rotate_deg(double angle, const Eigen::Vector3d& axis);

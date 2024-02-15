@@ -85,7 +85,7 @@ namespace stark::models
 	template<typename DEFORMABLE_HANDLER_0, typename DEFORMABLE_HANDLER_1>
 	inline void Interactions::attach(const DEFORMABLE_HANDLER_0& deformable0, const DEFORMABLE_HANDLER_1& deformable1, const std::vector<std::array<int, 2>>& pairs, const double stiffness)
 	{
-		this->disable_collision(object0, object1);
+		this->disable_collision(deformable0, deformable1);
 		this->_check_deformable_type(deformable0);
 		this->_check_deformable_type(deformable1);
 
@@ -95,12 +95,12 @@ namespace stark::models
 			global_pairs.push_back({ deformable0.get_global_vertex_idx(pair[0]), deformable1.get_global_vertex_idx(pair[1]) });
 		}
 
-		this->attachments->add_deformable_deformable(pairs_global_indices, stiffness);
+		this->attachments->add_deformable_deformable(global_pairs, stiffness);
 	}
 	template<typename DEFORMABLE_HANDLER>
 	inline void Interactions::attach(const RigidBodyHandler& rigidbody, const DEFORMABLE_HANDLER& deformable, const std::vector<int>& deformable_vertices, const double stiffness)
 	{
-		this->disable_collision(object0, object1);
+		this->disable_collision(rigidbody, deformable);
 		this->_check_deformable_type(deformable);
 
 		std::vector<int> global_vertices;

@@ -34,7 +34,7 @@ stark::VehicleFourWheels::Parametrization stark::VehicleFourWheels::Parametrizat
 }
 
 
-stark::VehicleFourWheels::VehicleFourWheels(std::shared_ptr<Simulation> simulation, Parametrization& params, std::string label)
+stark::VehicleFourWheels::VehicleFourWheels(std::shared_ptr<Simulation> simulation, const Parametrization& params, std::string label)
 	: simulation(simulation), params(params), label(label)
 {
 	// Constants
