@@ -50,12 +50,15 @@ namespace symx
 
 		bool load_if_cached(std::string name, std::string folder, std::string id, OpType op_type);
 		void compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", OpType op_type = OpType::Double, bool suppress_compiler_output = true);
+		void try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", OpType op_type = OpType::Double, bool suppress_compiler_output = true);
 		bool is_valid();
 
 		template<typename FLOAT>
 		bool load_if_cached(std::string name, std::string folder, std::string id);
 		template<typename FLOAT>
 		void compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", bool suppress_compiler_output = true);
+		template<typename FLOAT>
+		void try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", bool suppress_compiler_output = true);
 
 		template<typename FLOAT>
 		fptr<FLOAT> get_f();
@@ -110,6 +113,11 @@ namespace symx
 	inline void Compilation::compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, bool suppress_compiler_output)
 	{
 		this->compile(expr, name, folder, id, get_type_as_enum<FLOAT>(), suppress_compiler_output);
+	}
+	template<typename FLOAT>
+	inline void Compilation::try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, bool suppress_compiler_output)
+	{
+		this->try_load_otherwise_compile(expr, name, folder, id, get_type_as_enum<FLOAT>(), suppress_compiler_output);
 	}
 	template<typename FLOAT>
 	inline symx::Compilation::fptr<FLOAT> Compilation::get_f()

@@ -2,12 +2,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use("seaborn-v0_8")
 
+import tkinter as tk
+from tkinter import filedialog
+def select_file():
+    root = tk.Tk()
+    root.withdraw()  # Hide the main tkinter window
+    file_path = filedialog.askopenfilename()  # Open the dialog and store the selected file path
+    return file_path
+
+
 # path = "D:/builds/stark/output/collision_cloth_parallel_edge_test/line_search.txt"
 # path = "D:/builds/stark/output/collision_cloth_edge_edge_tests/line_search.txt"
 # path = "D:/builds/stark/output/cloth_friction_slope_test/line_search_cloth_friction_slope_test.txt"
 # path = "D:/builds/stark/output/cloth_friction_corner/line_search_cloth_friction_corner_jose.txt"
 # path = "D:/builds/stark/output/wrap/line_search.txt"
-path = "D:/builds/stark/output/laundry/line_search_laundry__2023-08-15__13-56-58.txt"
+path = select_file()
 
 start = 0
 n = 20

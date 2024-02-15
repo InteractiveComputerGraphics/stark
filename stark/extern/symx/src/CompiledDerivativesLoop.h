@@ -28,7 +28,7 @@ namespace symx
 		~CompiledDerivativesLoop() = default;
 		CompiledDerivativesLoop(const CompiledDerivativesLoop&) = delete; // Copying makes unclear who owns the DLL
 		CompiledDerivativesLoop(std::string name, std::string folder, Scalar expr, std::vector<Scalar>& variables, const int block_size, const bool suppress_compiler_output = true);
-		void init(std::string name, std::string folder, Scalar expr, std::vector<Scalar>& variables, const int block_size, const bool suppress_compiler_output = false);
+		void init(std::string name, std::string folder, Scalar expr, std::vector<Scalar>& variables, const std::string& all_symbols_names, const int block_size, const bool force_compilation = false,  const bool force_load = false, const bool suppress_compiler_output = false);
 
 		// Set connectivity
 		Element set_connectivity(std::function<const int32_t* ()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element);
@@ -52,17 +52,17 @@ namespace symx
 		void set_vector(const Vector& vector, ARRAY& arr);
 
 		// Set Scalars
-		void set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data);
+		void set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size);
 		template<typename ARRAY>
 		void set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, ARRAY& arr);
 
 		// Set Vectors
-		void set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data);
+		void set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size);
 		template<typename ARRAY>
 		void set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, ARRAY& arr);
 
 		// Set Matrices
-		void set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data);
+		void set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size);
 		template<typename ARRAY>
 		void set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, ARRAY& arr);
 
@@ -96,32 +96,31 @@ namespace symx
 		this->init(name, folder, expr, variables, block_size, suppress_compiler_output);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::init(std::string name, std::string folder, Scalar expr, std::vector<Scalar>& variables, const int block_size, const bool suppress_compiler_output)
+	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::init(std::string name, std::string folder, Scalar expr, std::vector<Scalar>& variables, const std::string& all_symbols_names, const int block_size, const bool force_compilation, const bool force_load, const bool suppress_compiler_output)
 	{
 		this->block_size = block_size;
 		this->n_variables = (int)variables.size();
 		this->n_blocks = this->n_variables / this->block_size;
 
-		std::string variables_names;
+		// Check if the variables are symbols
 		for (Scalar& scalar : variables) {
-			if (scalar.is_symbol()) {
-				variables_names += scalar.get_name();
-			}
-			else {
+			if (!scalar.is_symbol()) {
 				std::cout << "symx error: cannot take derivatives wrt non-symbols. Scalar passed: " << scalar.get_name() << std::endl;
 				exit(-1);
 			}
 		}
 
 		const std::string type_str = get_float_type_as_string<COMPILED_FLOAT>();
-		const std::string id_string = expr.get_checksum() + variables_names;
-		const bool was_E_cached = this->E.load_if_cached(name + "_E_" + type_str, folder, id_string);
+		const std::string id_string = (force_load) ? "FORCE_LOAD" : expr.get_checksum() + all_symbols_names;
 
 		bool was_everything_cached = false;
-		if (was_E_cached) {
-			const bool was_dE_cached = this->dE.load_if_cached(name + "_dE_" + type_str, folder, id_string);
-			const bool was_hE_cached = this->hE.load_if_cached(name + "_hE_" + type_str, folder, id_string);
-			was_everything_cached = was_E_cached && was_dE_cached && was_hE_cached;
+		if (!force_compilation) {
+			const bool was_E_cached = this->E.load_if_cached(name + "_E_" + type_str, folder, id_string);
+			if (was_E_cached) {
+				const bool was_dE_cached = this->dE.load_if_cached(name + "_dE_" + type_str, folder, id_string);
+				const bool was_hE_cached = this->hE.load_if_cached(name + "_hE_" + type_str, folder, id_string);
+				was_everything_cached = was_E_cached && was_dE_cached && was_hE_cached;
+			}
 		}
 
 		if (!was_everything_cached) {
@@ -218,11 +217,11 @@ namespace symx
 		this->hE.set_vector(vector, arr);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data)
+	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_scalars(const std::vector<Scalar>& scalars, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size)
 	{
-		this->E.set_scalars(scalars, indices, data);
-		this->dE.set_scalars(scalars, indices, data);
-		this->hE.set_scalars(scalars, indices, data);
+		this->E.set_scalars(scalars, indices, data, size);
+		this->dE.set_scalars(scalars, indices, data, size);
+		this->hE.set_scalars(scalars, indices, data, size);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	template<typename ARRAY>
@@ -233,11 +232,11 @@ namespace symx
 		this->hE.set_scalars(scalars, indices, arr);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data)
+	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_vectors(const std::vector<Vector>& vectors, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size)
 	{
-		this->E.set_vectors(vectors, indices, data);
-		this->dE.set_vectors(vectors, indices, data);
-		this->hE.set_vectors(vectors, indices, data);
+		this->E.set_vectors(vectors, indices, data, size);
+		this->dE.set_vectors(vectors, indices, data, size);
+		this->hE.set_vectors(vectors, indices, data, size);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	template<typename ARRAY>
@@ -248,11 +247,11 @@ namespace symx
 		this->hE.set_vectors(vectors, indices, arr);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data)
+	inline void CompiledDerivativesLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_matrices(const std::vector<Matrix>& matrices, const std::vector<Index>& indices, std::function<const INPUT_FLOAT* ()> data, std::function<int32_t()> size)
 	{
-		this->E.set_matrices(matrices, indices, data);
-		this->dE.set_matrices(matrices, indices, data);
-		this->hE.set_matrices(matrices, indices, data);
+		this->E.set_matrices(matrices, indices, data, size);
+		this->dE.set_matrices(matrices, indices, data, size);
+		this->hE.set_matrices(matrices, indices, data, size);
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	template<typename ARRAY>

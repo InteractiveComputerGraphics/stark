@@ -235,6 +235,41 @@ symx::Scalar symx::Scalar::tan() const
 		return Scalar(this->expressions.add_operation(ExprType::Tan, this->expr_id, -1), this->expressions);
 	}
 }
+symx::Scalar symx::Scalar::asin() const
+{
+	const Scalar& u = (*this);
+	if (u.is_zero()) {
+		return this->get_zero();
+	}
+	else {
+		return Scalar(this->expressions.add_operation(ExprType::ArcSin, this->expr_id, -1), this->expressions);
+	}
+}
+symx::Scalar symx::Scalar::acos() const
+{
+	const Scalar& u = (*this);
+	if (u.is_one()) {
+		return this->get_zero();
+	}
+	else {
+		return Scalar(this->expressions.add_operation(ExprType::ArcCos, this->expr_id, -1), this->expressions);
+	}
+}
+symx::Scalar symx::Scalar::atan() const
+{
+	const Scalar& u = (*this);
+	if (u.is_zero()) {
+		return this->get_zero();
+	}
+	else {
+		return Scalar(this->expressions.add_operation(ExprType::ArcTan, this->expr_id, -1), this->expressions);
+	}
+}
+symx::Scalar symx::Scalar::print() const
+{
+	const Scalar& u = (*this);
+	return Scalar(this->expressions.add_operation(ExprType::Print, this->expr_id, -1), this->expressions);
+}
 symx::Scalar symx::Scalar::inv() const
 {
 	const Scalar& u = (*this);
@@ -283,11 +318,35 @@ void symx::Scalar::get_checksum(picosha2::hash256_one_by_one& hasher)
 	std::array<char, sizeof(std::array<int32_t, 4>)>* expr_bytes = reinterpret_cast<std::array<char, sizeof(std::array<int32_t, 4>)>*>(&expr_ints);
 	hasher.process(expr_bytes->begin(), expr_bytes->end());
 
-	if (is_operation(this->expr.type)) {
+	if (is_operation(this->expr.type) || this->expr.type == ExprType::Branch) {
 		this->left().get_checksum(hasher);
 		if (this->has_right()) {
 			this->right().get_checksum(hasher);
 		}
+	}
+	else if (this->expr.type == ExprType::Symbol) {
+		const std::string label = this->get_name();
+		std::vector<char> bytes(label.begin(), label.end());
+		hasher.process(bytes.begin(), bytes.end());
+	}
+	else if (this->expr.type == ExprType::Zero || this->expr.type == ExprType::One || this->expr.type == ExprType::ConstantFloat) {
+		double value = 0.0;
+		switch (this->expr.type)
+		{
+			case ExprType::Zero:
+				value = 0.0;
+				break;
+			case ExprType::One:
+				value = 1.0;
+				break;
+			case ExprType::ConstantFloat:
+				value = unpack_double(this->expr.a, this->expr.b);
+				break;
+			default:
+				break;
+		}
+		std::array<char, sizeof(double)>* bytes = reinterpret_cast<std::array<char, sizeof(double)>*>(&value);
+		hasher.process(bytes->begin(), bytes->end());
 	}
 }
 symx::Scalar symx::Scalar::left() const
@@ -430,6 +489,18 @@ symx::Scalar symx::cos(const Scalar& scalar)
 symx::Scalar symx::tan(const Scalar& scalar)
 {
 	return scalar.tan();
+}
+symx::Scalar symx::asin(const Scalar& scalar)
+{
+	return scalar.asin();
+}
+symx::Scalar symx::acos(const Scalar& scalar)
+{
+	return scalar.acos();
+}
+symx::Scalar symx::atan(const Scalar& scalar)
+{
+	return scalar.atan();
 }
 
 symx::Scalar symx::operator>(const Scalar& a, const Scalar& b)

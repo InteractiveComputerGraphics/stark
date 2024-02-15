@@ -46,6 +46,9 @@ void tmcd::IntersectionDetection::add_blacklist_range_edge_triangle(const int32_
 void tmcd::IntersectionDetection::add_blacklist(const int32_t mesh_id_0, const int32_t mesh_id_1)
 {
 	this->add_blacklist_range_edge_triangle(mesh_id_0, { 0, this->meshes.n_edges_in_set[mesh_id_0] }, mesh_id_1, { 0, this->meshes.n_triangles_in_set[mesh_id_1] });
+	if (mesh_id_0 != mesh_id_1) {
+		this->add_blacklist_range_edge_triangle(mesh_id_1, { 0, this->meshes.n_edges_in_set[mesh_id_1] }, mesh_id_0, { 0, this->meshes.n_triangles_in_set[mesh_id_0] });
+	}
 }
 
 const IntersectionResults& tmcd::IntersectionDetection::run(const BroadPhaseStrategy strat)

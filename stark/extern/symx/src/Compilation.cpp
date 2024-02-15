@@ -4,7 +4,8 @@
 #ifdef _MSC_VER
 #define NOMINMAX
 #include <windows.h>
-std::string symx::compiler_command = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"";
+//std::string symx::compiler_command = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"";
+std::string symx::compiler_command = "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"";
 #else
 #include <dlfcn.h>
 std::string symx::compiler_command = "g++";
@@ -48,52 +49,47 @@ symx::Compilation::~Compilation()
 }
 void symx::Compilation::compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, OpType op_type, bool suppress_compiler_output)
 {
-	if (this->load_if_cached(name, folder, id, op_type)) {
-		this->was_cached = true;
-	}
-	else {
-		double t0 = omp_get_wtime();
-		symx::Sequence seq(expr);
-		this->_write_shared_object_code(seq, name, folder, id, op_type);
-		double t1 = omp_get_wtime();
-		this->runtime_codegen = t1 - t0;
+	double t0 = omp_get_wtime();
+	symx::Sequence seq(expr);
+	this->_write_shared_object_code(seq, name, folder, id, op_type);
+	double t1 = omp_get_wtime();
+	this->runtime_codegen = t1 - t0;
 
-		int err = -1;
-		std::string command;
+	int err = -1;
+	std::string command;
 #ifdef _MSC_VER
-		const std::string enable_output = (suppress_compiler_output) ? " >nul 2>nul " : "";
-		command = symx::compiler_command + enable_output;
-		command += " && cd " + folder;
-		command += " && cl " + name + ".cpp /LD /Ox /fp:fast /arch:AVX2 /bigobj" + enable_output;
-		command += " && del " + name + ".exp";
-		command += " && del " + name + ".lib";
-		command += " && del " + name + ".obj";
+	const std::string enable_output = (suppress_compiler_output) ? " >nul 2>nul " : "";
+	command = symx::compiler_command + enable_output;
+	command += " && cd " + folder;
+	command += " && cl " + name + ".cpp /LD /Ox /arch:AVX2 /bigobj" + enable_output;  // Note: fast-math is not used because it can change the expected results (e.g. sqrt(pow(x, 2)) < 0)
+	command += " && del " + name + ".exp";
+	command += " && del " + name + ".lib";
+	command += " && del " + name + ".obj";
 #else
-		const std::string enable_output = (suppress_compiler_output) ? " > /dev/null " : "";
-		command += "cd " + folder;
-		command += " ; g++ " + name + ".cpp -shared -O3 -ffast-math -march=native -o " + name + ".so" + enable_output;
+	const std::string enable_output = (suppress_compiler_output) ? " > /dev/null " : "";
+	command += "cd " + folder;
+	command += " ; g++ " + name + ".cpp -shared -O3 -march=native -o " + name + ".so" + enable_output;  // Note: fast-math is not used because it can change the expected results (e.g. sqrt(pow(x, 2)) < 0)
 #endif
-		t0 = omp_get_wtime();
+	t0 = omp_get_wtime();
+	err = system(command.c_str());
+
+	// When compiling multiple units in parallel, sometimes it will not run successfully.
+	// Trying it again solves the problem.
+	if (err != 0) {
 		err = system(command.c_str());
-
-		// When compiling multiple units in parallel, sometimes it will not run successfully.
-		// Trying it again solves the problem.
-		if (err != 0) {
-			err = system(command.c_str());
-		}
-		t1 = omp_get_wtime();
-		this->runtime_compilation = t1 - t0;
-
-		if (err != 0) {
-			std::cout << "symx error: Compilation failed for " << name << ". Try not suppressing compilation output to see compiler error." << std::endl;
-			std::cout << "compilation command: " << std::endl << std::endl;
-			std::cout << command << std::endl;
-			exit(-1);
-		}
-
-		bool success = this->load_if_cached(name, folder, id, op_type);
-		this->was_cached = false;
 	}
+	t1 = omp_get_wtime();
+	this->runtime_compilation = t1 - t0;
+
+	if (err != 0) {
+		std::cout << "symx error: Compilation failed for " << name << ". Try not suppressing compilation output to see compiler error." << std::endl;
+		std::cout << "compilation command: " << std::endl << std::endl;
+		std::cout << command << std::endl;
+		exit(-1);
+	}
+
+	bool success = this->load_if_cached(name, folder, id, op_type);
+	this->was_cached = false;
 }
 bool symx::Compilation::load_if_cached(std::string name, std::string folder, std::string id, OpType op_type)
 {
@@ -140,24 +136,31 @@ bool symx::Compilation::load_if_cached(std::string name, std::string folder, std
 		exit(-1);
 	}
 
-	// Load the SHA256 in the DLL
-	std::string dll_sha256_checksum;
-	dll_sha256_checksum.resize(64);
+	bool load = false;
+	if (id == "FORCE_LOAD") {
+		load = true;
+	}
+	else {
+		// Load the SHA256 in the DLL
+		std::string dll_sha256_checksum;
+		dll_sha256_checksum.resize(64);
 #ifdef _MSC_VER
-	void (*get_sha256)(char*) = reinterpret_cast<void(*)(char*)>(GetProcAddress(this->lib, "get_sha256"));
+		void (*get_sha256)(char*) = reinterpret_cast<void(*)(char*)>(GetProcAddress(this->lib, "get_sha256"));
 #else
-	void (*get_sha256)(char*) = reinterpret_cast<void(*)(char*)>(dlsym(this->lib, "get_sha256"));
+		void (*get_sha256)(char*) = reinterpret_cast<void(*)(char*)>(dlsym(this->lib, "get_sha256"));
 #endif
-	get_sha256(dll_sha256_checksum.data());
+		get_sha256(dll_sha256_checksum.data());
 
-	// Reconstruct SHA256
-	id += std::to_string(static_cast<int>(op_type));
-	std::vector<unsigned char> hash(picosha2::k_digest_size);
-	picosha2::hash256(id.begin(), id.end(), hash.begin(), hash.end());
-	std::string sha256_checksum = picosha2::bytes_to_hex_string(hash.begin(), hash.end());
+		// Reconstruct SHA256
+		id += std::to_string(static_cast<int>(op_type));
+		std::vector<unsigned char> hash(picosha2::k_digest_size);
+		picosha2::hash256(id.begin(), id.end(), hash.begin(), hash.end());
+		std::string sha256_checksum = picosha2::bytes_to_hex_string(hash.begin(), hash.end());
+		load = dll_sha256_checksum == sha256_checksum;
+	}
 
 	// checksums match?
-	if (dll_sha256_checksum == sha256_checksum) {
+	if (load) {
 #ifdef _MSC_VER
 		this->compiled_f = GetProcAddress(this->lib, name.c_str());
 		this->n_inputs = reinterpret_cast<int(*)()>(GetProcAddress(this->lib, "get_n_inputs"))();
@@ -185,6 +188,13 @@ bool symx::Compilation::load_if_cached(std::string name, std::string folder, std
 		return false;
 	}
 }
+void symx::Compilation::try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, OpType op_type, bool suppress_compiler_output)
+{
+	if (!this->load_if_cached(name, folder, id, op_type)) {
+		this->compile(expr, name, folder, id, op_type, suppress_compiler_output);
+	}
+}
+
 void symx::Compilation::_write_shared_object_code(Sequence& seq, std::string name, std::string folder, std::string id, OpType op_type)
 {
 	std::string code;
@@ -210,6 +220,7 @@ void symx::Compilation::_write_shared_object_code(Sequence& seq, std::string nam
 
 	// Includes
 	code += "#include <cmath>\n";
+	code += "#include <cstdio>\n";
 	if (is_simd) {
 		code += "#include <immintrin.h>\n";
 	}
@@ -357,6 +368,14 @@ void symx::Compilation::_add_instructions_scalar(std::string& code, Sequence& se
 			code += tab() + type + " " + idx(op.dst) + " = std::cos(" + idx(op.a) + ");\n"; break;
 		case ExprType::Tan:
 			code += tab() + type + " " + idx(op.dst) + " = std::tan(" + idx(op.a) + ");\n"; break;
+		case ExprType::ArcSin:
+			code += tab() + type + " " + idx(op.dst) + " = std::asin(" + idx(op.a) + ");\n"; break;
+		case ExprType::ArcCos:
+			code += tab() + type + " " + idx(op.dst) + " = std::acos(" + idx(op.a) + ");\n"; break;
+		case ExprType::ArcTan:
+			code += tab() + type + " " + idx(op.dst) + " = std::atan(" + idx(op.a) + ");\n"; break;
+		case ExprType::Print:
+			code += tab() + type + " " + idx(op.dst) + " = 0.0; printf(\"val_" + idx(op.a) + "=%.10e\\n\"," + idx(op.a) + ");\n"; break;
 		case ExprType::Branch:
 			if (op.is_endif()) {
 				indentation--;
@@ -433,6 +452,15 @@ void symx::Compilation::_add_instructions_simd(std::string& code, Sequence& eval
 		case ExprType::Tan:
 			code += begin_line + idx(op.dst) + " = tan(" + idx(op.a) + ");\n";
 			break;
+		case ExprType::ArcSin:
+			code += begin_line + idx(op.dst) + " = asin(" + idx(op.a) + ");\n";
+			break;
+		case ExprType::ArcCos:
+			code += begin_line + idx(op.dst) + " = acos(" + idx(op.a) + ");\n";
+			break;
+		case ExprType::ArcTan:
+			code += begin_line + idx(op.dst) + " = atan(" + idx(op.a) + ");\n";
+			break;
 		case ExprType::Branch:
 			std::cout << "symx error: Cannot generate SIMD code with banches." << std::endl;
 			exit(-1);
@@ -466,6 +494,9 @@ void symx::Compilation::_add_core_simd_functions(std::string& code, OpType op_ty
 	functions += "__m256d sin(__m256d& a) { __m256d s; double* a_view = reinterpret_cast<double*>(&a); double* s_view = reinterpret_cast<double*>(&s); for (int i = 0; i < 4; i++) { s_view[i] = std::sin(a_view[i]); }; return s; }\n";
 	functions += "__m256d cos(__m256d& a) { __m256d s; double* a_view = reinterpret_cast<double*>(&a); double* s_view = reinterpret_cast<double*>(&s); for (int i = 0; i < 4; i++) { s_view[i] = std::cos(a_view[i]); }; return s; }\n";
 	functions += "__m256d tan(__m256d& a) { __m256d s; double* a_view = reinterpret_cast<double*>(&a); double* s_view = reinterpret_cast<double*>(&s); for (int i = 0; i < 4; i++) { s_view[i] = std::tan(a_view[i]); }; return s; }\n";
+	functions += "__m256d asin(__m256d& a) { __m256d s; double* a_view = reinterpret_cast<double*>(&a); double* s_view = reinterpret_cast<double*>(&s); for (int i = 0; i < 4; i++) { s_view[i] = std::asin(a_view[i]); }; return s; }\n";
+	functions += "__m256d acos(__m256d& a) { __m256d s; double* a_view = reinterpret_cast<double*>(&a); double* s_view = reinterpret_cast<double*>(&s); for (int i = 0; i < 4; i++) { s_view[i] = std::acos(a_view[i]); }; return s; }\n";
+	functions += "__m256d atan(__m256d& a) { __m256d s; double* a_view = reinterpret_cast<double*>(&a); double* s_view = reinterpret_cast<double*>(&s); for (int i = 0; i < 4; i++) { s_view[i] = std::atan(a_view[i]); }; return s; }\n";
 
 	switch (op_type)
 	{

@@ -32,19 +32,7 @@ symx::Matrix symx::hessian(const Scalar& expr, const std::vector<Scalar>& symbol
 			}
 		}
 	}
-	return Matrix(vals, { n, n }, Matrix::Layout::NonSymmetric);
-}
-symx::Matrix symx::hessian_as_symmetric_lower_triangular(const Scalar& expr, const std::vector<Scalar>& symbols)
-{
-	const int n = (int)symbols.size();
-	std::vector<Scalar> vals;
-	for (int i = 0; i < n; i++) {
-		symx::Scalar g = symx::diff(expr, symbols[i]);
-		for (int j = 0; j <= i; j++) {
-			vals.push_back(symx::diff(g, symbols[j]));
-		}
-	}
-	return Matrix(vals, { n, n }, Matrix::Layout::SymmetricLowerTriangular);
+	return Matrix(vals, { n, n });
 }
 std::vector<symx::Scalar> symx::value_gradient_hessian(const Scalar& expr, const std::vector<Scalar>& symbols, const bool symmetric)
 {
@@ -158,12 +146,18 @@ symx::Scalar symx::diff(const Scalar& scalar, const Scalar& wrt)
 			return -sin(u) * du;
 		case ExprType::Tan:
 			return (1.0 + tan(u).powN(2)) * du;
+		case ExprType::ArcSin:
+			return du/(sqrt(1.0 - u.powN(2)));
+		case ExprType::ArcCos:
+			return -du/(sqrt(1.0 - u.powN(2)));
+		case ExprType::ArcTan:
+			return du/(1.0 + u.powN(2));
+		case ExprType::Print:
+			return u.make_constant(0.0);
 
 		default:
 			std::cout << "symx error: Unhandled ExprType found in diff." << std::endl;
 			exit(-1);
-			return scalar;
-			break;
 		}
 	}
 }

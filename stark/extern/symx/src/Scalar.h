@@ -52,13 +52,17 @@ namespace symx
 		void operator/=(const Scalar& other);
 		Scalar powN(int32_t val) const;
 		Scalar powF(double val) const;
+		Scalar inv() const;
 		Scalar sqrt() const;
 		Scalar log() const;
 		Scalar exp() const;
 		Scalar sin() const;
 		Scalar cos() const;
 		Scalar tan() const;
-		Scalar inv() const;
+		Scalar asin() const;
+		Scalar acos() const;
+		Scalar atan() const;
+		Scalar print() const;
 
 		// Functionalities
 		bool is_zero() const;
@@ -98,6 +102,9 @@ namespace symx
 	Scalar sin(const Scalar& scalar);
 	Scalar cos(const Scalar& scalar);
 	Scalar tan(const Scalar& scalar);
+	Scalar asin(const Scalar& scalar);
+	Scalar acos(const Scalar& scalar);
+	Scalar atan(const Scalar& scalar);
 
 	// Conditionals
 	Scalar branch(const Scalar& cond, const Scalar& positive_branch, const Scalar& negative_branch);

@@ -22,7 +22,7 @@ void symx::Energy::set_with_condition(const Scalar& expr, const Scalar& cond)
 	this->compiled_derivatives_d.update_connectivity(l2data_int(this->connectivity_after_condition), l2n_elements_int(this->connectivity_after_condition, this->n_items_per_element));
 	this->has_condition = true;
 }
-void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arrays, const bool suppress_compiler_output)
+void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arrays, const bool force_compilation, const bool force_load, const bool suppress_compiler_output)
 {
 	if (this->expr == nullptr) {
 		std::cout << "symx::Energy error: Expression not set in energy " << this->name << std::endl;
@@ -33,16 +33,23 @@ void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arra
 		exit(-1);
 	}
 
+	// All symbols names (to identify if anything changed there)
+	std::string all_symbols_names;
+	for (const std::string& s : this->sws.expressions.symbols){
+		all_symbols_names += s;
+	}
+
+	// Compilation
 	this->has_branches = this->expr->has_branch();
 	if (this->has_branches) {
-		this->compiled_derivatives_d.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, /*TODO:*/ 3, suppress_compiler_output);
+		this->compiled_derivatives_d.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, all_symbols_names, 3, force_compilation, force_load, suppress_compiler_output);
 		this->was_cached = this->compiled_derivatives_d.was_cached;
 		this->runtime_codegen = this->compiled_derivatives_d.runtime_codegen;
 		this->runtime_compilation = this->compiled_derivatives_d.runtime_compilation;
 		this->runtime_differentiation = this->compiled_derivatives_d.runtime_differentiation;
 	}
 	else {
-		this->compiled_derivatives.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, /*TODO:*/ 3, suppress_compiler_output);
+		this->compiled_derivatives.init(name, this->working_directory, *this->expr.get(), this->dof_symbols, all_symbols_names, 3, force_compilation, force_load, suppress_compiler_output);
 		this->was_cached = this->compiled_derivatives.was_cached;
 		this->runtime_codegen = this->compiled_derivatives.runtime_codegen;
 		this->runtime_compilation = this->compiled_derivatives.runtime_compilation;
@@ -51,7 +58,16 @@ void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arra
 	this->n_dofs = (int)this->dof_symbols.size();
 
 	if (this->has_condition) {
-		this->compiled_condition.compile({ *this->cond }, this->name + "_cond", this->working_directory, this->cond->get_checksum(), suppress_compiler_output);
+
+		if (force_compilation) {
+			std::string id = this->cond->get_checksum() + all_symbols_names;
+			this->compiled_condition.compile({ *this->cond }, this->name + "_cond", this->working_directory, id, suppress_compiler_output);
+		}
+		else {
+			std::string id = (force_load) ? "FORCE_LOAD" : this->cond->get_checksum() + all_symbols_names;
+			this->compiled_condition.try_load_otherwise_compile({ *this->cond }, this->name + "_cond", this->working_directory, id, suppress_compiler_output);
+		}
+
 		this->runtime_codegen += this->compiled_condition.compilation.runtime_codegen;
 		this->runtime_compilation += this->compiled_condition.compilation.runtime_compilation;
 	}
@@ -65,6 +81,10 @@ void symx::Energy::deferred_init(std::vector<std::function<double* ()>> dof_arra
 void symx::Energy::activate(const bool activate)
 {
 	this->is_active = activate;
+}
+void symx::Energy::disable_check_for_duplicate_dofs()
+{
+	this->check_for_duplicate_dofs = false;
 }
 bool symx::Energy::is_expression_set() const
 {
@@ -83,12 +103,12 @@ symx::Scalar symx::Energy::make_scalar(const double& scalar, const std::string n
 {
 	return this->make_scalar(l2data_double(scalar), name);
 }
-symx::Scalar symx::Energy::make_scalar(std::function<const double*()> data, const Index& idx, const std::string name)
+symx::Scalar symx::Energy::make_scalar(std::function<const double*()> data, std::function<int32_t()> size, const Index& idx, const std::string name)
 {
 	Scalar scalar = this->sws.make_scalar(this->_get_symbol_name(name));
-	this->compiled_derivatives.set_scalars({ scalar }, { idx }, data);
-	this->compiled_derivatives_d.set_scalars({ scalar }, { idx }, data);
-	this->compiled_condition.set_scalars({ scalar }, { idx }, data);
+	this->compiled_derivatives.set_scalars({ scalar }, { idx }, data, size);
+	this->compiled_derivatives_d.set_scalars({ scalar }, { idx }, data, size);
+	this->compiled_condition.set_scalars({ scalar }, { idx }, data, size);
 	return scalar;
 }
 symx::Vector symx::Energy::make_vector(std::function<const double* ()> data, const int32_t stride, const std::string name)
@@ -99,17 +119,28 @@ symx::Vector symx::Energy::make_vector(std::function<const double* ()> data, con
 	this->compiled_condition.set_vector(vector, data);
 	return vector;
 }
-symx::Vector symx::Energy::make_vector(std::function<const double*()> data, const int32_t stride, const Index& idx, const std::string name)
+symx::Vector symx::Energy::make_vector(std::function<const double*()> data, std::function<int32_t()> size, const int32_t stride, const Index& idx, const std::string name)
 {
 	Vector vector = this->sws.make_vector(this->_get_symbol_name(name), stride);
-	this->compiled_derivatives.set_vectors({ vector }, { idx }, data);
-	this->compiled_derivatives_d.set_vectors({ vector }, { idx }, data);
-	this->compiled_condition.set_vectors({ vector }, { idx }, data);
+	this->compiled_derivatives.set_vectors({ vector }, { idx }, data, size);
+	this->compiled_derivatives_d.set_vectors({ vector }, { idx }, data, size);
+	this->compiled_condition.set_vectors({ vector }, { idx }, data, size);
 	return vector;
 }
-symx::Vector symx::Energy::make_dof_vector(const DoF& dof, std::function<const double* ()> data, const int32_t stride, const Index& idx, const std::string name)
+symx::Vector symx::Energy::make_dof_vector(const DoF& dof, std::function<const double* ()> data, std::function<int32_t()> size, const int32_t stride, const Index& idx, const std::string name)
 {
-	symx::Vector vector = this->make_vector(data, stride, idx, name);
+	// Check that this dof has not been created yet
+	if (this->check_for_duplicate_dofs) {
+		for (const auto& dof_block : this->dof_block_global_index) {
+			if (dof_block.dof_set == dof.idx && dof_block.conn_idx == idx.idx) {
+				std::cout << "symx error: Energy::make_dof_vector() tried to create a symbol for a DoF that already exists for energy " + this->name << std::endl;
+				exit(-1);
+			}
+		}
+	}
+
+	// Create the vector and declare the DoF
+	symx::Vector vector = this->make_vector(data, size, stride, idx, name);
 	assert(vector.size() == 3);
 	this->dof_block_global_index.push_back({ dof.idx, idx.idx });
 	for (int i = 0; i < vector.size(); i++) {
@@ -117,32 +148,55 @@ symx::Vector symx::Energy::make_dof_vector(const DoF& dof, std::function<const d
 	}
 	return vector;
 }
-std::vector<symx::Vector> symx::Energy::make_vectors(std::function<const double* ()> data, const int32_t stride, const std::vector<Index>& indices, const std::string name)
+std::vector<symx::Vector> symx::Energy::make_vectors(std::function<const double* ()> data, std::function<int32_t()> size, const int32_t stride, const std::vector<Index>& indices, const std::string name)
 {
 	const std::string name_ = this->_get_symbol_name(name);
 	std::vector<Vector> vectors;
 	for (size_t i = 0; i < indices.size(); i++) {
-		vectors.push_back(this->make_vector(data, stride, indices[i], name_ + std::to_string(i)));
+		vectors.push_back(this->make_vector(data, size, stride, indices[i], name_ + std::to_string(i)));
 	}
 	return vectors;
 }
-std::vector<symx::Vector> symx::Energy::make_dof_vectors(const DoF& dof, std::function<const double* ()> data, const int32_t stride, const std::vector<Index>& indices, const std::string name)
+std::vector<symx::Vector> symx::Energy::make_dof_vectors(const DoF& dof, std::function<const double* ()> data, std::function<int32_t()> size, const int32_t stride, const std::vector<Index>& indices, const std::string name)
 {
 	const std::string name_ = this->_get_symbol_name(name);
 	std::vector<Vector> vectors;
 	for (size_t i = 0; i < indices.size(); i++) {
-		vectors.push_back(this->make_dof_vector(dof, data, stride, indices[i], name_ + std::to_string(i)));
+		vectors.push_back(this->make_dof_vector(dof, data, size, stride, indices[i], name_ + std::to_string(i)));
 	}
 	return vectors;
 }
-symx::Matrix symx::Energy::make_matrix(std::function<const double* ()> data, const std::array<int, 2> shape, const Index& idx, const std::string name)
+symx::Matrix symx::Energy::make_matrix(std::function<const double* ()> data, std::function<int32_t()> size, const std::array<int, 2> shape, const Index& idx, const std::string name)
 {
 	Matrix matrix = this->sws.make_matrix(this->_get_symbol_name(name), shape);
-	this->compiled_derivatives.set_matrices({ matrix }, { idx }, data);
-	this->compiled_derivatives_d.set_matrices({ matrix }, { idx }, data);
-	this->compiled_condition.set_matrices({ matrix }, { idx }, data);
+	this->compiled_derivatives.set_matrices({ matrix }, { idx }, data, size);
+	this->compiled_derivatives_d.set_matrices({ matrix }, { idx }, data, size);
+	this->compiled_condition.set_matrices({ matrix }, { idx }, data, size);
 	return matrix;
 }
+
+symx::Scalar symx::Energy::make_zero()
+{
+	return this->sws.get_zero();
+}
+symx::Scalar symx::Energy::make_one()
+{
+	return this->sws.get_one();
+}
+symx::Vector symx::Energy::make_zero_vector(const int32_t size)
+{
+	return this->sws.get_zero_vector(size);
+}
+symx::Matrix symx::Energy::make_zero_matrix(const std::array<int32_t, 2> shape)
+{
+	return this->sws.get_zero_matrix(shape);
+}
+symx::Matrix symx::Energy::make_identity_matrix(const int32_t size)
+{
+	return this->sws.get_identity_matrix(size);
+}
+
+
 
 void symx::Energy::evaluate_E(Assembly& assembly, const bool runtime_NaN_check)
 {
@@ -261,6 +315,7 @@ void symx::Energy::evaluate_E_grad_hess(Assembly& assembly, const bool runtime_N
 
 void symx::Energy::_update_connectivity_conditionally(const int n_threads)
 {
+	this->connectivity_after_condition.clear();
 	const int n_original_elements = this->compiled_condition.connectivity_n_elements();
 	if (n_original_elements == 0) { return; }
 	this->positive_conditions.resize(n_original_elements);
@@ -272,7 +327,6 @@ void symx::Energy::_update_connectivity_conditionally(const int n_threads)
 	);
 
 	const int32_t* connectivity_data = this->compiled_condition.connectivity_data();
-	this->connectivity_after_condition.clear();
 	for (int i = 0; i < n_original_elements; i++) {
 		if (this->positive_conditions[i]) {
 			for (int j = 0; j < n_items_per_element; j++) {

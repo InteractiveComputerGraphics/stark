@@ -28,68 +28,144 @@ add_subdirectory(extern/TriangleMeshCollisionDetection)
 add_subdirectory(extern/fmt)
 
 # Source files
-set(SOLVER_FILES
-	include/stark
-	src/solver/Settings.cpp
-	src/solver/Settings.h
-	src/solver/Callbacks.h
-	src/solver/AdaptiveParameter.cpp
-	src/solver/AdaptiveParameter.h
-	src/solver/NewtonsMethod.cpp
-	src/solver/NewtonsMethod.h
-	src/solver/Stark.cpp
-	src/solver/Stark.h
+set(CORE_FILES
+	src/core/AdaptiveParameter.cpp
+	src/core/AdaptiveParameter.h
+	src/core/Callbacks.h
+	src/core/Console.cpp
+	src/core/Console.h
+	src/core/include_ui.h
+	src/core/Logger.cpp
+	src/core/Logger.h
+	src/core/NewtonsMethod.cpp
+	src/core/NewtonsMethod.h
+	src/core/Settings.cpp
+	src/core/Settings.h
+	src/core/Stark.cpp
+	src/core/Stark.h
 	)
 
+set(MODELS_DEFORMABLES_FILES
+	src/models/deformables/EnergyEdgeStrain.cpp
+	src/models/deformables/EnergyEdgeStrain.h
+	src/models/deformables/EnergyPointInertia.cpp
+	src/models/deformables/EnergyPointInertia.h
+	src/models/deformables/EnergyPointPrescribedPositions.cpp
+	src/models/deformables/EnergyPointPrescribedPositions.h
+	src/models/deformables/EnergyTetStrain.cpp
+	src/models/deformables/EnergyTetStrain.h
+	src/models/deformables/EnergyTriangleBendingGrinspun03.cpp
+	src/models/deformables/EnergyTriangleBendingGrinspun03.h
+	src/models/deformables/EnergyTriangleStrain.cpp
+	src/models/deformables/EnergyTriangleStrain.h
+	src/models/deformables/DeformableHandler.cpp
+	src/models/deformables/DeformableHandler.h
+	src/models/deformables/DeformableLineHandler.cpp
+	src/models/deformables/DeformableLineHandler.h
+	src/models/deformables/DeformableSurfaceHandler.cpp
+	src/models/deformables/DeformableSurfaceHandler.h
+	src/models/deformables/DeformableVolumeHandler.cpp
+	src/models/deformables/DeformableVolumeHandler.h
+	src/models/deformables/Id.cpp
+	src/models/deformables/Id.h
+	src/models/deformables/PointDynamics.cpp
+	src/models/deformables/PointDynamics.h
+	src/models/deformables/PrescribedPointGroup.cpp
+	src/models/deformables/PrescribedPointGroup.h
+	src/models/deformables/PrescribedPointGroupWithTransformation.cpp
+	src/models/deformables/PrescribedPointGroupWithTransformation.h
+	src/models/deformables/DeformableSolidsLines.cpp
+	src/models/deformables/DeformableSolidsLines.h
+	src/models/deformables/DeformableSolidsSurfaces.cpp
+	src/models/deformables/DeformableSolidsSurfaces.h
+	src/models/deformables/DeformableSolidsVolumes.cpp
+	src/models/deformables/DeformableSolidsVolumes.h
+	src/models/deformables/Deformables.cpp
+	src/models/deformables/Deformables.h
+)
+
+set(MODELS_RIGIDBODIES_FILES
+	src/models/rigidbodies/EnergyRigidBodyConstraints.cpp
+	src/models/rigidbodies/EnergyRigidBodyConstraints.h
+	src/models/rigidbodies/EnergyRigidBodyInertia.cpp
+	src/models/rigidbodies/EnergyRigidBodyInertia.h
+	src/models/rigidbodies/inertia_tensors.cpp
+	src/models/rigidbodies/inertia_tensors.h
+	src/models/rigidbodies/rigid_body_constraint_utils.h
+	src/models/rigidbodies/RigidBodies.cpp
+	src/models/rigidbodies/RigidBodies.h
+	src/models/rigidbodies/RigidBodiesInternal.cpp
+	src/models/rigidbodies/RigidBodiesInternal.h
+	src/models/rigidbodies/RigidBodyConstraints.h
+	src/models/rigidbodies/RigidBodyDynamics.cpp
+	src/models/rigidbodies/RigidBodyDynamics.h
+	src/models/rigidbodies/RigidBodyHandler.cpp
+	src/models/rigidbodies/RigidBodyHandler.h
+	src/models/rigidbodies/rigidbody_constraints_ui.h
+	src/models/rigidbodies/rigidbody_transformations.cpp
+	src/models/rigidbodies/rigidbody_transformations.h
+)
+
+set(MODELS_INTERACTIONS_FILES
+	src/models/interactions/contact_and_friction_data.h
+	src/models/interactions/friction_geometry.cpp
+	src/models/interactions/friction_geometry.h
+	src/models/interactions/EnergyFrictionalContact.cpp
+	src/models/interactions/EnergyFrictionalContact.h
+	src/models/interactions/EnergyAttachments.cpp
+	src/models/interactions/EnergyAttachments.h
+	src/models/interactions/Interactions.cpp
+	src/models/interactions/Interactions.h
+)
+
+
 set(MODELS_FILES
-	src/models/Simulation.h
-	src/models/Simulation.cpp
-	src/models/distances.h
+	${MODELS_DEFORMABLES_FILES}
+	${MODELS_RIGIDBODIES_FILES}
+	${MODELS_INTERACTIONS_FILES}
+	${MODELS_CONSTRUCTS_FILES}
+
 	src/models/distances.cpp
-	src/models/friction_geometry.h
-	src/models/friction_geometry.cpp
-	src/models/time_integration.h
+	src/models/distances.h
+	src/models/include_ui.h
+	src/models/IntervalVector.h
+	src/models/MeshOutputGroups.cpp
+	src/models/MeshOutputGroups.h
+	src/models/Simulation.cpp
+	src/models/Simulation.h
 	src/models/time_integration.cpp
-	src/models/rigidbody_transformations.h
-	src/models/rigidbody_transformations.cpp
-	src/models/TriangleMeshContacts.h
-	src/models/TriangleMeshFriction.h
-	src/models/Cloth.h
-	src/models/Cloth.cpp
-	src/models/DeformableSolids.h
-	src/models/DeformableSolids.cpp
-	src/models/RigidBodies.h
-	src/models/RigidBodies.cpp
-	src/models/RigidBodyContacts.h
-	src/models/RigidBodyFriction.h
-	src/models/Interactions.h
-	src/models/Interactions.cpp
-	src/models/RB_Deformable_Contacts.h
-	src/models/RB_Deformable_Friction.h
+	src/models/time_integration.h
+	src/models/EventDrivenScript.cpp
+	src/models/EventDrivenScript.h
 	)
 
 set(UTILS_FILES
-	src/utils/Logger.cpp
-	src/utils/Logger.h
-	src/utils/Console.cpp
-	src/utils/Console.h
+	src/utils/Mesh.h
 	src/utils/mesh_utils.h
 	src/utils/mesh_utils.cpp
 	src/utils/mesh_generators.cpp
 	src/utils/mesh_generators.h
-	src/utils/inertia_tensors.cpp
-	src/utils/inertia_tensors.h
 	src/utils/unordered_array_set_and_map.h
-	src/utils/MultiMesh.h
-	src/utils/MultiMeshEdges.h
-	src/utils/MultiMeshEdges.cpp
-	src/utils/MeshWithDynamics.h
-	src/utils/linear_system.cpp
-	src/utils/linear_system.h
+	src/utils/blends.cpp
+	src/utils/blends.h
 	)
 
+set(CONSTRUCTS_FILES
+	src/constructs/include_ui.h
+	src/constructs/VehicleFourWheels.cpp
+	src/constructs/VehicleFourWheels.h
+)
+
+set(ALL_FILES
+	include/stark
+	${CORE_FILES} 
+	${MODELS_FILES} 
+	${UTILS_FILES}
+	${CONSTRUCTS_FILES}
+)
+
 # Create lireary
-add_library(stark ${SOLVER_FILES} ${MODELS_FILES} ${UTILS_FILES})
+add_library(stark ${ALL_FILES})
 
 # Include/link dependencies
 ## OpenMP
@@ -112,6 +188,9 @@ target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/symx/
 ## vtkio
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/vtkio/include)
 
+## TriangleMeshDistance
+target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/TriangleMeshDistance/include)
+
 ## fmt
 target_link_libraries(stark fmt::fmt)
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/fmt/include)
@@ -126,6 +205,4 @@ target_include_directories(stark PUBLIC ${EIGEN3_INCLUDE_DIR})
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/par_shapes/include)
 
 # Group files
-source_group("solver" FILES ${SOLVER_FILES})
-source_group("models" FILES ${MODELS_FILES})
-source_group("utils" FILES ${UTILS_FILES})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${ALL_FILES})

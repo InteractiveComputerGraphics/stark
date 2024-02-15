@@ -1,9 +1,31 @@
 #include "Vector.h"
 
+symx::Vector::Vector(const std::vector<Scalar>& values)
+	: vals(values)
+{
+	this->n = (int32_t)values.size();
+}
+symx::Vector symx::Vector::zero(const int32_t size, const Scalar& seed)
+{
+	std::vector<Scalar> vals;
+	for (int32_t i = 0; i < size; i++) {
+		vals.push_back(seed.get_zero());
+	}
+	return Vector(vals);
+}
 int32_t symx::Vector::size() const
 {
-	return std::max(this->nrows, this->ncols);
+	return this->n;
 }
+std::vector<symx::Scalar>& symx::Vector::values()
+{
+	return this->vals;
+}
+const std::vector<symx::Scalar>& symx::Vector::values() const
+{
+	return this->vals;
+}
+
 const symx::Scalar& symx::Vector::operator[](const int32_t& i) const
 {
 	assert(i < this->size() && "symx error: symx::Vector index out of bounds.");
@@ -24,29 +46,25 @@ symx::Scalar& symx::Vector::operator()(const int32_t& i)
 	assert(i < this->size() && "symx error: symx::Vector index out of bounds.");
 	return this->vals[i];
 }
-void symx::Vector::set_value(const double* val)
+symx::Vector symx::Vector::segment(const int32_t begin, const int32_t n) const
 {
-	for (int i = 0; i < this->size(); i++) {
-		this->vals[i].set_value(val[i]);
+	assert(begin >= 0 && begin + n <= this->n);
+
+	std::vector<Scalar> values;
+	for (int i = 0; i < n; i++) {
+		values.push_back((*this)[begin + i]);
+	}
+	return Vector(values);
+}
+void symx::Vector::set_segment(const int32_t begin, const int32_t n, const Vector& other)
+{
+	assert(begin >= 0 && begin + n <= this->n);
+
+	for (int i = 0; i < n; i++) {
+		(*this)[begin + i] = other[i];
 	}
 }
-symx::Scalar* symx::Vector::data()
-{
-	return this->vals.data();
-}
-symx::Vector::Vector(const std::vector<Scalar>& values)
-	: vals(values)
-{
-	this->ncols = 1;
-	this->nrows = (int32_t)values.size();
-}
-symx::Vector symx::Vector::transpose() const
-{
-	Vector other = (*this);
-	other.nrows = this->ncols;
-	other.ncols = this->nrows;
-	return other;
-}
+
 symx::Scalar symx::Vector::dot(const Vector& other) const
 {
 	const int32_t n = this->size();
@@ -101,6 +119,7 @@ void symx::Vector::normalize()
 {
 	(*this) = this->normalized();
 }
+
 symx::Vector symx::Vector::operator+(const Vector& other) const
 {
 	const int32_t size = this->size();
@@ -134,11 +153,6 @@ symx::Vector symx::Vector::operator*(const Scalar& scalar) const
 		values.push_back((*this)[i] * scalar);
 	}
 	return Vector(values);
-}
-symx::Scalar symx::Vector::operator*(const Vector& other) const
-{
-	assert(this->ncols == other.nrows && "symx error: symx::Vector::operator* ncols does not match nrows");
-	return this->dot(other);
 }
 symx::Vector symx::Vector::operator/(double val) const
 {
@@ -176,30 +190,6 @@ void symx::Vector::operator/=(const Scalar& scalar)
 {
 	(*this) = (*this) / scalar;
 }
-symx::Vector symx::Vector::cwise_add(double val) const
-{
-	return this->cwise_add(this->vals[0].make_constant(val));
-}
-symx::Vector symx::Vector::cwise_add(const Scalar& scalar) const
-{
-	std::vector<Scalar> values;
-	for (int32_t i = 0; i < this->size(); i++) {
-		values.push_back((*this)[i] + scalar);
-	}
-	return Vector(values);
-}
-symx::Vector symx::Vector::cwise_sub(double val) const
-{
-	return this->cwise_sub(this->vals[0].make_constant(val));
-}
-symx::Vector symx::Vector::cwise_sub(const Scalar& scalar) const
-{
-	std::vector<Scalar> values;
-	for (int32_t i = 0; i < this->size(); i++) {
-		values.push_back((*this)[i] - scalar);
-	}
-	return Vector(values);
-}
 symx::Vector symx::operator*(double val, const Vector& vec)
 {
 	return vec * val;
@@ -211,4 +201,9 @@ symx::Vector symx::operator*(const Scalar& scalar, const Vector& vec)
 symx::Vector symx::operator-(const Vector& vec)
 {
 	return (-1.0) * vec;
+}
+
+symx::Scalar symx::dot(const Vector& a, const Vector& b)
+{
+	return a.dot(b);
 }

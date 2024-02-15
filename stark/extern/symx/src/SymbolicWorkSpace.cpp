@@ -22,18 +22,7 @@ symx::Matrix symx::SymbolicWorkSpace::make_matrix(const std::string label, const
 			values.push_back(this->make_scalar(label + "(" + std::to_string(i) + ", " + std::to_string(j) + ")"));
 		}
 	}
-	return Matrix(values, shape, Matrix::Layout::NonSymmetric);
-}
-
-symx::Matrix symx::SymbolicWorkSpace::make_symmetric_matrix(const std::string label, const int32_t rows, const int32_t cols)
-{
-	std::vector<Scalar> values;
-	for (int32_t i = 0; i < rows; i++) {
-		for (int32_t j = 0; j <= i; j++) {
-			values.push_back(this->make_scalar(label + "(" + std::to_string(i) + ", " + std::to_string(j) + ")"));
-		}
-	}
-	return Matrix(values, { rows, cols }, Matrix::Layout::SymmetricLowerTriangular);
+	return Matrix(values, shape);
 }
 
 std::vector<symx::Scalar> symx::SymbolicWorkSpace::make_scalars(const std::string label, const int32_t n)
@@ -86,28 +75,21 @@ symx::Matrix symx::SymbolicWorkSpace::get_zero_matrix(const std::array<int32_t, 
 			values.push_back(this->get_zero());
 		}
 	}
-	return Matrix(values, shape, Matrix::Layout::NonSymmetric);
-}
-
-symx::Matrix symx::SymbolicWorkSpace::get_zero_symmetric_matrix(const std::array<int32_t, 2> shape)
-{
-	std::vector<Scalar> values;
-	for (int32_t i = 0; i < shape[0]; i++) {
-		for (int32_t j = 0; j <= i; j++) {
-			values.push_back(this->get_zero());
-		}
-	}
-	return Matrix(values, shape, Matrix::Layout::SymmetricLowerTriangular);
+	return Matrix(values, shape);
 }
 
 symx::Matrix symx::SymbolicWorkSpace::get_identity_matrix(const int32_t size)
 {
 	std::vector<Scalar> values;
 	for (int32_t i = 0; i < size; i++) {
-		for (int32_t j = 0; j < i; j++) {
-			values.push_back(this->get_zero());
+		for (int32_t j = 0; j < size; j++) {
+			if (i == j) {
+				values.push_back(this->get_one());
+			}
+			else {
+				values.push_back(this->get_zero());
+			}
 		}
-		values.push_back(this->get_one());
 	}
-	return Matrix(values, { size, size }, Matrix::Layout::SymmetricLowerTriangular);
+	return Matrix(values, { size, size });
 }
