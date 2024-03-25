@@ -7,7 +7,7 @@
 #include <iostream>
 
 
-namespace stark::models
+namespace stark
 {
 	// TODO: Cleanup, public/private and document
 	struct EventInfo

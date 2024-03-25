@@ -1,32 +1,37 @@
 #pragma once
-#include <vector>
-#include <array>
-#include <memory>
-
-#include <Eigen/Dense>
-
 #include "../../core/Stark.h"
-#include "RigidBodiesInternal.h"
+#include "RigidBodyDynamics.h"
 #include "RigidBodyHandler.h"
+#include "RigidBodiesMeshOutput.h"
 #include "rigidbody_constraints_ui.h"
+#include "inertia_tensors.h"  // make them public
+
+#include "EnergyRigidBodyInertia.h"
+#include "EnergyRigidBodyConstraints.h"
 
 
-namespace stark::models
+namespace stark
 {
 	class RigidBodies 
 	{
 	private:
 		/* Fields */
-		spRigidBodiesInternal rb;
 		double default_stiffness = 1e6;
 		double default_tolerance_in_m = 0.001;
 		double default_tolerance_in_deg = 1.0;
 
+		spRigidBodyDynamics rb;
+		std::shared_ptr<EnergyRigidBodyInertia> inertia;
+		std::shared_ptr<EnergyRigidBodyConstraints> constraints;
+
+
 	public:
+		/* Fields */
+		RigidBodiesMeshOutput output;
+
 		/* Methods */
-		RigidBodies(stark::core::Stark& stark, spRigidBodyDynamics dyn, spEnergyFrictionalContact contact);
-		void write_render_meshes(bool boolean = true);
-		void write_collision_meshes(bool boolean = true);
+		RigidBodies(core::Stark& stark, spRigidBodyDynamics rb);
+		RigidBodyHandler add(double mass, const Eigen::Matrix3d& inertia_local);
 
 		void set_default_constraint_stiffness(double stiffness);
 		void set_default_constraint_distance_tolerance(double tolerance_in_m);
@@ -34,19 +39,6 @@ namespace stark::models
 		double get_default_constraint_stiffness() const;
 		double get_default_constraint_distance_tolerance() const;
 		double get_default_constraint_angle_tolerance() const;
-
-		// Add rigid bodies
-		RigidBodyHandler add(const double mass, const Eigen::Matrix3d& inertia_local, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
-		RigidBodyHandler add_sphere(const double mass, const double radius, const int subdivisions = 2);
-		RigidBodyHandler add_sphere(const double mass, const double radius, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
-		RigidBodyHandler add_box(const double mass, const Eigen::Vector3d& size);
-		RigidBodyHandler add_box(const double mass, const Eigen::Vector3d& size, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
-		RigidBodyHandler add_box(const double mass, const double size);
-		RigidBodyHandler add_box(const double mass, const double size, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
-		RigidBodyHandler add_cylinder(const double mass, const double radius, const double full_height, const int slices = 16, const int stacks = 1);
-		RigidBodyHandler add_cylinder(const double mass, const double radius, const double full_height, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
-		RigidBodyHandler add_torus(const double mass, const double outer_radius, const double inner_radius, const int slices = 16, const int stacks = 32);
-		RigidBodyHandler add_torus(const double mass, const double outer_radius, const double inner_radius, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
 
 		// Add constraints
 		//// Base
@@ -133,7 +125,7 @@ namespace stark::models
 			const RigidBodyHandler& body_b,
 			const Eigen::Vector3d& p_glob,
 			const Eigen::Vector3d& d_glob,
-			const double admissible_angle_deg
+			double admissible_angle_deg
 		);
 		RBCHingeJointHandler add_constraint_hinge(
 			const RigidBodyHandler& body_a, 

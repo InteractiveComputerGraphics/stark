@@ -25,7 +25,7 @@ int32_t tmcd::internals::BroadPhaseBase::get_n_meshes() const
 void tmcd::internals::BroadPhaseBase::_init_threads()
 {
 	if (this->n_threads < 0) {
-			this->n_threads = omp_get_max_threads() / 2;
+		this->n_threads = omp_get_max_threads() / 2;
 	}
 	this->thread_buffers.resize(this->n_threads);
 }

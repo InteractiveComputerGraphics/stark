@@ -3,6 +3,7 @@
 #include <vector>
 #include <array>
 #include <cstring>
+#include <memory>
 
 #include "Expressions.h"
 #include "Scalar.h"
@@ -14,12 +15,11 @@ namespace symx
 	class SymbolicWorkSpace
 	{
 	public:
-		/* Fields */
-		Expressions expressions;
 
-	public:
 		/* Methods */
-		// Standalone symbols
+		SymbolicWorkSpace();
+		void set_cse_mode(CSE mode = CSE::Safe);
+
 		Scalar make_scalar(const std::string label);
 		Vector make_vector(const std::string label, const int32_t size);
 		Matrix make_matrix(const std::string label, const std::array<int32_t, 2> shape);
@@ -33,5 +33,11 @@ namespace symx
 		Vector get_zero_vector(const int32_t size);
 		Matrix get_zero_matrix(const std::array<int32_t, 2> shape);
 		Matrix get_identity_matrix(const int32_t size);
+
+		const std::shared_ptr<Expressions>& get_expression_graph() const;
+
+	private:
+		/* Fields */
+		std::shared_ptr<Expressions> expressions = nullptr;
 	};
 }

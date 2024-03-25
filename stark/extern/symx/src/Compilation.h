@@ -1,8 +1,9 @@
 #pragma once
 #include <fstream>
 #include <sstream>
+#ifdef SYMX_ENABLE_AVX
 #include <immintrin.h>
-#include <omp.h>
+#endif
 
 #include "Sequence.h"
 
@@ -20,7 +21,10 @@ namespace symx
 	extern std::string compiler_command;
 	enum class OpType
 	{
-		Double, Float, SIMD2d, SIMD4f, SIMD4d, SIMD8f, SIMD8d, SIMD16f
+		Double, Float
+#ifdef SYMX_ENABLE_AVX
+		, SIMD2d, SIMD4f, SIMD4d, SIMD8f, SIMD8d, SIMD16f
+#endif
 	};
 	class Compilation
 	{
@@ -51,7 +55,7 @@ namespace symx
 		bool load_if_cached(std::string name, std::string folder, std::string id, OpType op_type);
 		void compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", OpType op_type = OpType::Double, bool suppress_compiler_output = true);
 		void try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", OpType op_type = OpType::Double, bool suppress_compiler_output = true);
-		bool is_valid();
+		bool is_valid() const;
 
 		template<typename FLOAT>
 		bool load_if_cached(std::string name, std::string folder, std::string id);
@@ -80,6 +84,7 @@ namespace symx
 		else if constexpr (std::is_same_v<FLOAT, float>) {
 			return OpType::Float;
 		}
+#ifdef SYMX_ENABLE_AVX
 		else if constexpr (std::is_same_v<FLOAT, __m128d>) {
 			return OpType::SIMD2d;
 		}
@@ -98,6 +103,7 @@ namespace symx
 		else if constexpr (std::is_same_v<FLOAT, __m512>) {
 			return OpType::SIMD16f;
 		}
+#endif
 		else {
 			std::cout << "symx error: Compilation type not supported." << std::endl;
 			exit(-1);

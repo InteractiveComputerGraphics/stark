@@ -16,9 +16,9 @@ namespace stark::core
 		TooManyNewtonIterations = 1,
 		TooManyLineSearchIterations = 2,
 		LinearSystemFailure = 3,
-		InvalidConfiguration = 4,
+		InvalidIntermediateConfiguration = 4,
 		LineSearchDoesntDescend = 5,
-		ConvergedStateInvalid = 6,
+		InvalidConvergedState = 6,
 		Running = 7
 	};
 
@@ -46,12 +46,12 @@ namespace stark::core
 		// Pointers for easy access within the methods (TODO: Refactor)
 		symx::GlobalEnergy* global_energy = nullptr;
 		Callbacks* callbacks = nullptr;
-		Settings* settings = nullptr;
+		const Settings* settings = nullptr;
 		Console* console = nullptr;
 		Logger* logger = nullptr;
 
 		/* Methods */
-		NewtonState solve(symx::GlobalEnergy& global_energy, Callbacks& callbacks, Settings& settings, Console& console, Logger& logger);
+		NewtonState solve(const double& dt, symx::GlobalEnergy& global_energy, Callbacks& callbacks, const Settings& settings, Console& console, Logger& logger);
 
 	private:
 		void _run_before_evaluation();

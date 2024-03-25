@@ -1,35 +1,25 @@
 #pragma once
-#include <memory>
+#include "DeformablesMeshOutput.h"
+#include "deformables_energies_include.h"
 
-#include "DeformableSolidsLines.h"
-#include "DeformableSolidsSurfaces.h"
-#include "DeformableSolidsVolumes.h"
-#include "../interactions/EnergyFrictionalContact.h"
-
-#include "DeformableLineHandler.h"
-#include "DeformableSurfaceHandler.h"
-#include "DeformableVolumeHandler.h"
-
-
-namespace stark::models
+namespace stark
 {
 	class Deformables
 	{
 	public:
 		/* Methods */
-		Deformables(
-			stark::core::Stark& stark,
-			spPointDynamics dyn,
-			spEnergyFrictionalContact contact
-		);
+		Deformables(core::Stark& stark, spPointDynamics dyn);
 
-		DeformableLineHandler add_line(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 2>>& segments, const MaterialLine& material);
-		DeformableSurfaceHandler add_surface(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 3>>& triangles, const MaterialSurface& material);
-		DeformableVolumeHandler add_volume(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int32_t, 4>>& tets, const MaterialVolume& material);
+		/* Fields */
+		std::shared_ptr<DeformablesMeshOutput> output;
 
-	private:
-		std::shared_ptr<DeformableSolidsLines> lines;
-		std::shared_ptr<DeformableSolidsSurfaces> surfaces;
-		std::shared_ptr<DeformableSolidsVolumes> volumes;
+		// Models
+		spPointDynamics point_sets;
+		std::shared_ptr<EnergyLumpedInertia> lumped_inertia;
+		std::shared_ptr<EnergyPrescribedPositions> prescribed_positions;
+		std::shared_ptr<EnergySegmentStrain> segment_strain;
+		std::shared_ptr<EnergyTriangleStrain> triangle_strain;
+		std::shared_ptr<EnergyDiscreteShells> discrete_shells;
+		std::shared_ptr<EnergyTetStrain> tet_strain;
 	};
 }

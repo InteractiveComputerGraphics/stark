@@ -2,8 +2,8 @@
 
 #include "rigidbody_transformations.h"
 
-stark::models::EnergyRigidBodyInertia::EnergyRigidBodyInertia(stark::core::Stark& stark, spRigidBodyDynamics dyn)
-	: dyn(dyn)
+stark::EnergyRigidBodyInertia::EnergyRigidBodyInertia(core::Stark& stark, spRigidBodyDynamics rb)
+	: rb(rb)
 {
 	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step(stark); });
 
@@ -11,14 +11,14 @@ stark::models::EnergyRigidBodyInertia::EnergyRigidBodyInertia(stark::core::Stark
 	stark.global_energy.add_energy("EnergyRigidBodyInertia_Linear", this->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			symx::Vector v1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["rb"]);
-			symx::Vector v0 = energy.make_vector(this->dyn->v0, conn["rb"]);
-			symx::Vector a = energy.make_vector(this->dyn->a, conn["rb"]);
-			symx::Vector f = energy.make_vector(this->dyn->force, conn["rb"]);
+			symx::Vector v1 = energy.make_dof_vector(this->rb->dof_v, this->rb->v1, conn["rb"]);
+			symx::Vector v0 = energy.make_vector(this->rb->v0, conn["rb"]);
+			symx::Vector a = energy.make_vector(this->rb->a, conn["rb"]);
+			symx::Vector f = energy.make_vector(this->rb->force, conn["rb"]);
 			symx::Scalar m = energy.make_scalar(this->mass, conn["rb"]);
 			symx::Scalar damping = energy.make_scalar(this->linear_damping, conn["rb"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
-			symx::Vector gravity = energy.make_vector(stark.settings.simulation.gravity);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
+			symx::Vector gravity = energy.make_vector(stark.gravity);
 
 			symx::Vector vhat = v0 + dt * (a + gravity + f / m);
 			symx::Vector dev = v1 - vhat;
@@ -32,14 +32,14 @@ stark::models::EnergyRigidBodyInertia::EnergyRigidBodyInertia(stark::core::Stark
 	stark.global_energy.add_energy("EnergyRigidBodyInertia_Angular", this->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
-			symx::Vector w1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["rb"]);
-			symx::Vector w0 = energy.make_vector(this->dyn->w0, conn["rb"]);
-			symx::Vector aa = energy.make_vector(this->dyn->aa, conn["rb"]);
-			symx::Vector t = energy.make_vector(this->dyn->torque, conn["rb"]);
+			symx::Vector w1 = energy.make_dof_vector(this->rb->dof_w, this->rb->w1, conn["rb"]);
+			symx::Vector w0 = energy.make_vector(this->rb->w0, conn["rb"]);
+			symx::Vector aa = energy.make_vector(this->rb->aa, conn["rb"]);
+			symx::Vector t = energy.make_vector(this->rb->torque, conn["rb"]);
 			symx::Matrix J0_glob = energy.make_matrix(this->J0_glob, { 3, 3 }, conn["rb"]);
 			symx::Matrix J0_inv_glob = energy.make_matrix(this->J0_inv_glob, { 3, 3 }, conn["rb"]);
 			symx::Scalar damping = energy.make_scalar(this->angular_damping, conn["rb"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
 
 			symx::Vector what = w0 + dt * (aa + J0_inv_glob * t);
 			symx::Vector dev = w1 - what;
@@ -49,10 +49,10 @@ stark::models::EnergyRigidBodyInertia::EnergyRigidBodyInertia(stark::core::Stark
 	);
 
 	// Inverse mass and inertia tensor for acceleration residual
-	stark.callbacks.inv_mass[this->dyn->dof_v.idx] = [&](double* begin, double* end)
+	stark.callbacks.inv_mass[this->rb->dof_v.idx] = [&](double* begin, double* end)
 		{
 			const int n = (int)std::distance(begin, end);
-			const int n_bodies = this->dyn->get_n_bodies();
+			const int n_bodies = this->rb->get_n_bodies();
 			if (n != 3 * n_bodies) {
 				std::cout << "Stark error: EnergyRigidBodyInertia::inv_mass() found `begin` and `end` with different size than the set nodes." << std::endl;
 				exit(-1);
@@ -66,10 +66,10 @@ stark::models::EnergyRigidBodyInertia::EnergyRigidBodyInertia(stark::core::Stark
 				begin[3 * i + 2] *= mass_inv;
 			}
 		};
-	stark.callbacks.inv_mass[this->dyn->dof_w.idx] = [&](double* begin, double* end)
+	stark.callbacks.inv_mass[this->rb->dof_w.idx] = [&](double* begin, double* end)
 		{
 			const int n = (int)std::distance(begin, end);
-			const int n_bodies = this->dyn->get_n_bodies();
+			const int n_bodies = this->rb->get_n_bodies();
 			if (n != 3 * n_bodies) {
 				std::cout << "Stark error: EnergyRigidBodyInertia::inv_mass() found `begin` and `end` with different size than the set nodes." << std::endl;
 				exit(-1);
@@ -91,8 +91,13 @@ stark::models::EnergyRigidBodyInertia::EnergyRigidBodyInertia(stark::core::Stark
 		};
 }
 
-void stark::models::EnergyRigidBodyInertia::add(const double mass, const Eigen::Matrix3d& inertia_loc, const double linear_damping, const double angular_damping)
+void stark::EnergyRigidBodyInertia::add(const int rb_idx, const double mass, const Eigen::Matrix3d& inertia_loc, const double linear_damping, const double angular_damping)
 {
+	if (rb_idx != (int)this->mass.size()) {
+		std::cout << "Stark error: EnergyRigidBodyInertia::add() found non-consequtive rigid body added." << std::endl;
+		exit(-1);
+	}
+
 	this->conn.push_back({ (int)this->mass.size() });
 	this->mass.push_back(mass);
 	this->J_loc.push_back(inertia_loc);
@@ -100,13 +105,13 @@ void stark::models::EnergyRigidBodyInertia::add(const double mass, const Eigen::
 	this->angular_damping.push_back(angular_damping);
 }
 
-void stark::models::EnergyRigidBodyInertia::_before_time_step(stark::core::Stark& stark)
+void stark::EnergyRigidBodyInertia::_before_time_step(stark::core::Stark& stark)
 {
-	const int n = this->dyn->get_n_bodies();
+	const int n = this->rb->get_n_bodies();
 	this->J0_glob.resize(n);
 	this->J0_inv_glob.resize(n);
 	for (int i = 0; i < n; i++) {
-		const Eigen::Matrix3d J = local_to_global_matrix(this->J_loc[i], this->dyn->R0[i]);
+		const Eigen::Matrix3d J = local_to_global_matrix(this->J_loc[i], this->rb->R0[i]);
 		this->J0_glob[i] = {
 			J(0, 0), J(0, 1), J(0, 2),
 			J(1, 0), J(1, 1), J(1, 2),

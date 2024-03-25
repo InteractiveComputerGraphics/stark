@@ -6,8 +6,8 @@
 
 namespace stark::core
 {
-	enum class ConsoleOutputTo { ConsoleOnly, FileOnly, FileAndConsole, NoOutput };
 	enum class ConsoleVerbosity { NoOutput = 0, Frames = 1, TimeSteps = 2, NewtonIterations = 3 };
+	enum class ConsoleOutputTo { ConsoleOnly, FileOnly, FileAndConsole, NoOutput };
 
 	class Console
 	{

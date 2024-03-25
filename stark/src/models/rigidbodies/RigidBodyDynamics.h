@@ -9,7 +9,7 @@
 #include "../../core/Stark.h"
 
 
-namespace stark::models
+namespace stark
 {
 	class RigidBodyDynamics
 	{
@@ -35,11 +35,10 @@ namespace stark::models
 		symx::DoF dof_v;
 		symx::DoF dof_w;
 		std::vector<std::string> labels;
-		bool is_minimization_active = false;  // Tells us whether v1 is the converged state or we are still trying.
 
 		/* Methods */
-		RigidBodyDynamics(stark::core::Stark& stark);
-		int add();
+		RigidBodyDynamics(core::Stark& stark);
+		int add(const std::string& label = "");
 		int get_n_bodies() const;
 
 		// Position and direction getters
@@ -52,13 +51,13 @@ namespace stark::models
 		std::array<symx::Vector, 2> get_x1_d1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Vector& d_loc, const symx::Scalar& dt);
 		std::array<symx::Vector, 2> get_x0_x1(symx::Energy& energy, const symx::Index& rb_idx, const symx::Vector& x_loc, const symx::Scalar& dt);
 
-		Eigen::Vector3d get_x1(int rb_idx, const Eigen::Vector3d& x_loc, double dt);
-		Eigen::Vector3d get_d1(int rb_idx, const Eigen::Vector3d& d_loc, double dt);
+		Eigen::Vector3d get_x1(int rb, const Eigen::Vector3d& x_loc, double dt) const;
+		Eigen::Vector3d get_d1(int rb, const Eigen::Vector3d& d_loc, double dt) const;
 
 		//// With final positions
-		Eigen::Vector3d get_x1(int rb_idx, const Eigen::Vector3d& x_loc);
-		Eigen::Vector3d get_v1(int rb_idx, const Eigen::Vector3d& x_loc);
-		Eigen::Vector3d get_d1(int rb_idx, const Eigen::Vector3d& d_loc);
+		Eigen::Vector3d get_position_at(int rb, const Eigen::Vector3d& x_loc) const;
+		Eigen::Vector3d get_velocity_at(int rb, const Eigen::Vector3d& x_loc) const;
+		Eigen::Vector3d get_direction(int rb, const Eigen::Vector3d& d_loc) const;
 
 	private:
 		void _before_time_step(stark::core::Stark& stark);

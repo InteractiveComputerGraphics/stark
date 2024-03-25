@@ -40,11 +40,11 @@ symx::Sequence::Sequence(const std::vector<Scalar>& expr)
 		functionality. This is not at all the bottleneck of any subprocess in the pipeline.
 	*/
 
-	const Expressions& expressions = expr[0].expressions;
+	const std::vector<Expr>& expressions = expr[0].get_expression_graph()->get_expressions();
 
 	// Find unique branching points
 	std::unordered_map<int32_t, Expr> unique_branch_conditions;
-	for (const Expr& e : expressions.expressions) {
+	for (const Expr& e : expressions) {
 		if (e.type == ExprType::Branch) {
 			unique_branch_conditions[e.cond] = e;
 		}

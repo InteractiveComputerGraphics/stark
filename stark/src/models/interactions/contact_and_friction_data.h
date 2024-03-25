@@ -5,26 +5,48 @@
 
 #include <symx>
 
-namespace stark::models
+namespace stark
 {
 	/* ================================================================= */
 	/* ===========================  GENERAL  =========================== */
 	/* ================================================================= */
 	enum class PhysicalSystem { Deformable, Rigidbody };
 
-	struct Mesh
+	struct DeformableBookkeeping
 	{
-		PhysicalSystem ps;
-		int ps_set = -1;  // Index local to the physical system
-		std::vector<Eigen::Vector3d> vertices;
-		std::vector<std::array<int, 2>> edges;  // Local indices
-		std::vector<std::array<int, 3>> triangles;  // Local indices
+		int collision_group = -1;
+		int deformable_collision_group = -1;
+		int deformable_idx = -1;
+
+		// Maps the local collision mesh connectivity to the point set vertices (not the global vertices)
+		// Needed for subsets of points such as triangle meshes around tet meshes
+		std::vector<int> point_set_map; // vertices[i] = ps->get_global_vertex(idx_in_ps, point_set_map[i]);
+
+		inline DeformableBookkeeping() {}
+		inline DeformableBookkeeping(int collision_group, int deformable_collision_group, int deformable_idx, const std::vector<int>& point_set_map)
+			: collision_group(collision_group), deformable_collision_group(deformable_collision_group), deformable_idx(deformable_idx), point_set_map(point_set_map) {}
 	};
 
-	struct StaticPlanes
+	struct RigidBodyBookkeeping
 	{
-		std::vector<Eigen::Vector3d> point;
-		std::vector<Eigen::Vector3d> normal;
+		int collision_group = -1;
+		int rb_collision_group = -1;
+		int rb_idx = -1;
+		inline RigidBodyBookkeeping() {}
+		inline RigidBodyBookkeeping(int collision_group, int rb_collision_group, int rb_idx)
+			: rb_collision_group(rb_collision_group), rb_idx(rb_idx) {}
+	};
+
+	struct ContactMesh
+	{
+		// Mandatory
+		PhysicalSystem ps;
+		int idx_in_ps = -1;  // Index local to the physical system
+		std::vector<Eigen::Vector3d> vertices; // Used by the collision detection
+		std::vector<std::array<int, 2>> loc_edges;  // Used by the collision detection
+		
+		// Optional: Not used for segment-only meshes
+		std::vector<std::array<int, 3>> loc_triangles;  // Used by the collision detection
 	};
 
 	/* ============================================================================= */
@@ -34,8 +56,8 @@ namespace stark::models
 	struct ProximityHelper
 	{
 		PhysicalSystem ps;
-		int set = -1;  // Set index relative to all collision sets declared
-		int ps_set = -1;  // Index of the object relative to its physical system (eg. rigid body idx, deformable idx, ...)
+		int group = -1;  // Set index relative to all collision sets declared
+		int idx_in_ps = -1;  // Index of the object relative to its physical system (eg. rigid body idx, deformable idx, ...)
 		std::array<int, N> local_verts ;  // Indices local to the object
 		std::array<int, N> verts;  // Indices global to the physical system
 		std::array<int, 2> edge;  // Edge corresponding to the vertices (only used in EdgePoint)
@@ -48,15 +70,15 @@ namespace stark::models
 	{
 		struct PointTriangle
 		{
-			symx::LabelledConnectivity<2> point_point{ { "p", "q" } };
-			symx::LabelledConnectivity<3> point_edge{ { "p", "e0", "e1" } };
-			symx::LabelledConnectivity<4> point_triangle{ { "p", "t0", "t1", "t2" } };
+			symx::LabelledConnectivity<4> point_point{ { "group_a", "group_b", "p", "q" } };
+			symx::LabelledConnectivity<5> point_edge{ { "group_a", "group_b", "p", "e0", "e1" } };
+			symx::LabelledConnectivity<6> point_triangle{ { "group_a", "group_b", "p", "t0", "t1", "t2" } };
 		};
 		struct EdgeEdge
 		{
-			symx::LabelledConnectivity<6> point_point{ { "ea0", "ea1", "p", "eb0", "eb1", "q" } };
-			symx::LabelledConnectivity<5> point_edge{ { "ea0", "ea1", "p", "eb0", "eb1" } };
-			symx::LabelledConnectivity<4> edge_edge{ { "ea0", "ea1", "eb0", "eb1" } };
+			symx::LabelledConnectivity<8> point_point{ { "group_a", "group_b", "ea0", "ea1", "p", "eb0", "eb1", "q" } };
+			symx::LabelledConnectivity<7> point_edge{ { "group_a", "group_b", "ea0", "ea1", "p", "eb0", "eb1" } };
+			symx::LabelledConnectivity<6> edge_edge{ { "group_a", "group_b", "ea0", "ea1", "eb0", "eb1" } };
 		};
 		PointTriangle point_triangle;
 		EdgeEdge edge_edge;
@@ -77,15 +99,15 @@ namespace stark::models
 	{
 		struct PointTriangle
 		{
-			symx::LabelledConnectivity<4> point_point{ { "a", "b", "p", "q" } };
-			symx::LabelledConnectivity<5> point_edge{ { "a", "b", "p", "e0", "e1" } };
-			symx::LabelledConnectivity<6> point_triangle{ { "a", "b", "p", "t0", "t1", "t2" } };
+			symx::LabelledConnectivity<6> point_point{ { "group_a", "group_b", "a", "b", "p", "q" } };
+			symx::LabelledConnectivity<7> point_edge{ { "group_a", "group_b", "a", "b", "p", "e0", "e1" } };
+			symx::LabelledConnectivity<8> point_triangle{ { "group_a", "group_b", "a", "b", "p", "t0", "t1", "t2" } };
 		};
 		struct EdgeEdge
 		{
-			symx::LabelledConnectivity<8> point_point{ { "a", "b", "ea0", "ea1", "p", "eb0", "eb1", "q" } };
-			symx::LabelledConnectivity<7> point_edge{ { "a", "b", "ea0", "ea1", "p", "eb0", "eb1" } };
-			symx::LabelledConnectivity<6> edge_edge{ { "a", "b", "ea0", "ea1", "eb0", "eb1" } };
+			symx::LabelledConnectivity<10> point_point{ { "group_a", "group_b", "a", "b", "ea0", "ea1", "p", "eb0", "eb1", "q" } };
+			symx::LabelledConnectivity<9> point_edge{ { "group_a", "group_b", "a", "b", "ea0", "ea1", "p", "eb0", "eb1" } };
+			symx::LabelledConnectivity<8> edge_edge{ { "group_a", "group_b", "a", "b", "ea0", "ea1", "eb0", "eb1" } };
 		};
 		PointTriangle point_triangle;
 		EdgeEdge edge_edge;
@@ -106,18 +128,18 @@ namespace stark::models
 	{
 		struct PointTriangle
 		{
-			symx::LabelledConnectivity<3> rb_d_point_point{ { "rb", "p", "q" } };
-			symx::LabelledConnectivity<4> rb_d_point_edge{ { "rb", "p", "e0", "e1" } };
-			symx::LabelledConnectivity<5> rb_d_point_triangle{ { "rb", "p", "t0", "t1", "t2" } };
-			symx::LabelledConnectivity<4> rb_d_edge_point{ { "rb", "e0", "e1", "p" } };
-			symx::LabelledConnectivity<5> rb_d_triangle_point{ { "rb", "t0", "t1", "t2", "p" } };
+			symx::LabelledConnectivity<5> rb_d_point_point{ { "group_a", "group_b", "rb", "p", "q" } };
+			symx::LabelledConnectivity<6> rb_d_point_edge{ { "group_a", "group_b", "rb", "p", "e0", "e1" } };
+			symx::LabelledConnectivity<7> rb_d_point_triangle{ { "group_a", "group_b", "rb", "p", "t0", "t1", "t2" } };
+			symx::LabelledConnectivity<6> rb_d_edge_point{ { "group_a", "group_b", "rb", "e0", "e1", "p" } };
+			symx::LabelledConnectivity<7> rb_d_triangle_point{ { "group_a", "group_b", "rb", "t0", "t1", "t2", "p" } };
 		};
 		struct EdgeEdge
 		{
-			symx::LabelledConnectivity<7> rb_d_point_point{ { "rb", "ea0", "ea1", "p", "eb0", "eb1", "q" } };
-			symx::LabelledConnectivity<6> rb_d_point_edge{ { "rb", "ea0", "ea1", "p", "eb0", "eb1" } };
-			symx::LabelledConnectivity<5> rb_d_edge_edge{ { "rb", "ea0", "ea1", "eb0", "eb1" } };
-			symx::LabelledConnectivity<6> rb_d_edge_point{ { "rb", "ea0", "ea1", "eb0", "eb1", "q" } };
+			symx::LabelledConnectivity<9> rb_d_point_point{ { "group_a", "group_b", "rb", "ea0", "ea1", "p", "eb0", "eb1", "q" } };
+			symx::LabelledConnectivity<8> rb_d_point_edge{ { "group_a", "group_b", "rb", "ea0", "ea1", "p", "eb0", "eb1" } };
+			symx::LabelledConnectivity<7> rb_d_edge_edge{ { "group_a", "group_b", "rb", "ea0", "ea1", "eb0", "eb1" } };
+			symx::LabelledConnectivity<8> rb_d_edge_point{ { "group_a", "group_b", "rb", "ea0", "ea1", "eb0", "eb1", "q" } };
 		};
 		PointTriangle point_triangle;
 		EdgeEdge edge_edge;
@@ -134,18 +156,6 @@ namespace stark::models
 			this->edge_edge.rb_d_point_edge.clear();
 			this->edge_edge.rb_d_edge_edge.clear();
 			this->edge_edge.rb_d_edge_point.clear();
-		}
-	};
-
-	struct Contacts_Static
-	{
-		symx::LabelledConnectivity<2> deformable_point{ { "plane", "a" } };
-		symx::LabelledConnectivity<3> rb_point{ { "plane", "rb", "a" } };
-
-		void clear()
-		{
-			this->deformable_point.clear();
-			this->rb_point.clear();
 		}
 	};
 
@@ -346,31 +356,4 @@ namespace stark::models
 			this->triangle_point.conn.clear();
 		}
 	};
-
-	struct Friction_Static
-	{
-		struct DeformablePoint
-		{
-			FrictionContact contact;
-			symx::LabelledConnectivity<2> conn{ { "idx", "a" } };
-		};
-		struct RBPoint
-		{
-			FrictionContact contact;
-			symx::LabelledConnectivity<3> conn{ { "idx", "rb", "a" } };
-		};
-
-		DeformablePoint deformable_point;
-		RBPoint rb_point;
-
-		void clear()
-		{
-			this->deformable_point.contact.clear();
-			this->deformable_point.conn.clear();
-
-			this->rb_point.contact.clear();
-			this->rb_point.conn.clear();
-		}
-	};
-
 }

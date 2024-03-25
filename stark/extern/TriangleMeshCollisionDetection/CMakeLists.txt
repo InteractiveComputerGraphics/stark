@@ -1,11 +1,6 @@
-# External dependencies
-## OpenMP
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
+cmake_minimum_required(VERSION 3.9)
+
+set(TMCD_ENABLE_AVX ON CACHE BOOL "Flag to enable AVX for TriangleMeshCollisionDetection")
 
 # Enable SIMD and suppress compiler warnings
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -55,5 +50,16 @@ set(SOURCE_FILES
 )
 
 add_library(TriangleMeshCollisionDetection ${SOURCE_FILES})
+
+if(${TMCD_ENABLE_AVX})
+	target_compile_definitions(TriangleMeshCollisionDetection PUBLIC TMCD_ENABLE_AVX)
+endif()
+
+# External dependencies
+## OpenMP
+find_package(OpenMP)
+if (OPENMP_FOUND)
+	target_link_libraries(TriangleMeshCollisionDetection OpenMP::OpenMP_CXX)
+endif()
 
 source_group("TriangleMeshCollisionDetection" FILES ${SOURCE_FILES})

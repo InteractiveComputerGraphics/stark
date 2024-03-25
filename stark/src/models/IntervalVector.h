@@ -5,7 +5,7 @@
 #include <cassert>
 
 
-namespace stark::models
+namespace stark
 {
 	/**
 	*	std::vector<T> with offsets to identify contiguous intervals as collections (sets).
@@ -47,6 +47,7 @@ namespace stark::models
 		template<std::size_t N>
 		std::array<int, N> get_global_indices(const int set_id, const std::array<int, N>& local_indices) const;
 		IntervalVector<T> extract(const std::vector<int>& sets) const;
+		std::vector<T> get_set(const int set_id) const;
 
 		// Indexing
 		T* get_begin_ptr(const int set_id);
@@ -229,6 +230,13 @@ namespace stark::models
 		}
 
 		return output;
+	}
+
+	template<typename T>
+	inline std::vector<T> IntervalVector<T>::get_set(const int set_id) const
+	{
+		this->_assert_existing_set(set_id);
+		return std::vector<T>(this->get_begin_ptr(set_id), this->get_end_ptr(set_id));
 	}
 
 	template<typename T>

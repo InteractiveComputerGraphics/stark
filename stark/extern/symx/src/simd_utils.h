@@ -1,10 +1,13 @@
 #pragma once
 #include <type_traits>
+#ifdef SYMX_ENABLE_AVX
 #include <immintrin.h>
+#endif
 
 
 namespace symx
 {
+#ifdef SYMX_ENABLE_AVX
 	// SIMD types
 	using SIMD2d  = __m128d;
 	using SIMD4f  = __m128;
@@ -12,6 +15,7 @@ namespace symx
 	using SIMD8f  = __m256;
 	using SIMD8d  = __m512d;
 	using SIMD16f = __m512;
+#endif
 
 	// Underlying type of SIMD types
 	template<typename T>
@@ -22,12 +26,14 @@ namespace symx
 
 	template<> struct SIMD_to_Underlying<double> { using Underlying = double; };
 	template<> struct SIMD_to_Underlying<float> { using Underlying = float; };
+#ifdef SYMX_ENABLE_AVX
 	template<> struct SIMD_to_Underlying<__m128d> { using Underlying = double; };
 	template<> struct SIMD_to_Underlying<__m128> { using Underlying = float; };
 	template<> struct SIMD_to_Underlying<__m256d> { using Underlying = double; };
 	template<> struct SIMD_to_Underlying<__m256> { using Underlying = float; };
 	template<> struct SIMD_to_Underlying<__m512d> { using Underlying = double; };
 	template<> struct SIMD_to_Underlying<__m512> { using Underlying = float; };
+#endif
 
 	template<typename T>
 	using UNDERLYING_TYPE = typename SIMD_to_Underlying<T>::Underlying;
@@ -40,6 +46,7 @@ namespace symx
 		if constexpr (std::is_same_v<FLOAT, float> || std::is_same_v<FLOAT, double>) {
 			return 1;
 		}
+#ifdef SYMX_ENABLE_AVX
 		else if constexpr (std::is_same_v<FLOAT, __m128d>) {
 			return 2;
 		}
@@ -52,6 +59,7 @@ namespace symx
 		else if constexpr (std::is_same_v<FLOAT, __m512>) {
 			return 16;
 		}
+#endif
 	}
 
 	template<typename FLOAT>
@@ -63,6 +71,7 @@ namespace symx
 		else if constexpr (std::is_same_v<FLOAT, double>) {
 			return "double";
 		}
+#ifdef SYMX_ENABLE_AVX
 		else if constexpr (std::is_same_v<FLOAT, SIMD2d>) {
 			return "SIMD2d";
 		}
@@ -81,5 +90,6 @@ namespace symx
 		else if constexpr (std::is_same_v<FLOAT, SIMD16f>) {
 			return "SIMD16f";
 		}
+#endif
 	}
 }

@@ -3,12 +3,12 @@
 #include <array>
 
 #include "BlockedSparseMatrix/ParallelNumber.h"
+#include <omp.h>
 
 #include "lambdas.h"
 #include "Element.h"
 #include "Compilation.h"
 #include "simd_utils.h"
-#include "utils.h"
 #include "AlignmentAllocator.h"
 
 
@@ -49,6 +49,7 @@ namespace symx
 		std::vector<symx::avx::avector<COMPILED_FLOAT, 64>> thread_output;
 		std::vector<symx::avx::avector<COMPILED_FLOAT, 64>> thread_summation_buffer;
 		std::vector<std::vector<OUTPUT_FLOAT>> thread_solution_buffer;
+		std::function<void(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity, const OUTPUT_FLOAT* solution)> evaluation_callback = nullptr;
 
 		// Connectivity
 		std::function<const int32_t*()> connectivity_data;
@@ -62,8 +63,13 @@ namespace symx
 		int summation_stride = -1;
 		int summation_iterations = -1;
 
+		// Conditional evaluation
+		std::function<bool(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity)> conditional_evaluation_callback = nullptr;
+		std::vector<uint8_t> active_elements_bool;
+		std::vector<int32_t> active_elements;
+
 		// Misc
-		bsm::ParallelNumber<double> thread_compiled_timing;
+		bool check_for_NaNs = false;
 		std::string name = "";
 
 
@@ -75,8 +81,15 @@ namespace symx
 		bool load_if_cached(std::string name, std::string folder, std::string id);
 		void compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", bool suppress_compiler_output = true);
 		void try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id = "", bool suppress_compiler_output = true);
-		bool is_valid();
-		bool was_cached();
+		void set_check_for_NaNs(const bool check);
+		void set_evaluation_callback(std::function<void(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity, const OUTPUT_FLOAT* solution)> callback);
+		void set_conditional_evaluation_callback(std::function<bool(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity)> callback);
+		bool is_valid() const;
+		bool was_cached() const;
+		int get_n_elements() const;
+		int get_connectivity_stride() const;
+		const int32_t* get_connectivity_data() const;
+		const int32_t* get_connectivity_elem(const int32_t i) const;
 
 		// Set connectivity
 		Element set_connectivity(std::function<const int32_t*()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element);
@@ -117,12 +130,17 @@ namespace symx
 		// Set summation vector
 		void set_summation_vector(const Vector vector, const std::vector<double>& summation_data, const int summation_stride);
 
-
-		/*
-			CB -> std::function<void(const int32_t iteration, const int32_t thread_id, const int32_t* connectivity, const OUTPUT_FLOAT* solution)>
-		*/
-		template<typename CB>
-		void run(const int32_t n_threads, CB callback, const bool check_for_NaNs = false);
+		// Run
+		void run(
+			const int32_t n_threads,
+			std::function<void(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity, OUTPUT_FLOAT* solution)> callback,
+			std::function<bool(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity)> conditional_evaluation
+		);
+		void run(
+			const int32_t n_threads,
+			std::function<void(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity, OUTPUT_FLOAT* solution)> callback
+		);
+		void run(const int32_t n_threads);
 
 	private:
 		void _init();
@@ -138,13 +156,17 @@ namespace symx
 		static_assert((std::is_same_v<INPUT_FLOAT, float> || std::is_same_v<INPUT_FLOAT, double>), "INPUT_FLOAT must be {float, double}");
 		static_assert((
 			std::is_same_v<COMPILED_FLOAT, float> ||
-			std::is_same_v<COMPILED_FLOAT, double> ||
+			std::is_same_v<COMPILED_FLOAT, double>
+#ifdef SYMX_ENABLE_AVX
+			||
 			std::is_same_v<COMPILED_FLOAT, __m128d> ||
 			std::is_same_v<COMPILED_FLOAT, __m128> ||
 			std::is_same_v<COMPILED_FLOAT, __m256d> ||
 			std::is_same_v<COMPILED_FLOAT, __m256> ||
 			std::is_same_v<COMPILED_FLOAT, __m512d> ||
-			std::is_same_v<COMPILED_FLOAT, __m512>),
+			std::is_same_v<COMPILED_FLOAT, __m512>
+#endif
+			),
 			"COMPILED_FLOAT must be {float, double, __m128d, __m128, __m256d, __m256, __m512d, __m512}");
 
 		this->symbol_array_map.resize(this->compilation.n_inputs);
@@ -152,7 +174,7 @@ namespace symx
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::_resize_symbol_array_map(const Scalar& scalar)
 	{
-		this->symbol_array_map.resize(scalar.expressions.symbols.size());
+		this->symbol_array_map.resize(scalar.get_expression_graph()->get_n_symbols());
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	inline CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::CompiledInLoop(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string id, bool suppress_compiler_output)
@@ -184,18 +206,56 @@ namespace symx
 		return success;
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline bool CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::is_valid()
+	inline bool CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::is_valid() const
 	{
 		return this->compilation.is_valid();
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline bool CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::was_cached()
+	inline bool CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::was_cached() const
 	{
 		return this->compilation.was_cached;
 	}
 
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_check_for_NaNs(const bool check)
+	{
+		this->check_for_NaNs = check;
+	}
 
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_evaluation_callback(std::function<void(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity, const OUTPUT_FLOAT* solution)> callback)
+	{
+		this->evaluation_callback = callback;
+	}
 
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_conditional_evaluation_callback(std::function<bool(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity)> callback)
+	{
+	}
+
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline int CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::get_n_elements() const
+	{
+		return this->connectivity_n_elements();
+	}
+
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline int CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::get_connectivity_stride() const
+	{
+		return this->connectivity_stride;
+	}
+
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline const int32_t* CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::get_connectivity_data() const
+	{
+		return this->connectivity_data();
+	}
+
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline const int32_t* CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::get_connectivity_elem(const int32_t i) const
+	{
+		return this->connectivity_data() + this->connectivity_stride*i;
+	}
 
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	inline Element CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::set_connectivity(std::function<const int32_t* ()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element)
@@ -400,16 +460,15 @@ namespace symx
 
 
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	template<typename CB>
-	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run(const int32_t n_threads, CB callback, const bool check_for_NaNs)
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run(
+		const int32_t n_threads, 
+		std::function<void(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity, OUTPUT_FLOAT* solution)> callback,
+		std::function<bool(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity)> conditional_evaluation)
 	{
 		using UNDERLYING_FLOAT = UNDERLYING_TYPE<COMPILED_FLOAT>;
 		constexpr int N_SIMD = get_n_items_in_simd<COMPILED_FLOAT>();
 
 		auto symbol_number_as_str = [&](const int i) { return std::to_string(i) + "/" + std::to_string((int)this->symbol_array_map.size() - 1); };
-
-		// Init
-		this->thread_compiled_timing.reset(n_threads);
 
 		// Update connectivity, pointers and sizes
 		const int n_symbols = (int)this->symbol_array_map.size();
@@ -471,9 +530,28 @@ namespace symx
 		const int n_inputs = this->compilation.n_inputs;
 		const int n_outputs = this->compilation.n_outputs;
 
-		// Connectivity loop
-		const int total_avx_lines = (n_elements % N_SIMD == 0) ? n_elements / N_SIMD : n_elements / N_SIMD + 1;
+		// Conditional evaluation
+		bool has_conditional_evaluation = conditional_evaluation != nullptr;
+		if (has_conditional_evaluation) {
+			this->active_elements_bool.resize(n_elements);
 
+			#pragma omp parallel for schedule(static) num_threads(n_threads)
+			for (int i = 0; i < n_elements; i++) {
+				const int32_t* loc_conn = connectivity_data + i * this->connectivity_stride;
+				this->active_elements_bool[i] = conditional_evaluation(i, omp_get_thread_num(), loc_conn);
+			}
+
+			this->active_elements.clear();
+			for (int i = 0; i < n_elements; i++) {
+				if (this->active_elements_bool[i]) {
+					this->active_elements.push_back(i);
+				}
+			}
+		}
+
+		// Connectivity loop
+		const int n_active_elements = has_conditional_evaluation ? (int)this->active_elements.size() : n_elements;
+		const int total_avx_lines = (n_active_elements % N_SIMD == 0) ? n_active_elements / N_SIMD : n_active_elements / N_SIMD + 1;
 		
 		#pragma omp parallel for schedule(static) num_threads(n_threads) if(total_avx_lines > 2*n_threads)
 		for (int avx_i = 0; avx_i < total_avx_lines; avx_i++) {
@@ -481,14 +559,28 @@ namespace symx
 			COMPILED_FLOAT* f_input = this->thread_input[thread_id].data();
 			COMPILED_FLOAT* f_output = this->thread_output[thread_id].data();
 
+			// SIMD range
 			const int begin_i = N_SIMD * avx_i;
-			const int end_i = std::min(N_SIMD * (avx_i + 1), n_elements);
+			const int end_i = std::min(N_SIMD * (avx_i + 1), n_active_elements);
 			const int active_simd_elements = end_i - begin_i;
 
-			// Gather
+			// Gather element indices
+			std::array<int32_t, N_SIMD> element_indices;
+			if (has_conditional_evaluation) {
+				for (int i = 0; i < active_simd_elements; i++) {
+					element_indices[i] = this->active_elements[begin_i + i];
+				}
+			}
+			else {
+				for (int i = 0; i < active_simd_elements; i++) {
+					element_indices[i] = begin_i + i;
+				}
+			}
+
+			// Gather input
 			UNDERLYING_FLOAT* input_scalar = reinterpret_cast<UNDERLYING_FLOAT*>(f_input);
 			for (int32_t i = 0; i < active_simd_elements; i++) {
-				const int32_t* loc_conn = connectivity_data + (begin_i + i) * this->connectivity_stride;
+				const int32_t* loc_conn = this->get_connectivity_elem(element_indices[i]);
 				for (const int symbol_i : this->non_summation_symbols_idx) {
 					SymbolArrayMap& map = this->symbol_array_map[symbol_i];
 					const int32_t loc_idx = loc_conn[map.connectivity_index];
@@ -501,7 +593,7 @@ namespace symx
 
 					input_scalar[N_SIMD * symbol_i + i] = static_cast<UNDERLYING_FLOAT>(map.array_begin[value_idx]);
 
-					if (check_for_NaNs) {
+					if (this->check_for_NaNs) {
 						if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
 							std::cout << "symx error: NaN found in CompiledInLoop::run() in the input " << symbol_number_as_str(symbol_i) << " for instance with name \"" + this->name + "\"" << std::endl;
 							exit(-1);
@@ -512,7 +604,6 @@ namespace symx
 
 			// Run
 			//// No summation
-			const double t0 = omp_get_wtime();
 			if (this->summation_data.size() == 0) {
 				f(f_input, f_output);
 			}
@@ -535,7 +626,7 @@ namespace symx
 							SymbolArrayMap& map = this->symbol_array_map[symbol_i];
 							input_scalar[N_SIMD * symbol_i + i] = static_cast<UNDERLYING_FLOAT>(map.array_begin[map.stride * sum_it + map.offset]);
 
-							if (check_for_NaNs) {
+							if (this->check_for_NaNs) {
 								if (std::isnan(input_scalar[N_SIMD * symbol_i + i])) {
 									std::cout << "symx error: NaN found in CompiledInLoop::run() in the summation input " << symbol_number_as_str(symbol_i) << " for instance with name \"" + this->name + "\"" << std::endl;
 									exit(-1);
@@ -553,13 +644,10 @@ namespace symx
 					}
 				}
 			}
-			const double t1 = omp_get_wtime();
-			const double dt = t1 - t0;
-			this->thread_compiled_timing.get(thread_id) += dt;
 
-			// Scatter
+			// Scatter output
 			if constexpr (N_SIMD == 1 && std::is_same_v<UNDERLYING_FLOAT, OUTPUT_FLOAT>) {
-				if (check_for_NaNs) {
+				if (this->check_for_NaNs) {
 					for (int32_t i = 0; i < n_outputs; i++) {
 						if (std::isnan(f_output[i])) {
 							std::cout << "symx error: NaN found in CompiledInLoop::run() in the outputs for instance with name \"" + this->name + "\"" << std::endl;
@@ -573,8 +661,8 @@ namespace symx
 					}
 				}
 
-				const int32_t* loc_conn = connectivity_data + begin_i * this->connectivity_stride;
-				callback(begin_i, thread_id, loc_conn, f_output);
+				const int32_t* loc_conn = this->get_connectivity_elem(element_indices[0]);
+				callback(element_indices[0], thread_id, loc_conn, f_output);
 			}
 			else {
 				std::vector<OUTPUT_FLOAT>& solution_buffer = this->thread_solution_buffer[thread_id];
@@ -583,7 +671,7 @@ namespace symx
 					for (int32_t sol_i = 0; sol_i < n_outputs; sol_i++) {
 						solution_buffer[sol_i] = static_cast<OUTPUT_FLOAT>(output_scalar[N_SIMD * sol_i + i]);
 
-						if (check_for_NaNs) {
+						if (this->check_for_NaNs) {
 							if (std::isnan(solution_buffer[sol_i])) {
 								std::cout << "symx error: NaN found in the outputs of CompiledInLoop::run() for instance with name \"" + this->name + "\"" << std::endl;
 								std::cout << "Compile with scalar COMPILED_FLOAT to see the input." << std::endl;
@@ -591,11 +679,23 @@ namespace symx
 							}
 						}
 					}
-					const int32_t* loc_conn = connectivity_data + (begin_i + i) * this->connectivity_stride;
-					callback(begin_i + i, thread_id, loc_conn, solution_buffer.data());
+					const int32_t* loc_conn = this->get_connectivity_elem(element_indices[i]);
+					callback(element_indices[i], thread_id, loc_conn, solution_buffer.data());
 				}
 			}
 		}
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run(
+		const int32_t n_threads, 
+		std::function<void(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity, OUTPUT_FLOAT* solution)> callback)
+	{
+		this->run(n_threads, callback, this->conditional_evaluation_callback);
+	}
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run(const int32_t n_threads)
+	{
+		this->run(this->n_threads, this->evaluation_callback, this->conditional_evaluation_callback);
 	}
 }
 

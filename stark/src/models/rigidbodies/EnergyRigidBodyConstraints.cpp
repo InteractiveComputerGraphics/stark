@@ -4,8 +4,8 @@
 
 #include "rigidbody_transformations.h"
 
-stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark& stark, spRigidBodyDynamics dyn)
-	: dyn(dyn)
+stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark& stark, spRigidBodyDynamics rb)
+	: rb(rb)
 {
 	// Callbacks
 	stark.callbacks.is_converged_state_valid.push_back([&]() { return this->_is_converged_state_valid(stark); });
@@ -35,9 +35,9 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			symx::Vector target_glob = energy.make_vector(data->target_glob, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
 
-			symx::Vector glob = this->dyn->get_x1(energy, conn["rb"], loc, dt);
+			symx::Vector glob = this->rb->get_x1(energy, conn["rb"], loc, dt);
 			symx::Scalar E = RigidBodyConstraints::GlobalPoints::energy(stiffness, target_glob, glob);
 			energy.set_with_condition(E, is_active > 0.0);
 		}
@@ -52,9 +52,9 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			symx::Vector target_d_glob = energy.make_vector(data->target_d_glob, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
 
-			symx::Vector d_glob = this->dyn->get_d1(energy, conn["rb"], d_loc, dt);
+			symx::Vector d_glob = this->rb->get_d1(energy, conn["rb"], d_loc, dt);
 			symx::Scalar E = RigidBodyConstraints::GlobalDirections::energy(stiffness, target_d_glob, d_glob);
 			energy.set_with_condition(E, is_active > 0.0);
 		}
@@ -69,10 +69,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
 
-			symx::Vector a1 = this->dyn->get_x1(energy, conn["a"], a_loc, dt);
-			symx::Vector b1 = this->dyn->get_x1(energy, conn["b"], b_loc, dt);
+			symx::Vector a1 = this->rb->get_x1(energy, conn["a"], a_loc, dt);
+			symx::Vector b1 = this->rb->get_x1(energy, conn["b"], b_loc, dt);
 			symx::Scalar E = RigidBodyConstraints::Points::energy(stiffness, a1, b1);
 			energy.set_with_condition(E, is_active > 0.0);
 		}
@@ -88,10 +88,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
 
-			auto [a1, da1] = this->dyn->get_x1_d1(energy, conn["a"], a_loc, da_loc, dt);
-			symx::Vector b1 = this->dyn->get_x1(energy, conn["b"], b_loc, dt);
+			auto [a1, da1] = this->rb->get_x1_d1(energy, conn["a"], a_loc, da_loc, dt);
+			symx::Vector b1 = this->rb->get_x1(energy, conn["b"], b_loc, dt);
 			symx::Scalar E = RigidBodyConstraints::PointOnAxes::energy(stiffness, a1, da1, b1);
 			energy.set_with_condition(E, is_active > 0.0);
 		}
@@ -107,10 +107,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			symx::Scalar target_distance = energy.make_scalar(data->target_distance, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
 
-			symx::Vector a1 = this->dyn->get_x1(energy, conn["a"], a_loc, dt);
-			symx::Vector b1 = this->dyn->get_x1(energy, conn["b"], b_loc, dt);
+			symx::Vector a1 = this->rb->get_x1(energy, conn["a"], a_loc, dt);
+			symx::Vector b1 = this->rb->get_x1(energy, conn["b"], b_loc, dt);
 			symx::Scalar E = RigidBodyConstraints::Distance::energy(stiffness, a1, b1, target_distance);
 			energy.set_with_condition(E, is_active > 0.0);
 		}
@@ -127,10 +127,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			symx::Scalar max_distance = energy.make_scalar(data->max_distance, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
 
-			symx::Vector a1 = this->dyn->get_x1(energy, conn["a"], a_loc, dt);
-			symx::Vector b1 = this->dyn->get_x1(energy, conn["b"], b_loc, dt);
+			symx::Vector a1 = this->rb->get_x1(energy, conn["a"], a_loc, dt);
+			symx::Vector b1 = this->rb->get_x1(energy, conn["b"], b_loc, dt);
 			symx::Scalar E = RigidBodyConstraints::DistanceLimits::energy(stiffness, a1, b1, min_distance, max_distance);
 			energy.set_with_condition(E, is_active > 0.0);
 		}
@@ -145,10 +145,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			symx::Vector db_loc = energy.make_vector(data->db_loc, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
 
-			symx::Vector da = this->dyn->get_d1(energy, conn["a"], da_loc, dt);
-			symx::Vector db = this->dyn->get_d1(energy, conn["b"], db_loc, dt);
+			symx::Vector da = this->rb->get_d1(energy, conn["a"], da_loc, dt);
+			symx::Vector db = this->rb->get_d1(energy, conn["b"], db_loc, dt);
 			symx::Scalar E = RigidBodyConstraints::Directions::energy(stiffness, da, db);
 			energy.set_with_condition(E, is_active > 0.0);
 		}
@@ -164,10 +164,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			symx::Scalar max_distance = energy.make_scalar(data->max_distance, conn["idx"]);
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
 
-			symx::Vector da1 = this->dyn->get_d1(energy, conn["a"], da_loc, dt);
-			symx::Vector db1 = this->dyn->get_d1(energy, conn["b"], db_loc, dt);
+			symx::Vector da1 = this->rb->get_d1(energy, conn["a"], da_loc, dt);
+			symx::Vector db1 = this->rb->get_d1(energy, conn["b"], db_loc, dt);
 			symx::Scalar E = RigidBodyConstraints::AngleLimits::energy(stiffness, da1, db1, max_distance);
 			energy.set_with_condition(E, is_active > 0.0);
 		}
@@ -184,10 +184,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
 			symx::Scalar damping = energy.make_scalar(data->damping, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
 
-			auto [a0, a1] = this->dyn->get_x0_x1(energy, conn["a"], a_loc, dt);
-			auto [b0, b1] = this->dyn->get_x0_x1(energy, conn["b"], b_loc, dt);
+			auto [a0, a1] = this->rb->get_x0_x1(energy, conn["a"], a_loc, dt);
+			auto [b0, b1] = this->rb->get_x0_x1(energy, conn["b"], b_loc, dt);
 
 			symx::Scalar E = RigidBodyConstraints::DampedSprings::energy(stiffness, damping, a0, a1, b0, b1, rest_length, dt);
 			energy.set_with_condition(E, is_active > 0.0);
@@ -204,11 +204,11 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			symx::Scalar max_force = energy.make_scalar(data->max_force, conn["idx"]);
 			symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Vector va1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["a"]);
-			symx::Vector vb1 = energy.make_dof_vector(this->dyn->dof_v, this->dyn->v1, conn["b"]);
-			symx::Vector wa1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["a"]);
-			symx::Vector qa0 = energy.make_vector(this->dyn->q0_, conn["a"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Vector va1 = energy.make_dof_vector(this->rb->dof_v, this->rb->v1, conn["a"]);
+			symx::Vector vb1 = energy.make_dof_vector(this->rb->dof_v, this->rb->v1, conn["b"]);
+			symx::Vector wa1 = energy.make_dof_vector(this->rb->dof_w, this->rb->w1, conn["a"]);
+			symx::Vector qa0 = energy.make_vector(this->rb->q0_, conn["a"]);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
 
 			symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
 			symx::Scalar E = RigidBodyConstraints::LinearVelocity::energy(da1, va1, vb1, target_v, max_force, delay, dt);
@@ -226,10 +226,10 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 			symx::Scalar max_torque = energy.make_scalar(data->max_torque, conn["idx"]);
 			symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
 			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Vector wa1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["a"]);
-			symx::Vector wb1 = energy.make_dof_vector(this->dyn->dof_w, this->dyn->w1, conn["b"]);
-			symx::Vector qa0 = energy.make_vector(this->dyn->q0_, conn["a"]);
-			symx::Scalar dt = energy.make_scalar(stark.settings.simulation.adaptive_time_step.value);
+			symx::Vector wa1 = energy.make_dof_vector(this->rb->dof_w, this->rb->w1, conn["a"]);
+			symx::Vector wb1 = energy.make_dof_vector(this->rb->dof_w, this->rb->w1, conn["b"]);
+			symx::Vector qa0 = energy.make_vector(this->rb->q0_, conn["a"]);
+			symx::Scalar dt = energy.make_scalar(stark.dt);
 
 			symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
 			symx::Scalar E = RigidBodyConstraints::AngularVelocity::energy(da1, wa1, wb1, target_w, max_torque, delay, dt);
@@ -238,7 +238,7 @@ stark::models::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::cor
 	);
 }
 
-bool stark::models::EnergyRigidBodyConstraints::_is_converged_state_valid(core::Stark& stark)
+bool stark::EnergyRigidBodyConstraints::_is_converged_state_valid(core::Stark& stark)
 {
 	/*
 		Hardens every constraints that has gone beyond the input tolerance.
@@ -246,43 +246,43 @@ bool stark::models::EnergyRigidBodyConstraints::_is_converged_state_valid(core::
 	*/
 	const bool valid = this->_adjust_constraints_stiffness_and_log(stark, 1.0, this->stiffness_hard_multiplier, /*log = */ false, /* are_positions_set = */ false);
 	if (!valid) {
-		stark.console.add_error_msg("Rigid body constraints are not within tolerance. Hardening constraints. ");
+		stark.console.add_error_msg("Rigid body constraints are not within tolerance. Hardening bending_stiffness.");
 	}
 	return valid;
 }
 
-void stark::models::EnergyRigidBodyConstraints::_on_time_step_accepted(core::Stark& stark)
+void stark::EnergyRigidBodyConstraints::_on_time_step_accepted(core::Stark& stark)
 {
 	/*
 	*	Logs the state of the constraints.
 	*	Also, increases constraint stiffnesses at the end of a successful time step to preemtively adapt to harder conditions if occur smoothly.
 	*	This is an easy and cheap way to avoid restarting future successful time steps due to predictable load increases.
-	*	Adaptive soft decrease is not done as it would require a base stiffness value which is added responsibility to the user.
+	*	Adaptive soft decrease is not done as it would require a base bending_stiffness value which is added responsibility to the user.
 	*	It's too easy to have an overly soft constraint parametrization that runs into force time restarts too frequently.
 	*/
 	this->_adjust_constraints_stiffness_and_log(stark, this->soft_constraint_capacity_hardening_point, this->stiffness_soft_multiplier, /* log = */ true, /* are_positions_set = */ true);
 }
 
-void stark::models::EnergyRigidBodyConstraints::_write_frame(core::Stark& stark)
+void stark::EnergyRigidBodyConstraints::_write_frame(core::Stark& stark)
 {
 	auto& output = stark.settings.output;
 	this->logger.save_to_disk(fmt::format("{}/rigidbody_constraints_logger_{}__{}.txt", output.output_directory, output.simulation_name, output.time_stamp));
 }
 
-bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_and_log(core::Stark& stark, double cap, double multiplier, bool log, bool are_positions_set)
+bool stark::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_and_log(core::Stark& stark, double cap, double multiplier, bool log, bool are_positions_set)
 {
 	/*
 		This function evaluates all the constraints and serves multiple purposes:
-			- Hard increase of stiffness within the newton step
-			- Soft increase stiffness at the end of a successful time step
+			- Hard increase of bending_stiffness within the newton step
+			- Soft increase bending_stiffness at the end of a successful time step
 			- Log the state of constraints
 	*/
 
-	const double dt = stark.settings.simulation.adaptive_time_step.value;
+	const double dt = stark.dt;
 
 	// Get correct points and directions according to `are_positions_set`
-	auto get_x1 = [&](int rb, Eigen::Vector3d& loc) { return (are_positions_set) ? this->dyn->get_x1(rb, loc) : this->dyn->get_x1(rb, loc, dt); };
-	auto get_d1 = [&](int rb, Eigen::Vector3d& loc) { return (are_positions_set) ? this->dyn->get_d1(rb, loc) : this->dyn->get_d1(rb, loc, dt); };
+	auto get_x1 = [&](int rb, Eigen::Vector3d& loc) { return (are_positions_set) ? this->rb->get_position_at(rb, loc) : this->rb->get_x1(rb, loc, dt); };
+	auto get_d1 = [&](int rb, Eigen::Vector3d& loc) { return (are_positions_set) ? this->rb->get_direction(rb, loc) : this->rb->get_d1(rb, loc, dt); };
 
 	if (log) {
 		this->logger.append_to_series("time [s]", stark.current_time);
@@ -370,7 +370,6 @@ bool stark::models::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_an
 		auto [C, f] = RigidBodyConstraints::DistanceLimits::signed_violation_in_m_and_force(data->stiffness[idx], a1, b1, data->min_distance[idx], data->max_distance[idx]);
 
 		if (std::abs(C) > data->tolerance_in_m[idx]) {
-			std::cout << " " << std::abs(C) << " > " << data->tolerance_in_m[idx] << " . " << data->stiffness[idx] << std::endl;
 			is_valid = false;
 			data->stiffness[idx] *= multiplier;
 		}

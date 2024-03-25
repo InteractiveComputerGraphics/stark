@@ -64,10 +64,11 @@ std::string symx::core::Op::count_ops_string(std::vector<Op>& ops, std::string p
 {
 	std::string out;
 	std::vector<int> count = Op::count_ops(ops);
-	std::vector<std::string> labels = get_expr_type_labels();
 	for (int i = 0; i < (int)count.size(); i++) {
-		if (is_operation(static_cast<ExprType>(i)) && count[i] > 0) {
-			out += pre_string + labels[i] + ": \t" + std::to_string(count[i]) + "\n";
+		const ExprType type = static_cast<ExprType>(i);
+		if (is_operation(type) && count[i] > 0) {
+			const std::string label = get_label(type);
+			out += pre_string + label + ": \t" + std::to_string(count[i]) + "\n";
 		}
 	}
 	out += pre_string + "Total: \t" + std::to_string(ops.size()) + "\n";
@@ -77,15 +78,18 @@ std::string symx::core::Op::count_ops_string(std::vector<Op>& ops, std::string p
 
 
 symx::core::FixedBranchSequence::FixedBranchSequence(const std::vector<Scalar>& expr, const std::unordered_map<int, bool>& branch_combination)
-	: expressions(expr[0].expressions)
 {
+	// Expression graph size
+	const int n_exprs_in_the_graph = expr[0].get_expression_graph()->size();
+	const int n_symbols_in_the_graph = expr[0].get_expression_graph()->get_n_symbols();
+	
 	// Mapping of where each expression has been evaluated to. -1 if not evaluated yet.
-	this->expr_evaluated_at.resize(this->expressions.size(), -1);
+	this->expr_evaluated_at.resize(n_exprs_in_the_graph, -1);
 
 	// Run
-	this->n_inputs = (int)this->expressions.symbols.size();
+	this->n_inputs = n_symbols_in_the_graph;
 	this->n_outputs = (int)expr.size();
-	this->ops.reserve(this->expressions.expressions.size());
+	this->ops.reserve(n_exprs_in_the_graph);
 	for (int i = 0; i < (int)expr.size(); i++) {
 		const int expr_sol_idx = this->_gather_ops(expr[i], branch_combination);
 		this->ops.push_back(Op(ExprType::Symbol, i, expr_sol_idx, -1)); // We use ExprType::Symbol to indicate move solution to output
@@ -147,7 +151,7 @@ int32_t symx::core::FixedBranchSequence::_gather_ops(const Scalar& scalar, const
 			}
 			else if (scalar.expr.type == ExprType::ConstantFloat) {
 				const int32_t pos = (int32_t)this->ops.size() + this->n_inputs;
-				this->ops.emplace_back(ExprType::ConstantFloat, pos, -1, -1, (double)unpack_double(scalar.expr.a, scalar.expr.b));
+				this->ops.emplace_back(ExprType::ConstantFloat, pos, -1, -1, scalar.expr.unpack_double());
 				this->expr_evaluated_at[scalar.expr_id] = pos;
 				return pos;
 			}

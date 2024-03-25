@@ -1,19 +1,81 @@
 stark repo TODO
 ===============
 
+Presets
+-------
+	- Flesh: Volumetric + skin
+	
+On the Desk
+-----------
+	- Adaptive time step and contact stiffness
+		- Test!
+	- Project on Demand
+	- rb_constraint_test_scenes is commented out
+	- mesh_utils
+ 
+ 
 Release
 -------
+	- Give a final good look to all the bindings and make sure they are up to date
+	- Script should be cleaned. Just leave the time events.
+	- `settings.debug.check_non_singular_hessian`
+		Maybe we can add a quick test while inverting the diagonal during preconditioning preparation?
+	- Make all arrows:
+		simulation.deformables->prescribed_positions->add
+		simulation->deformables->prescribed_positions->add
+	- contact_distance -> contact_thickness
+	- Prescribed meshes implemented as target rigid or deformable meshes with no mass.
+		This is because otherwise we don't get physically correct displacements with velocities for the prescribed mesh.
+		For example, a baseball bat hitting a ball. It's different if it has a continuous motion with actual angular velocity 
+		vs just teleporting clipping the ball.
+		- Deformable meshes can be used for character animation for instance.
+			PointSet + PrescribedPositions + triangle collision
+		- Rigidbodies
+			RigidBody + fix with target
+	- Rigidbodies have labels, but pointsets do not :(
+	- We don't have friction for any case of the edge-edge
+	- Memory error in BroadPhaseBase destructor
+	- Adaptive contact stiffness and time step size
+	- global log of parameters
+	- No output directory should be just a warning
+	- Automatic project to PD
+	- Per-handler contact distance
+	- move Script to Stark
+	- `using Vertices = std::vector<Eigen::Vector3d>`, `using Tets = std::vector<std::array<int, 4>>`
+	- stark::models and then include_ui.h really suck. I would just directly declare without "models".
+	- Maybe split mesh utils as it is getting quite large
+		Also, some methods have two versions (void and return) and others do not.
+	- Energy evaluation with non-DOF-dependent data (e.g. different X_inv per quadrature point)
+		Substitute summations over fixed values, with a more general connectivity based inner loop.
+		Sometimes there is per-integration point information that needs to be fetched.
+	- DeformableLine bending. Grispun equivalent?
+	- More default materials (including with skin)
+	- Get rid of Jan's code to make files and folders.
+	- For all meshes input, check all nodes are used, there are no zero-volume elements...
+	- vtkio is very nice but needs documentation and public/private. I lost half an hour because I used a private method instead of the indended one.
+
+	- GlobalEnergy.test_derivatives_with_FD();
+	
+	- Fabian on better rod models:
+		hm, I only looked at Tassilos rods paper. I think the basics were fairly simple. Need to track rotations though I think. But they are not free variables like in micropolar
+		In Theodor Kims curly hair paper they referenced "Discrete elastic rods" which is supposedly also some standard
+		the curly hair paper itself is probably not suitable because I think they said it doesn't work with straight hair or something like that
+		http://www.cs.columbia.edu/cg/pdfs/143-rods.pdf
+	- Material parametrizations should be constructed with the enum (no static function) so the user can't get invalid stuff
+		This also solves the `.use_skin` extra step
+	- The rod implementation is wrong. Damping for sure. Strain is softer then stiffer??
+	
 	// TODO: Try not "better friction mode"
 	// TODO: Test blend strategies.
 
 	[CRITICAL] There is definitely something wrong when reducing time step.
-	- [GENERAL PROBLEM] It is hard to figure out what might be causing convergence problems.
-		In the dryer sim, the motor really struggles, the collision struggles, projection leads to a lot of iterations, CG struggles, unclear if mass ratios are a problem...
+	- [GENERAL PROBLEM] It is hard to 7827eally struggles, the collision struggles, projection leads to a lot of iterations, CG struggles, unclear if mass ratios are a problem...
 		Inspection tools would be great.
 		In general, rigid body sim is tough in this framework. Need to probably run much smaller dt.
 		
 		We need to really clarify a lot of stuff to set up expectations. Mass ratios, huge forces, runtimes, repulsions... But it works, look at the gallerie!
 	- Unclear deg/s is a good idea. Maybe we just make everything rad/s.
+	- Warn from starting huge pressure due to self contacts. I lost so much time with the tires!
 	- We need to check for penetrations in the rest configuration. People need this.
 	- Is `Id::get_local_idx()` fixed?
 	- No warnings. Ideally it should compile with -Werror.
@@ -27,6 +89,8 @@ Release
 	- Gallery.
 	- Sanitize all the UI.
 	- Remove research materials.
+	- More materials. Not just towel and sorf_rubber.
+	- Headers with License at the top of every file?
 	
 	To clarify for users
 	~~~~~~~~~~~~~~~~~~~~
@@ -38,10 +102,32 @@ Release
 				b) It is numerically challenging, specially when the stick-slide condition is tightly define.
 			In highly dynamis scenes (car) small time steps and tight tolerances can make a big difference.
 		- Still sometimes the codegen folder needs to be recomputed or the program run again.
+		- The performance numbers from the paper might not be 100% accurate anymore as improvements to safety and other more flexible facilities were added.
 	
 	Comming
 		- Locally disabled collisions for attachments
 		- Generalize attachments beyond point-point -> point-triangle, point-edge... and other combinations between RB and deformables.
+
+
+Missing from the Python bindings
+--------------------------------
+	- EventDrivenScript
+
+To Test (especially after python bindings)
+------------------------------------------
+	- EventDrivenScript
+		The basic functionality works, but I am not sure everything does.
+
+Simulation observations
+-----------------------
+In the car simulation, friction really behaves very differently between rigid wheels and soft tires.
+
+
+Simulations
+-----------
+	- Volumetric with skin
+	- Human arm (w/o hand)
+		This is a huge huge thing, and we have everything: flesh, skin, bones, joints.
 
 Oct unification
 ---------------
@@ -207,6 +293,10 @@ High priority
 
 Mid priority
 ------------
+	* Option to controllably end the simulation using a custom callback
+	* replace all the `reinterpret_cast<>` by `_mm256_loadu_pd`
+	* Project-on-Demand Newton.
+	* Newton-CG
 	* SymX still has some low level design problems in eval, hashing...
 	* SymX can't use const data arrays?????
 	* Rigid bodies are very complicated. Probably too complicated to be practical.
@@ -300,6 +390,8 @@ Mid priority
 		
 Low priority
 ------------
+	* Auto adjust friction_stick_slide_threshold
+	* Only compile required energies.
 	Performance
 		* Coloring instead of mutexes
 		* Adaptive sparse matrix AMD reordering to keep the non-zero blocks near the diagonal

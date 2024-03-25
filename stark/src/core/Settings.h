@@ -3,8 +3,8 @@
 #include <limits>
 
 #include <Eigen/Dense>
+#include <symx>
 
-#include "AdaptiveParameter.h"
 #include "Console.h"
 
 // User facing enums
@@ -28,27 +28,16 @@ namespace stark::core
 			int fps = 30;
 			ConsoleVerbosity console_verbosity = ConsoleVerbosity::TimeSteps;
 			ConsoleOutputTo console_output_to = ConsoleOutputTo::FileAndConsole;
-			bool calculate_smooth_normals = false;
 			bool enable_output = true;
 		};
 		struct Simulation
 		{
-			AdaptiveParameter adaptive_time_step;
 			Eigen::Vector3d gravity = { 0.0, 0.0, -9.81 };
-		};
-		struct Contact
-		{
-			AdaptiveParameter adaptive_contact_stiffness;
-			double dhat = -1.0;  // Can't have a good default value. If left at -1.0, the simulation will give an error
-			double friction_stick_slide_threshold = -1.0; // Can't have a good default value. If left at -1.0, the simulation will give an error
-			double edge_edge_cross_norm_sq_cutoff = 1e-30;
-			double friction_displacement_perturbation = 1e-9;
-			bool better_friction_mode = true;
-			bool collisions_enabled = true;
-			bool friction_enabled = true;
-			bool triangle_point_enabled = true;
-			bool edge_edge_enabled = true;
-			bool enable_intersection_test = true;
+			bool init_frictional_contact = true;
+			double max_time_step_size = 0.01;
+			bool use_adaptive_time_step = true;
+			double time_step_size_success_muliplier = 1.05;
+			double time_step_size_lower_bound = 1e-6;
 		};
 		struct NewtonsMethod
 		{
@@ -60,6 +49,7 @@ namespace stark::core
 			int max_line_search_iterations = 10;
 			double line_search_multiplier = 0.5;
 			double cg_max_iterations_multiplier = 1.0;
+			double epsilon_residual = 1e-12;  // Does not apply the correction if the residual is below this value. Avoids numerical instability in CG.
 		};
 		struct Execution
 		{
@@ -74,13 +64,13 @@ namespace stark::core
 			bool symx_suppress_compiler_output = true;
 			bool symx_force_compilation = false;
 			bool symx_force_load = false;
+			bool symx_finite_difference_check = false;
 			bool line_search_output = false;
 		};
 
 		Output output;
 		Simulation simulation;
 		NewtonsMethod newton;
-		Contact contact;
 		Execution execution;
 		Debug debug;
 

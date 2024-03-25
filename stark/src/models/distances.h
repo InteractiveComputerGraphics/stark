@@ -2,7 +2,7 @@
 #include <symx>
 #include <Eigen/Dense>
 
-namespace stark::models
+namespace stark
 {
 	double sq_distance_point_point(const Eigen::Vector3d& p, const Eigen::Vector3d& q);
 	double sq_distance_point_line(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b);

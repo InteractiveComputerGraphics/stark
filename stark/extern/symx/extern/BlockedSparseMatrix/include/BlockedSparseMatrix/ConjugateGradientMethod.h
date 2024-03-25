@@ -1,10 +1,10 @@
 #pragma once
 #include <iostream>
 #include <string>
-#include <vector>
-#include <array>
 #include <functional>
+#ifdef BSM_ENABLE_AVX
 #include <immintrin.h>
+#endif
 
 #include "AlignmentAllocator.h"
 
@@ -44,15 +44,18 @@ namespace cg
     template<typename FLOAT = double>
     inline void vector_add(FLOAT* solution, const FLOAT alpha, const FLOAT* a, const FLOAT beta, const FLOAT* b, const int size, const int n_threads)
     {
+        const int n_threads_ = (n_threads == -1) ? omp_get_num_procs() : n_threads;
+#ifdef BSM_ENABLE_AVX
         __m256d* s_avx = reinterpret_cast<__m256d*>(solution);
         const __m256d* a_avx = reinterpret_cast<const __m256d*>(a);
         const __m256d* b_avx = reinterpret_cast<const __m256d*>(b);
         const int n_avx = size / 4;
-        const int n_threads_ = (n_threads == -1) ? omp_get_num_procs() : n_threads;
 
         __m256d alpha_avx = _mm256_set1_pd(alpha);
         __m256d beta_avx = _mm256_set1_pd(beta);
+#endif
         if (alpha == static_cast<FLOAT>(1.0) && solution == a) {
+#ifdef BSM_ENABLE_AVX
             #pragma omp parallel for schedule(static) num_threads(n_threads_) if(size > N_ITEMS_FOR_PARALLELISM)
             for (int i = 0; i < n_avx; i++) {
                 s_avx[i] = _mm256_fmadd_pd(beta_avx, b_avx[i], s_avx[i]);
@@ -61,8 +64,15 @@ namespace cg
             for (int i = 4 * (size / 4); i < size; i++) {
                 solution[i] += beta * b[i];
             }
+#else
+            #pragma omp parallel for schedule(static) num_threads(n_threads_) if(size > N_ITEMS_FOR_PARALLELISM)
+            for (int i = 0; i < size; i++) {
+                solution[i] += beta * b[i];
+            }
+#endif
         }
         else {
+#ifdef BSM_ENABLE_AVX
             #pragma omp parallel for schedule(static) num_threads(n_threads_) if(size > N_ITEMS_FOR_PARALLELISM)
             for (int i = 0; i < n_avx; i++) {
                 s_avx[i] = _mm256_add_pd(_mm256_mul_pd(alpha_avx, a_avx[i]), _mm256_mul_pd(beta_avx, b_avx[i]));
@@ -71,6 +81,12 @@ namespace cg
             for (int i = 4 * (size / 4); i < size; i++) {
                 solution[i] = alpha * a[i] + beta * b[i];
             }
+#else
+            #pragma omp parallel for schedule(static) num_threads(n_threads_) if(size > N_ITEMS_FOR_PARALLELISM)
+            for (int i = 0.0; i < size; i++) {
+                solution[i] = alpha * a[i] + beta * b[i];
+            }
+#endif
         }
     }
 
@@ -90,9 +106,13 @@ namespace cg
     inline FLOAT vector_dot(const FLOAT* a, const FLOAT* b, const int size, const int n_threads)
     {
         FLOAT sum = static_cast<FLOAT>(0.0);
+#ifdef BSM_ENABLE_AVX
         const __m256d* a_avx = reinterpret_cast<const __m256d*>(a);
         const __m256d* b_avx = reinterpret_cast<const __m256d*>(b);
         const int n_avx = size / 4;
+#else
+        const int n_avx = size;
+#endif
 
         if (size > N_ITEMS_FOR_PARALLELISM) {
             const int n_threads_ = (n_threads == -1) ? omp_get_num_procs() : n_threads;
@@ -109,31 +129,48 @@ namespace cg
                     end = (thread_id + 1) * chunksize;
                 }
 
+#ifdef BSM_ENABLE_AVX
                 __m256d loc_sum = _mm256_set1_pd(0.0);
                 for (int i = begin; i < end; i++) {
                     loc_sum = _mm256_fmadd_pd(a_avx[i], b_avx[i], loc_sum);
                 }
-
                 const double* s = reinterpret_cast<double*>(&loc_sum);
                 const double loc_sum_scalar = s[0] + s[1] + s[2] + s[3];
+#else
+                FLOAT loc_sum = 0.0;
+                for (int i = begin; i < end; i++) {
+                    loc_sum += a[i] * b[i];
+                }
+                const double loc_sum_scalar = loc_sum;
+#endif
 
                 #pragma omp atomic
                 sum += loc_sum_scalar;
             }
         }
         else {
+#ifdef BSM_ENABLE_AVX
             __m256d loc_sum = _mm256_set1_pd(0.0);
             for (int i = 0; i < n_avx; i++) {
                 loc_sum = _mm256_fmadd_pd(a_avx[i], b_avx[i], loc_sum);
             }
             const double* s = reinterpret_cast<double*>(&loc_sum);
             const double loc_sum_scalar = s[0] + s[1] + s[2] + s[3];
+#else
+            FLOAT loc_sum = 0.0;
+            for (int i = 0; i < n_avx; i++) {
+                loc_sum += a[i] * b[i];
+            }
+            const double loc_sum_scalar = loc_sum;
+#endif
             sum += loc_sum_scalar;
         }
 
+#ifdef BSM_ENABLE_AVX
         for (int i = 4 * (size / 4); i < size; i++) {
             sum += a[i] * b[i];
         }
+#endif
 
         return sum;
     }

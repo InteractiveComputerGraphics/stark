@@ -29,9 +29,10 @@ set(SOURCE_FILES
     #gripper.cpp
     #gripper.h
     #main.cpp
-    main_refactor.cpp
-    rb_constraint_test_scenes.cpp
-    rb_constraint_test_scenes.h
+    #main_refactor.cpp
+    main_refactor_deformables.cpp
+    #rb_constraint_test_scenes.cpp
+    #rb_constraint_test_scenes.h
 	)
 
 # Create executable    

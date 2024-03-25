@@ -92,7 +92,6 @@ namespace symx
 			/* Fields */
 			std::vector<Op> ops;
 			std::vector<int> expr_evaluated_at;
-			Expressions& expressions;
 			int n_inputs = -1;
 			int n_outputs = -1;
 			std::unordered_set<int32_t> found_branches;

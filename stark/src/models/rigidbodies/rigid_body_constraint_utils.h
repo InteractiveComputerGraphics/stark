@@ -8,7 +8,7 @@
 #include "../../core/Logger.h"
 
 
-namespace stark::models
+namespace stark
 {
 	double inf_norm(const Eigen::Vector3d& x)
 	{

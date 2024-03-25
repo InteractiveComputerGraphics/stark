@@ -4,11 +4,13 @@
 #include <array>
 #include <algorithm>
 #include <mutex>
+#include <memory>
 #include <cassert>
 #include <type_traits>
-#include <memory>
 #include <omp.h>
+#ifdef BSM_ENABLE_AVX
 #include <immintrin.h>
+#endif
 
 #include "types.h"
 
@@ -393,7 +395,11 @@ namespace bsm
 			const int n_blocks = this->crs_next->rows.back();
 			constexpr int BLOCK_SIZE = BLOCK_ROWS * BLOCK_COLS;
 			this->crs_next->cols.resize(n_blocks);
+#ifdef BSM_ENABLE_AVX
 			this->crs_next->vals.reserve(BLOCK_SIZE * n_blocks + sizeof(__m256) / sizeof(STORAGE_FLOAT));  // Reserve an extra __m256 space for padding
+#else
+			this->crs_next->vals.reserve(BLOCK_SIZE * n_blocks + 1);
+#endif
 			this->crs_next->vals.resize(BLOCK_SIZE * n_blocks);
 
 			// Copy data in buckets into the CRS
@@ -447,7 +453,11 @@ namespace bsm
 		//// Allocate new matrix
 		const int n_blocks = this->crs_next->rows.back();
 		this->crs_next->cols.resize(n_blocks);
+#ifdef BSM_ENABLE_AVX
 		this->crs_next->vals.reserve(BLOCK_SIZE * n_blocks + sizeof(__m256)/sizeof(STORAGE_FLOAT));  // Reserve an extra __m256 space for padding
+#else
+		this->crs_next->vals.reserve(BLOCK_SIZE * n_blocks + 1);
+#endif
 		this->crs_next->vals.resize(BLOCK_SIZE*n_blocks);
 
 		//// Loop through the rows of the new CRS and copy the entries from the old CRS and the new row_buckets, in order
@@ -919,8 +929,19 @@ namespace bsm
 		const int n_threads_ = (n_threads == -1) ? omp_get_num_procs() / 2 : n_threads;
 		const bool sequential = n_threads_ < this->n_block_rows;
 		constexpr int BLOCK_SIZE = BLOCK_ROWS * BLOCK_COLS;
+#ifdef BSM_ENABLE_AVX
 		constexpr int NUMBERS_PER_AVX_LINE = sizeof(__m256d) / sizeof(OPERATION_FLOAT);
+#else
+		constexpr int NUMBERS_PER_AVX_LINE = 1;
+#endif
 		constexpr int N_AVX_LINES_PER_BLOCK_COLUMN = (BLOCK_ROWS % NUMBERS_PER_AVX_LINE == 0) ? BLOCK_ROWS / NUMBERS_PER_AVX_LINE : BLOCK_ROWS / NUMBERS_PER_AVX_LINE + 1;
+
+#ifdef BSM_ENABLE_AVX
+        if constexpr (N_AVX_LINES_PER_BLOCK_COLUMN > 1) {
+            std::cout << "BlockedSparseMatrix.spmxv() error: Currently can't handle larger than 4x4 blocks (bug in solution scattering)." << std::endl;
+            exit(-1);
+        }
+#endif
 
 		// We spawn threads here
 		#pragma omp parallel num_threads(n_threads_)
@@ -963,10 +984,17 @@ namespace bsm
 				int* block_col_ptr = this->crs_current->cols.data() + begin;
 
 				// Initialize the result of the rows dot products in the AVX temporal lines
+#ifdef BSM_ENABLE_AVX
 				std::array<__m256d, N_AVX_LINES_PER_BLOCK_COLUMN> solution_local;
 				for (int avx_i = 0; avx_i < N_AVX_LINES_PER_BLOCK_COLUMN; avx_i++) {
 					solution_local[avx_i] = _mm256_set1_pd(0.0);
 				}
+#else
+				std::array<OPERATION_FLOAT, N_AVX_LINES_PER_BLOCK_COLUMN> solution_local;
+				for (int avx_i = 0; avx_i < N_AVX_LINES_PER_BLOCK_COLUMN; avx_i++) {
+					solution_local[avx_i] = 0.0;
+				}
+#endif
 
 				// Actual dot product operation:
 				//// For each non-zero block in the block CRS
@@ -980,18 +1008,22 @@ namespace bsm
 
 						// For each AVX line in the block column
 						for (int avx_i = 0; avx_i < N_AVX_LINES_PER_BLOCK_COLUMN; avx_i++) {
-
+#ifdef BSM_ENABLE_AVX
 							// Fetch the values (if STORAGE_FLOAT != OPERATION_FLOAT -> cast)
 							__m256d vals;
 							if constexpr (std::is_same_v<STORAGE_FLOAT, float>) {
-								vals = _mm256_cvtps_pd(*reinterpret_cast<__m128*>(vals_scalar + NUMBERS_PER_AVX_LINE * avx_i));
+								vals = _mm256_cvtps_pd(_mm128_loadu_ps(vals_scalar + NUMBERS_PER_AVX_LINE * avx_i));
 							}
 							else if constexpr (std::is_same_v<STORAGE_FLOAT, double>) {
-								vals = *reinterpret_cast<__m256d*>(vals_scalar + NUMBERS_PER_AVX_LINE * avx_i);
+								vals = _mm256_loadu_pd(vals_scalar + NUMBERS_PER_AVX_LINE * avx_i);
 							}
 
 							// Add the dot product contribution of the current rows solution
 							solution_local[avx_i] = _mm256_fmadd_pd(vals, _mm256_set1_pd(v[col]), solution_local[avx_i]);
+#else
+							OPERATION_FLOAT val = *(vals_scalar + NUMBERS_PER_AVX_LINE * avx_i);
+							solution_local[avx_i] += val * v[col];
+#endif
 						}
 
 						// Move to the next column index
@@ -1004,7 +1036,14 @@ namespace bsm
 				}
 
 				// Once `solution_local` contains the result of all rows dot products, copy them to the solution vector
-				const double* res_scalar = reinterpret_cast<double*>(&solution_local[0]);
+                double* res_scalar = nullptr;
+#ifdef BSM_ENABLE_AVX
+                std::array<double, 4> res_scalar_arr;
+				_mm256_storeu_pd(res_scalar_arr.data(), solution_local[0]);
+                res_scalar = res_scalar_arr.data();
+#else
+                res_scalar = reinterpret_cast<double*>(&solution_local[0]);
+#endif
 				const int base_row = BLOCK_ROWS * block_row_i;
 				for (int i = 0; i < BLOCK_ROWS; i++) {
 					if (base_row + i < this->n_rows) {
@@ -1028,7 +1067,11 @@ namespace bsm
 		constexpr int BLOCK_SIZE = BLOCK_ROWS * BLOCK_COLS;
 
 		if (this->preconditioner == Preconditioner::Diagonal) {
-			this->diag_inv.resize(this->n_block_rows * BLOCK_ROWS + sizeof(__m256));
+#ifdef BSM_ENABLE_AVX
+			this->diag_inv.resize(this->n_block_rows * BLOCK_ROWS + sizeof(__m256)/sizeof(STORAGE_FLOAT));
+#else
+			this->diag_inv.resize(this->n_block_rows * BLOCK_ROWS);
+#endif
 
 			#pragma omp parallel for schedule(static) num_threads(n_threads_)
 			for (int block_row_i = 0; block_row_i < this->n_block_rows; block_row_i++) {
@@ -1045,7 +1088,11 @@ namespace bsm
 			}
 		}
 		else if (this->preconditioner == Preconditioner::BlockDiagonal) {
-			this->diag_inv.resize(this->n_block_rows * BLOCK_SIZE + sizeof(__m256));
+#ifdef BSM_ENABLE_AVX
+			this->diag_inv.resize(this->n_block_rows * BLOCK_SIZE + sizeof(__m256)/sizeof(STORAGE_FLOAT));
+#else
+			this->diag_inv.resize(this->n_block_rows * BLOCK_SIZE);
+#endif
 
 			#pragma omp parallel for schedule(static) num_threads(n_threads_)
 			for (int block_row_i = 0; block_row_i < this->n_block_rows; block_row_i++) {
@@ -1160,19 +1207,22 @@ namespace bsm
 		const int n_threads_ = (n_threads == -1) ? omp_get_num_procs() / 2 : n_threads;
 
 		if (this->preconditioner == Preconditioner::Diagonal) {
-			__m256d* s_avx = reinterpret_cast<__m256d*>(solution);
-			const __m256d* diag_inv_avx = reinterpret_cast<const __m256d*>(this->diag_inv.data());
-			const __m256d* v_avx = reinterpret_cast<const __m256d*>(v);
+#ifdef BSM_ENABLE_AVX
 			const int n_avx = this->n_rows / 4;
 
 			#pragma omp parallel for schedule(static) num_threads(n_threads_)
-			for (int i = 0; i < n_avx; i++) {
-				s_avx[i] = _mm256_mul_pd(diag_inv_avx[i], v_avx[i]);
-			}
+			for (int i = 0; i < this->n_rows; i += 4) {
+				_mm256_storeu_pd(&solution[i], _mm256_mul_pd(_mm256_loadu_pd(&this->diag_inv[i]), _mm256_loadu_pd(&v[i])) );
+            }
 
 			for (int i = 4 * (this->n_rows / 4); i < this->n_rows; i++) {
 				solution[i] = this->diag_inv[i] * v[i];
 			}
+#else
+			for (int i = 0; i < this->n_rows; i++) {
+				solution[i] = this->diag_inv[i] * v[i];
+			}
+#endif
 		}
 		else if (this->preconditioner == Preconditioner::BlockDiagonal) {
 			#pragma omp parallel for schedule(static) num_threads(n_threads_)
@@ -1181,20 +1231,38 @@ namespace bsm
 
 				STORAGE_FLOAT* vals_scalar = this->diag_inv.data() + BLOCK_SIZE * block_row_i;
 
+#ifdef BSM_ENABLE_AVX
 				__m256d sol = _mm256_set1_pd(0.0);
 				for (int col = 0; col < BLOCK_COLS; col++) {
 					__m256d vals;
 					if constexpr (std::is_same_v<STORAGE_FLOAT, float>) {
-						vals = _mm256_cvtps_pd(*reinterpret_cast<__m128*>(vals_scalar + BLOCK_ROWS * col));
+						vals = _mm256_cvtps_pd(_mm128_loadu_ps(vals_scalar + BLOCK_ROWS * col));
 					}
 					else if constexpr (std::is_same_v<STORAGE_FLOAT, double>) {
-						vals = *reinterpret_cast<__m256d*>(vals_scalar + BLOCK_ROWS * col);
+						vals = _mm256_loadu_pd(vals_scalar + BLOCK_ROWS * col);
 					}
 
 					sol = _mm256_fmadd_pd(vals, _mm256_set1_pd(v[base_row + col]), sol);
 				}
 
-				const double* res_scalar = reinterpret_cast<double*>(&sol);
+				static_assert(sizeof(__m256d) / sizeof(double) >= BLOCK_ROWS);
+
+                std::array<double, 4> res_scalar_arr;
+				_mm256_storeu_pd(res_scalar_arr.data(), sol);
+                const double* res_scalar = res_scalar_arr.data();
+#else
+				std::array<double, BLOCK_ROWS> sol;
+				for (int i = 0; i < BLOCK_ROWS; i++) {
+					sol[i] = 0.0;
+					for (int col = 0; col < BLOCK_COLS; col++) {
+						double val = *(vals_scalar + BLOCK_ROWS * col + i);
+						sol[i] += val * v[base_row + col];
+					}
+				}
+
+				const double* res_scalar = sol.data();
+#endif
+
 				for (int i = 0; i < BLOCK_ROWS; i++) {
 					if (base_row + i < this->n_rows) {
 						solution[base_row + i] = res_scalar[i];

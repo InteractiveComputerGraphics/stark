@@ -5,7 +5,7 @@
 #include <Eigen/Dense>
 #include <symx>
 
-namespace stark::models
+namespace stark
 {
 	symx::Vector time_integration(const symx::Vector& x0, const symx::Vector& v1, const symx::Scalar& dt);
 	Eigen::Vector3d time_integration(const Eigen::Vector3d& x0, const Eigen::Vector3d& v1, const double dt);

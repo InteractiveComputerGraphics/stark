@@ -5,7 +5,8 @@
 #include <algorithm>
 #include <random>
 
-#include <JanBenderUtilities/OBJLoader.h>
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tinyobjloader.h"
 
 #include "unordered_array_set_and_map.h"
 
@@ -18,7 +19,6 @@ void push_back_if_not_present(std::vector<int>& v, const int value)
 }
 double generate_random_double(double l, int seed) {
 	// Create a random number generator
-	std::random_device rd;
 	std::mt19937 gen(seed);
 	std::uniform_real_distribution<double> dist(-l, l);
 
@@ -37,29 +37,94 @@ double stark::utils::deg2rad(const double deg)
 {
 	return 2.0 * PI * (deg / 360.0);
 }
-
 double stark::utils::rad2deg(const double rad)
 {
 	return rad * 180.0 / PI;
 }
 
-void stark::utils::load_obj(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_triangles, const std::string path)
+std::vector<stark::utils::Mesh<3>> stark::utils::load_obj(const std::string& path)
 {
-	std::vector<std::array<float, 3>> vertices;
-	std::vector<std::array<float, 3>> normals;
-	std::vector<std::array<float, 2>> texture_coordinates;
-	std::vector<JanBenderUtilities::OBJMeshFaceIndices> faces;
-	JanBenderUtilities::OBJLoader::loadObj(path, &vertices, &faces, &normals, &texture_coordinates, { 1.0f, 1.0f, 1.0f });
+    std::vector<stark::utils::Mesh<3>> tri_meshes;
 
-	out_vertices.reserve(vertices.size());
-	for (const std::array<float, 3> &point : vertices) {
-		out_vertices.push_back({ (double)point[0], (double)point[1], (double)point[2] });
-	}
+    // Initialise tinyobjloader objects and read the file
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn;
+    std::string err;
+    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str());
 
-	out_triangles.reserve(faces.size());
-	for (const auto& face : faces) {
-		out_triangles.push_back({ face.posIndices[0] - 1, face.posIndices[1] - 1, face.posIndices[2] - 1 });
-	}
+    // Input checking
+    if (!warn.empty()) {
+        std::cout << warn << std::endl;
+    }
+
+    if (!err.empty()) {
+        std::cerr << err << std::endl;
+    }
+
+    if (!ret) {
+        exit(1);
+    }
+
+    // Global information
+    const int total_n_vertices = (int)attrib.vertices.size() / 3;
+
+    // Write the geometric information into individual triangular meshes
+    // Loop over meshes
+    for (int shape_i = 0; shape_i < shapes.size(); shape_i++) {
+
+        // Initialize individual triangular mesh
+        Mesh<3> tri_mesh;
+        tri_mesh.conn.resize(shapes[shape_i].mesh.num_face_vertices.size());
+        std::vector<bool> global_nodes_present(total_n_vertices, false);
+
+        // Loop over triangles
+        int index_offset = 0;
+        for (int tri_i = 0; tri_i < shapes[shape_i].mesh.num_face_vertices.size(); tri_i++) {
+            if (shapes[shape_i].mesh.num_face_vertices[tri_i] != 3) {
+                std::cout << "learnSPH error: readTriMeshesFromObj can only read triangle meshes." << std::endl;
+            }
+
+            // Gather triangle global indices
+            std::array<int, 3> triangle_global_indices;
+            for (int vertex_i = 0; vertex_i < 3; vertex_i++) {
+                tinyobj::index_t idx = shapes[shape_i].mesh.indices[(int)(3 * tri_i + vertex_i)];
+                const int global_vertex_index = idx.vertex_index;
+                triangle_global_indices[vertex_i] = global_vertex_index;
+                global_nodes_present[global_vertex_index] = true;
+            }
+            tri_mesh.conn.push_back(triangle_global_indices);
+        }
+
+        // Reduce global indexes to local indexes
+        std::vector<int> global_to_local_vertex_idx(total_n_vertices, -1);
+        int local_vertices_count = 0;
+        for (int global_vertex_i = 0; global_vertex_i < total_n_vertices; global_vertex_i++) {
+            if (global_nodes_present[global_vertex_i]) {
+                // Map global -> local
+                global_to_local_vertex_idx[global_vertex_i] = local_vertices_count;
+                local_vertices_count++;
+
+                // Add vertex to the local mesh vertex vector
+                tinyobj::real_t vx = attrib.vertices[(int)(3 * global_vertex_i + 0)];
+                tinyobj::real_t vy = attrib.vertices[(int)(3 * global_vertex_i + 1)];
+                tinyobj::real_t vz = attrib.vertices[(int)(3 * global_vertex_i + 2)];
+                tri_mesh.vertices.push_back({ vx, vy, vz });
+            }
+        }
+
+        // Change triangle indices
+        for (int tri_i = 0; tri_i < tri_mesh.conn.size(); tri_i++) {
+            for (int vertex_i = 0; vertex_i < 3; vertex_i++) {
+                tri_mesh.conn[tri_i][vertex_i] = global_to_local_vertex_idx[tri_mesh.conn[tri_i][vertex_i]];
+            }
+        }
+
+        tri_meshes.push_back(tri_mesh);
+    }
+
+	return tri_meshes;
 }
 
 Eigen::Vector3d stark::utils::triangle_normal(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2)
@@ -130,14 +195,26 @@ void stark::utils::find_internal_angles(std::vector<std::array<int, 4>>& interna
 		}
 	}
 }
-
-void stark::utils::extract_surface(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_triangles, std::vector<int>& out_triangle_to_tet_node_map, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets)
+void stark::utils::find_perimeter_edges(std::vector<std::array<int, 2>>& perimeter_edges, const std::vector<std::array<int, 3>>& triangles)
 {
-	out_vertices.clear();
+	utils::unordered_array_map<int, 2, int> edge_count;
+	for (const auto& triangle : triangles) {
+		edge_count[{ std::min(triangle[0], triangle[1]), std::max(triangle[0], triangle[1])} ]++;
+		edge_count[{ std::min(triangle[1], triangle[2]), std::max(triangle[1], triangle[2])} ]++;
+		edge_count[{ std::min(triangle[2], triangle[0]), std::max(triangle[2], triangle[0])} ]++;
+	}
+
+	perimeter_edges.clear();
+	for (const auto& [edge, count] : edge_count) {
+		if (count == 1) { // Edge appears only once, so it's a perimeter edge
+			perimeter_edges.push_back(edge);
+		}
+	}
+}
+void stark::utils::extract_surface(std::vector<std::array<int, 3>>& out_triangles, std::vector<int>& out_triangle_to_tet_node_map, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets)
+{
 	out_triangles.clear();
 	out_triangle_to_tet_node_map.clear();
-
-	/* Code partially generated by ChatGPT 4 */
 
 	// Store the faces (with sorted connectivity) that occur only once and map them to their corresponding tet index
 	utils::unordered_array_map<int, 3, int> unique_face_tet_map;
@@ -165,42 +242,74 @@ void stark::utils::extract_surface(std::vector<Eigen::Vector3d>& out_vertices, s
 		}
 	}
 
-	// Map to associate old vertex indices to new ones
-	std::vector<int> old_to_new_indices(vertices.size(), -1);
-	int new_index = 0;
-
-	// Build new connectivity
+	// New connectivity + Face winding
+	std::vector<std::array<int, 3>> unique_triangles; 
+	unique_triangles.reserve(unique_face_tet_map.size());
 	for (const auto& it : unique_face_tet_map) {
-		const std::array<int, 3>& old_face = it.first;
-		std::array<int, 3> new_face;
-		for (int i = 0; i < 3; ++i) {
-			int old_index = old_face[i];
-			if (old_to_new_indices[old_index] == -1) {
-				old_to_new_indices[old_index] = new_index++;
-				out_vertices.push_back(vertices[old_index]);
-			}
-			new_face[i] = old_to_new_indices[old_index];
-		}
+		std::array<int, 3> face = it.first;
 
 		// Face winding to point outwards from the tet
 		const std::array<int, 4>& tet = tets[it.second];
 		const Eigen::Vector3d center = (vertices[tet[0]] + vertices[tet[1]] + vertices[tet[2]] + vertices[tet[3]]) / 4.0;
-		if (is_outward_facing(vertices[old_face[0]], vertices[old_face[1]], vertices[old_face[2]], center)) {
-			std::swap(new_face[0], new_face[1]);
+		if (is_outward_facing(vertices[face[0]], vertices[face[1]], vertices[face[2]], center)) {
+			std::swap(face[0], face[1]);
 		}
-		out_triangles.push_back(new_face);
+
+		unique_triangles.push_back(face);
 	}
 
-	// Reverse map for output
-	out_triangle_to_tet_node_map.resize(out_vertices.size());
-	for (int old_index = 0; old_index < (int)old_to_new_indices.size(); old_index++) {
-		if (old_to_new_indices[old_index] != -1) {
-			const int new_index = old_to_new_indices[old_index];
-			out_triangle_to_tet_node_map[new_index] = old_index;
+	// Reduce connectivity to a full, smaller mesh
+	reduce_connectivity(out_triangles, out_triangle_to_tet_node_map, unique_triangles, (int)vertices.size());
+}
+std::tuple<std::vector<std::array<int, 3>>, std::vector<int>> stark::utils::extract_surface(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets)
+{
+	std::vector<std::array<int, 3>> out_triangles;
+	std::vector<int> out_triangle_to_tet_node_map;
+	extract_surface(out_triangles, out_triangle_to_tet_node_map, vertices, tets);
+	return { out_triangles, out_triangle_to_tet_node_map };
+}
+void stark::utils::find_sharp_edges(std::vector<std::array<int, 2>>& out_edges, std::vector<int>& out_old_to_new_map, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, double angle_deg_threshold)
+{
+	std::vector<std::array<int, 2>> edges;
+	std::vector<std::array<int, 4>> internal_angles;
+	find_internal_angles(internal_angles, triangles, (int)vertices.size());
+
+	const double cos_angle_rad_threshold = std::cos(deg2rad(angle_deg_threshold));
+	edges.reserve(internal_angles.size());
+	for (const std::array<int, 4>& angle : internal_angles) {
+		const Eigen::Vector3d& p0 = vertices[angle[0]];
+		const Eigen::Vector3d& p1 = vertices[angle[1]];
+		const Eigen::Vector3d& p2 = vertices[angle[2]];
+		const Eigen::Vector3d& p3 = vertices[angle[3]];
+
+		const Eigen::Vector3d n0 = triangle_normal(p0, p1, p2);
+		const Eigen::Vector3d n1 = triangle_normal(p1, p0, p3);
+		if (n0.dot(n1) < cos_angle_rad_threshold) {
+			edges.push_back({ angle[0], angle[1] });
 		}
 	}
+
+	reduce_connectivity(out_edges, out_old_to_new_map, edges, (int)vertices.size());
+}
+std::tuple<std::vector<std::array<int, 2>>, std::vector<int>> stark::utils::find_sharp_edges(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, double angle_deg_threshold)
+{
+	std::vector<std::array<int, 2>> out_edges;
+	std::vector<int> out_old_to_new_map;
+	find_sharp_edges(out_edges, out_old_to_new_map, vertices, triangles, angle_deg_threshold);
+	return { out_edges, out_old_to_new_map };
 }
 
+
+
+
+double stark::utils::total_volume(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets)
+{
+	double volume = 0.0;
+	for (const std::array<int, 4>&tet : tets) {
+		volume += unsigned_tetra_volume(vertices[tet[0]], vertices[tet[1]], vertices[tet[2]], vertices[tet[3]]);
+	}
+	return volume;
+}
 void stark::utils::compute_node_normals(std::vector<Eigen::Vector3d>& output, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles)
 {
 	output.resize(vertices.size(), Eigen::Vector3d::Zero());
@@ -215,8 +324,11 @@ void stark::utils::compute_node_normals(std::vector<Eigen::Vector3d>& output, co
 		normal.normalize();
 	}
 }
-void stark::utils::generate_triangular_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, const Eigen::Vector2d& bottom, const Eigen::Vector2d& top, const std::array<int, 2>& n_quads_per_dim, const bool randomize, const double z)
+
+void stark::utils::generate_triangle_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, const Eigen::Vector2d& center, const Eigen::Vector2d& dimensions, const std::array<int, 2>& n_quads_per_dim, const bool randomize, const double z)
 {
+	const Eigen::Vector2d bottom = center - 0.5 * dimensions;
+	const Eigen::Vector2d top = center + 0.5 * dimensions;
 	assert(bottom[0] <= top[0] && bottom[1] <= top[1]);
 
 	// Precomputation
@@ -286,29 +398,16 @@ void stark::utils::generate_triangular_grid(std::vector<Eigen::Vector3d>& out_ve
 		}
 	}
 }
-stark::utils::Mesh<3> stark::utils::generate_triangular_grid(const Eigen::Vector2d& bottom, const Eigen::Vector2d& top, const std::array<int, 2>& n_quads_per_dim, const bool randomize, const double z)
+stark::utils::Mesh<3> stark::utils::generate_triangle_grid(const Eigen::Vector2d& center, const Eigen::Vector2d& dimensions, const std::array<int, 2>& n_quads_per_dim, const bool randomize, const double z)
 {
 	Mesh<3> mesh;
-	generate_triangular_grid(mesh.vertices, mesh.conn, bottom, top, n_quads_per_dim, randomize, z);
+	generate_triangle_grid(mesh.vertices, mesh.conn, center, dimensions, n_quads_per_dim, randomize, z);
 	return mesh;
 }
-std::array<int, 2> stark::utils::generate_triangular_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, const double x_length, const double y_length, const int n_short_side, const bool randomize, const double z)
+void stark::utils::generate_tet_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 4>>& out_tets, const Eigen::Vector3d& center, const Eigen::Vector3d& dimensions, const std::array<int, 3>& n_quads_per_dim)
 {
-	int nx = 0;
-	int ny = 0;
-	if (x_length < y_length) {
-		nx = n_short_side;
-		ny = (int)((y_length/x_length)*(double)nx);
-	}
-	else {
-		ny = n_short_side;
-		nx = (int)((y_length/x_length)*(double)ny);
-	}
-	generate_triangular_grid(out_vertices, out_connectivity, { -0.5*x_length, -0.5*y_length }, { 0.5*x_length, 0.5*y_length }, {nx, ny}, randomize, z);
-	return {nx, ny};
-}
-void stark::utils::generate_tet_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 4>>& out_tets, const Eigen::Vector3d& bottom, const Eigen::Vector3d& top, const std::array<int, 3>& n_quads_per_dim)
-{
+	const Eigen::Vector3d bottom = center - 0.5 * dimensions;
+	const Eigen::Vector3d top = center + 0.5 * dimensions;
 	assert(bottom[0] <= top[0] && bottom[1] <= top[1] && bottom[2] <= top[2]);
 
 	// Precomputation
@@ -422,13 +521,47 @@ void stark::utils::generate_tet_grid(std::vector<Eigen::Vector3d>& out_vertices,
 		}
 	}
 }
-stark::utils::Mesh<4> stark::utils::generate_tet_grid(const Eigen::Vector3d& bottom, const Eigen::Vector3d& top, const std::array<int, 3>& n_quads_per_dim)
+stark::utils::Mesh<4> stark::utils::generate_tet_grid(const Eigen::Vector3d& center, const Eigen::Vector3d& dimensions, const std::array<int, 3>& n_quads_per_dim)
 {
 	Mesh<4> mesh;
-	generate_tet_grid(mesh.vertices, mesh.conn, bottom, top, n_quads_per_dim);
+	generate_tet_grid(mesh.vertices, mesh.conn, center, dimensions, n_quads_per_dim);
 	return mesh;
 }
-void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const bool generate_normals)
+
+void stark::utils::generate_segment_line(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 2>>& out_connectivity, const Eigen::Vector3d& begin, const Eigen::Vector3d& end, const int n_segments)
+{
+	out_vertices.resize(n_segments + 1);
+	out_connectivity.resize(n_segments);
+
+	for (int i = 0; i <= n_segments; i++) {
+		out_vertices[i] = begin + (end - begin) * (i / (double)n_segments);
+	}
+	for (int i = 0; i < n_segments; i++) {
+		out_connectivity[i] = { i, i + 1 };
+	}
+}
+
+stark::utils::Mesh<2> stark::utils::generate_segment_line(const Eigen::Vector3d& begin, const Eigen::Vector3d& end, const int n_segments)
+{
+	Mesh<2> mesh;
+	generate_segment_line(mesh.vertices, mesh.conn, begin, end, n_segments);
+	return mesh;
+}
+
+void stark::utils::write_VTK(const std::string& path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets)
+{
+	vtkio::VTKFile vtk_file;
+
+	if (vertices.size() == 0) {
+		vtk_file.write_empty(path);
+	}
+	else {
+		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.set_cells_from_twice_indexable(tets, vtkio::CellType::Tetra);
+		vtk_file.write(path);
+	}
+}
+void stark::utils::write_VTK(const std::string& path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const bool generate_normals)
 {
 	vtkio::VTKFile vtk_file;
 
@@ -446,8 +579,7 @@ void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Ve
 		vtk_file.write(path);
 	}
 }
-
-void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 2>>& edges)
+void stark::utils::write_VTK(const std::string& path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 2>>& edges)
 {
 	vtkio::VTKFile vtk_file;
 
@@ -460,8 +592,7 @@ void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Ve
 		vtk_file.write(path);
 	}
 }
-
-void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Vector3d>& vertices)
+void stark::utils::write_VTK(const std::string& path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 1>>& points)
 {
 	vtkio::VTKFile vtk_file;
 
@@ -473,20 +604,6 @@ void stark::utils::write_VTK(const std::string path, const std::vector<Eigen::Ve
 		vtk_file.set_cells_as_particles(vertices.size());
 		vtk_file.write(path);
 	}
-}
-
-std::vector<int> stark::utils::vertices_in_AABB(const std::vector<Eigen::Vector3d>& vertices, const Eigen::Vector3d& bottom, const Eigen::Vector3d& top)
-{
-	std::vector<int> indices;
-	for (int i = 0; i < (int)vertices.size(); i++) {
-		const Eigen::Vector3d& p = vertices[i];
-		if (bottom[0] <= p[0] && p[0] < top[0] &&
-			bottom[1] <= p[1] && p[1] < top[1] &&
-			bottom[2] <= p[2] && p[2] < top[2]) {
-			indices.push_back(i);
-		}
-	}
-	return indices;
 }
 
 void stark::utils::move(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& translation)
@@ -524,4 +641,12 @@ void stark::utils::mirror(std::vector<Eigen::Vector3d>& points, const int dim, c
 		const double dist = point[dim] - pivot;
 		point[dim] = pivot - dist;
 	}
+}
+
+Eigen::Vector3d stark::utils::rotate_deg(const Eigen::Vector3d& point, const Eigen::Matrix3d& R, const Eigen::Vector3d& pivot)
+{
+	const Eigen::Vector3d p_shifted = point - pivot;
+	const Eigen::Vector3d p_shifted_rotated = R*p_shifted;
+	const Eigen::Vector3d p_rotated = p_shifted_rotated + pivot;
+	return p_rotated;
 }

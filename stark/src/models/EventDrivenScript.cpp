@@ -2,20 +2,20 @@
 
 #include <iostream>
 
-int stark::models::EventDrivenScript::add_independent_event(std::function<bool(EventInfo&)> run_when, std::function<void(EventInfo&)> action, Permanence permanence, std::function<bool(EventInfo&)> delete_when)
+int stark::EventDrivenScript::add_independent_event(std::function<bool(EventInfo&)> run_when, std::function<void(EventInfo&)> action, Permanence permanence, std::function<bool(EventInfo&)> delete_when)
 {
 	Event event_(this->event_counter, run_when, action, delete_when, permanence == Permanence::ONE_OFF);
 	this->independent_events.push_back(event_);
 	return this->event_counter++;
 }
 
-int stark::models::EventDrivenScript::add_recurring_event(std::function<void(EventInfo&)> action)
+int stark::EventDrivenScript::add_recurring_event(std::function<void(EventInfo&)> action)
 {
 	const std::function<bool(EventInfo&)> run_when = [](EventInfo&) { return true; };
 	return this->add_independent_event(run_when, action, Permanence::PERMANENT);
 }
 
-void stark::models::EventDrivenScript::run_a_cycle(double time)
+void stark::EventDrivenScript::run_a_cycle(double time)
 {
 	// Independent events
 	for (auto it = this->independent_events.begin(); it != this->independent_events.end();)	{
@@ -46,7 +46,7 @@ void stark::models::EventDrivenScript::run_a_cycle(double time)
 	}
 }
 
-void stark::models::EventDrivenScript::clear()
+void stark::EventDrivenScript::clear()
 {
 	this->independent_events.clear();
 }

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
+#include <memory>
 
 #include <picoSHA2/picosha2.h>
 
@@ -13,22 +14,21 @@ namespace symx
 	// Thin wrapper to expressions with the ability to create new ones
 	class Scalar
 	{
-	public:
+	friend class SymbolicWorkSpace;
 
 	private:
 		/* Methods */
-		Scalar(const int32_t expr_id, Expressions& expressions)
+		Scalar(const int32_t expr_id, std::shared_ptr<Expressions> expressions)
 			: expr_id(expr_id), expressions(expressions) 
 		{
-			this->expr = this->expressions.expressions[this->expr_id];
+			this->expr = this->expressions->expressions[this->expr_id];
 		};
-		friend class SymbolicWorkSpace;
 
 	public:
 		/* Fields */
 		int32_t expr_id;
 		Expr expr;
-		Expressions& expressions;
+		std::shared_ptr<Expressions> expressions;
 
 		/* Methods */
 		Scalar& operator=(const Scalar& other);
@@ -68,6 +68,7 @@ namespace symx
 		bool is_zero() const;
 		bool is_one() const;
 		void set_value(const double val);
+		double get_value() const;
 		double eval();
 		std::string get_checksum();
 		void get_checksum(picosha2::hash256_one_by_one& hasher);
@@ -86,6 +87,7 @@ namespace symx
 		int32_t get_symbol_idx() const;
 		bool is_symbol() const;
 		std::string get_name() const;
+		const std::shared_ptr<Expressions> get_expression_graph() const;
 	};
 
 	// Operations

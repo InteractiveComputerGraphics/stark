@@ -36,6 +36,7 @@ void symx::GlobalEnergy::add_energy(std::string name, std::function<const int32_
 		}
 	}
 	std::unique_ptr<Energy> energy_ptr = std::make_unique<Energy>(name, this->working_directory, data, n_elements, n_items_per_element);
+	energy_ptr->set_cse_mode(this->cse_mode);
 	this->energies.push_back(std::move(energy_ptr));
 	this->energies.back()->working_directory = this->working_directory;
 	Element element(n_items_per_element);
@@ -109,7 +110,7 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 		this->energies[i]->working_directory = this->working_directory;
 
 		const double t0 = omp_get_wtime();
-		this->energies[i]->deferred_init(this->dof_data, force_compilation, force_load, suppress_compiler_output);
+		this->energies[i]->deferred_init(force_compilation, force_load, suppress_compiler_output);
 		const double t1 = omp_get_wtime();
 		
 		#pragma omp atomic
@@ -147,12 +148,12 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 	this->is_initialized = true;
 	return output;
 }
-symx::Assembled symx::GlobalEnergy::evaluate_E(const bool check_for_NaNs)
+symx::Assembled symx::GlobalEnergy::evaluate_E()
 {
 	this->_exit_if_not_initialized();
 	this->assembly.reset(this->get_dofs_offsets(), this->n_threads, false, false);
 	for (auto& energy : this->energies) {
-		energy->evaluate_E(this->assembly, check_for_NaNs);
+		energy->evaluate_E(this->assembly);
 	}
 	for (auto& external_E : this->external_E) {
 		external_E(this->assembly);
@@ -160,12 +161,12 @@ symx::Assembled symx::GlobalEnergy::evaluate_E(const bool check_for_NaNs)
 	this->assembly.E.end();
 	return Assembled(this->assembly);
 }
-symx::Assembled symx::GlobalEnergy::evaluate_E_grad(const bool check_for_NaNs)
+symx::Assembled symx::GlobalEnergy::evaluate_E_grad()
 {
 	this->_exit_if_not_initialized();
 	this->assembly.reset(this->get_dofs_offsets(), this->n_threads, false, true);
 	for (auto& energy : this->energies) {
-		energy->evaluate_E_grad(this->assembly, check_for_NaNs);
+		energy->evaluate_E_grad(this->assembly);
 	}
 	for (auto& external_E_grad : this->external_E_grad) {
 		external_E_grad(this->assembly);
@@ -174,12 +175,12 @@ symx::Assembled symx::GlobalEnergy::evaluate_E_grad(const bool check_for_NaNs)
 	this->assembly.grad.end();
 	return Assembled(this->assembly);
 }
-symx::Assembled symx::GlobalEnergy::evaluate_E_grad_hess(const bool check_for_NaNs)
+symx::Assembled symx::GlobalEnergy::evaluate_E_grad_hess()
 {
 	this->_exit_if_not_initialized();
 	this->assembly.reset(this->get_dofs_offsets(), this->n_threads, true, true);
 	for (auto& energy : this->energies) {
-		energy->evaluate_E_grad_hess(this->assembly, check_for_NaNs);
+		energy->evaluate_E_grad_hess(this->assembly);
 	}
 	for (auto& external_E_grad_hess : this->external_E_grad_hess) {
 		external_E_grad_hess(this->assembly);
@@ -188,6 +189,24 @@ symx::Assembled symx::GlobalEnergy::evaluate_E_grad_hess(const bool check_for_Na
 	this->assembly.grad.end();
 	this->assembly.hess.end_insertion(this->n_threads);
 	return Assembled(this->assembly);
+}
+const std::vector<std::vector<int32_t>>& symx::GlobalEnergy::compute_topology()
+{
+	this->_exit_if_not_initialized();
+
+	// Clear topology
+	this->topology.resize(this->get_total_n_dofs());
+	for (auto& t : this->topology) {
+		t.clear();
+	}
+
+	// Compute topology
+	this->assembly.reset(this->get_dofs_offsets(), this->n_threads, false, false);
+	for (auto& energy : this->energies) {
+		energy->add_topology(this->assembly, this->topology);
+	}
+
+	return this->topology;
 }
 void symx::GlobalEnergy::get_dofs(double* u) const
 {
@@ -241,6 +260,107 @@ void symx::GlobalEnergy::set_dofs(const double* u)
 void symx::GlobalEnergy::set_project_to_PD(const bool activate)
 {
 	for (auto& energy : this->energies) {
-		energy->project_to_PD = activate;
+		energy->set_project_to_PD(activate);
+	}
+}
+void symx::GlobalEnergy::set_cse_mode(CSE mode)
+{
+	this->cse_mode = mode;
+}
+void symx::GlobalEnergy::set_check_for_NaNs(const bool activate)
+{
+	for (auto& energy : this->energies) {
+		energy->set_check_for_NaNs(activate);
+	}
+}
+
+void symx::GlobalEnergy::test_derivatives_with_FD(const double h)
+{
+	// Get the current dofs
+	const int n_dofs = this->get_total_n_dofs();
+	Eigen::VectorXd u = Eigen::VectorXd::Zero(n_dofs);
+	this->get_dofs(u.data());
+
+	// Evaluate
+	Assembled assembled = this->evaluate_E_grad_hess();
+	const double E = *assembled.E;
+	const Eigen::VectorXd grad = *assembled.grad;
+
+	std::vector<Eigen::Triplet<double>> triplets;
+	assembled.hess->to_triplets(triplets);
+	Eigen::SparseMatrix<double> hess_sparse(n_dofs, n_dofs);
+	hess_sparse.setFromTriplets(triplets.begin(), triplets.end());
+	const Eigen::MatrixXd hess = hess_sparse.toDense();
+
+	// Compute the FD gradient and Hessian
+	Eigen::VectorXd grad_FD(n_dofs);
+	Eigen::MatrixXd hess_FD(n_dofs, n_dofs);
+	for (int i = 0; i < n_dofs; i++) {
+		u[i] += h;
+		this->set_dofs(u.data());
+		Assembled A = this->evaluate_E_grad();
+		const double E_plus = *A.E;
+		const Eigen::VectorXd dE_plus = *A.grad;
+
+		u[i] -= 2.0 * h;
+		
+		this->set_dofs(u.data());
+		A = this->evaluate_E_grad();
+		const double E_minus = *A.E;
+		const Eigen::VectorXd dE_minus = *A.grad;
+		u[i] += h;
+
+		grad_FD[i] = (E_plus - E_minus) / (2.0 * h);
+		hess_FD.row(i) = (dE_plus - dE_minus) / (2.0 * h);
+	}
+
+	// Compare
+	double max_diff_grad = (grad - grad_FD).cwiseAbs().maxCoeff();
+	double max_diff_hess = (hess - hess_FD).cwiseAbs().maxCoeff();
+	std::cout << "symx::GlobalEnergy::test_derivatives_with_FD(h = " << h << ") max residual (GRAD, HESS): ( " << max_diff_grad << ", " << max_diff_hess << ")" << std::endl;
+}
+
+void symx::GlobalEnergy::clear_user_conditional_evaluation()
+{
+	for (auto& energy : this->energies) {
+		energy->disable_user_element_condition();
+	}
+}
+
+void symx::GlobalEnergy::activate_elements_from_dofs(const std::vector<uint8_t>& activation, const int32_t n_threads)
+{
+	const std::vector<int32_t> offsets = this->get_dofs_offsets();
+	if (activation.size() != offsets.back()) {
+		std::cout << "symx::GlobalEnergy::activate_elements() error: Size mismatch." << std::endl;
+		exit(-1);
+	}
+
+	for (auto& energy : this->energies) {
+		energy->enable_user_element_condition();
+		const int n_elements = energy->get_n_elements();
+		#pragma omp parallel for num_threads(n_threads) schedule(static)
+		for (int32_t elem_i = 0; elem_i < n_elements; elem_i++) {
+			const ElementInfo element = energy->get_element_info(elem_i);
+			const int n_dof_nodes = element.get_n_dof_nodes();
+
+			bool is_element_active = false;
+			for (int32_t dof_i = 0; dof_i < n_dof_nodes; dof_i++) {
+				const int32_t dof_set = element.get_dof_node_set(dof_i);
+				const int32_t dof_node_local = element.get_dof_node(dof_i);
+				const int32_t dof_global_begin = offsets[dof_set] + GlobalEnergy::BLOCK_SIZE*dof_node_local;
+
+				for (int32_t i = 0; i < GlobalEnergy::BLOCK_SIZE; i++) {
+					if (activation[dof_global_begin + i]) {
+						is_element_active = true;
+						break;
+					}
+				}
+
+				if (is_element_active) {
+					break;
+				}
+			}
+			energy->set_user_element_condition(elem_i, is_element_active);
+		}
 	}
 }

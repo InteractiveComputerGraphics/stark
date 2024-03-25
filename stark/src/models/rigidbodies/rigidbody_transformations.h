@@ -5,7 +5,7 @@
 #include <symx>
 
 
-namespace stark::models
+namespace stark
 {
     // Eigen
     Eigen::Vector3d local_to_global_point(const Eigen::Vector3d& x, const Eigen::Matrix3d& R, const Eigen::Vector3d& translation);

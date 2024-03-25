@@ -3,31 +3,31 @@
 #include "../time_integration.h"
 
 // Eigen
-Eigen::Vector3d stark::models::local_to_global_point(const Eigen::Vector3d& x, const Eigen::Matrix3d& R, const Eigen::Vector3d& translation)
+Eigen::Vector3d stark::local_to_global_point(const Eigen::Vector3d& x, const Eigen::Matrix3d& R, const Eigen::Vector3d& translation)
 {
 	return translation + R * x;
 }
-Eigen::Vector3d stark::models::local_to_global_direction(const Eigen::Vector3d& x, const Eigen::Matrix3d& R)
+Eigen::Vector3d stark::local_to_global_direction(const Eigen::Vector3d& x, const Eigen::Matrix3d& R)
 {
 	return R * x;
 }
-Eigen::Matrix3d stark::models::local_to_global_matrix(const Eigen::Matrix3d& A, const Eigen::Matrix3d& R)
+Eigen::Matrix3d stark::local_to_global_matrix(const Eigen::Matrix3d& A, const Eigen::Matrix3d& R)
 {
 	return R * A * R.transpose();
 }
-Eigen::Vector3d stark::models::global_to_local_point(const Eigen::Vector3d& x, const Eigen::Matrix3d& R, const Eigen::Vector3d& translation)
+Eigen::Vector3d stark::global_to_local_point(const Eigen::Vector3d& x, const Eigen::Matrix3d& R, const Eigen::Vector3d& translation)
 {
 	return R.transpose() * (x - translation);
 }
-Eigen::Vector3d stark::models::global_to_local_direction(const Eigen::Vector3d& x, const Eigen::Matrix3d& R)
+Eigen::Vector3d stark::global_to_local_direction(const Eigen::Vector3d& x, const Eigen::Matrix3d& R)
 {
 	return R.transpose() * x;
 }
-Eigen::Matrix3d stark::models::global_to_local_matrix(const Eigen::Matrix3d& A, const Eigen::Matrix3d& R)
+Eigen::Matrix3d stark::global_to_local_matrix(const Eigen::Matrix3d& A, const Eigen::Matrix3d& R)
 {
 	return R.transpose() * A * R;
 }
-Eigen::Quaterniond stark::models::quat_time_integration(const Eigen::Quaterniond& q_start, const Eigen::Vector3d& w_glob, const double dt)
+Eigen::Quaterniond stark::quat_time_integration(const Eigen::Quaterniond& q_start, const Eigen::Vector3d& w_glob, const double dt)
 {
 	// https:// stackoverflow.com/questions/46908345/integrate-angular-velocity-as-quaternion-rotation?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
 	Eigen::Quaterniond w_ = Eigen::Quaterniond(0, w_glob.x(), w_glob.y(), w_glob.z());
@@ -35,13 +35,13 @@ Eigen::Quaterniond stark::models::quat_time_integration(const Eigen::Quaterniond
 	q_end.coeffs() += 0.5 * dt * (w_ * q_start).coeffs();
 	return q_end.normalized();
 }
-Eigen::Vector3d stark::models::integrate_loc_point(const Eigen::Vector3d& p_loc, const Eigen::Vector3d& t0, const Eigen::Quaterniond& q0, const Eigen::Vector3d& v1, const Eigen::Vector3d& w1, const double& dt)
+Eigen::Vector3d stark::integrate_loc_point(const Eigen::Vector3d& p_loc, const Eigen::Vector3d& t0, const Eigen::Quaterniond& q0, const Eigen::Vector3d& v1, const Eigen::Vector3d& w1, const double& dt)
 {
 	Eigen::Vector3d t1 = time_integration(t0, v1, dt);
 	Eigen::Matrix3d R1 = quat_time_integration(q0, w1, dt).toRotationMatrix();
 	return local_to_global_point(p_loc, R1, t1);
 }
-Eigen::Vector3d stark::models::integrate_loc_direction(const Eigen::Vector3d& d_loc, const Eigen::Quaterniond& q0, const Eigen::Vector3d& w1, const double& dt)
+Eigen::Vector3d stark::integrate_loc_direction(const Eigen::Vector3d& d_loc, const Eigen::Quaterniond& q0, const Eigen::Vector3d& w1, const double& dt)
 {
 	Eigen::Matrix3d R1 = quat_time_integration(q0, w1, dt).toRotationMatrix();
 	return local_to_global_direction(d_loc, R1);
@@ -51,7 +51,7 @@ Eigen::Vector3d stark::models::integrate_loc_direction(const Eigen::Vector3d& d_
 
 
 // SymX
-symx::Matrix stark::models::quat_to_rotation(const symx::Vector& q)
+symx::Matrix stark::quat_to_rotation(const symx::Vector& q)
 {
 	symx::Matrix R = symx::Matrix::identity(3, q[0]);
 
@@ -85,7 +85,7 @@ symx::Matrix stark::models::quat_to_rotation(const symx::Vector& q)
 
 	return R;
 }
-symx::Vector stark::models::quat_dot_product(const symx::Vector& q1, const symx::Vector& q2)
+symx::Vector stark::quat_dot_product(const symx::Vector& q1, const symx::Vector& q2)
 {
 	// w, x, y, z = q
 	const symx::Scalar& a = q1[0];
@@ -106,7 +106,7 @@ symx::Vector stark::models::quat_dot_product(const symx::Vector& q1, const symx:
 		}
 	);
 }
-symx::Vector stark::models::quat_conjugated(const symx::Vector& q1)
+symx::Vector stark::quat_conjugated(const symx::Vector& q1)
 {
 	// w, x, y, z = q
 	const symx::Scalar& a = q1[0];
@@ -115,46 +115,46 @@ symx::Vector stark::models::quat_conjugated(const symx::Vector& q1)
 	const symx::Scalar& d = q1[3];
 	return symx::Vector({ a, -b, -c, -d });
 }
-symx::Vector stark::models::quat_time_integration(const symx::Vector& q_start, const symx::Vector& w_glob, const symx::Scalar& dt)
+symx::Vector stark::quat_time_integration(const symx::Vector& q_start, const symx::Vector& w_glob, const symx::Scalar& dt)
 {
 	const symx::Vector w_({ dt.get_zero(), w_glob[0], w_glob[1], w_glob[2] });
 	const symx::Vector q1 = q_start + 0.5 * dt * quat_dot_product(w_, q_start);
 	return q1.normalized();
 }
-symx::Matrix stark::models::quat_time_integration_as_rotation_matrix(const symx::Vector& q_start, const symx::Vector& w_glob, const symx::Scalar& dt)
+symx::Matrix stark::quat_time_integration_as_rotation_matrix(const symx::Vector& q_start, const symx::Vector& w_glob, const symx::Scalar& dt)
 {
 	symx::Vector q1 = quat_time_integration(q_start, w_glob, dt);
 	return quat_to_rotation(q1);
 }
-symx::Vector stark::models::local_to_global_point(const symx::Vector& p_loc, const symx::Vector& t, const symx::Matrix& R)
+symx::Vector stark::local_to_global_point(const symx::Vector& p_loc, const symx::Vector& t, const symx::Matrix& R)
 {
 	return t + R*p_loc;
 }
-symx::Vector stark::models::local_to_global_point(const symx::Vector& p_loc, const symx::Vector& t, const symx::Vector& q)
+symx::Vector stark::local_to_global_point(const symx::Vector& p_loc, const symx::Vector& t, const symx::Vector& q)
 {
 	return local_to_global_point(p_loc, t, quat_to_rotation(q));
 }
-symx::Vector stark::models::local_to_global_direction(const symx::Vector& d_loc, const symx::Matrix& R)
+symx::Vector stark::local_to_global_direction(const symx::Vector& d_loc, const symx::Matrix& R)
 {
 	return R*d_loc;
 }
-symx::Vector stark::models::local_to_global_direction(const symx::Vector& d_loc, const symx::Vector& q)
+symx::Vector stark::local_to_global_direction(const symx::Vector& d_loc, const symx::Vector& q)
 {
 	return local_to_global_direction(d_loc, quat_to_rotation(q));
 }
-symx::Vector stark::models::integrate_loc_point(const symx::Vector& p_loc, const symx::Vector& t0, const symx::Vector& q0, const symx::Vector& v1, const symx::Vector& w1, const symx::Scalar& dt)
+symx::Vector stark::integrate_loc_point(const symx::Vector& p_loc, const symx::Vector& t0, const symx::Vector& q0, const symx::Vector& v1, const symx::Vector& w1, const symx::Scalar& dt)
 {
 	symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
 	symx::Vector t1 = t0 + dt * v1;
 	return local_to_global_point(p_loc, t1, R1);
 }
-symx::Vector stark::models::integrate_loc_direction(const symx::Vector& d_loc, const symx::Vector& q0, const symx::Vector& w1, const symx::Scalar& dt)
+symx::Vector stark::integrate_loc_direction(const symx::Vector& d_loc, const symx::Vector& q0, const symx::Vector& w1, const symx::Scalar& dt)
 {
 	symx::Matrix R1 = quat_time_integration_as_rotation_matrix(q0, w1, dt);
 	return local_to_global_direction(d_loc, R1);
 }
 
-symx::Vector stark::models::global_point_velocity_in_rigib_body(const symx::Vector& v_body, const symx::Vector& w_body, const symx::Vector& r_glob)
+symx::Vector stark::global_point_velocity_in_rigib_body(const symx::Vector& v_body, const symx::Vector& w_body, const symx::Vector& r_glob)
 {
 	return v_body + w_body.cross3(r_glob);
 }

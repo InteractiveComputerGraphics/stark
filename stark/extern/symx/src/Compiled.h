@@ -1,10 +1,7 @@
 #pragma once
 #include <type_traits>
-#include <cstring>
-#include <immintrin.h>
 
 #include "Compilation.h"
-
 #include "AlignmentAllocator.h"
 
 namespace symx

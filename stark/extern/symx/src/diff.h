@@ -10,7 +10,8 @@
 
 namespace symx
 {
-	Scalar diff(const Scalar& expr, const Scalar& symbol);
+	Scalar diff(const Scalar& expr, const Scalar& symbol, std::unordered_map<int64_t, Scalar>* diff_map = nullptr);
+	Scalar diff_impl(const Scalar& expr, const Scalar& symbol, std::unordered_map<int64_t, Scalar>* diff_map = nullptr);
 	Vector gradient(const Scalar& expr, const std::vector<Scalar>& symbols);
 	Matrix hessian(const Scalar& expr, const std::vector<Scalar>& symbols, const bool symmetric = true);
 	std::vector<Scalar> value_gradient(const Scalar& expr, const std::vector<Scalar>& symbols);

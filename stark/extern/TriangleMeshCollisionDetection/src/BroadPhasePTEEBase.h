@@ -33,7 +33,9 @@ namespace tmcd
 			const BroadPhasePTEEResults& _run(const bool is_ccd, const double enlargement, const BroadPhaseStrategy strat = BroadPhaseStrategy::OctreeSIMD);
 			void _run_broad_phase_bruteforce();
 			void _run_octree_leaf_scalar(const OctreeNode& leaf);
+#ifdef TMCD_ENABLE_AVX
 			void _run_octree_leaf_simd(const OctreeNode& leaf);
+#endif
 
 			/* Fields */
 			bool is_point_triangle_active = true;

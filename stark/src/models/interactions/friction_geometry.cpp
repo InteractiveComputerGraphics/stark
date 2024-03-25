@@ -1,7 +1,7 @@
 #include "friction_geometry.h"
 
 // Ericson05
-std::array<double, 3> stark::models::barycentric_point_triangle(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c)
+std::array<double, 3> stark::barycentric_point_triangle(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c)
 {
 	const Eigen::Vector3d v0 = b - a;
 	const Eigen::Vector3d v1 = c - a;
@@ -18,7 +18,7 @@ std::array<double, 3> stark::models::barycentric_point_triangle(const Eigen::Vec
 	return { u, v, w };
 }
 // Ericson05
-std::array<double, 2> stark::models::barycentric_point_edge(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b)
+std::array<double, 2> stark::barycentric_point_edge(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b)
 {
 	const Eigen::Vector3d ab = b - a;
 	const Eigen::Vector3d u = p - a;
@@ -26,7 +26,7 @@ std::array<double, 2> stark::models::barycentric_point_edge(const Eigen::Vector3
 	return { 1.0 - alpha, alpha };
 }
 // Ericson05
-std::array<double, 2> stark::models::barycentric_edge_edge(const Eigen::Vector3d& A, const Eigen::Vector3d& B, const Eigen::Vector3d& P, const Eigen::Vector3d& Q)
+std::array<double, 2> stark::barycentric_edge_edge(const Eigen::Vector3d& A, const Eigen::Vector3d& B, const Eigen::Vector3d& P, const Eigen::Vector3d& Q)
 {
 	const Eigen::Vector3d da = B - A; // Direction vector of segment S0
 	const Eigen::Vector3d db = Q - P; // Direction vector of segment S1
@@ -40,7 +40,7 @@ std::array<double, 2> stark::models::barycentric_edge_edge(const Eigen::Vector3d
 	const double cross_sq_norm = denom; // Same as da.cross(db).squaredNorm();
 
 	if (denom < 1e-16) {
-		std::cout << "error stark::models::barycentric_edge_edge(): parallel edge found." << std::endl;
+		std::cout << "error stark::barycentric_edge_edge(): parallel edge found." << std::endl;
 		exit(-1);
 	}
 	const double s = (b * f - c * e) / denom;  // arc of the closest point on L1 to L2
@@ -48,7 +48,7 @@ std::array<double, 2> stark::models::barycentric_edge_edge(const Eigen::Vector3d
 	return {s, t};
 }
 
-std::array<double, 6> stark::models::projection_matrix_triangle(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c)
+std::array<double, 6> stark::projection_matrix_triangle(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c)
 {
 	const Eigen::Vector3d v01 = a - c;
 	const Eigen::Vector3d v02 = b - c;
@@ -62,7 +62,7 @@ std::array<double, 6> stark::models::projection_matrix_triangle(const Eigen::Vec
 	P.row(1) = v;
 	return { P(0, 0), P(0, 1), P(0, 2), P(1, 0), P(1, 1), P(1, 2) };
 }
-std::array<double, 6> stark::models::projection_matrix_edge_edge(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& p, const Eigen::Vector3d& q)
+std::array<double, 6> stark::projection_matrix_edge_edge(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& p, const Eigen::Vector3d& q)
 {
 	const Eigen::Vector3d u = (b - a).normalized();
 	const Eigen::Vector3d n = u.cross(q - p);
@@ -73,7 +73,7 @@ std::array<double, 6> stark::models::projection_matrix_edge_edge(const Eigen::Ve
 	P.row(1) = v;
 	return { P(0, 0), P(0, 1), P(0, 2), P(1, 0), P(1, 1), P(1, 2) };
 }
-std::array<double, 6> stark::models::projection_matrix_point_point(const Eigen::Vector3d& p, const Eigen::Vector3d& a)
+std::array<double, 6> stark::projection_matrix_point_point(const Eigen::Vector3d& p, const Eigen::Vector3d& a)
 {
 	const Eigen::Vector3d n = (p - a).normalized();
 	Eigen::Vector3d e;
@@ -90,7 +90,7 @@ std::array<double, 6> stark::models::projection_matrix_point_point(const Eigen::
 	P.row(1) = v;
 	return { P(0, 0), P(0, 1), P(0, 2), P(1, 0), P(1, 1), P(1, 2) };
 }
-std::array<double, 6> stark::models::projection_matrix_point_edge(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b)
+std::array<double, 6> stark::projection_matrix_point_edge(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b)
 {
 	const Eigen::Vector3d u = (b - a).normalized();
 	const Eigen::Vector3d t = (p - a);
@@ -102,7 +102,7 @@ std::array<double, 6> stark::models::projection_matrix_point_edge(const Eigen::V
 	return { P(0, 0), P(0, 1), P(0, 2), P(1, 0), P(1, 1), P(1, 2) };
 }
 
-double stark::models::edge_edge_mollifier(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& p, const Eigen::Vector3d& q, const Eigen::Vector3d& A, const Eigen::Vector3d& B, const Eigen::Vector3d& P, const Eigen::Vector3d& Q)
+double stark::edge_edge_mollifier(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& p, const Eigen::Vector3d& q, const Eigen::Vector3d& A, const Eigen::Vector3d& B, const Eigen::Vector3d& P, const Eigen::Vector3d& Q)
 {
 	const double eps_x = 1e-3 * (A - B).squaredNorm() * (P - Q).squaredNorm();
 	const double x = (b - a).cross(q - p).squaredNorm();

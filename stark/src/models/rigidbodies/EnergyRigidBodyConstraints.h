@@ -8,7 +8,7 @@
 #include "RigidBodyDynamics.h"
 #include "RigidBodyConstraints.h"
 
-namespace stark::models
+namespace stark
 {
 	/*
 		All constraints
@@ -40,10 +40,10 @@ namespace stark::models
 	class EnergyRigidBodyConstraints
 	{
 	public:
-        EnergyRigidBodyConstraints(core::Stark& stark, const spRigidBodyDynamics dyn);
+        EnergyRigidBodyConstraints(core::Stark& stark, const spRigidBodyDynamics rb);
 
         /* Fields */
-        const spRigidBodyDynamics dyn;
+        const spRigidBodyDynamics rb;
 		double stiffness_hard_multiplier = 2.0;
 		double stiffness_soft_multiplier = 1.05;
 		double soft_constraint_capacity_hardening_point = 0.75;
@@ -74,5 +74,4 @@ namespace stark::models
 		void _on_time_step_accepted(core::Stark& stark);
 		void _write_frame(core::Stark& stark);
 	};
-    using spEnergyRigidBodyConstraints = std::shared_ptr<EnergyRigidBodyConstraints>;
 }

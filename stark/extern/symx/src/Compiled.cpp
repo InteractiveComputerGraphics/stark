@@ -88,9 +88,11 @@ void symx::Compiled<FLOAT>::_resize_buffers()
 // Explicit template instantiation
 template class symx::Compiled<double>;
 template class symx::Compiled<float>;
+#ifdef SYMX_ENABLE_AVX
 template class symx::Compiled<__m128d>;
 template class symx::Compiled<__m128>;
 template class symx::Compiled<__m256d>;
 template class symx::Compiled<__m256>;
 template class symx::Compiled<__m512d>;
 template class symx::Compiled<__m512>;
+#endif

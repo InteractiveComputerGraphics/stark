@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.9)
 
+set(SYMX_ENABLE_AVX ON CACHE BOOL "Flag to enable AVX for symx")
+set(BSM_ENABLE_AVX ON CACHE BOOL "Flag to enable AVX for BlockedSparseMatrix")
+
 # Enable SIMD and suppress compiler warnings
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	add_compile_options("-march=native")
@@ -24,7 +27,6 @@ set(SOURCE_FILES
 	src/Compilation.h
 	src/Compiled.cpp
 	src/Compiled.h
-	src/CompiledDerivativesLoop.h
 	src/CompiledInLoop.h
 	src/diff.cpp
 	src/diff.h
@@ -62,6 +64,11 @@ set(SOURCE_FILES
 
 # Add library
 add_library(symx ${SOURCE_FILES})
+
+if(${SYMX_ENABLE_AVX})
+	target_compile_definitions(symx PUBLIC SYMX_ENABLE_AVX)
+	target_compile_definitions(symx PUBLIC BSM_ENABLE_AVX)
+endif()
 
 # Include/link dependencies
 ## OpenMP

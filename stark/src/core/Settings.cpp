@@ -77,17 +77,6 @@ std::string to_string(const bool v)
 		return "false";
 	}
 }
-std::string to_string(const AdaptiveParameter& v)
-{
-	std::string out;
-	out += fmt::format("\n             value: {:.2e}", v.value);
-	out += fmt::format("\n             min: {:.2e}", v.min);
-	out += fmt::format("\n             max: {:.2e}", v.max);
-	out += fmt::format("\n             success_multiplier: {:f}", v.success_multiplier);
-	out += fmt::format("\n             failure_multiplier: {:f}", v.failure_multiplier);
-	out += fmt::format("\n             n_successful_iterations_to_increase: {:d}", v.n_successful_iterations_to_increase);
-	return out;
-}
 std::string to_string(const Eigen::Vector3d& v)
 {
 	return fmt::format("({:f}, {:f}, {:f})", v[0], v[1], v[2]);
@@ -98,22 +87,6 @@ Settings::Settings()
 	// Initialize default parameters
 	this->execution.n_threads = omp_get_max_threads();
 	this->output.time_stamp = time_stamp();
-
-	//// Adaptive Time step
-	this->simulation.adaptive_time_step.value = 1.0/60.0; // [s]
-	this->simulation.adaptive_time_step.min = 1e-6; // [s]
-	this->simulation.adaptive_time_step.max = 1.0/60.0; // [s]
-	this->simulation.adaptive_time_step.success_multiplier = 1.2;
-	this->simulation.adaptive_time_step.failure_multiplier = 0.5;
-	this->simulation.adaptive_time_step.n_successful_iterations_to_increase = 5;
-
-	//// Adaptive Contact stiffness (mild adaptivity, too strong results in fluctuations)
-	this->contact.adaptive_contact_stiffness.value = 1e6;
-	this->contact.adaptive_contact_stiffness.min = 1e6;
-	this->contact.adaptive_contact_stiffness.max = 1e15;
-	this->contact.adaptive_contact_stiffness.success_multiplier = 0.8;
-	this->contact.adaptive_contact_stiffness.failure_multiplier = 2.0;
-	this->contact.adaptive_contact_stiffness.n_successful_iterations_to_increase = 50;
 }
 
 std::string Settings::as_string() const
@@ -130,25 +103,15 @@ std::string Settings::as_string() const
 	out += "\n         fps: " + std::to_string(this->output.fps);
 	out += "\n         console_verbosity: " + to_string(this->output.console_verbosity);
 	out += "\n         console_output_to: " + to_string(this->output.console_output_to);
-	out += "\n         calculate_smooth_normals: " + to_string(this->output.calculate_smooth_normals);
 	out += "\n         enable_output: " + to_string(this->output.enable_output);
 
 	out += "\n     Simulation";
-	out += "\n         adaptive_time_step" + to_string(this->simulation.adaptive_time_step);
 	out += "\n         gravity: " + to_string(this->simulation.gravity);
-
-	out += "\n     Contact";
-	out += "\n         adaptive_contact_stiffness" + to_string(this->contact.adaptive_contact_stiffness);
-	out += "\n         dhat: " + fmt::format("{:.1e}", this->contact.dhat);
-	out += "\n         friction_stick_slide_threshold: " + fmt::format("{:.1e}", this->contact.friction_stick_slide_threshold);
-	out += "\n         edge_edge_cross_norm_sq_cutoff: " + fmt::format("{:.1e}", this->contact.edge_edge_cross_norm_sq_cutoff);
-	out += "\n         friction_displacement_perturbation: " + fmt::format("{:.1e}", this->contact.friction_displacement_perturbation);
-	out += "\n         better_friction_mode: " + to_string(this->contact.better_friction_mode);
-	out += "\n         collisions_enabled: " + to_string(this->contact.collisions_enabled);
-	out += "\n         friction_enabled: " + to_string(this->contact.friction_enabled);
-	out += "\n         triangle_point_enabled: " + to_string(this->contact.triangle_point_enabled);
-	out += "\n         edge_edge_enabled: " + to_string(this->contact.edge_edge_enabled);
-	out += "\n         enable_intersection_test: " + to_string(this->contact.enable_intersection_test);
+	out += "\n         init_frictional_contact: " + to_string(this->simulation.init_frictional_contact);
+	out += "\n         max_time_step_size: " + to_string(this->simulation.max_time_step_size);
+	out += "\n         use_adaptive_time_step: " + to_string(this->simulation.use_adaptive_time_step);
+	out += "\n         time_step_size_success_muliplier: " + to_string(this->simulation.time_step_size_success_muliplier);
+	out += "\n         time_step_size_lower_bound: " + fmt::format("{:.1e}", this->simulation.time_step_size_lower_bound);
 
 	out += "\n     Newton's Method";
 	out += "\n         residual_type: " + to_string(this->newton.residual.type);
@@ -159,6 +122,7 @@ std::string Settings::as_string() const
 	out += "\n         max_line_search_iterations: " + std::to_string(this->newton.max_line_search_iterations);
 	out += "\n         line_search_multiplier: " + fmt::format("{:f}", this->newton.line_search_multiplier);
 	out += "\n         cg_max_iterations_multiplier: " + fmt::format("{:f}", this->newton.cg_max_iterations_multiplier);
+	out += "\n         epsilon_residual: " + fmt::format("{:.1e}", this->newton.epsilon_residual);
 
 	out += "\n     Execution";
 	out += "\n         allowed_execution_time: " + fmt::format("{:.1e}", this->execution.allowed_execution_time);

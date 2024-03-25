@@ -3,15 +3,11 @@
 #include <string>
 #include <algorithm>
 #include <functional>
-#include <memory>
-#include <omp.h>
 
 #include "LabelledConnectivity.h"
 #include "Element.h"
 #include "Energy.h"
 #include "Assembly.h"
-
-#include <Eigen/Dense>
 
 
 namespace symx
@@ -31,6 +27,7 @@ namespace symx
 		bool runtime_NaN_check = true;
 		int n_threads = -1;
 		bool is_initialized = false;
+		CSE cse_mode = CSE::Safe;
 
 		double runtime_differentiation = 0.0;
 		double runtime_codegen = 0.0;
@@ -44,6 +41,9 @@ namespace symx
 
 		// Assembly
 		Assembly assembly;
+
+		// Topology
+		std::vector<std::vector<int32_t>> topology;
 
 		/* Methods */
 		GlobalEnergy() = default;
@@ -65,13 +65,19 @@ namespace symx
 		DoF add_dof_array(DYNAMIC_VECTOR& arr, std::string label = "");
 
 		std::string compile(std::string working_directory, const int n_threads = -1, bool force_compilation = false, bool force_load = false, bool suppress_compiler_output = true);
-		Assembled evaluate_E(const bool check_for_NaNs = false);
-		Assembled evaluate_E_grad(const bool check_for_NaNs = false);
-		Assembled evaluate_E_grad_hess(const bool check_for_NaNs = false);
+		Assembled evaluate_E();
+		Assembled evaluate_E_grad();
+		Assembled evaluate_E_grad_hess();
+		const std::vector<std::vector<int32_t>>& compute_topology();  // WARNING: Ignores external contributions
 		void get_dofs(double* u) const;
 		void apply_dof_increment(const double* du);
 		void set_dofs(const double* u);
 		void set_project_to_PD(const bool activate);
+		void set_cse_mode(CSE mode = CSE::Safe);
+		void set_check_for_NaNs(const bool activate);
+		void test_derivatives_with_FD(const double h = 1e-7);
+		void clear_user_conditional_evaluation();
+		void activate_elements_from_dofs(const std::vector<uint8_t>& activation, const int32_t n_threads);
 
 		int get_total_n_dofs() const;
 		int32_t get_n_dof_sets() const;

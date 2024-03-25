@@ -1,13 +1,14 @@
 #include "inertia_tensors.h"
 
-Eigen::Matrix3d stark::models::inertia_tensor_sphere(double mass, double radius)
+Eigen::Matrix3d stark::inertia_tensor_sphere(double mass, double radius)
 {
     double I = (2.0 / 5.0) * mass * radius * radius;
     Eigen::Matrix3d inertia_tensor = Eigen::Matrix3d::Identity() * I;
     return inertia_tensor;
 }
-Eigen::Matrix3d stark::models::inertia_tensor_cylinder(double mass, double radius, double height)
+Eigen::Matrix3d stark::inertia_tensor_cylinder(double mass, double radius, double full_height)
 {
+    const double height = full_height;
     double Ix = (1.0 / 12.0) * mass * (3 * radius * radius + height * height);
     double Iy = (1.0 / 12.0) * mass * (3 * radius * radius + height * height);
     double Iz = (1.0 / 2.0) * mass * radius * radius;
@@ -18,7 +19,7 @@ Eigen::Matrix3d stark::models::inertia_tensor_cylinder(double mass, double radiu
         0, 0, Iz;
     return inertia_tensor;
 }
-Eigen::Matrix3d stark::models::inertia_tensor_box(double mass, double size)
+Eigen::Matrix3d stark::inertia_tensor_box(double mass, double size)
 {
     double I = (1.0 / 6.0) * mass * size * size;
     Eigen::Matrix3d inertia_tensor;
@@ -27,7 +28,7 @@ Eigen::Matrix3d stark::models::inertia_tensor_box(double mass, double size)
         0, 0, I;
     return inertia_tensor;
 }
-Eigen::Matrix3d stark::models::inertia_tensor_box(double mass, const Eigen::Vector3d& size)
+Eigen::Matrix3d stark::inertia_tensor_box(double mass, const Eigen::Vector3d& size)
 {
     const double length = size.x();
     const double width = size.y();
@@ -43,7 +44,7 @@ Eigen::Matrix3d stark::models::inertia_tensor_box(double mass, const Eigen::Vect
         0, 0, Iz;
     return inertia_tensor;
 }
-Eigen::Matrix3d stark::models::inertia_tensor_torus(double mass, double b, double a)
+Eigen::Matrix3d stark::inertia_tensor_torus(double mass, double b, double a)
 {
     double a2 = a*a;
     double b2 = b*b;

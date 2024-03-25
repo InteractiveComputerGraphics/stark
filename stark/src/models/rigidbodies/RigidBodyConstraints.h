@@ -11,7 +11,7 @@
 #include "../../utils/mesh_utils.h"
 #include "../distances.h"
 
-namespace stark::models
+namespace stark
 {
 	struct RigidBodyConstraints
 	{
@@ -44,9 +44,9 @@ namespace stark::models
 					magnitude to f = k*(da - db) with direction (da - db).normalized(), which is easy to convert to torque as
 					we know that both da and db have length of 1.
 
-				Direction constraints use linear distance stiffness [N/m]. Even though it is possible to find an equivalent
-				stiffness in units of [Nm/rad], that relation it highly non-linear and we find it less intuitive. The principle
-				of our *hard constraint* formulations is "to have enough stiffness to reach a tolerance". Theoretically,
+				Direction constraints use linear distance bending_stiffness [N/m]. Even though it is possible to find an equivalent
+				bending_stiffness in units of [Nm/rad], that relation it highly non-linear and we find it less intuitive. The principle
+				of our *hard constraint* formulations is "to have enough bending_stiffness to reach a tolerance". Theoretically,
 				stiffnesses should be infinite in these cases. The only relevant values are force/torque and tolerances.
 		*/
 		constexpr static double EPS = 100.0 * std::numeric_limits<double>::epsilon();

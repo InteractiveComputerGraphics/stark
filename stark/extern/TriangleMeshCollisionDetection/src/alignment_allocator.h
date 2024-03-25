@@ -1,20 +1,8 @@
 #pragma once
-#include <array>
 #include <vector>
-#include <cstring>
-#include <memory>
-#include <iostream>
-#include <cassert>
-#include <immintrin.h>
-
-#if !defined __AVX2__
-#define __AVX2__
+#ifndef _MSC_VER
+#include <cstdlib>
 #endif
-
-#ifdef __linux__
-#include <malloc.h>
-#endif
-
 
 namespace tmcd
 {
@@ -54,23 +42,20 @@ namespace tmcd
 			}
 
 			inline pointer allocate(size_type n) {
-#ifdef _WIN32
+#ifdef _MSC_VER
 				return (pointer)_aligned_malloc(n * sizeof(value_type), N);
-#elif __linux__
-				// NB! Argument order is opposite from MSVC/Windows
-				return (pointer)aligned_alloc(N, n * sizeof(value_type));
 #else
-#error "Unknown platform"
+				const auto req_size = n * sizeof(value_type);
+				const auto alignment_size = (req_size / N) * N;
+				return (pointer)std::aligned_alloc(N, alignment_size < req_size ? alignment_size + N : alignment_size);
 #endif
 			}
 
 			inline void deallocate(pointer p, size_type) {
-#ifdef _WIN32
+#ifdef _MSC_VER
 				_aligned_free(p);
-#elif __linux__
-				free(p);
 #else
-#error "Unknown platform"
+				std::free(p);
 #endif
 			}
 

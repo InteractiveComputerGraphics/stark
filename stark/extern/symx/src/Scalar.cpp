@@ -17,24 +17,24 @@ symx::Scalar double_to_scalar(const symx::Scalar& seed, const double v)
 
 symx::Scalar& symx::Scalar::operator=(const Scalar& other)
 {
-	assert(&this->expressions == &other.expressions && "symx error: Cannot mix symbols from different workspaces");
+	assert(this->expressions.get() == other.expressions.get() && "symx error: Cannot mix symbols from different workspaces");
 	this->expr_id = other.expr_id;
 	this->expr = other.expr;
 	return *this;
 }
 symx::Scalar symx::Scalar::operator+(double val) const
 {
-	Scalar scalar(this->expressions.declare_constant_float(val), this->expressions);
+	Scalar scalar(this->expressions->declare_constant_float(val), this->expressions);
 	return (*this) + scalar;
 }
 symx::Scalar symx::Scalar::operator-(double val) const
 {
-	Scalar scalar(this->expressions.declare_constant_float(val), this->expressions);
+	Scalar scalar(this->expressions->declare_constant_float(val), this->expressions);
 	return (*this) - scalar;
 }
 symx::Scalar symx::Scalar::operator*(double val) const
 {
-	Scalar scalar(this->expressions.declare_constant_float(val), this->expressions);
+	Scalar scalar(this->expressions->declare_constant_float(val), this->expressions);
 	return (*this) * scalar;
 }
 symx::Scalar symx::Scalar::operator/(double val) const
@@ -72,7 +72,7 @@ symx::Scalar symx::Scalar::operator+(const Scalar& other) const
 		return u;
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::Add, this->expr_id, other.expr_id), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::Add, this->expr_id, other.expr_id), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::operator-(const Scalar& other) const
@@ -83,7 +83,7 @@ symx::Scalar symx::Scalar::operator-(const Scalar& other) const
 		return u;
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::Sub, this->expr_id, other.expr_id), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::Sub, this->expr_id, other.expr_id), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::operator*(const Scalar& other) const
@@ -100,7 +100,7 @@ symx::Scalar symx::Scalar::operator*(const Scalar& other) const
 		return u;
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::Mul, this->expr_id, other.expr_id), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::Mul, this->expr_id, other.expr_id), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::operator/(const Scalar& other) const
@@ -155,17 +155,17 @@ symx::Scalar symx::Scalar::powN(const int32_t val) const
 		return u.inv();
 	}
 	else if (val < 0) {
-		const Scalar powN = Scalar(this->expressions.add_operation(ExprType::PowN, this->expr_id, -val), this->expressions);
+		const Scalar powN = Scalar(this->expressions->add_operation(ExprType::PowN, this->expr_id, -val), this->expressions);
 		return powN.inv();
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::PowN, this->expr_id, val), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::PowN, this->expr_id, val), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::powF(double val) const
 {
-	const int32_t constant_double_id = this->expressions.declare_constant_float(val);
-	return Scalar(this->expressions.add_operation(ExprType::PowF, this->expr_id, constant_double_id), this->expressions);
+	const int32_t constant_double_id = this->expressions->declare_constant_float(val);
+	return Scalar(this->expressions->add_operation(ExprType::PowF, this->expr_id, constant_double_id), this->expressions);
 }
 symx::Scalar symx::Scalar::sqrt() const
 {
@@ -177,7 +177,7 @@ symx::Scalar symx::Scalar::sqrt() const
 		return this->get_one();
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::Sqrt, this->expr_id, -1), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::Sqrt, this->expr_id, -1), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::log() const
@@ -192,7 +192,7 @@ symx::Scalar symx::Scalar::log() const
 		return this->get_one();
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::Ln, this->expr_id, -1), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::Ln, this->expr_id, -1), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::exp() const
@@ -202,7 +202,7 @@ symx::Scalar symx::Scalar::exp() const
 		return this->get_one();
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::Exp, this->expr_id, -1), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::Exp, this->expr_id, -1), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::sin() const
@@ -212,7 +212,7 @@ symx::Scalar symx::Scalar::sin() const
 		return this->get_zero();
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::Sin, this->expr_id, -1), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::Sin, this->expr_id, -1), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::cos() const
@@ -222,7 +222,7 @@ symx::Scalar symx::Scalar::cos() const
 		return this->get_one();
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::Cos, this->expr_id, -1), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::Cos, this->expr_id, -1), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::tan() const
@@ -232,7 +232,7 @@ symx::Scalar symx::Scalar::tan() const
 		return this->get_zero();
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::Tan, this->expr_id, -1), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::Tan, this->expr_id, -1), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::asin() const
@@ -242,7 +242,7 @@ symx::Scalar symx::Scalar::asin() const
 		return this->get_zero();
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::ArcSin, this->expr_id, -1), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::ArcSin, this->expr_id, -1), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::acos() const
@@ -252,7 +252,7 @@ symx::Scalar symx::Scalar::acos() const
 		return this->get_zero();
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::ArcCos, this->expr_id, -1), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::ArcCos, this->expr_id, -1), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::atan() const
@@ -262,13 +262,13 @@ symx::Scalar symx::Scalar::atan() const
 		return this->get_zero();
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::ArcTan, this->expr_id, -1), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::ArcTan, this->expr_id, -1), this->expressions);
 	}
 }
 symx::Scalar symx::Scalar::print() const
 {
 	const Scalar& u = (*this);
-	return Scalar(this->expressions.add_operation(ExprType::Print, this->expr_id, -1), this->expressions);
+	return Scalar(this->expressions->add_operation(ExprType::Print, this->expr_id, -1), this->expressions);
 }
 symx::Scalar symx::Scalar::inv() const
 {
@@ -281,7 +281,7 @@ symx::Scalar symx::Scalar::inv() const
 		return this->get_one();
 	}
 	else {
-		return Scalar(this->expressions.add_operation(ExprType::Reciprocal, this->expr_id, -1), this->expressions);
+		return Scalar(this->expressions->add_operation(ExprType::Reciprocal, this->expr_id, -1), this->expressions);
 	}
 }
 bool symx::Scalar::is_zero() const
@@ -294,11 +294,15 @@ bool symx::Scalar::is_one() const
 }
 void symx::Scalar::set_value(const double val)
 {
-	this->expressions.set_value(this->expr_id, val);
+	this->expressions->set_value(this->expr_id, val);
+}
+double symx::Scalar::get_value() const
+{
+	return this->expressions->get_value(this->expr_id);
 }
 double symx::Scalar::eval()
 {
-	return this->expressions.eval(this->expr_id);
+	return this->expressions->eval(this->expr_id);
 }
 std::string symx::Scalar::get_checksum()
 {
@@ -340,7 +344,7 @@ void symx::Scalar::get_checksum(picosha2::hash256_one_by_one& hasher)
 				value = 1.0;
 				break;
 			case ExprType::ConstantFloat:
-				value = unpack_double(this->expr.a, this->expr.b);
+				value = this->expr.unpack_double();
 				break;
 			default:
 				break;
@@ -392,11 +396,11 @@ bool symx::Scalar::has_branch() const
 }
 symx::Scalar symx::Scalar::get_zero() const
 {
-	return Scalar(this->expressions.get_zero_idx(), this->expressions);
+	return Scalar(this->expressions->get_zero_idx(), this->expressions);
 }
 symx::Scalar symx::Scalar::get_one() const
 {
-	return Scalar(this->expressions.get_one_idx(), this->expressions);
+	return Scalar(this->expressions->get_one_idx(), this->expressions);
 }
 symx::Scalar symx::Scalar::get_condition() const
 {
@@ -408,11 +412,11 @@ symx::Scalar symx::Scalar::get_condition() const
 }
 symx::Scalar symx::Scalar::make_constant(const double val) const
 {
-	return Scalar(this->expressions.declare_constant_float(val), this->expressions);
+	return Scalar(this->expressions->declare_constant_float(val), this->expressions);
 }
 symx::Scalar symx::Scalar::make_branch(const Scalar& condition, const Scalar& positive_branch, const Scalar& negative_branch) const
 {
-	return Scalar(this->expressions.add_branch(condition.expr_id, positive_branch.expr_id, negative_branch.expr_id), this->expressions);
+	return Scalar(this->expressions->add_branch(condition.expr_id, positive_branch.expr_id, negative_branch.expr_id), this->expressions);
 }
 int32_t symx::Scalar::get_symbol_idx() const
 {
@@ -434,7 +438,11 @@ std::string symx::Scalar::get_name() const
 		std::cout << "symx error: Scalar::get_name() can only be used on non-derived symbols." << std::endl;
 		exit(-1);
 	}
-	return this->expressions.symbols[this->expr.a];
+	return this->expressions->symbols[this->expr.a];
+}
+const std::shared_ptr<symx::Expressions> symx::Scalar::get_expression_graph() const
+{
+	return this->expressions;
 }
 symx::Scalar symx::operator+(double val, Scalar scalar)
 {

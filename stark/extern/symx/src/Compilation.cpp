@@ -1,5 +1,6 @@
 #include "Compilation.h"
 
+#include "omp.h"
 
 #ifdef _MSC_VER
 #define NOMINMAX
@@ -285,7 +286,7 @@ void symx::Compilation::_write_shared_object_code(Sequence& seq, std::string nam
 	outfile << code;
 	outfile.close();
 }
-bool symx::Compilation::is_valid()
+bool symx::Compilation::is_valid() const
 {
 	return this->compiled_f != nullptr;
 }
@@ -297,6 +298,7 @@ std::string symx::Compilation::_get_op_type_string(OpType op_type)
 		return "double";
 	case symx::OpType::Float:
 		return "float";
+#ifdef SYMX_ENABLE_AVX
 	case symx::OpType::SIMD2d:
 		return "__m128d";
 	case symx::OpType::SIMD4f:
@@ -309,6 +311,7 @@ std::string symx::Compilation::_get_op_type_string(OpType op_type)
 		return "__m512d";
 	case symx::OpType::SIMD16f:
 		return "__m512";
+#endif
 	default:
 		return "";
 		break;
@@ -473,6 +476,7 @@ void symx::Compilation::_add_instructions_simd(std::string& code, Sequence& eval
 }
 void symx::Compilation::_add_core_simd_functions(std::string& code, OpType op_type)
 {
+#ifdef SYMX_ENABLE_AVX
 	// TODO: Fix iterations and types for special vector functions
 	if (op_type != OpType::SIMD4d) {
 		std::cout << "symx error: SIMD compilation only possible with type __m256d." << std::endl;
@@ -546,4 +550,8 @@ void symx::Compilation::_add_core_simd_functions(std::string& code, OpType op_ty
 	functions += "}\n";
 
 	code += functions;
+#else
+	std::cout << "symx error: SIMD compilation not available." << std::endl;
+	exit(-1);
+#endif
 }

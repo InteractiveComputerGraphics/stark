@@ -33,13 +33,13 @@ stark::Settings test_settings(std::string name)
 	settings.output.enable_output = false;
 	settings.execution.end_simulation_time = 3.0;
 	settings.simulation.gravity = {0, 0, 0};
-	settings.contact.collisions_enabled = false;
+	settings.simulation.init_frictional_contact = false;
 
 	// Debug
 	//settings.debug.symx_force_load = true;
 
 	// High resolution for accurate results
-	settings.simulation.adaptive_time_step.set(0.0, 0.002, 0.002);
+	settings.simulation.max_time_step_size = 0.002;
 	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
 	settings.newton.residual = { stark::ResidualType::Force, 1e-6 };
 
@@ -49,9 +49,9 @@ TEST_CASE("inertia", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("inertia");
 	settings.simulation.gravity[0] = PERTURBATION;
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	auto constraint = simulation.rigidbodies->add_constraint_global_point(box0, box0.get_translation());
 	simulation.run();
 	auto [C, f] = constraint.get_violation_in_m_and_force();
@@ -62,9 +62,9 @@ TEST_CASE("inertia", "[rb_constraints]")
 TEST_CASE("global_point", "[rb_constraints]") 
 {
 	stark::Settings settings = test_settings("global_point");
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	auto constraint = simulation.rigidbodies->add_constraint_global_point(box0, box0.get_translation());
 	box0.add_force_at_centroid({PERTURBATION, 0, 0});
 	simulation.run();
@@ -76,9 +76,9 @@ TEST_CASE("global_point", "[rb_constraints]")
 TEST_CASE("global_direction", "[rb_constraints]") 
 {
 	stark::Settings settings = test_settings("global_direction");
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	auto constraint = simulation.rigidbodies->add_constraint_global_direction(box0, Eigen::Vector3d::UnitZ());
 	box0.add_torque({PERTURBATION, 0, 0});
 	simulation.run();
@@ -90,11 +90,11 @@ TEST_CASE("global_direction", "[rb_constraints]")
 TEST_CASE("point", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("point");
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	simulation.rigidbodies->add_constraint_fix(box0);
-	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({0.1, 0.0, 0.0});
+	auto box1 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 })).set_translation({0.1, 0.0, 0.0});
 	auto constraint = simulation.rigidbodies->add_constraint_point(box0, box1, {0.05, 0.0, 0.0});
 
 	box1.add_force_at_centroid({ PERTURBATION, 0, 0 });
@@ -107,11 +107,11 @@ TEST_CASE("point", "[rb_constraints]")
 TEST_CASE("point_on_axis", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("point_on_axis");
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	simulation.rigidbodies->add_constraint_fix(box0);
-	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({0.1, 0.0, 0.0});
+	auto box1 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 })).set_translation({0.1, 0.0, 0.0});
 	auto constraint = simulation.rigidbodies->add_constraint_point_on_axis(box0, box1, {0.0, 0.0, 0.0}, Eigen::Vector3d::UnitZ());
 
 	box1.add_force_at_centroid({ PERTURBATION, 0, 0 });
@@ -124,11 +124,11 @@ TEST_CASE("point_on_axis", "[rb_constraints]")
 TEST_CASE("distance", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("distance");
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	simulation.rigidbodies->add_constraint_fix(box0);
-	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({1.0, 0.0, 0.0});
+	auto box1 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 })).set_translation({1.0, 0.0, 0.0});
 	auto constraint = simulation.rigidbodies->add_constraint_distance(box0, box1, box0.get_translation(), box1.get_translation());
 
 	box1.add_force_at_centroid({ PERTURBATION, 0, 0 });
@@ -141,11 +141,11 @@ TEST_CASE("distance", "[rb_constraints]")
 TEST_CASE("distance_limits_max", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("distance_limits_max");
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	simulation.rigidbodies->add_constraint_fix(box0);
-	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({1.0, 0.0, 0.0});
+	auto box1 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 })).set_translation({1.0, 0.0, 0.0});
 	auto constraint = simulation.rigidbodies->add_constraint_distance_limits(box0, box1, box0.get_translation(), box1.get_translation(), 0.99, 1.01);
 
 	box1.add_force_at_centroid({ PERTURBATION, 0, 0 });
@@ -158,11 +158,11 @@ TEST_CASE("distance_limits_max", "[rb_constraints]")
 TEST_CASE("distance_limits_min", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("distance_limits_min");
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	simulation.rigidbodies->add_constraint_fix(box0);
-	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({1.0, 0.0, 0.0});
+	auto box1 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 })).set_translation({1.0, 0.0, 0.0});
 	auto constraint = simulation.rigidbodies->add_constraint_distance_limits(box0, box1, box0.get_translation(), box1.get_translation(), 0.99, 1.01);
 
 	box1.add_force_at_centroid({ -PERTURBATION, 0, 0 });
@@ -175,11 +175,11 @@ TEST_CASE("distance_limits_min", "[rb_constraints]")
 TEST_CASE("direction", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("direction");
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	simulation.rigidbodies->add_constraint_fix(box0);
-	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({0.0, 0.0, 0.1});
+	auto box1 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 })).set_translation({0.0, 0.0, 0.1});
 	auto constraint = simulation.rigidbodies->add_constraint_direction(box0, box1, Eigen::Vector3d::UnitZ());
 
 	box1.add_torque({ PERTURBATION, 0, 0 });
@@ -192,11 +192,11 @@ TEST_CASE("direction", "[rb_constraints]")
 TEST_CASE("angle_limit", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("angle_limit");
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	simulation.rigidbodies->add_constraint_fix(box0);
-	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({0.0, 0.0, 0.1});
+	auto box1 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 })).set_translation({0.0, 0.0, 0.1});
 	auto constraint = simulation.rigidbodies->add_constraint_angle_limit(box0, box1, Eigen::Vector3d::UnitZ(), 25.0);
 
 	box1.add_torque({ PERTURBATION, 0, 0 });
@@ -209,15 +209,15 @@ TEST_CASE("angle_limit", "[rb_constraints]")
 TEST_CASE("spring", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("spring");
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 	const double stiffness = 1000.0; // 1000.0;
 	const double perturbation = 1.0; // PERTURBATION / 100.0;
 	const double mass = 1.0;
 	const double damping = 1.0;
 
-	auto box0 = simulation.rigidbodies->add_box(mass, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	simulation.rigidbodies->add_constraint_fix(box0);
-	auto box1 = simulation.rigidbodies->add_box(mass, { 0.1, 0.1, 0.1 }).set_translation({ 0.2, 0.0, 0.0 });
+	auto box1 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 })).set_translation({ 0.2, 0.0, 0.0 });
 	auto constraint = simulation.rigidbodies->add_constraint_spring(box0, box1, box0.get_translation(), box1.get_translation(), stiffness, damping);
 
 	box1.add_force_at_centroid({ perturbation, 0, 0 });
@@ -235,14 +235,14 @@ TEST_CASE("spring", "[rb_constraints]")
 TEST_CASE("linear_velocity", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("linear_velocity");
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 	const double max_force = 50.0;
 	const double target_v = 3.7;// PERTURBATION / 100.0;
 	const double delay = 0.01;
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	simulation.rigidbodies->add_constraint_fix(box0);
-	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({ 0.1, 0.0, 0.0 });
+	auto box1 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 })).set_translation({ 0.1, 0.0, 0.0 });
 	auto ball_joint = simulation.rigidbodies->add_constraint_point(box0, box1, { 0.05, 0.0, 0.0 });
 	auto constraint = simulation.rigidbodies->add_constraint_linear_velocity(box0, box1, Eigen::Vector3d::UnitX(), target_v, max_force, delay);
 
@@ -257,14 +257,14 @@ TEST_CASE("linear_velocity", "[rb_constraints]")
 TEST_CASE("angular_velocity", "[rb_constraints]")
 {
 	stark::Settings settings = test_settings("angular_velocity");
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 	const double max_torque = 10.0;
 	const double perturbation = 1.7;
 	const double delay = 0.01;
 
-	auto box0 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 });
+	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));
 	simulation.rigidbodies->add_constraint_fix(box0);
-	auto box1 = simulation.rigidbodies->add_box(MASS, { 0.1, 0.1, 0.1 }).set_translation({ 0.1, 0.0, 0.0 });
+	auto box1 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 })).set_translation({ 0.1, 0.0, 0.0 });
 	auto attachment = simulation.rigidbodies->add_constraint_attachment(box0, box1);
 	auto constraint = simulation.rigidbodies->add_constraint_angular_velocity(box0, box1, Eigen::Vector3d::UnitX(), perturbation, max_torque, delay);
 

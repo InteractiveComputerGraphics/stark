@@ -1,5 +1,4 @@
 #pragma once
-#include <omp.h>
 
 #include <Eigen/Dense>
 #include <BlockedSparseMatrix/BlockedSparseMatrix.h>

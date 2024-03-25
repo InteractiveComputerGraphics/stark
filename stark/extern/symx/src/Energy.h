@@ -5,55 +5,90 @@
 
 #include "Assembly.h"
 #include "SymbolicWorkSpace.h"
-#include "CompiledDerivativesLoop.h"
-
+#include "CompiledInLoop.h"
+#include "diff.h"
 
 namespace symx
 {
-	struct DoF { int idx; };
+	/**
+	* Simple representation of a set of degrees of freedom.
+	*/
+	struct DoF 
+	{ 
+		int idx; 
+	};
+
+	/**
+	* Identifies an entry in the element connectivity with a DoF set.
+	*/
+	struct DoFInConn
+	{
+		int dof_set;  // nth set of degrees of freedom
+		int conn_idx;  // nth entry in the local element connectivity
+	};
+	
+	/**
+	* Element handler for easy data access.
+	*/
+	class ElementInfo
+	{
+	private:
+		int32_t conn_stride;
+		const int32_t* conn;
+		int32_t idx;
+		const std::vector<DoFInConn>& dof_in_conn;
+	public:
+		ElementInfo(const int32_t conn_stride, const int32_t* conn, const int32_t idx, const std::vector<DoFInConn>& dof_in_conn)
+			: conn_stride(conn_stride), conn(conn), idx(idx), dof_in_conn(dof_in_conn) {}
+		inline int32_t get_stride() const { return conn_stride; }
+		inline int32_t get_idx() const { return idx; }
+		inline int32_t get_n_dof_nodes() const { return (int32_t)dof_in_conn.size(); }
+		inline int32_t get_entry(const int32_t i) const { return conn[i]; }
+		inline int32_t get_dof_node_set(const int32_t i) const { return dof_in_conn[i].dof_set; }
+		inline int32_t get_dof_node_idx(const int32_t dof_i) const { return dof_in_conn[dof_i].conn_idx; }
+		inline int32_t get_dof_node(const int32_t dof_i) const { return get_entry(get_dof_node_idx(dof_i)); }
+	};
 
 	class Energy
 	{
 	private:
-		struct DoFBlockGlobalIndex
-		{
-			int dof_set;  // nth set of degrees of freedom
-			int conn_idx;  // nth entry in the local element connectivity
-		};
 
 	public:
 		/* Fields */
-		int32_t n_items_per_element = -1;
-		CompiledDerivativesLoop<double, double, double> compiled_derivatives;
-		CompiledDerivativesLoop<double, double, double> compiled_derivatives_d;  // For energies with branches
-		std::vector<DoFBlockGlobalIndex> dof_block_global_index;
-		std::vector<int> dof_dof_array_idx;  // which dof_array is assigned to each dof
+		// Compiled functions
+		CompiledInLoop<double> E;   // Energy
+		CompiledInLoop<double> dE;  // Enegy and gradient
+		CompiledInLoop<double> hE;  // Energy, gradient and hessian
+		CompiledInLoop<double> C;   // Condition
+
+		// Parameters
 		std::string name;
-		int n_dofs = -1;
 		std::string working_directory;
-		bool has_branches = false;
-		bool was_cached = false;
-		double runtime_differentiation = 0.0;
-		double runtime_codegen = 0.0;
-		double runtime_compilation = 0.0;
-		uint64_t n_bytes_symbols = 0;
+		int n_dofs = -1;
 		bool project_to_PD = false;
 		bool is_active = true;
 		bool check_for_duplicate_dofs = true;
 
+		// Bookkeeping
+		std::vector<DoFInConn> dof_in_conn;
+		bool was_cached = false;
+
+		// Performance metrics
+		double runtime_differentiation = 0.0;
+		double runtime_codegen = 0.0;
+		double runtime_compilation = 0.0;
+		uint64_t n_bytes_symbols = 0;
+
+		// Conditional evaluation
+		std::unique_ptr<Scalar> cond = nullptr;
+		std::vector<uint8_t> has_element_positive_condition;
+		std::vector<uint8_t> user_defined_element_condition;
+
 		// Symbols
 		SymbolicWorkSpace sws;
-		//std::vector<std::pair<std::pair<Vector, Index>, std::function<const double*()>>> block_symbols_data_pairs;
 		std::vector<Scalar> dof_symbols;
 		std::unique_ptr<Scalar> expr = nullptr;
 		int name_conter = 0;
-
-		// Conditional evaluation
-		CompiledInLoop<double, double, double> compiled_condition;
-		bool has_condition = false;
-		std::unique_ptr<Scalar> cond = nullptr;
-		std::vector<uint8_t> positive_conditions;
-		std::vector<int32_t> connectivity_after_condition;
 
 
 		/* Methods */
@@ -62,14 +97,25 @@ namespace symx
 		Energy(std::string name, std::string working_directory, std::vector<int32_t>& arr, const int32_t n_items_per_element);
 		template<std::size_t N>
 		Energy(std::string name, std::string working_directory, std::vector<std::array<int32_t, N>>& arr);
+		void deferred_init(const bool force_compilation, const bool force_load, const bool suppress_compiler_output);
 
 		void set(const Scalar& expr);
-		// When the condition is positive, the energy becomes active
 		void set_with_condition(const Scalar& expr, const Scalar& cond);
+		void set_project_to_PD(const bool project_to_PD);
+		void set_cse_mode(CSE mode = CSE::Safe);
 		bool is_expression_set() const;
-		void deferred_init(std::vector<std::function<double* ()>> dof_arrays, const bool force_compilation, const bool force_load, const bool suppress_compiler_output);
 		void activate(const bool activate);
 		void disable_check_for_duplicate_dofs();
+		void set_check_for_NaNs(const bool check);
+		int get_n_elements() const;
+		int get_connectivity_stride() const;
+		const int32_t* get_connectivity_elem(const int32_t element_idx) const;
+		bool has_symbolic_element_condition() const;
+		bool has_user_defined_element_condition() const;
+		ElementInfo get_element_info(const int32_t element_idx) const;
+		void disable_user_element_condition();
+		void enable_user_element_condition();
+		void set_user_element_condition(const int32_t element_idx, const bool activate);
 	
 		// Make fixed Scalar
 		Scalar make_scalar(std::function<const double* ()> data, const std::string name = "");
@@ -139,12 +185,15 @@ namespace symx
 		Matrix make_identity_matrix(const int32_t size);
 
 		// Evaluations
-		void evaluate_E(Assembly& assembly, const bool runtime_NaN_check = false);
-		void evaluate_E_grad(Assembly& assembly, const bool runtime_NaN_check = false);
-		void evaluate_E_grad_hess(Assembly& assembly, const bool runtime_NaN_check = false);
+		void evaluate_E(Assembly& assembly);
+		void evaluate_E_grad(Assembly& assembly);
+		void evaluate_E_grad_hess(Assembly& assembly);
+		void add_topology(Assembly& assembly, std::vector<std::vector<int32_t>>& topology);
 
 	private:
-		void _update_connectivity_conditionally(const int n_threads);
+		const std::vector<uint8_t>& _evaluate_element_conditions(const int n_threads);
+		std::function<bool(const int32_t element_idx, const int32_t thread_id, const int32_t* connectivity)> _get_updated_conditional_evaluation(const int n_threads);
+		void _for_each_compiled(const std::function<void(CompiledInLoop<double>&)> f);
 		std::string _get_symbol_name(std::string user_name);
 		void _init(std::string name, std::string working_directory, std::function<const int32_t* ()> data, std::function<int32_t()> n_elements, const int32_t n_items_per_element);
 	};
@@ -244,8 +293,9 @@ namespace symx
 		symx::Vector summation = this->sws.make_vector("summation", (int)STRIDE);
 
 		// Set the summation symbols with the data for the loop
-		this->compiled_derivatives.set_summation_vector(summation, summation_data, (int)STRIDE);
-		this->compiled_condition.set_summation_vector(summation, summation_data, (int)STRIDE);
+		this->_for_each_compiled([&](CompiledInLoop<double>& compiled) {
+			compiled.set_summation_vector(summation, summation_data, (int)STRIDE);
+		});
 
 		return summation;
 	}

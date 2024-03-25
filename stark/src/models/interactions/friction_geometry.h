@@ -5,7 +5,7 @@
 #include <symx>
 
 
-namespace stark::models
+namespace stark
 {
 	std::array<double, 3> barycentric_point_triangle(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c);
 	std::array<double, 2> barycentric_point_edge(const Eigen::Vector3d& p, const Eigen::Vector3d& a, const Eigen::Vector3d& b);

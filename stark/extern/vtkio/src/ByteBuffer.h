@@ -95,7 +95,10 @@ namespace bytebuffer
 		this->setByteOrder(byte_order);
 		this->data.clear();
 		this->data.resize(n_bytes);
-		input.read(this->data.data(), n_bytes);
+		auto& success = input.read(this->data.data(), n_bytes);
+		if (!success) {
+			std::cout << "ByteBuffer error: Could not read from file." << std::endl; exit(-1);
+		}
 	}
 	inline void ByteBuffer::setFromASCIIStream(std::ifstream& input, const DataType data_type, const size_t n_items, const char sep)
 	{

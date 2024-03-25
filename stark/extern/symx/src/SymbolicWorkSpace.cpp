@@ -1,8 +1,18 @@
 #include "SymbolicWorkSpace.h"
 
+symx::SymbolicWorkSpace::SymbolicWorkSpace()
+	: expressions(std::make_shared<Expressions>())
+{
+}
+
+void symx::SymbolicWorkSpace::set_cse_mode(CSE mode)
+{
+	this->expressions->set_cse_mode(mode);
+}
+
 symx::Scalar symx::SymbolicWorkSpace::make_scalar(const std::string label)
 {
-	return Scalar(this->expressions.declare_symbol(label), this->expressions);
+	return Scalar(this->expressions->declare_symbol(label), this->expressions);
 }
 
 symx::Vector symx::SymbolicWorkSpace::make_vector(const std::string label, const int32_t size)
@@ -45,17 +55,17 @@ std::vector<symx::Vector> symx::SymbolicWorkSpace::make_vectors(const std::strin
 
 symx::Scalar symx::SymbolicWorkSpace::make_branch(const Scalar& condition, const Scalar& positive_branch, const Scalar& negative_branch)
 {
-	return Scalar(this->expressions.add_branch(condition.expr_id, positive_branch.expr_id, negative_branch.expr_id), this->expressions);
+	return Scalar(this->expressions->add_branch(condition.expr_id, positive_branch.expr_id, negative_branch.expr_id), this->expressions);
 }
 
 symx::Scalar symx::SymbolicWorkSpace::get_zero()
 {
-	return Scalar(this->expressions.get_zero_idx(), this->expressions);
+	return Scalar(this->expressions->get_zero_idx(), this->expressions);
 }
 
 symx::Scalar symx::SymbolicWorkSpace::get_one()
 {
-	return Scalar(this->expressions.get_one_idx(), this->expressions);
+	return Scalar(this->expressions->get_one_idx(), this->expressions);
 }
 
 symx::Vector symx::SymbolicWorkSpace::get_zero_vector(const int32_t size)
@@ -92,4 +102,9 @@ symx::Matrix symx::SymbolicWorkSpace::get_identity_matrix(const int32_t size)
 		}
 	}
 	return Matrix(values, { size, size });
+}
+
+const std::shared_ptr<symx::Expressions>& symx::SymbolicWorkSpace::get_expression_graph() const
+{
+	return this->expressions;
 }

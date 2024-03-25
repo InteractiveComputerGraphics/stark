@@ -5,7 +5,7 @@
 #include <BlockedSparseMatrix/ConjugateGradientMethod.h>
 
 
-stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& global_energy, Callbacks& callbacks, Settings& settings, Console& console, Logger& logger)
+stark::core::NewtonState stark::core::NewtonsMethod::solve(const double& dt, symx::GlobalEnergy& global_energy, Callbacks& callbacks, const Settings& settings, Console& console, Logger& logger)
 {
 	// Set pointers for easy access accross methods
 	this->global_energy = &global_energy;
@@ -15,7 +15,6 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 	this->logger = &logger;
 
 	// Short naming
-	const double dt = settings.simulation.adaptive_time_step.value;
 	const int ndofs = global_energy.get_total_n_dofs();
 	const int n_nodes = ndofs / 3;
 
@@ -41,6 +40,13 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 			break;
 		}
 
+		// Test
+		if (settings.debug.symx_finite_difference_check) {
+			this->global_energy->test_derivatives_with_FD(1e-4);
+			this->global_energy->test_derivatives_with_FD(1e-6);
+			this->global_energy->test_derivatives_with_FD(1e-8);
+		}
+
 		// Print line header
 		console.print(fmt::format("\n\t\t {:d}. ", this->step_newton_it), ConsoleVerbosity::NewtonIterations);
 
@@ -58,7 +64,8 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		//// Converged right away? 
 		//// Can happen in the first time step sometimes (e.g. no gravity). 
 		//// Avoids unnecessary CG iterations and problems with the forcing sequence.
-		if (residual_max < this->settings->newton.residual.tolerance) {
+		//// If this uses the standard residual, it may kill visible oscillations if not even a single newton iteration is run.
+		if (residual_max < this->settings->newton.epsilon_residual) {
 			newton_state = NewtonState::Successful;
 			break;
 		}
@@ -84,7 +91,7 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		// Max step in the search direction
 		double step_valid_configuration = this->_inplace_max_step_in_search_direction(this->du);
 		if (step_valid_configuration < 0.01) {
-			newton_state = NewtonState::InvalidConfiguration;
+			newton_state = NewtonState::InvalidIntermediateConfiguration;
 			break;
 		}
 
@@ -110,7 +117,7 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 
 	// Is converged state valid?
 	if (!callbacks.run_is_converged_state_valid()) {
-		newton_state = NewtonState::ConvergedStateInvalid;
+		newton_state = NewtonState::InvalidConvergedState;
 	}
 
 	// Print
@@ -137,13 +144,13 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(symx::GlobalEnergy& g
 		case NewtonState::LinearSystemFailure:
 			console.print("\n\t\t -> Linear system couldn't find a solution. ", ConsoleVerbosity::TimeSteps);
 			break;
-		case NewtonState::InvalidConfiguration:
+		case NewtonState::InvalidIntermediateConfiguration:
 			console.print("\n\t\t -> Invalid configuration couldn't be avoided. ", ConsoleVerbosity::TimeSteps);
 			break;
 		case NewtonState::LineSearchDoesntDescend:
 			console.print("\n\t\t -> Line search doesn't descend. ", ConsoleVerbosity::TimeSteps);
 			break;
-		case NewtonState::ConvergedStateInvalid:
+		case NewtonState::InvalidConvergedState:
 			console.print("\n\t\t -> Converged state is not valid. ", ConsoleVerbosity::TimeSteps);
 			break;
 		default:
@@ -179,7 +186,7 @@ symx::Assembled stark::core::NewtonsMethod::_evaluate_E_grad_hess()
 	this->_run_before_evaluation();
 
 	this->logger->start_timing("evaluate_E_grad_hess");
-	symx::Assembled assembled = this->global_energy->evaluate_E_grad_hess(this->settings->debug.symx_check_for_NaNs);
+	symx::Assembled assembled = this->global_energy->evaluate_E_grad_hess();
 	this->logger->stop_timing_add("evaluate_E_grad_hess");
 
 	this->_run_after_evaluation();
@@ -191,7 +198,7 @@ symx::Assembled stark::core::NewtonsMethod::_evaluate_E_grad()
 	this->_run_before_evaluation();
 
 	this->logger->start_timing("evaluate_E_grad");
-	symx::Assembled assembled = this->global_energy->evaluate_E_grad(this->settings->debug.symx_check_for_NaNs);
+	symx::Assembled assembled = this->global_energy->evaluate_E_grad();
 	this->logger->stop_timing_add("evaluate_E_grad");
 
 	this->_run_after_evaluation();
@@ -203,7 +210,7 @@ symx::Assembled stark::core::NewtonsMethod::_evaluate_E()
 	this->_run_before_evaluation();
 
 	this->logger->start_timing("evaluate_E");
-	symx::Assembled assembled = this->global_energy->evaluate_E(this->settings->debug.symx_check_for_NaNs);
+	symx::Assembled assembled = this->global_energy->evaluate_E();
 	this->logger->stop_timing_add("evaluate_E");
 
 	this->_run_after_evaluation();

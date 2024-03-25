@@ -38,7 +38,7 @@ namespace tmd
 	{
 	public:
 		std::array<FLOAT, 3> v;
-		
+
 		Vec3r() {};
 		template<typename FLOAT_I>
 		Vec3r(const FLOAT_I& x, const FLOAT_I& y, const FLOAT_I& z) { v[0] = static_cast<FLOAT>(x); v[1] = static_cast<FLOAT>(y); v[2] = static_cast<FLOAT>(z); }
@@ -46,15 +46,15 @@ namespace tmd
 		const FLOAT& operator[](const SIZE_T& i) const { return v[i]; }
 		template<typename SIZE_T>
 		FLOAT& operator[](const SIZE_T& i) { return v[i]; }
-		FLOAT dot(const Vec3r &u) const { return v[0]*u[0] + v[1]*u[1] + v[2]*u[2]; }
-		Vec3r<FLOAT> cross(const Vec3r &u) const { return Vec3r(v[1]*u[2] - v[2]*u[1], -v[0]*u[2] + v[2]*u[0], v[0]*u[1] - v[1]*u[0]); }
-		Vec3r<FLOAT> operator+(const Vec3r &u) const { return Vec3r(v[0]+u[0], v[1]+u[1], v[2]+u[2]); }
-		Vec3r<FLOAT> operator-(const Vec3r &u) const { return Vec3r(v[0]-u[0], v[1]-u[1], v[2]-u[2]); }
+		FLOAT dot(const Vec3r& u) const { return v[0] * u[0] + v[1] * u[1] + v[2] * u[2]; }
+		Vec3r<FLOAT> cross(const Vec3r& u) const { return Vec3r(v[1] * u[2] - v[2] * u[1], -v[0] * u[2] + v[2] * u[0], v[0] * u[1] - v[1] * u[0]); }
+		Vec3r<FLOAT> operator+(const Vec3r& u) const { return Vec3r(v[0] + u[0], v[1] + u[1], v[2] + u[2]); }
+		Vec3r<FLOAT> operator-(const Vec3r& u) const { return Vec3r(v[0] - u[0], v[1] - u[1], v[2] - u[2]); }
 		void operator+=(const Vec3r& u) { v[0] += u[0]; v[1] += u[1]; v[2] += u[2]; }
 		template<typename FLOAT_I>
-		Vec3r<FLOAT> operator*(const FLOAT_I &a) const { return Vec3r(static_cast<FLOAT>(a)*v[0], static_cast<FLOAT>(a)*v[1], static_cast<FLOAT>(a)*v[2]); }
+		Vec3r<FLOAT> operator*(const FLOAT_I& a) const { return Vec3r(static_cast<FLOAT>(a) * v[0], static_cast<FLOAT>(a) * v[1], static_cast<FLOAT>(a) * v[2]); }
 		template<typename FLOAT_I>
-		Vec3r<FLOAT> operator/(const FLOAT_I &a) const { return Vec3r(v[0]/static_cast<FLOAT>(a), v[1]/static_cast<FLOAT>(a), v[2]/static_cast<FLOAT>(a)); }
+		Vec3r<FLOAT> operator/(const FLOAT_I& a) const { return Vec3r(v[0] / static_cast<FLOAT>(a), v[1] / static_cast<FLOAT>(a), v[2] / static_cast<FLOAT>(a)); }
 		template<typename FLOAT_I>
 		void operator/=(const FLOAT_I& a) { v[0] /= static_cast<FLOAT>(a); v[1] /= static_cast<FLOAT>(a); v[2] /= static_cast<FLOAT>(a); }
 		FLOAT squaredNorm() const { return this->dot(*this); }
@@ -73,7 +73,7 @@ namespace tmd
 	/**
 	 * Computes the squared distance, the nearest entity (vertex, edge or face) and the nearest point from a point to a triangle.
 	 */
-	static double point_triangle_sq_unsigned(NearestEntity& nearest_entity, Vec3d& nearest_point, const Vec3d& point, const Vec3d& v0, const Vec3d& v1, const Vec3d& v2);
+	static void point_triangle_sq_unsigned(double& distance_sq, NearestEntity& nearest_entity, Vec3d& barycentric, Vec3d& nearest_point, const Vec3d& point, const Vec3d& v0, const Vec3d& v1, const Vec3d& v2);
 	// -----------------------------------
 
 	// Struct that contains the result of a distance query
@@ -83,11 +83,12 @@ namespace tmd
 		Vec3d nearest_point;
 		tmd::NearestEntity nearest_entity;
 		int triangle_id = -1;
+		Vec3d barycentric;
 	};
 	// -----------------------------------
 
 	/**
-	 * A class to compute signed and unsigned distances to a connected 
+	 * A class to compute signed and unsigned distances to a connected
 	 * and watertight triangle mesh.
 	 */
 	class TriangleMeshDistance
@@ -124,11 +125,12 @@ namespace tmd
 		std::vector<Vec3d> pseudonormals_vertices;
 		BoundingSphere root_bv;
 		bool is_constructed = false;
+		bool is_manifold = false;
 
 		/* Private methods */
 		void _construct();
-		void _build_tree(const int node_id, BoundingSphere& bounding_sphere, std::vector<Triangle> &triangles, const int begin, const int end);
-		void _query(Result &result, const Node &node, const Vec3d& point) const;
+		void _build_tree(const int node_id, BoundingSphere& bounding_sphere, std::vector<Triangle>& triangles, const int begin, const int end);
+		void _query(Result& result, const Node& node, const Vec3d& point) const;
 
 	public:
 
@@ -176,10 +178,17 @@ namespace tmd
 		void construct(const std::vector<IndexableVector3double>& vertices, const std::vector<IndexableVector3int>& triangles);
 
 		/**
+		 * @brief Returns the result of the manifold check done at construction time.
+		 *
+		 * @return True if the mesh is watertight, with all edges being shared by exactly two triangles, false otherwise.
+		*/
+		bool is_mesh_manifold() const;
+
+		/**
 		 * @brief Computes the unsigned distance from a point to the triangle mesh. Thread safe.
 		 *
 		 * @param point to query from. Typed to `Vec3d` but can be passed as `{x, y, z}`.
-		 * 
+		 *
 		 * @return Result containing distance, nearest point on the mesh, nearest entity and the nearest triangle index.
 		*/
 		template<typename IndexableVector3double>
@@ -190,7 +199,7 @@ namespace tmd
 		 * @brief Computes the unsigned distance from a point to the triangle mesh. Thread safe.
 		 *
 		 * @param point to query from. Typed to `Vec3d` but can be passed as `{x, y, z}`.
-		 * 
+		 *
 		 * @return Result containing distance, nearest point on the mesh, nearest entity and the nearest triangle index.
 		*/
 		template<typename IndexableVector3double>
@@ -220,16 +229,16 @@ inline void tmd::TriangleMeshDistance::construct(const FLOAT* vertices, const SI
 {
 	this->vertices.resize((size_t)n_vertices);
 	for (size_t i = 0; i < (size_t)n_vertices; i++) {
-		this->vertices[i][0] = (double)vertices[3*i + 0];
-		this->vertices[i][1] = (double)vertices[3*i + 1];
-		this->vertices[i][2] = (double)vertices[3*i + 2];
+		this->vertices[i][0] = (double)vertices[3 * i + 0];
+		this->vertices[i][1] = (double)vertices[3 * i + 1];
+		this->vertices[i][2] = (double)vertices[3 * i + 2];
 	}
 
 	this->triangles.resize((size_t)n_triangles);
 	for (size_t i = 0; i < (size_t)n_triangles; i++) {
-		this->triangles[i][0] = (int)triangles[3*i + 0];
-		this->triangles[i][1] = (int)triangles[3*i + 1];
-		this->triangles[i][2] = (int)triangles[3*i + 2];
+		this->triangles[i][0] = (int)triangles[3 * i + 0];
+		this->triangles[i][1] = (int)triangles[3 * i + 1];
+		this->triangles[i][2] = (int)triangles[3 * i + 2];
 	}
 	this->_construct();
 }
@@ -250,6 +259,11 @@ inline void tmd::TriangleMeshDistance::construct(const std::vector<IndexableVect
 		this->triangles[i][2] = (int)triangles[i][2];
 	}
 	this->_construct();
+}
+
+inline bool tmd::TriangleMeshDistance::is_mesh_manifold() const
+{
+	return this->is_manifold;
 }
 
 inline tmd::Result tmd::TriangleMeshDistance::signed_distance(const std::array<double, 3>& point) const
@@ -287,7 +301,12 @@ inline tmd::Result tmd::TriangleMeshDistance::signed_distance(const std::array<d
 		break;
 	}
 
-	const Vec3d u = p - result.nearest_point;
+	const Vec3d nearest_point(
+		result.barycentric[0] * this->vertices[triangle[0]] +
+		result.barycentric[1] * this->vertices[triangle[1]] +
+		result.barycentric[2] * this->vertices[triangle[2]]
+	);
+	const Vec3d u = p - nearest_point;
 	result.distance *= (u.dot(pseudonormal) >= 0.0) ? 1.0 : -1.0;
 
 	return result;
@@ -316,7 +335,7 @@ inline tmd::Result tmd::TriangleMeshDistance::unsigned_distance(const std::array
 template<typename IndexableVector3double>
 inline tmd::Result tmd::TriangleMeshDistance::unsigned_distance(const IndexableVector3double& point) const
 {
-	return this->unsigned_distance({static_cast<double>(point[0]), static_cast<double>(point[1]), static_cast<double>(point[2])});
+	return this->unsigned_distance({ static_cast<double>(point[0]), static_cast<double>(point[1]), static_cast<double>(point[2]) });
 }
 
 inline void tmd::TriangleMeshDistance::_construct()
@@ -325,7 +344,7 @@ inline void tmd::TriangleMeshDistance::_construct()
 		std::cout << "DistanceTriangleMesh error: Empty triangle list." << std::endl;
 		exit(-1);
 	}
-	
+
 	// Build the tree containing the triangles
 	std::vector<Triangle> triangles;
 
@@ -348,22 +367,22 @@ inline void tmd::TriangleMeshDistance::_construct()
 	std::unordered_map<uint64_t, int> edges_count;
 	const uint64_t n_vertices = (uint64_t)this->vertices.size();
 	auto add_edge_normal = [&](const int i, const int j, const Vec3d& triangle_normal)
-	{
-		const uint64_t key = std::min(i, j) * n_vertices + std::max(i, j);
-		if (edge_normals.find(key) == edge_normals.end()) {
-			edge_normals[key] = triangle_normal;
-			edges_count[key] = 1;
-		}
-		else {
-			edge_normals[key] += triangle_normal;
-			edges_count[key] += 1;
-		}
-	};
+		{
+			const uint64_t key = std::min(i, j) * n_vertices + std::max(i, j);
+			if (edge_normals.find(key) == edge_normals.end()) {
+				edge_normals[key] = triangle_normal;
+				edges_count[key] = 1;
+			}
+			else {
+				edge_normals[key] += triangle_normal;
+				edges_count[key] += 1;
+			}
+		};
 	auto get_edge_normal = [&](const int i, const int j)
-	{
-		const uint64_t key = std::min(i, j) * n_vertices + std::max(i, j);
-		return edge_normals.find(key)->second;
-	};
+		{
+			const uint64_t key = std::min(i, j) * n_vertices + std::max(i, j);
+			return edge_normals.find(key)->second;
+		};
 
 	//// Compute
 	this->pseudonormals_triangles.resize(this->triangles.size());
@@ -406,21 +425,11 @@ inline void tmd::TriangleMeshDistance::_construct()
 	}
 
 	// Check that the mesh is watertight: All edges appear exactly twice.
-	bool single_edge_found = false;
-	bool triple_edge_found = false;
+	this->is_manifold = true;
 	for (const auto edge_count : edges_count) {
-		if (edge_count.second == 1) {
-			single_edge_found = true;
+		if (edge_count.second != 2) {
+			this->is_manifold = false;
 		}
-		else if (edge_count.second > 2) {
-			triple_edge_found = true;
-		}
-	}
-	if (single_edge_found) {
-		std::cout << "DistanceTriangleMesh warning: mesh is not watertight. At least one edge found belonging to just one triangle." << std::endl;
-	}
-	if (triple_edge_found) {
-		std::cout << "DistanceTriangleMesh warning: mesh is not watertight. At least one edge found belonging to more than two triangle." << std::endl;
 	}
 
 	this->is_constructed = true;
@@ -450,7 +459,7 @@ inline void tmd::TriangleMeshDistance::_build_tree(const int node_id, BoundingSp
 		// Compute AxisAligned Bounding Box center and largest dimension of all current triangles
 		Vec3d top = { std::numeric_limits<double>::lowest(), std::numeric_limits<double>::lowest(), std::numeric_limits<double>::lowest() };
 		Vec3d bottom = { std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max() };
-		Vec3d center = {0, 0, 0};
+		Vec3d center = { 0, 0, 0 };
 		for (int tri_i = begin; tri_i < end; tri_i++) {
 			for (int vertex_i = 0; vertex_i < 3; vertex_i++) {
 				const Vec3d& p = triangles[tri_i].vertices[vertex_i];
@@ -462,7 +471,7 @@ inline void tmd::TriangleMeshDistance::_build_tree(const int node_id, BoundingSp
 				}
 			}
 		}
-		center /= 3*n_triangles;
+		center /= 3 * n_triangles;
 		const Vec3d diagonal = top - bottom;
 		const int split_dim = (int)(std::max_element(&diagonal[0], &diagonal[0] + 3) - &diagonal[0]);
 
@@ -507,13 +516,16 @@ inline void tmd::TriangleMeshDistance::_query(Result& result, const Node& node, 
 		const Vec3d& v1 = this->vertices[triangle[1]];
 		const Vec3d& v2 = this->vertices[triangle[2]];
 
-		Vec3d nearest_point;
+		double distance_sq;
 		tmd::NearestEntity nearest_entity;
-		const double distance_sq = tmd::point_triangle_sq_unsigned(nearest_entity, nearest_point, point, v0, v1, v2);
+		Vec3d barycentric;
+		Vec3d nearest_point;
+		tmd::point_triangle_sq_unsigned(distance_sq, nearest_entity, barycentric, nearest_point, point, v0, v1, v2);
 
 		if (distance_sq < result.distance * result.distance) {
-			result.nearest_point = nearest_point;
 			result.nearest_entity = nearest_entity;
+			result.nearest_point = nearest_point;
+			result.barycentric = barycentric;
 			result.distance = std::sqrt(distance_sq);
 			result.triangle_id = triangle_id;
 		}
@@ -547,260 +559,85 @@ inline void tmd::TriangleMeshDistance::_query(Result& result, const Node& node, 
 	}
 }
 
-static double tmd::point_triangle_sq_unsigned(NearestEntity& nearest_entity, Vec3d& nearest_point, const Vec3d& point, const Vec3d& v0, const Vec3d& v1, const Vec3d& v2)
+static void tmd::point_triangle_sq_unsigned(double& distance_sq, NearestEntity& nearest_entity, Vec3d& barycentric, Vec3d& nearest_point, const Vec3d& p, const Vec3d& a, const Vec3d& b, const Vec3d& c)
 {
-	Vec3d diff = v0 - point;
-	Vec3d edge0 = v1 - v0;
-	Vec3d edge1 = v2 - v0;
-	double a00 = edge0.dot(edge0);
-	double a01 = edge0.dot(edge1);
-	double a11 = edge1.dot(edge1);
-	double b0 = diff.dot(edge0);
-	double b1 = diff.dot(edge1);
-	double c = diff.dot(diff);
-	double det = std::abs(a00 * a11 - a01 * a01);
-	double s = a01 * b1 - a11 * b0;
-	double t = a01 * b0 - a00 * b1;
+	// This function is a modified version of the one found in the Real-Time Collision Detection book by Ericson.
+	Vec3d ab = b - a;
+	Vec3d ac = c - a;
+	Vec3d bc = c - b;
 
-	double d2 = -1.0;
-
-	if (s + t <= det)
-	{
-		if (s < 0)
-		{
-			if (t < 0)  // region 4
-			{
-				if (b0 < 0)
-				{
-					t = 0;
-					if (-b0 >= a00)
-					{
-						nearest_entity = NearestEntity::V1;
-						s = 1;
-						d2 = a00 + (2) * b0 + c;
-					}
-					else
-					{
-						nearest_entity = NearestEntity::E01;
-						s = -b0 / a00;
-						d2 = b0 * s + c;
-					}
-				}
-				else
-				{
-					s = 0;
-					if (b1 >= 0)
-					{
-						nearest_entity = NearestEntity::V0;
-						t = 0;
-						d2 = c;
-					}
-					else if (-b1 >= a11)
-					{
-						nearest_entity = NearestEntity::V2;
-						t = 1;
-						d2 = a11 + (2) * b1 + c;
-					}
-					else
-					{
-						nearest_entity = NearestEntity::E02;
-						t = -b1 / a11;
-						d2 = b1 * t + c;
-					}
-				}
-			}
-			else  // region 3
-			{
-				s = 0;
-				if (b1 >= 0)
-				{
-					nearest_entity = NearestEntity::V0;
-					t = 0;
-					d2 = c;
-				}
-				else if (-b1 >= a11)
-				{
-					nearest_entity = NearestEntity::V2;
-					t = 1;
-					d2 = a11 + (2) * b1 + c;
-				}
-				else
-				{
-					nearest_entity = NearestEntity::E02;
-					t = -b1 / a11;
-					d2 = b1 * t + c;
-				}
-			}
-		}
-		else if (t < 0)  // region 5
-		{
-			t = 0;
-			if (b0 >= 0)
-			{
-				nearest_entity = NearestEntity::V0;
-				s = 0;
-				d2 = c;
-			}
-			else if (-b0 >= a00)
-			{
-				nearest_entity = NearestEntity::V1;
-				s = 1;
-				d2 = a00 + (2) * b0 + c;
-			}
-			else
-			{
-				nearest_entity = NearestEntity::E01;
-				s = -b0 / a00;
-				d2 = b0 * s + c;
-			}
-		}
-		else  // region 0 
-		{
-			nearest_entity = NearestEntity::F;
-			// minimum at interior point
-			double invDet = (1) / det;
-			s *= invDet;
-			t *= invDet;
-			d2 = s * (a00 * s + a01 * t + (2) * b0) +
-				t * (a01 * s + a11 * t + (2) * b1) + c;
-		}
-	}
-	else
-	{
-		double tmp0, tmp1, numer, denom;
-
-		if (s < 0)  // region 2
-		{
-			tmp0 = a01 + b0;
-			tmp1 = a11 + b1;
-			if (tmp1 > tmp0)
-			{
-				numer = tmp1 - tmp0;
-				denom = a00 - (2) * a01 + a11;
-				if (numer >= denom)
-				{
-					nearest_entity = NearestEntity::V1;
-					s = 1;
-					t = 0;
-					d2 = a00 + (2) * b0 + c;
-				}
-				else
-				{
-					nearest_entity = NearestEntity::E12;
-					s = numer / denom;
-					t = 1 - s;
-					d2 = s * (a00 * s + a01 * t + (2) * b0) +
-						t * (a01 * s + a11 * t + (2) * b1) + c;
-				}
-			}
-			else
-			{
-				s = 0;
-				if (tmp1 <= 0)
-				{
-					nearest_entity = NearestEntity::V2;
-					t = 1;
-					d2 = a11 + (2) * b1 + c;
-				}
-				else if (b1 >= 0)
-				{
-					nearest_entity = NearestEntity::V0;
-					t = 0;
-					d2 = c;
-				}
-				else
-				{
-					nearest_entity = NearestEntity::E02;
-					t = -b1 / a11;
-					d2 = b1 * t + c;
-				}
-			}
-		}
-		else if (t < 0)  // region 6
-		{
-			tmp0 = a01 + b1;
-			tmp1 = a00 + b0;
-			if (tmp1 > tmp0)
-			{
-				numer = tmp1 - tmp0;
-				denom = a00 - (2) * a01 + a11;
-				if (numer >= denom)
-				{
-					nearest_entity = NearestEntity::V2;
-					t = 1;
-					s = 0;
-					d2 = a11 + (2) * b1 + c;
-				}
-				else
-				{
-					nearest_entity = NearestEntity::E12;
-					t = numer / denom;
-					s = 1 - t;
-					d2 = s * (a00 * s + a01 * t + (2) * b0) +
-						t * (a01 * s + a11 * t + (2) * b1) + c;
-				}
-			}
-			else
-			{
-				t = 0;
-				if (tmp1 <= 0)
-				{
-					nearest_entity = NearestEntity::V1;
-					s = 1;
-					d2 = a00 + (2) * b0 + c;
-				}
-				else if (b0 >= 0)
-				{
-					nearest_entity = NearestEntity::V0;
-					s = 0;
-					d2 = c;
-				}
-				else
-				{
-					nearest_entity = NearestEntity::E01;
-					s = -b0 / a00;
-					d2 = b0 * s + c;
-				}
-			}
-		}
-		else  // region 1
-		{
-			numer = a11 + b1 - a01 - b0;
-			if (numer <= 0)
-			{
-				nearest_entity = NearestEntity::V2;
-				s = 0;
-				t = 1;
-				d2 = a11 + (2) * b1 + c;
-			}
-			else
-			{
-				denom = a00 - (2) * a01 + a11;
-				if (numer >= denom)
-				{
-					nearest_entity = NearestEntity::V1;
-					s = 1;
-					t = 0;
-					d2 = a00 + (2) * b0 + c;
-				}
-				else
-				{
-					nearest_entity = NearestEntity::E12;
-					s = numer / denom;
-					t = 1 - s;
-					d2 = s * (a00 * s + a01 * t + (2) * b0) +
-						t * (a01 * s + a11 * t + (2) * b1) + c;
-				}
-			}
-		}
+	// Compute parametric position s for projection P’ of P on AB
+	double snom = (p - a).dot(ab), sdenom = (p - b).dot(a - b);
+	// Compute parametric position t for projection P’ of P on AC
+	double tnom = (p - a).dot(ac), tdenom = (p - c).dot(a - c);
+	if (snom <= 0.0 && tnom <= 0.0) {
+		nearest_entity = NearestEntity::V0;
+		barycentric = { 1.0, 0.0, 0.0 };
+		nearest_point = a;
+		distance_sq = (p - nearest_point).squaredNorm();
+		return;
 	}
 
-	// Account for numerical round-off error.
-	if (d2 < 0)
-	{
-		d2 = 0;
+	// Compute parametric position u for projection P’ of P on BC
+	double unom = (p - b).dot(bc), udenom = (p - c).dot(b - c);
+	if (sdenom <= 0.0 && unom <= 0.0) {
+		nearest_entity = NearestEntity::V1;
+		barycentric = { 0.0, 1.0, 0.0 };
+		nearest_point = b;
+		distance_sq = (p - nearest_point).squaredNorm();
+		return;
+	}
+	if (tdenom <= 0.0 && udenom <= 0.0) {
+		nearest_entity = NearestEntity::V2;
+		barycentric = { 0.0, 0.0, 1.0 };
+		nearest_point = c;
+		distance_sq = (p - nearest_point).squaredNorm();
+		return;
 	}
 
-	nearest_point = v0 + s * edge0 + t * edge1;
-	return d2;
+	// Normal for the triangle
+	Vec3d n = ab.cross(ac);
+
+	// Check if P is outside AB
+	double vc = n.dot((a - p).cross(b - p));
+	if (vc <= 0.0 && snom >= 0.0 && sdenom >= 0.0) {
+		double arc = snom / (snom + sdenom);
+		nearest_entity = NearestEntity::E01;
+		barycentric = { 1.0 - arc, arc, 0.0 };
+		nearest_point = barycentric[0] * a + barycentric[1] * b;
+		distance_sq = (p - nearest_point).squaredNorm();
+		return;
+	}
+
+	// Check if P is outside BC
+	double va = n.dot((b - p).cross(c - p));
+	if (va <= 0.0 && unom >= 0.0 && udenom >= 0.0) {
+		double arc = unom / (unom + udenom);
+		nearest_entity = NearestEntity::E12;
+		barycentric = { 0.0, 1.0 - arc, arc };
+		nearest_point = barycentric[1] * b + barycentric[2] * c;
+		distance_sq = (p - nearest_point).squaredNorm();
+		return;
+	}
+
+	// Check if P is outside AC
+	double vb = n.dot((c - p).cross(a - p));
+	if (vb <= 0.0 && tnom >= 0.0 && tdenom >= 0.0) {
+		double arc = tnom / (tnom + tdenom);
+		nearest_entity = NearestEntity::E02;
+		barycentric = { 1.0 - arc, 0.0, arc };
+		nearest_point = barycentric[0] * a + barycentric[2] * c;
+		distance_sq = (p - nearest_point).squaredNorm();
+		return;
+	}
+
+	// P must project inside the triangle; compute using barycentric coordinates
+	double u = va / (va + vb + vc);
+	double v = vb / (va + vb + vc);
+	double w = 1.0 - u - v; // = vc / (va + vb + vc)
+	nearest_entity = NearestEntity::F;
+	barycentric = { u, v, w };
+	nearest_point = u * a + v * b + w * c;
+	distance_sq = (p - nearest_point).squaredNorm();
+	return;
 }

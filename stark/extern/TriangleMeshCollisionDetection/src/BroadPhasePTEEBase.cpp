@@ -95,18 +95,24 @@ const BroadPhasePTEEResults& tmcd::internals::BroadPhasePTEEBase::_run(const boo
 		const std::vector<OctreeNode*> leaves = this->octree.run(this->aabbs.aabbs, this->aabbs.world_bottom, this->aabbs.world_top);
 
 		// Find actual overlapping AABBs
+#ifdef TMCD_ENABLE_AVX
 		if (strat == BroadPhaseStrategy::Octree) {
+#else
+		if (strat == BroadPhaseStrategy::Octree || strat == BroadPhaseStrategy::OctreeSIMD) {
+#endif
 			#pragma omp parallel for schedule(static) num_threads(this->n_threads)
 			for (int leaf_i = 0; leaf_i < (int)leaves.size(); leaf_i++) {
 				this->_run_octree_leaf_scalar(*leaves[leaf_i]);
 			}
 		}
+#ifdef TMCD_ENABLE_AVX
 		else if (strat == BroadPhaseStrategy::OctreeSIMD) {
 			#pragma omp parallel for schedule(static) num_threads(this->n_threads)
 			for (int leaf_i = 0; leaf_i < (int)leaves.size(); leaf_i++) {
 				this->_run_octree_leaf_simd(*leaves[leaf_i]);
 			}
 		}
+#endif
 	}
 	double t1 = omp_get_wtime();
 	this->runtime_solve = t1 - t0;
@@ -414,6 +420,7 @@ void tmcd::internals::BroadPhasePTEEBase::_run_octree_leaf_scalar(const OctreeNo
 		}
 	}
 }
+#ifdef TMCD_ENABLE_AVX
 void tmcd::internals::BroadPhasePTEEBase::_run_octree_leaf_simd(const OctreeNode& leaf)
 {
 	// Preparation
@@ -771,3 +778,4 @@ void tmcd::internals::BroadPhasePTEEBase::_run_octree_leaf_simd(const OctreeNode
 		}
 	}
 }
+#endif

@@ -3,7 +3,10 @@
 #include <array>
 #include <cstdint>
 
+#ifdef TMCD_ENABLE_AVX
+#include <immintrin.h>
 #include "alignment_allocator.h"
+#endif
 
 namespace tmcd
 {
@@ -82,6 +85,7 @@ namespace tmcd
 
 		struct ThreadBuffer
 		{
+#ifdef TMCD_ENABLE_AVX
 			struct LeafSIMDBuffer
 			{
 				struct AABBList
@@ -100,11 +104,13 @@ namespace tmcd
 				std::vector<int32_t> local_collision_idxs;
 			};
 
+			LeafSIMDBuffer simd;
+#endif
+
 			std::vector<Interval> blacklist_buffer;
 			BroadPhasePTEEResults broad_phase_results_pt_ee;
 			BroadPhaseETResults broad_phase_results_et;
 			std::vector<AABB> aabbs;
-			LeafSIMDBuffer simd;
 		};
 	}
 }

@@ -1,6 +1,7 @@
-project(Eigen3)
+# cmake_minimum_require must be the first command of the file
+cmake_minimum_required(VERSION 3.5.0)
 
-cmake_minimum_required(VERSION 2.8.11)
+project(Eigen3)
 
 # guard against in-source builds
 
@@ -56,6 +57,7 @@ endif()
 
 include(CheckCXXCompilerFlag)
 include(GNUInstallDirs)
+include(CMakeDependentOption)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -85,6 +87,9 @@ else()
   #set(CMAKE_CXX_EXTENSIONS OFF)
   ei_add_cxx_compiler_flag("-std=c++03")
 endif()
+
+# Determine if we should build shared libraries on this platform.
+get_cmake_property(EIGEN_BUILD_SHARED_LIBS TARGET_SUPPORTS_SHARED_LIBS)
 
 #############################################################################
 # find how to link to the standard libraries                                #
@@ -239,13 +244,28 @@ if(NOT MSVC)
     message(STATUS "Enabling FMA in tests/examples")
   endif()
 
+  option(EIGEN_TEST_AVX2 "Enable/Disable AVX2 in tests/examples" OFF)
+  if(EIGEN_TEST_AVX2)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mfma")
+    message(STATUS "Enabling AVX2 in tests/examples")
+  endif()
+
   option(EIGEN_TEST_AVX512 "Enable/Disable AVX512 in tests/examples" OFF)
   if(EIGEN_TEST_AVX512)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f -mfma -DEIGEN_ENABLE_AVX512")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f -mfma")
     if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
     endif()
     message(STATUS "Enabling AVX512 in tests/examples")
+  endif()
+
+  option(EIGEN_TEST_AVX512DQ "Enable/Disable AVX512DQ in tests/examples" OFF)
+  if(EIGEN_TEST_AVX512DQ)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512dq")
+    if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
+    endif()
+    message(STATUS "Enabling AVX512DQ in tests/examples")
   endif()
 
   option(EIGEN_TEST_F16C "Enable/Disable F16C in tests/examples" OFF)
@@ -407,22 +427,28 @@ endif()
 
 if(EIGEN_INCLUDE_INSTALL_DIR AND NOT INCLUDE_INSTALL_DIR)
   set(INCLUDE_INSTALL_DIR ${EIGEN_INCLUDE_INSTALL_DIR}
-      CACHE PATH "The directory relative to CMAKE_PREFIX_PATH where Eigen header files are installed")
+      CACHE PATH "The directory relative to CMAKE_INSTALL_PREFIX where Eigen header files are installed")
 else()
   set(INCLUDE_INSTALL_DIR
       "${CMAKE_INSTALL_INCLUDEDIR}/eigen3"
-      CACHE PATH "The directory relative to CMAKE_PREFIX_PATH where Eigen header files are installed"
+      CACHE PATH "The directory relative to CMAKE_INSTALL_PREFIX where Eigen header files are installed"
       )
 endif()
 set(CMAKEPACKAGE_INSTALL_DIR
     "${CMAKE_INSTALL_DATADIR}/eigen3/cmake"
-    CACHE PATH "The directory relative to CMAKE_PREFIX_PATH where Eigen3Config.cmake is installed"
+    CACHE PATH "The directory relative to CMAKE_INSTALL_PREFIX where Eigen3Config.cmake is installed"
     )
 set(PKGCONFIG_INSTALL_DIR
     "${CMAKE_INSTALL_DATADIR}/pkgconfig"
-    CACHE PATH "The directory relative to CMAKE_PREFIX_PATH where eigen3.pc is installed"
+    CACHE PATH "The directory relative to CMAKE_INSTALL_PREFIX where eigen3.pc is installed"
     )
 
+foreach(var INCLUDE_INSTALL_DIR CMAKEPACKAGE_INSTALL_DIR PKGCONFIG_INSTALL_DIR)
+  # If an absolute path is specified, make it relative to "{CMAKE_INSTALL_PREFIX}".
+  if(IS_ABSOLUTE "${${var}}")
+    file(RELATIVE_PATH "${var}" "${CMAKE_INSTALL_PREFIX}" "${${var}}")
+  endif()
+endforeach()
 
 # similar to set_target_properties but append the property instead of overwriting it
 macro(ei_add_target_property target prop value)
@@ -449,7 +475,12 @@ endif()
 
 install(DIRECTORY Eigen DESTINATION ${INCLUDE_INSTALL_DIR} COMPONENT Devel)
 
-add_subdirectory(doc EXCLUDE_FROM_ALL)
+
+option(EIGEN_BUILD_DOC "Enable creation of Eigen documentation" ON)
+if(EIGEN_BUILD_DOC)
+  add_subdirectory(doc EXCLUDE_FROM_ALL)
+endif()
+
 
 option(BUILD_TESTING "Enable creation of Eigen tests." ON)
 if(BUILD_TESTING)
@@ -477,6 +508,7 @@ option(EIGEN_TEST_SYCL "Add Sycl support." OFF)
 option(EIGEN_SYCL_TRISYCL "Use the triSYCL Sycl implementation (ComputeCPP by default)." OFF)
 if(EIGEN_TEST_SYCL)
   set (CMAKE_MODULE_PATH "${CMAKE_ROOT}/Modules" "cmake/Modules/" "${CMAKE_MODULE_PATH}")
+  find_package(Threads REQUIRED)
   if(EIGEN_SYCL_TRISYCL)
     message(STATUS "Using triSYCL")
     include(FindTriSYCL)
@@ -529,32 +561,30 @@ message(STATUS "")
 
 string(TOLOWER "${CMAKE_GENERATOR}" cmake_generator_tolower)
 if(cmake_generator_tolower MATCHES "makefile")
-  message(STATUS "Some things you can do now:")
-  message(STATUS "--------------+--------------------------------------------------------------")
-  message(STATUS "Command       |   Description")
-  message(STATUS "--------------+--------------------------------------------------------------")
-  message(STATUS "make install  | Install Eigen. Headers will be installed to:")
-  message(STATUS "              |     <CMAKE_INSTALL_PREFIX>/<INCLUDE_INSTALL_DIR>")
-  message(STATUS "              |   Using the following values:")
-  message(STATUS "              |     CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
-  message(STATUS "              |     INCLUDE_INSTALL_DIR:  ${INCLUDE_INSTALL_DIR}")
-  message(STATUS "              |   Change the install location of Eigen headers using:")
-  message(STATUS "              |     cmake . -DCMAKE_INSTALL_PREFIX=yourprefix")
-  message(STATUS "              |   Or:")
-  message(STATUS "              |     cmake . -DINCLUDE_INSTALL_DIR=yourdir")
-  message(STATUS "make doc      | Generate the API documentation, requires Doxygen & LaTeX")
-  if(BUILD_TESTING)
-    message(STATUS "make check    | Build and run the unit-tests. Read this page:")
-    message(STATUS "              |   http://eigen.tuxfamily.org/index.php?title=Tests")
-  endif()
-  message(STATUS "make blas     | Build BLAS library (not the same thing as Eigen)")
-  message(STATUS "make uninstall| Removes files installed by make install")
-  message(STATUS "--------------+--------------------------------------------------------------")
+  message(STATUS "Available targets (use: make TARGET):")
 else()
-  message(STATUS "To build/run the unit tests, read this page:")
-  message(STATUS "  http://eigen.tuxfamily.org/index.php?title=Tests")
+  message(STATUS "Available targets (use: cmake --build . --target TARGET):")
 endif()
-
+message(STATUS "---------+--------------------------------------------------------------")
+message(STATUS "Target   |   Description")
+message(STATUS "---------+--------------------------------------------------------------")
+message(STATUS "install  | Install Eigen. Headers will be installed to:")
+message(STATUS "         |     <CMAKE_INSTALL_PREFIX>/<INCLUDE_INSTALL_DIR>")
+message(STATUS "         |   Using the following values:")
+message(STATUS "         |     CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "         |     INCLUDE_INSTALL_DIR:  ${INCLUDE_INSTALL_DIR}")
+message(STATUS "         |   Change the install location of Eigen headers using:")
+message(STATUS "         |     cmake . -DCMAKE_INSTALL_PREFIX=yourprefix")
+message(STATUS "         |   Or:")
+message(STATUS "         |     cmake . -DINCLUDE_INSTALL_DIR=yourdir")
+message(STATUS "doc      | Generate the API documentation, requires Doxygen & LaTeX")
+if(BUILD_TESTING)
+  message(STATUS "check    | Build and run the unit-tests. Read this page:")
+  message(STATUS "         |   http://eigen.tuxfamily.org/index.php?title=Tests")
+endif()
+message(STATUS "blas     | Build BLAS library (not the same thing as Eigen)")
+message(STATUS "uninstall| Remove files installed by the install target")
+message(STATUS "---------+--------------------------------------------------------------")
 message(STATUS "")
 
 
@@ -566,82 +596,48 @@ set ( EIGEN_DEFINITIONS "")
 set ( EIGEN_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/${INCLUDE_INSTALL_DIR}" )
 set ( EIGEN_ROOT_DIR ${CMAKE_INSTALL_PREFIX} )
 
-# Interface libraries require at least CMake 3.0
-if (NOT CMAKE_VERSION VERSION_LESS 3.0)
-  include (CMakePackageConfigHelpers)
+include (CMakePackageConfigHelpers)
 
-  # Imported target support
-  add_library (eigen INTERFACE)
-  add_library (Eigen3::Eigen ALIAS eigen)
-  target_compile_definitions (eigen INTERFACE ${EIGEN_DEFINITIONS})
-  target_include_directories (eigen INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}>
-  )
+# Imported target support
+add_library (eigen INTERFACE)
+add_library (Eigen3::Eigen ALIAS eigen)
+target_compile_definitions (eigen INTERFACE ${EIGEN_DEFINITIONS})
+target_include_directories (eigen INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}>
+)
 
-  # Export as title case Eigen
-  set_target_properties (eigen PROPERTIES EXPORT_NAME Eigen)
+# Export as title case Eigen
+set_target_properties (eigen PROPERTIES EXPORT_NAME Eigen)
 
-  install (TARGETS eigen EXPORT Eigen3Targets)
+install (TARGETS eigen EXPORT Eigen3Targets)
 
-  configure_package_config_file (
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Eigen3Config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Eigen3Config.cmake
-    PATH_VARS EIGEN_INCLUDE_DIR EIGEN_ROOT_DIR
-    INSTALL_DESTINATION ${CMAKEPACKAGE_INSTALL_DIR}
-    NO_CHECK_REQUIRED_COMPONENTS_MACRO # Eigen does not provide components
-  )
-  # Remove CMAKE_SIZEOF_VOID_P from Eigen3ConfigVersion.cmake since Eigen does
-  # not depend on architecture specific settings or libraries. More
-  # specifically, an Eigen3Config.cmake generated from a 64 bit target can be
-  # used for 32 bit targets as well (and vice versa).
-  set (_Eigen3_CMAKE_SIZEOF_VOID_P ${CMAKE_SIZEOF_VOID_P})
-  unset (CMAKE_SIZEOF_VOID_P)
-  write_basic_package_version_file (Eigen3ConfigVersion.cmake
-                                    VERSION ${EIGEN_VERSION_NUMBER}
-                                    COMPATIBILITY SameMajorVersion)
-  set (CMAKE_SIZEOF_VOID_P ${_Eigen3_CMAKE_SIZEOF_VOID_P})
+configure_package_config_file (
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Eigen3Config.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/Eigen3Config.cmake
+  PATH_VARS EIGEN_INCLUDE_DIR EIGEN_ROOT_DIR
+  INSTALL_DESTINATION ${CMAKEPACKAGE_INSTALL_DIR}
+  NO_CHECK_REQUIRED_COMPONENTS_MACRO # Eigen does not provide components
+)
+# Remove CMAKE_SIZEOF_VOID_P from Eigen3ConfigVersion.cmake since Eigen does
+# not depend on architecture specific settings or libraries. More
+# specifically, an Eigen3Config.cmake generated from a 64 bit target can be
+# used for 32 bit targets as well (and vice versa).
+set (_Eigen3_CMAKE_SIZEOF_VOID_P ${CMAKE_SIZEOF_VOID_P})
+unset (CMAKE_SIZEOF_VOID_P)
+write_basic_package_version_file (Eigen3ConfigVersion.cmake
+                                  VERSION ${EIGEN_VERSION_NUMBER}
+                                  COMPATIBILITY SameMajorVersion)
+set (CMAKE_SIZEOF_VOID_P ${_Eigen3_CMAKE_SIZEOF_VOID_P})
 
-  # The Eigen target will be located in the Eigen3 namespace. Other CMake
-  # targets can refer to it using Eigen3::Eigen.
-  export (TARGETS eigen NAMESPACE Eigen3:: FILE Eigen3Targets.cmake)
-  # Export Eigen3 package to CMake registry such that it can be easily found by
-  # CMake even if it has not been installed to a standard directory.
-  export (PACKAGE Eigen3)
+# The Eigen target will be located in the Eigen3 namespace. Other CMake
+# targets can refer to it using Eigen3::Eigen.
+export (TARGETS eigen NAMESPACE Eigen3:: FILE Eigen3Targets.cmake)
+# Export Eigen3 package to CMake registry such that it can be easily found by
+# CMake even if it has not been installed to a standard directory.
+export (PACKAGE Eigen3)
 
-  install (EXPORT Eigen3Targets NAMESPACE Eigen3:: DESTINATION ${CMAKEPACKAGE_INSTALL_DIR})
-
-else ()
-  # Fallback to legacy Eigen3Config.cmake without the imported target
-
-  # If CMakePackageConfigHelpers module is available (CMake >= 2.8.8)
-  # create a relocatable Config file, otherwise leave the hardcoded paths
-  include(CMakePackageConfigHelpers OPTIONAL RESULT_VARIABLE CPCH_PATH)
-
-  if(CPCH_PATH)
-    configure_package_config_file (
-      ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Eigen3ConfigLegacy.cmake.in
-      ${CMAKE_CURRENT_BINARY_DIR}/Eigen3Config.cmake
-      PATH_VARS EIGEN_INCLUDE_DIR EIGEN_ROOT_DIR
-      INSTALL_DESTINATION ${CMAKEPACKAGE_INSTALL_DIR}
-      NO_CHECK_REQUIRED_COMPONENTS_MACRO # Eigen does not provide components
-    )
-  else()
-    # The PACKAGE_* variables are defined by the configure_package_config_file
-    # but without it we define them manually to the hardcoded paths
-    set(PACKAGE_INIT "")
-    set(PACKAGE_EIGEN_INCLUDE_DIR ${EIGEN_INCLUDE_DIR})
-    set(PACKAGE_EIGEN_ROOT_DIR ${EIGEN_ROOT_DIR})
-    configure_file ( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Eigen3ConfigLegacy.cmake.in
-                     ${CMAKE_CURRENT_BINARY_DIR}/Eigen3Config.cmake
-                     @ONLY ESCAPE_QUOTES )
-  endif()
-
-  write_basic_package_version_file( Eigen3ConfigVersion.cmake
-                                    VERSION ${EIGEN_VERSION_NUMBER}
-                                    COMPATIBILITY SameMajorVersion )
-
-endif ()
+install (EXPORT Eigen3Targets NAMESPACE Eigen3:: DESTINATION ${CMAKEPACKAGE_INSTALL_DIR})
 
 install ( FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/UseEigen3.cmake
                 ${CMAKE_CURRENT_BINARY_DIR}/Eigen3Config.cmake
@@ -651,3 +647,7 @@ install ( FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/UseEigen3.cmake
 # Add uninstall target
 add_custom_target ( uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/EigenUninstall.cmake)
+
+if (EIGEN_SPLIT_TESTSUITE)
+  ei_split_testsuite("${EIGEN_SPLIT_TESTSUITE}")
+endif()

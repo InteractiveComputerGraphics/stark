@@ -8,17 +8,13 @@
 
 namespace symx
 {
-
 	class Matrix
 	{
-	public:
-		enum class Ordering { RowMajor, ColMajor };
-
 	private:
 		/* Fields */
 		int32_t nrows = -1;
 		int32_t ncols = -1;
-		std::vector<Scalar> vals; // If symmetric, stored as LowerTriangular
+		std::vector<Scalar> vals;
 
 	public:
 		/* Methods */

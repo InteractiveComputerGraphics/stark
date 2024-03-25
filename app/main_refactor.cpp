@@ -50,16 +50,16 @@ void net()
 	settings.contact.collisions_enabled = false;
 	settings.contact.friction_enabled = false;
 	settings.debug.symx_check_for_NaNs = true;
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
 	// Net
 	const double l = 0.5;
 	const int n = 10;
 	auto [vertices, triangles] = stark::utils::generate_triangular_grid({ -l, -l }, { l, l }, { n, n });
 	auto edges = stark::utils::find_edges_from_simplices(triangles, (int)vertices.size());
-	auto material = stark::models::MaterialLine::sticky_goo();
-	material.strain_damping = 0.1;
-	auto net = simulation.deformables->add_line(vertices, edges, material);
+	auto params = stark::DeformableLineParametrization::sticky_goo(stark::ElasticityOnly::False);
+	params.strain_damping = 0.1;
+	auto net = simulation.deformables->add_line(vertices, edges, params);
 
 	// BC
 	if (true) {
@@ -79,18 +79,19 @@ void hanging_cloth()
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
-	settings.simulation.adaptive_time_step.set(0.0, 0.01, 0.01);
 	settings.contact.collisions_enabled = false;
-	settings.contact.friction_enabled = false;
 	settings.debug.symx_check_for_NaNs = true;
-	stark::models::Simulation simulation(settings);
+
+	settings.debug.symx_finite_difference_check = false;
+	settings.newton.symx_cse_strategy = symx::CSE::Safe;
+	stark::Simulation simulation(settings);
 
 	// Cloth
 	const double l = 0.5;
 	const int n = 50;
 	auto [vertices, triangles] = stark::utils::generate_triangular_grid({ -l, -l }, { l, l }, { n, n });
-	auto material = stark::MaterialSurface::towel();
-	auto towel = simulation.deformables->add_surface(vertices, triangles, material);
+	auto params = stark::DeformableSurfaceParametrization::towel(stark::ElasticityOnly::False);
+	auto towel = simulation.deformables->add_surface(vertices, triangles, params);
 
 	// BC
 	auto bc = towel.create_prescribed_positions_group_with_transformation();
@@ -100,36 +101,182 @@ void hanging_cloth()
 	// Run
 	simulation.run();
 }
-void rubber_block()
+void hanging_cloth_scaled()
 {
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "rubber_block";
-	settings.output.output_directory = OUTPUT_PATH + "/rubber_block";
+	settings.output.simulation_name = "hanging_cloth_scaled";
+	settings.output.output_directory = OUTPUT_PATH + "/hanging_cloth_scaled";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
+	settings.execution.end_simulation_time = 5.0;
+	settings.contact.collisions_enabled = false;
+	settings.debug.symx_check_for_NaNs = true;
+	stark::Simulation simulation(settings);
+
+	// cloth
+	auto params = stark::DeformableSurfaceParametrization::towel(stark::ElasticityOnly::False);
+	params.inertia_damping = 1.0;
+	params.strain_limit = 9999999.9;
+	auto cloth = simulation.deformables->add_surface_grid({ 0.0, 0.0 }, 0.2, 20, params);
+
+	// BC
+	auto bc = cloth.create_prescribed_positions_group_with_transformation();
+	bc->add_vertices_in_aabb({ 0.1, 0.1, 0.0 }, { 0.01, 0.01, 0.01 });
+	bc->add_vertices_in_aabb({ 0.1, -0.1, 0.0 }, { 0.01, 0.01, 0.01 });
+
+	// Run
+	simulation.run(
+		[&]()
+		{
+			const double t = simulation.get_time() / 5.0;
+			cloth.set_scale(1.0 - 0.8 * t);
+		}
+	);
+}
+void hanging_box_scaled()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "hanging_box_scaled";
+	settings.output.output_directory = OUTPUT_PATH + "/hanging_box_scaled";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
+	settings.execution.end_simulation_time = 5.0;
+	settings.contact.collisions_enabled = false;
+	settings.debug.symx_check_for_NaNs = true;
+	stark::Simulation simulation(settings);
+
+	// Box
+	auto params = stark::DeformableVolumeParametrization::soft_rubber(stark::ElasticityOnly::False);
+	params.inertia_damping = 1.0;
+	params.strain_limit = 9999999.9;
+	auto box = simulation.deformables->add_volume_grid({ 0.0, 0.0, 0.0 }, 0.2, 7, params);
+
+	// BC
+	auto bc = box.create_prescribed_positions_group_with_transformation();
+	bc->add_vertices_in_aabb({ 0.1, 0.1, 0.1 }, { 0.01, 0.01, 0.01 });
+	bc->add_vertices_in_aabb({ 0.1, -0.1, 0.1 }, { 0.01, 0.01, 0.01 });
+
+	// Run
+	simulation.run(
+		[&]()
+		{
+			const double t = simulation.get_time() / 5.0;
+			box.set_scale(1.0 - 0.8 * t);
+		}
+	);
+}
+void hanging_cloth_and_reinforcement()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "hanging_cloth_and_reinforcement";
+	settings.output.output_directory = OUTPUT_PATH + "/hanging_cloth_and_reinforcement";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
+	settings.execution.end_simulation_time = 5.0;
+	
+	settings.contact.collisions_enabled = false;
+	settings.contact.friction_enabled = false;
+	settings.contact.dhat = 0.002;
+
+	settings.newton.project_to_PD = false;
+	settings.debug.symx_check_for_NaNs = true;
+	stark::Simulation simulation(settings);
+
+	// Only cloth
+	{
+		auto params = stark::DeformableSurfaceParametrization::towel(stark::ElasticityOnly::False);
+		params.inertia_damping = 1.0;
+		params.strain_limit = 9999999.9;
+		params.strain_young_modulus = 1e2;
+		auto cloth = simulation.deformables->add_surface_grid({ 0.0, 0.0 }, 0.2, 20, params);
+
+		// BC
+		auto bc = cloth.create_prescribed_positions_group_with_transformation();
+		bc->add_vertices_in_aabb({ 0.1, 0.1, 0.0 }, { 0.01, 0.01, 0.01 });
+		bc->add_vertices_in_aabb({ 0.1, -0.1, 0.0 }, { 0.01, 0.01, 0.01 });
+	}
+
+	// Cloth + Reinforcement
+	auto params = stark::DeformableSurfaceParametrization::towel(stark::ElasticityOnly::False);
+	params.inertia_damping = 1.0;
+	params.strain_limit = 9999999.9;
+	params.strain_young_modulus = 1e2;
+
+	params.use_reinforced_perimeter = true;
+	params.reinforced_perimeter = stark::DeformableLineParametrization::sticky_goo(stark::ElasticityOnly::False);
+	params.reinforced_perimeter.strain_limit = 9999999.9;
+	params.reinforced_perimeter.strain_damping = 0.0;
+	auto cloth = simulation.deformables->add_surface_grid({ 0.0, 0.0 }, 0.2, 20, params)
+		.add_displacement({ 0.0, 0.3, 0.0 });
+
+	// BC
+	auto bc = cloth.create_prescribed_positions_group_with_transformation();
+	bc->add_vertices_in_aabb({ 0.1, 0.4, 0.0 }, { 0.01, 0.01, 0.01 });
+	bc->add_vertices_in_aabb({ 0.1, 0.2, 0.0 }, { 0.01, 0.01, 0.01 });
+
+	// Run
+	simulation.run(
+		[&]()
+		{
+			const double t = simulation.get_time() / 5.0;
+			auto reinforcement = cloth.get_reinforcement();
+			reinforcement.set_young_modulus(1e5 * t);  // Increases skin bending stiffness over time
+			reinforcement.set_scale(1.0 - 0.8*t);
+		}
+	);
+}
+void rubber_block_and_skin()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "rubber_block_and_skin";
+	settings.output.output_directory = OUTPUT_PATH + "/rubber_block_and_skin";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
 	settings.contact.collisions_enabled = false;
 	settings.contact.friction_enabled = false;
-	settings.debug.symx_check_for_NaNs = true;
-	stark::models::Simulation simulation(settings);
+	settings.newton.project_to_PD = false;
 
-	// Declare objects
-	const double w = 0.1;
-	const double l = 2.0*w;
-	const int nw = 10;
-	const int nl = nw * (l / w);
-	auto [vertices, tets] = stark::utils::generate_tet_grid({ -l, -w, -w }, { l, w, w }, { nl, nw, nw });
-	auto material = stark::models::MaterialVolume::soft_rubber();
-	auto block = simulation.deformables->add_volume(vertices, tets, material);
+	settings.debug.symx_check_for_NaNs = true;
+	stark::Simulation simulation(settings);
+
+	// Only volumetric soft cube
+	{
+		auto params = stark::DeformableVolumeParametrization::soft_rubber(stark::ElasticityOnly::False);
+		params.inertia_damping = 1.0;
+		params.strain_young_modulus = 5e3;
+		auto block = simulation.deformables->add_volume_grid({ 0.0, 0.0, 0.1 }, 0.2, 5, params);
+
+		// BC
+		auto bc = block.create_prescribed_positions_group_with_transformation();
+		bc->set_stiffness(1e6);
+		bc->add_vertices_in_aabb({ 0.0, 0.0, 0.0 }, { 10.0, 10.0, 0.01 });
+	}
+
+	// Volumetric + Skin soft cube
+	auto params = stark::DeformableVolumeParametrization::soft_rubber(stark::ElasticityOnly::False);
+	params.inertia_damping = 1.0;
+	params.strain_young_modulus = 5e3;
+
+	params.use_skin = true;
+	params.skin = stark::DeformableSurfaceParametrization::towel(stark::ElasticityOnly::False);
+	params.skin.bending_stiffness = 1.0;
+	auto block = simulation.deformables->add_volume_grid({ 0.0, 0.0, 0.1 }, 0.2, 5, params)
+		.add_displacement({0.0, 0.3, 0.0});
 
 	// BC
 	auto bc = block.create_prescribed_positions_group_with_transformation();
 	bc->set_stiffness(1e6);
-	bc->add_vertices_in_aabb({ -l, 0.0, 0.0 }, { 0.001, 2.0*w, 2.0*w });
+	bc->add_vertices_in_aabb({ 0.0, 0.0, 0.0 }, { 10.0, 10.0, 0.01 });
 
 	// Run
-	simulation.run();
+	simulation.run(
+		[&]() 
+		{
+			block.get_skin().set_bending_stiffness(simulation.get_time() / 5.0);  // Increases skin bending stiffness over time
+		}
+	);
 }
 void simple_collision()
 {
@@ -210,8 +357,10 @@ void heavy_box_rigid_and_deformable()
 	settings.contact.collisions_enabled = true;
 	settings.contact.friction_enabled = true;
 	settings.contact.dhat = 0.01;
+	settings.contact.friction_stick_slide_threshold = 0.1;
 
 	settings.debug.symx_check_for_NaNs = true;
+	settings.debug.symx_finite_difference_check = false;
 
 	stark::Simulation simulation(settings);
 
@@ -222,15 +371,15 @@ void heavy_box_rigid_and_deformable()
 	const double rho2 = 1e4;
 
 	//// Base
-	const int n = 5;
+	const int n = 10;
 	auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w, -0.5*w, -0.5*w }, { 0.5*w, 0.5*w, 0.5*w }, { n, n, n });
-	auto material = stark::models::MaterialVolume::soft_rubber();
-	material.density = rho;
-	material.strain_young_modulus = 1e4;
-	material.inertia_damping = 1.0;
-	material.strain_damping = 1.0;
-	material.strain_limit = 999.0;
-	auto base = simulation.deformables->add_volume(vertices, tets, material);
+	auto params = stark::DeformableVolumeParametrization::soft_rubber(stark::ElasticityOnly::False);
+	params.density = rho;
+	params.strain_young_modulus = 1e4;
+	params.inertia_damping = 1.0;
+	params.strain_damping = 1.0;
+	params.strain_limit = 999.0;
+	auto base = simulation.deformables->add_volume(vertices, tets, params);
 	auto bc = base.create_prescribed_positions_group_with_transformation();
 	bc->add_vertices_in_aabb({ 0.0, 0.0, -0.5*w }, { 1.0, 1.0, 0.01 });
 
@@ -239,12 +388,12 @@ void heavy_box_rigid_and_deformable()
 		const int n = 1;
 		auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5*w2, -0.5*w2, -0.5*w2 }, { 0.5*w2, 0.5*w2, 0.5*w2 }, { n, n, n });
 		stark::utils::move(vertices, { 0.01, 0.0, 0.5*w + 0.5*w2 + 2.0*settings.contact.dhat });
-		auto material = stark::models::MaterialVolume::soft_rubber();
-		material.density = rho2;
-		material.inertia_damping = 1.0;
-		material.strain_damping = 1.0;
-		material.strain_limit = 999.0;
-		auto top = simulation.deformables->add_volume(vertices, tets, material);
+		auto material = stark::DeformableVolumeParametrization::soft_rubber(stark::ElasticityOnly::False);
+		params.density = rho2;
+		params.inertia_damping = 1.0;
+		params.strain_damping = 1.0;
+		params.strain_limit = 999.0;
+		auto top = simulation.deformables->add_volume(vertices, tets, params);
 
 		simulation.interactions->set_friction(base, top, 0.5);
 		//simulation.interactions->disable_collision(base, top);
@@ -253,7 +402,7 @@ void heavy_box_rigid_and_deformable()
 	//// Top rigid
 	else {
 		auto top = simulation.rigidbodies->add_box(rho2*std::pow(w2, 3), w2)
-			.set_translation({ 0.01, 0.0, 0.5*w + 0.5*w2 + 2.0*settings.contact.dhat });
+			.set_displacement({ 0.01, 0.0, 0.5*w + 0.5*w2 + 2.0*settings.contact.dhat });
 
 		simulation.interactions->set_friction(base, top, 0.5);
 		//simulation.interactions->disable_collision(base, top);
@@ -272,15 +421,15 @@ void attachments()
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
 	settings.debug.symx_check_for_NaNs = true;
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
 	const double w = 0.1;
 	const int n = 5;
 
 	// Base block
 	auto [vertices, tets] = stark::utils::generate_tet_grid({ -0.5 * w, -0.5 * w, -0.5 * w }, { 0.5 * w, 0.5 * w, 0.5 * w }, { n, n, n });
-	auto material = stark::models::MaterialVolume::soft_rubber();
-	auto block0 = simulation.deformables->add_volume(vertices, tets, material);
+	auto params = stark::DeformableVolumeParametrization::soft_rubber(stark::ElasticityOnly::False);
+	auto block0 = simulation.deformables->add_volume(vertices, tets, params);
 
 	// BC
 	auto bc = block0.create_prescribed_positions_group_with_transformation();
@@ -289,19 +438,19 @@ void attachments()
 
 	// Second block
 	stark::utils::move(vertices, { w, 0.0, -w });
-	auto block1 = simulation.deformables->add_volume(vertices, tets, material);
+	auto block1 = simulation.deformables->add_volume(vertices, tets, params);
 	simulation.interactions->attach_by_distance(block0, block1);
 
 	// Cloth
 	auto [c_vertices, c_triangles] = stark::utils::generate_triangular_grid({ -0.5 * w, -0.5 * w }, { 0.5 * w, 0.5 * w }, { n, n });
 	stark::utils::move(c_vertices, { 2.0*w, 0.0, -0.5*w });
-	auto c_material = stark::MaterialSurface::towel();
+	auto c_material = stark::DeformableSurfaceParametrization::towel(stark::ElasticityOnly::False);
 	auto cloth = simulation.deformables->add_surface(c_vertices, c_triangles, c_material);
 	simulation.interactions->attach_by_distance(block1, cloth);
 
 	// Rigid body
 	auto rigid = simulation.rigidbodies->add_box(1.0, w)
-		.set_translation({3.0*w, 0.0, 0.0});
+		.set_displacement({3.0*w, 0.0, 0.0});
 	simulation.interactions->attach_by_distance(rigid, cloth);
 
 	// Run
@@ -322,11 +471,11 @@ void laundry_cloth()
 	settings.contact.adaptive_contact_stiffness.set(1e4, 1e4, 1e12);
 	settings.contact.friction_stick_slide_threshold = 0.01;
 	settings.contact.dhat = 0.002;
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
 	// Wall
 	auto wall = simulation.rigidbodies->add_box(100.0, { 2.0, 0.5, 2.0 })
-		.set_translation({ 0.0, -0.5, 0.0 });
+		.set_displacement({ 0.0, -0.5, 0.0 });
 	simulation.rigidbodies->add_constraint_fix(wall);
 	wall.add_to_output_label("wall");
 
@@ -358,7 +507,7 @@ void laundry_cloth()
 	std::vector<stark::DeformableSurfaceHandler> cloths;
 	for (size_t i = 0; i < n_cloths; i++) {
 		cloths.push_back(
-			simulation.deformables->add_surface(vertices_cloth, triangles_cloth, stark::MaterialSurface::towel())
+			simulation.deformables->add_surface(vertices_cloth, triangles_cloth, stark::DeformableSurfaceParametrization::towel(stark::ElasticityOnly::False))
 		);
 		stark::utils::move(vertices_cloth, { 0.0, spacing, 0.0 });
 	}
@@ -390,11 +539,11 @@ void laundry_soft_boxes()
 	settings.contact.friction_stick_slide_threshold = 0.01;// 0.01;
 	settings.contact.dhat = 0.002;
 	settings.contact.friction_enabled = true;
-	stark::models::Simulation simulation(settings);
+	stark::Simulation simulation(settings);
 
 	// Wall
 	auto wall = simulation.rigidbodies->add_box(10.0, { 2.0, 0.5, 2.0 })
-		.set_translation({ 0.0, -0.5, 0.0 });
+		.set_displacement({ 0.0, -0.5, 0.0 });
 	simulation.rigidbodies->add_constraint_fix(wall);
 	wall.add_to_output_label("wall");
 
@@ -421,7 +570,7 @@ void laundry_soft_boxes()
 	stark::utils::generate_tet_grid(vertices_box, tets_box, { -half_box_size, -half_box_size, -half_box_size }, { half_box_size, half_box_size, half_box_size }, { n_elems, n_elems, n_elems });
 	stark::utils::move(vertices_box, { -0.133, -0.0869, -0.148 });
 
-	auto material_box = stark::models::MaterialVolume::soft_rubber();
+	auto material_box = stark::DeformableVolumeParametrization::soft_rubber(stark::ElasticityOnly::False);
 	material_box.strain_young_modulus = 1e4;
 	material_box.density *= 2.0;
 
@@ -455,21 +604,22 @@ void car()
 {
 	/*
 		Important:
-			This simulation is highly dynamic. Tight convergence, small time steps, etc... matters.
+			This simulation is highly dynamic. Tight convergence, small time steps, etc... matter.
 	*/
 
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "car";
 	settings.output.output_directory = OUTPUT_PATH + "/car";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.output.console_verbosity = stark::ConsoleVerbosity::Frames;
+	settings.output.console_verbosity = stark::ConsoleVerbosity::TimeSteps;
 	
 	settings.execution.end_simulation_time = 15.0;
-	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
-	settings.debug.symx_check_for_NaNs = true;
+	settings.newton.linear_system_solver = stark::LinearSystemSolver::CG;
+	settings.newton.residual = { stark::ResidualType::Acceleration, 0.1 };
+	//settings.debug.symx_check_for_NaNs = true;
 
-	settings.simulation.adaptive_time_step.set(0.0, 0.001, 0.001);
-	settings.newton.project_to_PD = false;
+	settings.simulation.adaptive_time_step.set(0.0, 0.005, 0.005);
+	settings.newton.project_to_PD = true;
 	settings.contact.dhat = 0.02;
 	settings.contact.friction_stick_slide_threshold = 0.1;
 	settings.contact.adaptive_contact_stiffness.set(1e8, 1e8, 1e12);
@@ -477,25 +627,38 @@ void car()
 	auto simulation = std::make_shared<stark::Simulation>(settings);
 
 	// Car
-	stark::VehicleFourWheels car(simulation, stark::VehicleFourWheels::Parametrization::sedan(), "sedan");
+	//// Soft tires
+	auto parametrization = stark::VehicleFourWheels::Parametrization::sedan();
+	parametrization.chassis.collision_mesh = stark::utils::load_obj(MODELS_PATH + "/sedan_chassis_collision_mesh.obj");
+	parametrization.wheels.tires.mesh = stark::utils::load_vtk<4>(MODELS_PATH + "/tire_sedan.vtk");
+	stark::VehicleFourWheels car(simulation, parametrization, "sedan");
+
+	////// Rigid tires
+	//auto parametrization = stark::VehicleFourWheels::Parametrization::sedan();
+	//parametrization.chassis.collision_mesh = stark::utils::load_obj(MODELS_PATH + "/sedan_chassis_collision_mesh.obj");
+	//stark::VehicleFourWheels rigid(simulation, parametrization, "rigid");
+
+
+	// Move the car
 
 	// Environment
 	stark::StaticPlaneHandler ground = simulation->interactions->add_static_plane({ 0.0, 0.0, -0.02 }, Eigen::Vector3d::UnitZ());
-	car.set_wheels_friction(ground, 1.25);
+	//car.set_wheels_friction(ground, 1.25);
+	car.set_wheels_friction(ground, 5.0);
 	car.set_chassis_friction(ground, 0.5);
 
-	// Obstacle
-	if (true) {
-		auto obstacle = simulation->rigidbodies->add_box(1000.0, 1.0)
-			.set_rotation(45.0, Eigen::Vector3d::UnitX())
-			.set_translation({ 0.8, 50.0, 0.0 })
-			.add_to_output_label("obstacle");
-		simulation->rigidbodies->add_constraint_fix(obstacle)
-			.set_stiffness(1e8)
-			.set_tolerance_in_deg(60.0)
-			.set_tolerance_in_m(1.0);
-		simulation->interactions->disable_collision(ground, obstacle);
-	}
+	//// Obstacle
+	//if (false) {
+	//	auto obstacle = simulation->rigidbodies->add_box(1000.0, 1.0)
+	//		.set_rotation(45.0, Eigen::Vector3d::UnitX())
+	//		.set_displacement({ 0.8, 50.0, 0.0 })
+	//		.add_to_output_label("obstacle");
+	//	simulation->rigidbodies->add_constraint_fix(obstacle)
+	//		.set_stiffness(1e8)
+	//		.set_tolerance_in_deg(60.0)
+	//		.set_tolerance_in_m(1.0);
+	//	simulation->interactions->disable_collision(ground, obstacle);
+	//}
 
 	// Script
 	//// Velocity
@@ -519,7 +682,10 @@ int main()
 	//rb();
 	//net();
 	//hanging_cloth();
-	//rubber_block();
+	//rubber_block_and_skin();
+	//hanging_cloth_and_reinforcement();
+	//hanging_cloth_scaled();
+	hanging_box_scaled();
 	//simple_collision();
 	//edge_edge_collision();
 	//heavy_box_rigid_and_deformable();
@@ -528,5 +694,5 @@ int main()
 	//laundry_cloth();
 	//laundry_soft_boxes();
 
-	car();
+	//car();
 }

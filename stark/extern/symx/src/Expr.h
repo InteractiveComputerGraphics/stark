@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <vector>
 #include <string>
 #include <cstdint>
@@ -8,9 +9,6 @@
 
 namespace symx
 {
-	constexpr uint8_t uint8_true = static_cast<uint8_t>(true);
-	constexpr uint8_t uint8_false = static_cast<uint8_t>(false);
-
 	enum class ExprType
 	{
 		// Identities
@@ -42,22 +40,68 @@ namespace symx
 
 		EnumCount = 22 // This entry serves as a marker
 	};
-	constexpr static bool is_operation(const ExprType& type)
-	{
-		return static_cast<int32_t>(ExprType::Add) <= static_cast<int32_t>(type)
-			&& static_cast<int32_t>(type) < static_cast<int32_t>(ExprType::EnumCount);
-	}
 	constexpr static int n_expr_types()
 	{
 		return static_cast<int32_t>(ExprType::EnumCount);
 	}
-	static std::vector<std::string> get_expr_type_labels()
+	constexpr static bool is_operation(const ExprType& type)
 	{
-		std::vector<std::string> labels = { "Zero", "One", "Branch", "ConstantInteger", "ConstantFloat", "Symbol", "Add", "Sub", "Mul", "Inv", "PowN", "PowF", "Sqrt", "Log", "Exp", "Sin", "Cos", "Tan", "ArcSin", "ArcCos", "ArcTan", "Print" };
-		assert(labels.size() == n_expr_types());
-		return labels;
+		assert(static_cast<int32_t>(type) < static_cast<int32_t>(ExprType::EnumCount) && "Invalid ExprType");
+		return static_cast<int32_t>(ExprType::Add) <= static_cast<int32_t>(type)
+			&& static_cast<int32_t>(type) < static_cast<int32_t>(ExprType::EnumCount);
 	}
-
+	static std::string get_label(const ExprType& type)
+	{
+		switch (type)
+		{
+		case ExprType::Zero:
+			return "Zero";
+		case ExprType::One:
+			return "One";
+		case ExprType::Branch:
+			return "Branch";
+		case ExprType::ConstantFloat:
+			return "ConstantFloat";
+		case ExprType::Symbol:
+			return "Symbol";
+		case ExprType::Add:
+			return "Add";
+		case ExprType::Sub:
+			return "Sub";
+		case ExprType::Mul:
+			return "Mul";
+		case ExprType::Reciprocal:
+			return "Reciprocal";
+		case ExprType::PowN:
+			return "PowN";
+		case ExprType::PowF:
+			return "PowF";
+		case ExprType::Sqrt:
+			return "Sqrt";
+		case ExprType::Ln:
+			return "Ln";
+		case ExprType::Exp:
+			return "Exp";
+		case ExprType::Sin:
+			return "Sin";
+		case ExprType::Cos:
+			return "Cos";
+		case ExprType::Tan:
+			return "Tan";
+		case ExprType::ArcSin:
+			return "ArcSin";
+		case ExprType::ArcCos:
+			return "ArcCos";
+		case ExprType::ArcTan:
+			return "ArcTan";
+		case ExprType::Print:
+			return "Print";
+		default:
+			std::cout << "symx error: Invalid ExprType: " << static_cast<int32_t>(type) << std::endl;
+			exit(-1);
+			break;
+		}
+	}
 	struct Expr
 	{
 		ExprType type;
@@ -65,20 +109,49 @@ namespace symx
 		int32_t b = -1;
 		uint64_t hash = 0;
 		int32_t cond = 0; // Used for ExprType::Branch
-		Expr(const ExprType type, const int32_t a, const int32_t b, const uint64_t hash, const uint32_t cond = 0)
+		Expr(const ExprType type, const int32_t a, const int32_t b, const uint64_t hash = 0, const uint32_t cond = 0)
 			: type(type), a(a), b(b), hash(hash), cond(cond) {};
 		Expr() = default;
+
+		inline bool operator==(const Expr& other) const
+		{
+			return 
+				this->type == other.type && 
+				this->a == other.a && 
+				this->b == other.b && 
+				this->cond == other.cond;
+		}
+		inline bool operator!=(const Expr& other) const
+		{
+			return !(*this == other);
+		}
+		inline bool is_zero() const
+		{
+			return this->type == ExprType::Zero;
+		}
+		inline bool is_one() const
+		{
+			return this->type == ExprType::One;
+		}
+		inline bool is_operation() const
+		{
+			return symx::is_operation(this->type);
+		}
+		inline std::string get_expr_label() const
+		{
+			return get_label(this->type);
+		}
+		inline void pack_double(const double val)
+		{
+			memcpy(&this->a, &val, 4);
+			memcpy(&this->b, (char*)(&val) + 4, 4);
+		}
+		inline double unpack_double() const
+		{
+			double val;
+			memcpy(&val, &this->a, 4);
+			memcpy((char*)(&val) + 4, &this->b, 4);
+			return val;
+		}
 	};
-	inline void pack_double(int32_t& a, int32_t& b, const double val)
-	{
-		memcpy(&a, &val, 4);
-		memcpy(&b, (char*)(&val) + 4, 4);
-	}
-	inline double unpack_double(int32_t a, int32_t b)
-	{
-		double val;
-		memcpy(&val, &a, 4);
-		memcpy((char*)(&val) + 4, &b, 4);
-		return val;
-	}
 }
