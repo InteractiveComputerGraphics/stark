@@ -1,14 +1,14 @@
 #include "EnergyPrescribedPositions.h"
 
 #include "../../time_integration.h"
-#include "../../../utils/mesh_utils.h"
+#include "../../../utils/include.h"
 
 
 stark::EnergyPrescribedPositions::EnergyPrescribedPositions(core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
 {
 	// Callbacks
-	stark.callbacks.is_converged_state_valid.push_back([&]() { return this->_is_converged_state_valid(stark); });
+	stark.callbacks.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
 
 	// Declare the energy
 	stark.global_energy.add_energy("EnergyPrescribedPositions", this->conn,
@@ -115,8 +115,17 @@ void stark::EnergyPrescribedPositions::set_transformation(const Handler& handler
 
 void stark::EnergyPrescribedPositions::set_transformation(const Handler& handler, const Eigen::Vector3d& t, const double angle_deg, const Eigen::Vector3d& axis)
 {
-	const Eigen::Matrix3d R = Eigen::AngleAxisd(utils::deg2rad(angle_deg), axis.normalized()).toRotationMatrix();
+	const Eigen::Matrix3d R = Eigen::AngleAxisd(deg2rad(angle_deg), axis.normalized()).toRotationMatrix();
 	this->set_transformation(handler, t, R);
+}
+
+void stark::EnergyPrescribedPositions::set_target_position(const Handler& handler, int prescribed_idx, const Eigen::Vector3d& t)
+{
+	handler.exit_if_not_valid("EnergyPrescribedPositions::set_target_position");
+	const int group = handler.get_idx();
+	const auto [begin, end] = this->group_begin_end[group];
+	const int idx = begin + prescribed_idx;
+	this->target_positions[idx] = t;
 }
 
 bool stark::EnergyPrescribedPositions::_is_converged_state_valid(stark::core::Stark& stark)

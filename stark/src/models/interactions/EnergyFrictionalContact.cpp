@@ -1,9 +1,11 @@
 #include "EnergyFrictionalContact.h"
 
+#include <fmt/format.h>
+
 #include "../time_integration.h"
 #include "../distances.h"
 #include "../rigidbodies/rigidbody_transformations.h"
-#include "../../utils/mesh_utils.h"
+#include "../../utils/include.h"
 #include "friction_geometry.h"
 
 using namespace stark;
@@ -15,10 +17,12 @@ EnergyFrictionalContact::EnergyFrictionalContact(core::Stark& stark, const spPoi
 	this->is_initialized = true;
 
 	// Callbacks
-	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step__update_friction_contacts(stark); });
-	stark.callbacks.before_energy_evaluation.push_back([&]() { this->_before_energy_evaluation__update_contacts(stark); });
-	stark.callbacks.is_intermidiate_state_valid.push_back([&]() { return this->_is_valid_configuration(stark); });
-	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step__update_friction_contacts(stark); });
+	stark.callbacks.add_before_time_step([&]() { this->_before_time_step__update_friction_contacts(stark); });
+	stark.callbacks.add_before_energy_evaluation([&]() { this->_before_energy_evaluation__update_contacts(stark); });
+	stark.callbacks.add_is_intermidiate_state_valid([&]() { return this->_is_intermidiate_state_valid(stark); });
+	stark.callbacks.add_is_initial_state_valid([&]() { return this->_is_intermidiate_state_valid(stark); });
+	stark.callbacks.add_on_intermidiate_state_invalid([&]() { this->_on_intermidiate_state_invalid(stark); });
+	stark.callbacks.add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
 
 	// Contact declarations
 	this->_energies_contact_deformables(stark);
@@ -171,7 +175,7 @@ EnergyFrictionalContact::Handler EnergyFrictionalContact::_add_triangles_edges_a
 	this->contact_thicknesses.push_back(this->_init_contact_thickness(params.contact_thickness));
 
 	// Find edges
-	const std::vector<std::array<int, 2>> edges = utils::find_edges_from_simplices(triangles, n_vertices);
+	const std::vector<std::array<int, 2>> edges = find_edges_from_simplices(triangles, n_vertices);
 
 	// Add to local meshes data structures
 	this->meshes.push_back({});
@@ -764,7 +768,7 @@ void EnergyFrictionalContact::_before_time_step__update_friction_contacts(core::
 		}
 	}
 }
-bool EnergyFrictionalContact::_is_valid_configuration(core::Stark& stark)
+bool EnergyFrictionalContact::_is_intermidiate_state_valid(core::Stark& stark)
 {
 	if (!this->global_params.collisions_enabled) { return true; }
 	if (!this->global_params.intersection_test_enabled) { return true; }
@@ -772,6 +776,17 @@ bool EnergyFrictionalContact::_is_valid_configuration(core::Stark& stark)
 
 	const auto& intersections = this->_run_intersection_detection(stark, stark.dt);
 	return intersections.edge_triangle.size() == 0;
+}
+void stark::EnergyFrictionalContact::_on_intermidiate_state_invalid(core::Stark& stark)
+{
+	const double old_stiffness = this->contact_stiffness;
+	this->contact_stiffness *= 2.0;
+	const double new_stiffness = this->contact_stiffness;
+	stark.console.add_error_msg(fmt::format("Penetration couldn't be avoided. Contact stiffness hardened from {:.1e} to {:.1e}.", old_stiffness, new_stiffness));
+}
+void stark::EnergyFrictionalContact::_on_time_step_accepted(core::Stark& stark)
+{
+	this->contact_stiffness = std::max(this->global_params.min_contact_stiffness, 0.99*this->contact_stiffness);
 }
 
 

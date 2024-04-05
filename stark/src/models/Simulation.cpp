@@ -42,11 +42,10 @@ void stark::Simulation::add_time_event(double t0, double t1, std::function<void(
 }
 void stark::Simulation::add_time_event(double t0, double t1, std::function<void(double, EventInfo&)> action)
 {
-	this->script.add_independent_event(
-		[t0, t1, this](EventInfo& event_info) { return this->get_time() >= t0 && this->get_time() < t1; },
-		[action, this](EventInfo& event_info) { action(this->get_time(), event_info); },
-		stark::EventDrivenScript::Permanence::PERMANENT,
-		[t1, this](EventInfo& event_info) { return this->get_time() >= t1; }
+	this->stark.script.add_event(
+		/* action = */ [action, this](EventInfo& event_info) { action(this->get_time(), event_info); },
+		/* run_when = */ [t0, t1, this](EventInfo& event_info) { return this->get_time() >= t0 && this->get_time() < t1; },
+		/* delete_when = */ [t1, this](EventInfo& event_info) { return this->get_time() >= t1; }
 	);
 }
 
@@ -57,7 +56,7 @@ void stark::Simulation::run(std::function<void()> callback)
 
 stark::EventDrivenScript& stark::Simulation::get_script()
 {
-	return this->script;
+	return this->stark.script;
 }
 
 void stark::Simulation::run(double duration, std::function<void()> user_callback)
@@ -65,7 +64,7 @@ void stark::Simulation::run(double duration, std::function<void()> user_callback
 	this->stark.run(duration, 
 		[user_callback, this]()
 		{
-			this->script.run_a_cycle(this->get_time());
+			this->stark.script.run_a_cycle(this->get_time());
 			if (user_callback != nullptr) user_callback();
 		}
 	);
@@ -73,7 +72,7 @@ void stark::Simulation::run(double duration, std::function<void()> user_callback
 
 void stark::Simulation::run_one_time_step()
 {
-	this->script.run_a_cycle(this->get_time());
+	this->stark.script.run_a_cycle(this->get_time());
 	this->stark.run_one_step();
 }
 

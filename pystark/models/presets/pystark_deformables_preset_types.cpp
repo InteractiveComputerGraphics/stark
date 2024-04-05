@@ -51,6 +51,21 @@ void pystark_deformables_preset_types(nb::module_& m)
 			.def_static("Cotton_Fabric", &Surface::Params::Cotton_Fabric)
 			;
 	}
+	auto prescribed_surface_module = m.def_submodule("PrescribedSurface");
+	{
+		nb::class_<PrescribedSurface::Handler>(prescribed_surface_module, "Handler")
+			.def_rw("point_set", &PrescribedSurface::Handler::point_set)
+			.def_rw("inertia", &PrescribedSurface::Handler::prescribed)
+			.def_rw("contact", &PrescribedSurface::Handler::contact)
+			;
+
+		nb::class_<PrescribedSurface::Params>(prescribed_surface_module, "Params")
+			.def_rw("inertia", &PrescribedSurface::Params::prescribed)
+			.def_rw("contact", &PrescribedSurface::Params::contact)
+
+			.def(nb::init<>())
+			;
+	}
 
 	auto volume_module = m.def_submodule("Volume");
 	{

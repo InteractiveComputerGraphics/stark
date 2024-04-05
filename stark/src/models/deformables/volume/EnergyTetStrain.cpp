@@ -2,7 +2,7 @@
 
 #include "../deformable_tools.h"
 #include "../../time_integration.h"
-#include "../../../utils/mesh_utils.h"
+#include "../../../utils/include.h"
 
 
 stark::EnergyTetStrain::EnergyTetStrain(stark::core::Stark& stark, spPointDynamics dyn)
@@ -64,7 +64,7 @@ stark::EnergyTetStrain::EnergyTetStrain(stark::core::Stark& stark, spPointDynami
 			std::array<symx::Scalar, 3> s = eigenvalues_sym_3x3(E1);
 			symx::Scalar strain_limiting_energy_density = energy.make_zero();
 			for (int i = 0; i < 3; i++) {
-				symx::Scalar dl = s[i] - (strain_limit + 1.0);
+				symx::Scalar dl = s[i] - strain_limit;
 				strain_limiting_energy_density += symx::branch(dl > 0.0, strain_limit_stiffness*dl.powN(3)/3.0, 0.0);
 			}
 

@@ -1,7 +1,7 @@
 #include "EnergySegmentStrain.h"
 
 #include "../../time_integration.h"
-#include "../../../utils/mesh_utils.h"
+#include "../../../utils/include.h"
 
 stark::EnergySegmentStrain::EnergySegmentStrain(stark::core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
@@ -30,7 +30,7 @@ stark::EnergySegmentStrain::EnergySegmentStrain(stark::core::Stark& stark, spPoi
 			std::vector<symx::Vector> Xs = { scale * X[0], scale * X[1] };
 
 			// Strain
-			symx::Scalar section_area = utils::PI * section_radius.powN(2);
+			symx::Scalar section_area = M_PI * section_radius.powN(2);
 			symx::Scalar l_rest = (Xs[0] - Xs[1]).norm();
 			symx::Scalar l = (x1[0] - x1[1]).norm();
 			symx::Scalar e = (l - l_rest) / l_rest;
@@ -73,7 +73,7 @@ stark::EnergySegmentStrain::EnergySegmentStrain(stark::core::Stark& stark, spPoi
 			std::vector<symx::Vector> Xs = { scale * X[0], scale * X[1] };
 
 			// Strain
-			symx::Scalar section_area = utils::PI * section_radius.powN(2);
+			symx::Scalar section_area = M_PI * section_radius.powN(2);
 			symx::Scalar l_rest = (Xs[0] - Xs[1]).norm();
 			symx::Scalar l = (x1[0] - x1[1]).norm();
 			symx::Scalar e = (l - l_rest) / l_rest;

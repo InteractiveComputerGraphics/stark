@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../utils/mesh_utils.h"
+#include "../../utils/include.h"
 
 #include "rigidbody_transformations.h"
 #include "RigidBodyConstraints.h"
@@ -65,9 +65,9 @@ namespace stark
 		_STARK_RB_CONSTRAINT_DEFINE_TOLERANCE_IN_M()
 
 		inline Eigen::Vector3d get_global_target_point() const { return this->constraints->target_glob[this->idx]; };
-		inline auto& set_global_target_point(Eigen::Vector3d& x) { this->constraints->target_glob[this->idx] = x; return (*this); };
+		inline auto& set_global_target_point(const Eigen::Vector3d& x) { this->constraints->target_glob[this->idx] = x; return (*this); };
 		inline Eigen::Vector3d get_local_point() const { return this->constraints->loc[this->idx]; };
-		inline auto& set_local_point(Eigen::Vector3d& x) { this->constraints->loc[this->idx] = x; return (*this); };
+		inline auto& set_local_point(const Eigen::Vector3d& x) { this->constraints->loc[this->idx] = x; return (*this); };
 		inline std::array<double, 2> get_violation_in_m_and_force() const
 		{ 
 			return RigidBodyConstraints::GlobalPoints::violation_in_m_and_force(get_stiffness(), get_global_target_point(), rb.transform_local_to_global_point(get_local_point()));
@@ -81,9 +81,9 @@ namespace stark
 		_STARK_RB_CONSTRAINT_DEFINE_TOLERANCE_IN_DEG()
 
 		inline Eigen::Vector3d get_global_target_direction() const { return this->constraints->target_d_glob[this->idx]; };
-		inline auto& set_global_target_direction(Eigen::Vector3d& x) { this->constraints->target_d_glob[this->idx] = x; return (*this); };
+		inline auto& set_global_target_direction(const Eigen::Vector3d& x) { this->constraints->target_d_glob[this->idx] = x; return (*this); };
 		inline Eigen::Vector3d get_local_direction() const { return this->constraints->d_loc[this->idx]; };
-		inline auto& set_local_direction(Eigen::Vector3d& x) { this->constraints->d_loc[this->idx] = x; return (*this); };
+		inline auto& set_local_direction(const Eigen::Vector3d& x) { this->constraints->d_loc[this->idx] = x; return (*this); };
 		inline std::array<double, 2> get_violation_in_deg_and_torque() const
 		{
 			return RigidBodyConstraints::GlobalDirections::violation_in_deg_and_torque(get_stiffness(), get_global_target_direction(), rb.transform_local_to_global_direction(get_local_direction()));
@@ -189,7 +189,7 @@ namespace stark
 		}
 		inline auto& set_opening_angle_deg(double angle_deg, const Eigen::Vector3d& normal_loc_a)
 		{
-			return this->set_opening_angle_rad(utils::deg2rad(angle_deg), normal_loc_a);
+			return this->set_opening_angle_rad(deg2rad(angle_deg), normal_loc_a);
 		}
 	};
 
@@ -289,8 +289,8 @@ namespace stark
 		inline auto& set_local_direction_body_a(const Eigen::Vector3d& d) const { this->constraints->da_loc[this->idx] = d; return (*this); };
 		inline double get_target_angular_velocity_in_rad_per_s() const { return this->constraints->target_w[this->idx]; };
 		inline auto& set_target_angular_velocity_in_rad_per_s(double w) { this->constraints->target_w[this->idx] = w; return (*this); };
-		inline double get_target_angular_velocity_in_deg_per_s() const { return utils::rad2deg(this->constraints->target_w[this->idx]); };
-		inline auto& set_target_angular_velocity_in_deg_per_s(double w) { this->constraints->target_w[this->idx] = utils::deg2rad(w); return (*this); };
+		inline double get_target_angular_velocity_in_deg_per_s() const { return rad2deg(this->constraints->target_w[this->idx]); };
+		inline auto& set_target_angular_velocity_in_deg_per_s(double w) { this->constraints->target_w[this->idx] = deg2rad(w); return (*this); };
 		inline double get_max_torque() const { return this->constraints->max_torque[this->idx]; };
 		inline auto& set_max_torque(double torque) { 
 			// Check that torque is not negative
@@ -354,6 +354,17 @@ namespace stark
 			this->z_lock.set_tolerance_in_deg(tolerance_in_deg);
 			this->x_lock.set_tolerance_in_deg(tolerance_in_deg);
 			return (*this);
+		}
+		inline auto& set_transformation(const Eigen::Vector3d& translation, const Eigen::Matrix3d& rotation)
+		{
+			this->anchor_point.set_global_target_point(translation);
+			this->z_lock.set_global_target_direction(rotation.col(2));
+			this->x_lock.set_global_target_direction(rotation.col(0));
+			return (*this);
+		}
+		inline auto& set_transformation(const Eigen::Vector3d& translation, const double angle_deg, const Eigen::Vector3d& axis)
+		{
+			return this->set_transformation(translation, Eigen::AngleAxisd(deg2rad(angle_deg), axis).toRotationMatrix());
 		}
 
 		inline std::string get_label() const { return this->label; };

@@ -33,6 +33,10 @@ namespace stark
 			{
 				this->get_model()->set_transformation(*this, t, angle_deg, axis);
 			}
+			inline void set_target_position(int prescribed_idx, const Eigen::Vector3d& t)
+			{
+				this->get_model()->set_target_position(*this, prescribed_idx, t);
+			}
 		};
 
 	private:
@@ -44,7 +48,7 @@ namespace stark
 		std::vector<double> stiffness; // per group
 		std::vector<double> tolerance; // per group
 
-		std::vector<std::array<int, 2>> group_begin_end; // per group  (for tolerance purposes)
+		std::vector<std::array<int, 2>> group_begin_end; // per group  (for tolerance checking purposes)
 		std::vector<Eigen::Vector3d> rest_positions; // per point  (for transformation purposes)
 
 	public:
@@ -57,6 +61,7 @@ namespace stark
 		void set_params(const Handler& handler, const Params& params);
 		void set_transformation(const Handler& handler, const Eigen::Vector3d& t, const Eigen::Matrix3d& R);
 		void set_transformation(const Handler& handler, const Eigen::Vector3d& t, const double angle_deg, const Eigen::Vector3d& axis);
+		void set_target_position(const Handler& handler, int prescribed_idx, const Eigen::Vector3d& t);
 
 	private:
 		bool _is_converged_state_valid(core::Stark& stark);

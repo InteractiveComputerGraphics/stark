@@ -1,6 +1,6 @@
 #include "deformable_tools.h"
 
-#include "../../utils/mesh_utils.h"
+#include "../../utils/include.h"
 
 symx::Matrix stark::triangle_jacobian(const std::vector<symx::Vector>& x)
 {
@@ -47,10 +47,10 @@ std::array<symx::Scalar, 3> stark::eigenvalues_sym_3x3(const symx::Matrix& A)
 		-54.0 * d * e * f;
 	const symx::Scalar sqrt_arg = 4.0 * x1.powN(3) - x2.powN(2);
 	symx::Scalar phi = symx::atan(symx::sqrt(sqrt_arg) / x2);
-	phi += symx::branch(x2 > 0.0, 0.0, stark::utils::PI); // Warning: Special case for atan(0/0) = 0.0 not handled
+	phi += symx::branch(x2 > 0.0, 0.0, M_PI); // Warning: Special case for atan(0/0) = 0.0 not handled
 	return {
 		1.0 / 3.0 * (a + b + c - 2.0 * sqrt(x1) * cos(phi / 3.0)),
-		1.0 / 3.0 * (a + b + c + 2.0 * sqrt(x1) * cos((phi - stark::utils::PI) / 3.0)),
-		1.0 / 3.0 * (a + b + c + 2.0 * sqrt(x1) * cos((phi + stark::utils::PI) / 3.0))
+		1.0 / 3.0 * (a + b + c + 2.0 * sqrt(x1) * cos((phi - M_PI) / 3.0)),
+		1.0 / 3.0 * (a + b + c + 2.0 * sqrt(x1) * cos((phi + M_PI) / 3.0))
 	};
 }

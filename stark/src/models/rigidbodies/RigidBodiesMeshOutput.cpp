@@ -1,12 +1,12 @@
 #include "RigidBodiesMeshOutput.h"
 
-#include "../../utils/mesh_utils.h"
+#include "../../utils/include.h"
 
 
 stark::RigidBodiesMeshOutput::RigidBodiesMeshOutput(core::Stark& stark, spRigidBodyDynamics rb)
 	: rb(rb)
 {
-	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
+	stark.callbacks.add_write_frame([&]() { this->_write_frame(stark); });
 }
 void stark::RigidBodiesMeshOutput::add_point_mesh(const std::string& label, const RigidBodyHandler& rb, const std::vector<Eigen::Vector3d>& vertices)
 {
@@ -71,7 +71,7 @@ inline void stark::RigidBodiesMeshOutput::_write(core::Stark& stark, const MeshO
 				}
 			}
 		}
-		stark::utils::write_VTK(stark.get_frame_path(label) + ".vtk", this->vertices, conn_buffer);
+		stark::write_VTK(stark.get_frame_path(label) + ".vtk", this->vertices, conn_buffer);
 	}
 }
 // Forward declaration

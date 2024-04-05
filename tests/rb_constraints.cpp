@@ -5,7 +5,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include "../app/paths.h"
+#include "../examples/paths.h"
 
 #define ENABLE_THESE_TESTS true
 

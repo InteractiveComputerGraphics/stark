@@ -8,26 +8,33 @@
 #include <Eigen/Dense>
 #include <vtkio>
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #include "Mesh.h"
 
-namespace stark::utils
+namespace stark
 {
-	// General utils
-	static constexpr double PI = 3.14159265358979323846;
+	// Misc
 	double deg2rad(const double deg);
 	double rad2deg(const double rad);
+
+	// Set operations
 	template<typename T>
 	std::vector<T> gather(const std::vector<T>& data, const std::vector<int>& indices);
 	template<std::size_t N>
 	std::vector<std::array<int, N>> apply_map(const std::vector<std::array<int, N>>& connectivity, const std::vector<int>& map);
 
-	// Load
+	// Read/Write
 	std::vector<Mesh<3>> load_obj(const std::string& path);
-	
 	template<std::size_t N>
 	void load_vtk(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, N>>& out_conn, const std::string& path);
 	template<std::size_t N>
 	Mesh<N> load_vtk(const std::string& path);
+	void write_VTK(const std::string& path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets);
+	void write_VTK(const std::string& path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const bool generate_normals = false);
+	void write_VTK(const std::string& path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 2>>& edges);
+	void write_VTK(const std::string& path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 1>>& points);
 
 	// Primitives
 	Eigen::Vector3d triangle_normal(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2);
@@ -35,8 +42,7 @@ namespace stark::utils
 	double unsigned_tetra_volume(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2, const Eigen::Vector3d& p3);
 	double signed_tetra_volume(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2, const Eigen::Vector3d& p3);
 
-	// Meshes
-	//// Topology
+	// Topology
 	template<std::size_t N>
 	void reduce_connectivity(std::vector<std::array<int, N>>& out_new_conn, std::vector<int>& out_new_to_old_map, const std::vector<std::array<int, N>>& conn, const int n_nodes);
 	template<std::size_t N>
@@ -47,28 +53,18 @@ namespace stark::utils
 	std::vector<std::array<int, 2>> find_edges_from_simplices(const std::vector<std::array<int, N>>& simplices, const int n_nodes);
 	void find_node_node_map_simplex(std::vector<std::vector<int>>& output, const int32_t* connectivity, const int32_t n_simplices, const int32_t n_nodes_per_simplex, const int32_t n_nodes);
 	void find_internal_angles(std::vector<std::array<int, 4>>& internal_edges, const std::vector<std::array<int, 3>>& triangles, const int n_nodes);
-	void find_perimeter_edges(std::vector<std::array<int, 2>>& perimeter_edges, const std::vector<std::array<int, 3>>& triangles);
-	void extract_surface(std::vector<std::array<int, 3>>& out_triangles, std::vector<int>& out_triangle_to_tet_node_map, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets);
-	std::tuple<std::vector<std::array<int, 3>>, std::vector<int>> extract_surface(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets);
+	void find_perimeter_edges(std::vector<std::array<int, 2>>& out_perimeter_edges, std::vector<int>& out_edge_to_triangle_node_map, const std::vector<std::array<int, 3>>& triangles, const int n_nodes);
+	std::tuple<std::vector<std::array<int, 2>>, std::vector<int>> find_perimeter_edges(const std::vector<std::array<int, 3>>& triangles, const int n_nodes);
 	void find_sharp_edges(std::vector<std::array<int, 2>>& out_edges, std::vector<int>& out_old_to_new_map, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, double angle_deg_threshold);
 	std::tuple<std::vector<std::array<int, 2>>, std::vector<int>> find_sharp_edges(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, double angle_deg_threshold);
+	void find_surface(std::vector<std::array<int, 3>>& out_triangles, std::vector<int>& out_triangle_to_tet_node_map, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets);
+	std::tuple<std::vector<std::array<int, 3>>, std::vector<int>> find_surface(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets);
 
-	//// Other
+	// Geometry
 	double total_volume(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets);
 	void compute_node_normals(std::vector<Eigen::Vector3d>& output, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
-	void generate_triangle_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, const Eigen::Vector2d& center, const Eigen::Vector2d& dimensions, const std::array<int, 2>& n_quads_per_dim, const bool randomize = false, const double z = 0.0);
-	Mesh<3> generate_triangle_grid(const Eigen::Vector2d& center, const Eigen::Vector2d& dimensions, const std::array<int, 2>& n_quads_per_dim, const bool randomize = false, const double z = 0.0);
-	void generate_tet_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 4>>& out_tets, const Eigen::Vector3d& center, const Eigen::Vector3d& dimensions, const std::array<int, 3>& n_quads_per_dim);
-	Mesh<4> generate_tet_grid(const Eigen::Vector3d& center, const Eigen::Vector3d& dimensions, const std::array<int, 3>& n_quads_per_dim);
-	void generate_segment_line(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 2>>& out_connectivity, const Eigen::Vector3d& begin, const Eigen::Vector3d& end, const int n_segments);
-	Mesh<2> generate_segment_line(const Eigen::Vector3d& begin, const Eigen::Vector3d& end, const int n_segments);
 
-	void write_VTK(const std::string& path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets);
-	void write_VTK(const std::string& path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const bool generate_normals = false);
-	void write_VTK(const std::string& path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 2>>& edges);
-	void write_VTK(const std::string& path, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 1>>& points);
-
-	//// Transformations
+	// Transformations
 	void move(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& translation);
 	void rotate_deg(std::vector<Eigen::Vector3d>& points, const double angle, const Eigen::Vector3d& axis);
 	void rotate_deg(std::vector<Eigen::Vector3d>& points, const double angle, const Eigen::Vector3d& axis, const Eigen::Vector3d& pivot);
@@ -103,7 +99,7 @@ namespace stark::utils
 		return output;
 	}
 	template<std::size_t N>
-	void load_vtk(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, N>>& out_conn, const std::string path)
+	void load_vtk(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, N>>& out_conn, const std::string& path)
 	{
 		vtkio::VTKFile vtk_file;
 		vtk_file.read(path);
@@ -111,9 +107,9 @@ namespace stark::utils
 		vtk_file.get_cells_to_twice_indexable(out_conn);
 	}
 	template<std::size_t N>
-	Mesh<N> load_vtk(const std::string path)
+	Mesh<N> load_vtk(const std::string& path)
 	{
-		stark::utils::Mesh<N> m;
+		stark::Mesh<N> m;
 		load_vtk(m.vertices, m.conn, path);
 		return m;
 	}

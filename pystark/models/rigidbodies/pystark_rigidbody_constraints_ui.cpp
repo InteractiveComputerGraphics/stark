@@ -16,7 +16,7 @@
     .def("get_body_b", &Self::get_body_b) \
 
 #define DEFINE(NAME) \
-    .def("##NAME", &Self::##NAME) \
+    .def(#NAME, &Self::##NAME) \
 
 #define DEFINE_GETTER_SETTER(NAME) \
     .def("get_##NAME", &Self::get_##NAME) \

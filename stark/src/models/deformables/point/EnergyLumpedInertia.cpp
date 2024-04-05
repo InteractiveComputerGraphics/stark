@@ -1,6 +1,6 @@
 #include "EnergyLumpedInertia.h"
 
-#include "../../../utils/mesh_utils.h"
+#include "../../../utils/include.h"
 
 stark::EnergyLumpedInertia::EnergyLumpedInertia(stark::core::Stark& stark, const spPointDynamics dyn)
 	: dyn(dyn)
@@ -35,11 +35,12 @@ stark::EnergyLumpedInertia::EnergyLumpedInertia(stark::core::Stark& stark, const
 	);
 
 	// Inverse mass for acceleration residual
-	stark.callbacks.inv_mass[this->dyn->dof.idx] = [&](double* begin, double* end)
+	stark.callbacks.add_inv_mass_application(this->dyn->dof, 
+		[&](double* begin, double* end)
 		{
 			const int n = (int)std::distance(begin, end);
 			if (n != 3 * this->dyn->size()) {
-				std::cout << "Stark error: EnergyLumpedInertia::inv_mass() found `begin` and `end` with different size than the set nodes." << std::endl;
+				std::cout << "Stark error: EnergyLumpedInertia::inv_mass_application() found `begin` and `end` with different size than the set nodes." << std::endl;
 				exit(-1);
 			}
 
@@ -54,7 +55,8 @@ stark::EnergyLumpedInertia::EnergyLumpedInertia(stark::core::Stark& stark, const
 				begin[3 * glob + 1] *= mass_inv;
 				begin[3 * glob + 2] *= mass_inv;
 			}
-		};
+		}
+	);
 }
 
 stark::EnergyLumpedInertia::Handler stark::EnergyLumpedInertia::add(const PointSetHandler& set, const std::vector<int>& points, const std::vector<double>& lumped_volume, const Params& params)
@@ -130,7 +132,7 @@ stark::EnergyLumpedInertia::Handler stark::EnergyLumpedInertia::add(const PointS
 		const Eigen::Vector3d& B = this->dyn->X[conn_glob[1]];
 		const Eigen::Vector3d& C = this->dyn->X[conn_glob[2]];
 
-		const double lumped = utils::triangle_area(A, B, C) / 3.0;
+		const double lumped = triangle_area(A, B, C) / 3.0;
 		lumped_volume[conn[0]] += lumped;
 		lumped_volume[conn[1]] += lumped;
 		lumped_volume[conn[2]] += lumped;
@@ -154,7 +156,7 @@ stark::EnergyLumpedInertia::Handler stark::EnergyLumpedInertia::add(const PointS
 		const Eigen::Vector3d& C = this->dyn->X[conn_glob[2]];
 		const Eigen::Vector3d& D = this->dyn->X[conn_glob[3]];
 
-		const double lumped = utils::unsigned_tetra_volume(A, B, C, D) / 4.0;
+		const double lumped = unsigned_tetra_volume(A, B, C, D) / 4.0;
 		lumped_volume[conn[0]] += lumped;
 		lumped_volume[conn[1]] += lumped;
 		lumped_volume[conn[2]] += lumped;

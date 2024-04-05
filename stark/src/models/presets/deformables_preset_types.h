@@ -81,6 +81,26 @@ namespace stark
 		};
 	}
 
+	namespace PrescribedSurface
+	{
+		struct Params
+		{
+			EnergyPrescribedPositions::Params prescribed;
+			ContactParams contact;
+
+			Params() = default;
+		};
+
+		struct Handler
+		{
+			PointSetHandler point_set;
+			EnergyPrescribedPositions::Handler prescribed;
+			ContactHandler contact;
+		};
+	}
+
+
+
 	namespace Volume
 	{
 		enum Preset

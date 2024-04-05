@@ -237,8 +237,13 @@ void Stark::_initialize()
 
 	// SymX
 	//// Compile
-	const std::string symx_print = this->global_energy.compile(this->settings.output.codegen_directory, this->settings.execution.n_threads, this->settings.debug.symx_force_compilation, this->settings.debug.symx_force_load, this->settings.debug.symx_suppress_compiler_output);
-	this->console.print(symx_print, ConsoleVerbosity::Frames);
+	symx::GlobalEnergy::CompilationOptions options;
+	options.n_threads = this->settings.execution.n_threads;
+	options.force_compilation = this->settings.debug.symx_force_compilation;
+	options.force_load = this->settings.debug.symx_force_load;
+	options.suppress_compiler_output = this->settings.debug.symx_suppress_compiler_output;
+	options.msg_callback = [&](const std::string& msg) { this->console.print(msg, ConsoleVerbosity::Frames); };
+	this->global_energy.compile(this->settings.output.codegen_directory, options);
 	if (this->settings.debug.symx_force_load) {
 		this->console.print("\t-|-|-|-|- WARNING: Forced load enabled. Loaded expressions might be outdated. -|-|-|-|-", ConsoleVerbosity::Frames);
 	}
@@ -261,6 +266,12 @@ void Stark::_initialize()
 
 	// Callbacks
 	this->callbacks.run_before_simulation();
+
+	// Check that the initial state is valid
+	if (!this->callbacks.run_is_initial_state_valid()) {
+		this->console.print("Initial state is not valid. Exiting simulation.", ConsoleVerbosity::Frames);
+		exit(-1);
+	}
 }
 void Stark::_write_frame()
 {

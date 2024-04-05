@@ -36,14 +36,14 @@ stark::RigidBody::Handler stark::RigidBodyPresets::add(
 stark::RigidBody::VCH stark::RigidBodyPresets::add_sphere(const std::string& output_label, double mass, double radius, int subdivisions, const ContactParams& contact_params)
 {
 	const Eigen::Matrix3d inertia_local = inertia_tensor_sphere(mass, radius);
-	const utils::Mesh<3> mesh = utils::make_sphere(radius, subdivisions);
+	const Mesh<3> mesh = make_sphere(radius, subdivisions);
 	RigidBody::Handler handler = this->add(output_label, mass, inertia_local, mesh.vertices, mesh.conn, contact_params);
 	return { mesh.vertices, mesh.conn, handler };
 }
 stark::RigidBody::VCH stark::RigidBodyPresets::add_box(const std::string& output_label, double mass, const Eigen::Vector3d& size, const ContactParams& contact_params)
 {
 	const Eigen::Matrix3d inertia_local = inertia_tensor_box(mass, size);
-	const utils::Mesh<3> mesh = utils::make_box(size);
+	const Mesh<3> mesh = make_box(size);
 	RigidBody::Handler handler = this->add(output_label, mass, inertia_local, mesh.vertices, mesh.conn, contact_params);
 	return { mesh.vertices, mesh.conn, handler };
 }
@@ -54,14 +54,14 @@ stark::RigidBody::VCH stark::RigidBodyPresets::add_box(const std::string& output
 stark::RigidBody::VCH stark::RigidBodyPresets::add_cylinder(const std::string& output_label, double mass, double radius, double full_height, int slices, int stacks, const ContactParams& contact_params)
 {
 	const Eigen::Matrix3d inertia_local = inertia_tensor_cylinder(mass, radius, full_height);
-	const utils::Mesh<3> mesh = utils::make_cylinder(radius, full_height, slices, stacks);
+	const Mesh<3> mesh = make_cylinder(radius, full_height, slices, stacks);
 	RigidBody::Handler handler = this->add(output_label, mass, inertia_local, mesh.vertices, mesh.conn, contact_params);
 	return { mesh.vertices, mesh.conn, handler };
 }
 stark::RigidBody::VCH stark::RigidBodyPresets::add_torus(const std::string& output_label, double mass, double outer_radius, double inner_radius, int slices, int stacks, const ContactParams& contact_params)
 {
 	const Eigen::Matrix3d inertia_local = inertia_tensor_torus(mass, outer_radius, inner_radius);
-	const utils::Mesh<3> mesh = utils::make_torus(outer_radius, inner_radius, slices, stacks);
+	const Mesh<3> mesh = make_torus(outer_radius, inner_radius, slices, stacks);
 	RigidBody::Handler handler = this->add(output_label, mass, inertia_local, mesh.vertices, mesh.conn, contact_params);
 	return { mesh.vertices, mesh.conn, handler };
 }

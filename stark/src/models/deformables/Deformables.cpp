@@ -1,6 +1,6 @@
 #include "Deformables.h"
 
-#include "../../utils/mesh_utils.h"
+#include "../../utils/include.h"
 
 stark::Deformables::Deformables(core::Stark& stark, spPointDynamics dyn)
 	: point_sets(dyn)

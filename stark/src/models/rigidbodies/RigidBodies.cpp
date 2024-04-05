@@ -2,7 +2,6 @@
 #include <functional>
 
 
-
 stark::RigidBodies::RigidBodies(core::Stark& stark, spRigidBodyDynamics rb)
 	: rb(rb), output(stark, rb)
 {

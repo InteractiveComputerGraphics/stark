@@ -17,6 +17,7 @@ namespace stark
 
 		Surface::Handler add_surface(const std::string& output_label, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const Surface::Params& params);
 		Surface::VCH add_surface_grid(const std::string& output_label, const Eigen::Vector2d& dim, const std::array<int, 2>& subdivisions, const Surface::Params& params);
+		PrescribedSurface::Handler add_prescribed_surface(const std::string& output_label, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const PrescribedSurface::Params& params);
 
 		Volume::Handler add_volume(const std::string& output_label, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets, const Volume::Params& params);
 		Volume::VCH add_volume_grid(const std::string& output_label, const Eigen::Vector3d& dim, const std::array<int, 3>& subdivisions, const Volume::Params& params);

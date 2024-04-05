@@ -91,6 +91,7 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(const double& dt, sym
 		// Max step in the search direction
 		double step_valid_configuration = this->_inplace_max_step_in_search_direction(this->du);
 		if (step_valid_configuration < 0.01) {
+			callbacks.run_on_intermidiate_state_invalid();
 			newton_state = NewtonState::InvalidIntermediateConfiguration;
 			break;
 		}
@@ -145,7 +146,7 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(const double& dt, sym
 			console.print("\n\t\t -> Linear system couldn't find a solution. ", ConsoleVerbosity::TimeSteps);
 			break;
 		case NewtonState::InvalidIntermediateConfiguration:
-			console.print("\n\t\t -> Invalid configuration couldn't be avoided. ", ConsoleVerbosity::TimeSteps);
+			console.print("\n\t\t -> Invalid intermediate configuration couldn't be avoided. ", ConsoleVerbosity::TimeSteps);
 			break;
 		case NewtonState::LineSearchDoesntDescend:
 			console.print("\n\t\t -> Line search doesn't descend. ", ConsoleVerbosity::TimeSteps);
@@ -231,7 +232,9 @@ Eigen::VectorXd stark::core::NewtonsMethod::_compute_residual(const Eigen::Vecto
 		std::vector<int> dofs_offsets = this->global_energy->get_dofs_offsets();
 		this->residual = grad.cwiseAbs() / dt; // Force
 		int dof_count = 0;
-		for (auto& pair : this->callbacks->inv_mass) {
+
+		std::unordered_map<int, std::function<void(double*, double*)>> inv_mass_application = this->callbacks->get_inv_mass_application();
+		for (auto& pair : inv_mass_application) {
 			const int dof = pair.first;
 			auto& inv_mass_application_f = pair.second;
 
@@ -338,7 +341,7 @@ double stark::core::NewtonsMethod::_inplace_max_step_in_search_direction(const E
 	while (true) {
 
 		if (step < 0.01) {
-			this->console->add_error_msg(fmt::format("Max step in the search direction shorter than {:2e}", step));
+			//this->console->add_error_msg(fmt::format("Max step in the search direction shorter than {:2e}", step));
 			return 0.0;
 		}
 

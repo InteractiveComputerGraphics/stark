@@ -2,7 +2,7 @@
 
 #include "RigidBodyDynamics.h"
 #include "rigidbody_transformations.h"
-#include "../../utils/mesh_utils.h"
+#include "../../utils/include.h"
 
 stark::RigidBodyHandler::RigidBodyHandler(RigidBodyDynamics* rb, EnergyRigidBodyInertia* inertia, int idx)
 	: rb(rb), idx(idx), inertia(inertia)
@@ -66,7 +66,7 @@ stark::RigidBodyHandler& stark::RigidBodyHandler::set_rotation(const Eigen::Quat
 }
 stark::RigidBodyHandler& stark::RigidBodyHandler::set_rotation(double angle_deg, const Eigen::Vector3d& axis)
 {
-	this->set_rotation(Eigen::Quaterniond(Eigen::AngleAxis<double>(utils::deg2rad(angle_deg), axis.normalized())));
+	this->set_rotation(Eigen::Quaterniond(Eigen::AngleAxis<double>(deg2rad(angle_deg), axis.normalized())));
 	return (*this);
 }
 stark::RigidBodyHandler& stark::RigidBodyHandler::add_rotation(const Eigen::Quaterniond& q)
@@ -81,7 +81,7 @@ stark::RigidBodyHandler& stark::RigidBodyHandler::add_rotation(const Eigen::Quat
 stark::RigidBodyHandler& stark::RigidBodyHandler::add_rotation(double angle_deg, const Eigen::Vector3d& axis, const Eigen::Vector3d& pivot)
 {
 	this->add_translation(-pivot);
-	this->add_rotation(Eigen::Quaterniond(Eigen::AngleAxis<double>(utils::deg2rad(angle_deg), axis.normalized())));
+	this->add_rotation(Eigen::Quaterniond(Eigen::AngleAxis<double>(deg2rad(angle_deg), axis.normalized())));
 	this->add_translation(pivot);
 	return (*this);
 }

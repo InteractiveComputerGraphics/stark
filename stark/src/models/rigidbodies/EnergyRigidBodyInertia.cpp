@@ -5,7 +5,7 @@
 stark::EnergyRigidBodyInertia::EnergyRigidBodyInertia(core::Stark& stark, spRigidBodyDynamics rb)
 	: rb(rb)
 {
-	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step(stark); });
+	stark.callbacks.add_before_time_step([&]() { this->_before_time_step(stark); });
 
 	// Linear inertia
 	stark.global_energy.add_energy("EnergyRigidBodyInertia_Linear", this->conn,
@@ -49,12 +49,13 @@ stark::EnergyRigidBodyInertia::EnergyRigidBodyInertia(core::Stark& stark, spRigi
 	);
 
 	// Inverse mass and inertia tensor for acceleration residual
-	stark.callbacks.inv_mass[this->rb->dof_v.idx] = [&](double* begin, double* end)
+	stark.callbacks.add_inv_mass_application(this->rb->dof_v,
+		[&](double* begin, double* end)
 		{
 			const int n = (int)std::distance(begin, end);
 			const int n_bodies = this->rb->get_n_bodies();
 			if (n != 3 * n_bodies) {
-				std::cout << "Stark error: EnergyRigidBodyInertia::inv_mass() found `begin` and `end` with different size than the set nodes." << std::endl;
+				std::cout << "Stark error: EnergyRigidBodyInertia::inv_mass_application() found `begin` and `end` with different size than the set nodes." << std::endl;
 				exit(-1);
 			}
 
@@ -65,13 +66,15 @@ stark::EnergyRigidBodyInertia::EnergyRigidBodyInertia(core::Stark& stark, spRigi
 				begin[3 * i + 1] *= mass_inv;
 				begin[3 * i + 2] *= mass_inv;
 			}
-		};
-	stark.callbacks.inv_mass[this->rb->dof_w.idx] = [&](double* begin, double* end)
+		}
+	);
+	stark.callbacks.add_inv_mass_application(this->rb->dof_w,
+		[&](double* begin, double* end)
 		{
 			const int n = (int)std::distance(begin, end);
 			const int n_bodies = this->rb->get_n_bodies();
 			if (n != 3 * n_bodies) {
-				std::cout << "Stark error: EnergyRigidBodyInertia::inv_mass() found `begin` and `end` with different size than the set nodes." << std::endl;
+				std::cout << "Stark error: EnergyRigidBodyInertia::inv_mass_application() found `begin` and `end` with different size than the set nodes." << std::endl;
 				exit(-1);
 			}
 
@@ -88,7 +91,8 @@ stark::EnergyRigidBodyInertia::EnergyRigidBodyInertia(core::Stark& stark, spRigi
 				begin[3 * i + 1] = aa[1];
 				begin[3 * i + 2] = aa[2];
 			}
-		};
+		}
+	);
 }
 
 void stark::EnergyRigidBodyInertia::add(const int rb_idx, const double mass, const Eigen::Matrix3d& inertia_loc, const double linear_damping, const double angular_damping)

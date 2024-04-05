@@ -6,7 +6,6 @@
 #include "rigidbodies/RigidBodies.h"
 #include "interactions/Interactions.h"
 #include "presets/Presets.h"
-#include "EventDrivenScript.h"
 
 
 namespace stark
@@ -39,6 +38,5 @@ namespace stark
 
 	private:
 		core::Stark stark;
-		EventDrivenScript script;
 	};
 }

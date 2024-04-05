@@ -16,32 +16,18 @@ endif()
 
 set(SOURCE_FILES
     paths.h
-    #scenes_cloth.cpp
-    #scenes_cloth.h
-    #scenes_deformable_solids.cpp
-    #scenes_deformable_solids.h
-    #scenes_rigidbodies.cpp
-    #scenes_rigidbodies.h
-    #scenes_interactions.cpp
-    #scenes_interactions.h
-    #kobuki.cpp
-    #kobuki.h
-    #gripper.cpp
-    #gripper.h
-    #main.cpp
-    #main_refactor.cpp
-    main_refactor_deformables.cpp
-    #rb_constraint_test_scenes.cpp
-    #rb_constraint_test_scenes.h
+    main.cpp
+    rb_constraint_test_scenes.cpp
+    rb_constraint_test_scenes.h
 	)
 
 # Create executable    
-add_executable(app ${SOURCE_FILES})
+add_executable(examples ${SOURCE_FILES})
 
 # Include/link dependencies
 ## Stark
-target_link_libraries(app stark)
-target_include_directories(app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../stark/include)
+target_link_libraries(examples stark)
+target_include_directories(examples PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../stark/include)
 
 ## Eigen
-target_include_directories(app PUBLIC ${EIGEN3_INCLUDE_DIR})
+target_include_directories(examples PUBLIC ${EIGEN3_INCLUDE_DIR})

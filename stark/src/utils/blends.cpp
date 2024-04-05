@@ -2,14 +2,14 @@
 
 #include <cmath>
 
-double stark::utils::blend(double min, double max, double begin_time, double end_time, double current_time, BlendType blendType)
+double stark::blend(double min, double max, double begin_time, double end_time, double current_time, BlendType blendType)
 {
     const double duration = end_time - begin_time;
     const double dt = current_time - begin_time;
 
     // Error exit if time is out of range
     if (dt < 0.0 || dt > duration) {
-        std::cout << "stark error: utils::blend() got time out of range: " << current_time << std::endl;
+        std::cout << "stark error: blend() got time out of range: " << current_time << std::endl;
         exit(-1);
     }
 
@@ -37,21 +37,8 @@ double stark::utils::blend(double min, double max, double begin_time, double end
             result += (1 - pow(-2 * t + 2, 3) / 2) * (max - min);
         }
         break;
-    case BlendType::Anticipation:
-        // Anticipation with slight back movement before going forward
-        result += (pow(t - 1, 3) + 1) * (max - min);
-        break;
-    case BlendType::Bounce:
-        // Simple bounce effect, more sophisticated bounce can be added
-        if (t < 0.5) {
-            result += (1 - pow(1 - 2 * t, 2)) * (max - min) / 2;
-        }
-        else {
-            result += (pow(2 * t - 1, 2) + 1) * (max - min) / 2;
-        }
-        break;
     default:
-        std::cerr << "stark error: utils::blend() got unknown blend type." << std::endl;
+        std::cerr << "stark error: blend() got unknown blend type." << std::endl;
         exit(1);
     }
 

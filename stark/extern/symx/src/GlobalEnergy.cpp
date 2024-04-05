@@ -83,26 +83,31 @@ void symx::GlobalEnergy::_exit_if_not_initialized() const
 		exit(-1);
 	}
 }
-std::string symx::GlobalEnergy::compile(std::string working_directory, const int n_threads, bool force_compilation, bool force_load, bool suppress_compiler_output)
+void symx::GlobalEnergy::compile(std::string working_directory, CompilationOptions options)
 {
-	std::string output;
 	if (this->get_n_dof_sets() == 0) {
 		std::cout << "SymX GlobalEnergy.compile() error: No sets of degrees of freedom declared." << std::endl;
 		exit(-1);
 	}
+
+	auto msg = [&](const std::string& s) {
+		if (options.msg_callback) {
+			options.msg_callback(s);
+		}
+	};
 
 	this->working_directory = working_directory;
 	this->n_threads = n_threads;
 	if (this->n_threads == -1) {
 		this->n_threads = omp_get_max_threads();
 	}
-	this->n_threads = suppress_compiler_output ? this->n_threads : 1;
+	this->n_threads = options.suppress_compiler_output ? this->n_threads : 1;
 
 	this->runtime_differentiation = 0.0;
 	this->runtime_codegen = 0.0;
 	this->runtime_compilation = 0.0;
 	this->symbols_bytes = 0;
-	output += "SymX energies:\n";
+	msg("SymX energies:\n");
 
 	const double t0 = omp_get_wtime();
 	#pragma omp parallel for num_threads(this->n_threads) schedule(dynamic)
@@ -110,7 +115,7 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 		this->energies[i]->working_directory = this->working_directory;
 
 		const double t0 = omp_get_wtime();
-		this->energies[i]->deferred_init(force_compilation, force_load, suppress_compiler_output);
+		this->energies[i]->deferred_init(options.force_compilation, options.force_load, options.suppress_compiler_output);
 		const double t1 = omp_get_wtime();
 		
 		#pragma omp atomic
@@ -125,11 +130,14 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 		#pragma omp atomic
 		this->symbols_bytes += this->energies[i]->n_bytes_symbols;
 
-		if (this->energies[i]->was_cached) {
-			output += "\t " + two_columns(this->energies[i]->name, "loaded. (" + std::to_string(t1 - t0) + " s)\n", 60);
-		}
-		else {
-			output += "\t " + two_columns(this->energies[i]->name, "compiled. (" + std::to_string(t1 - t0) + " s)\n", 60);
+		#pragma omp critical
+		{
+			if (this->energies[i]->was_cached) {
+				msg("\t " + two_columns(this->energies[i]->name, "loaded. (" + std::to_string(t1 - t0) + " s)\n", 60));
+			}
+			else {
+				msg("\t " + two_columns(this->energies[i]->name, "compiled. (" + std::to_string(t1 - t0) + " s)\n", 60));
+			}
 		}
 	}
 	const double t1 = omp_get_wtime();
@@ -139,14 +147,13 @@ std::string symx::GlobalEnergy::compile(std::string working_directory, const int
 	slow_compile_note = "(Note: MSVC takes a lot of time just to load!)";
 	#endif
 
-	output += "SymX stats\n";
-	output += "\t Total time: " + std::to_string(t1 - t0) + " s.\n";
-	output += "\t Differentiation (acc): " + std::to_string(this->runtime_differentiation) + " s.\n";
-	output += "\t Code generation (acc): " + std::to_string(this->runtime_codegen) + " s.\n";
-	output += "\t Compilation (acc): " + std::to_string(this->runtime_compilation) + " s. " + slow_compile_note + "\n";
-	output += "\t Symbol peak memory: " + std::to_string(this->symbols_bytes/1024) + " KB.\n";
+	msg("SymX stats\n");
+	msg("\t Total time: " + std::to_string(t1 - t0) + " s.\n");
+	msg("\t Differentiation (acc): " + std::to_string(this->runtime_differentiation) + " s.\n");
+	msg("\t Code generation (acc): " + std::to_string(this->runtime_codegen) + " s.\n");
+	msg("\t Compilation (acc): " + std::to_string(this->runtime_compilation) + " s. " + slow_compile_note + "\n");
+	msg("\t Symbol peak memory: " + std::to_string(this->symbols_bytes/1024) + " KB.\n");
 	this->is_initialized = true;
-	return output;
 }
 symx::Assembled symx::GlobalEnergy::evaluate_E()
 {

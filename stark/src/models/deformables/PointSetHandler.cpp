@@ -1,7 +1,7 @@
 #include "PointSetHandler.h"
 
 #include "PointDynamics.h"
-#include "../../utils/mesh_utils.h"
+#include "../../utils/include.h"
 
 using namespace stark;
 
@@ -116,9 +116,9 @@ PointSetHandler& PointSetHandler::add_displacement(const Eigen::Vector3d& displa
 }
 PointSetHandler& PointSetHandler::add_rotation(const double angle_deg, const Eigen::Vector3d& axis, const Eigen::Vector3d& pivot, bool also_at_rest_pose)
 {
-	const Eigen::Matrix3d R = Eigen::AngleAxis<double>(utils::deg2rad(angle_deg), axis.normalized()).toRotationMatrix();
+	const Eigen::Matrix3d R = Eigen::AngleAxis<double>(deg2rad(angle_deg), axis.normalized()).toRotationMatrix();
 	for (int i = this->get_begin(); i < this->get_end(); i++) {
-		this->dyn->x0[i] = utils::rotate_deg(this->dyn->x0[i], R, pivot);
+		this->dyn->x0[i] = rotate_deg(this->dyn->x0[i], R, pivot);
 		this->dyn->x1[i] = this->dyn->x0[i];
 		if (also_at_rest_pose) {
 			this->dyn->X[i] = this->dyn->x0[i];

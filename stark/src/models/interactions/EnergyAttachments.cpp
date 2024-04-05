@@ -1,6 +1,6 @@
 #include "EnergyAttachments.h"
 
-#include "../../utils/mesh_utils.h"
+#include "../../utils/include.h"
 #include "../time_integration.h"
 #include "../rigidbodies/rigidbody_transformations.h"
 #include <tmd/TriangleMeshDistance.h>
@@ -10,7 +10,7 @@ stark::EnergyAttachments::EnergyAttachments(core::Stark& stark, const spPointDyn
 	: dyn(dyn), rb(rb)
 {
 	// Callbacks
-	stark.callbacks.is_converged_state_valid.push_back([&]() { return this->_is_converged_state_valid(stark); });
+	stark.callbacks.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
 
 	// Declare the energies
 	stark.global_energy.add_energy("EnergyAttachments_d_d_p_p", this->conn_d_d_p_p,

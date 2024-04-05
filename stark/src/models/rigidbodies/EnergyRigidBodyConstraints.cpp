@@ -8,9 +8,9 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 	: rb(rb)
 {
 	// Callbacks
-	stark.callbacks.is_converged_state_valid.push_back([&]() { return this->_is_converged_state_valid(stark); });
-	stark.callbacks.on_time_step_accepted.push_back([&]() { this->_on_time_step_accepted(stark); });
-	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
+	stark.callbacks.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
+	stark.callbacks.add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
+	stark.callbacks.add_write_frame([&]() { this->_write_frame(stark); });
 
 	// Constraint containers initialization
 	this->global_points = std::make_shared<RigidBodyConstraints::GlobalPoints>();

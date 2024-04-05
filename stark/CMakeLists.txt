@@ -48,6 +48,8 @@ set(CORE_FILES
 	src/core/NewtonsMethod.h
 	src/core/Settings.cpp
 	src/core/Settings.h
+	src/core/EventDrivenScript.cpp
+	src/core/EventDrivenScript.h
 	src/core/Stark.cpp
 	src/core/Stark.h
 	)
@@ -144,8 +146,6 @@ set(MODELS_FILES
 	src/models/Simulation.h
 	src/models/time_integration.cpp
 	src/models/time_integration.h
-	src/models/EventDrivenScript.cpp
-	src/models/EventDrivenScript.h
 	)
 
 set(UTILS_FILES
@@ -157,6 +157,7 @@ set(UTILS_FILES
 	src/utils/unordered_array_set_and_map.h
 	src/utils/blends.cpp
 	src/utils/blends.h
+	src/utils/include.h
 	)
 
 set(CONSTRUCTS_FILES

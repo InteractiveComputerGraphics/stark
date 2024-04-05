@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace stark::utils
+namespace stark
 {
     template<std::size_t N, typename INT_TYPE = int>
     struct ArrayHasher {

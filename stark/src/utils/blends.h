@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 
-namespace stark::utils
+namespace stark
 {
     enum class BlendType 
     {
@@ -9,9 +9,7 @@ namespace stark::utils
         Linear,
         EaseIn,
         EaseOut,
-        EaseInOut,
-        Anticipation,
-        Bounce
+        EaseInOut
     };
 
     double blend(double min, double max, double begin_time, double end_time, double current_time, BlendType blendType);

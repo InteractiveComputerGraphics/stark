@@ -15,6 +15,16 @@ namespace symx
 	class GlobalEnergy
 	{
 	public:
+		/* Types */
+		struct CompilationOptions
+		{
+			int n_threads = -1;
+			bool force_compilation = false;
+			bool force_load = false;
+			bool suppress_compiler_output = true;
+			std::function<void(const std::string&)> msg_callback = nullptr;
+		};
+
 		constexpr static std::size_t BLOCK_SIZE = 3;
 
 		/* Fields */
@@ -64,7 +74,7 @@ namespace symx
 		template<typename DYNAMIC_VECTOR>  // std::vector<double>, Eigen::VectorXd...
 		DoF add_dof_array(DYNAMIC_VECTOR& arr, std::string label = "");
 
-		std::string compile(std::string working_directory, const int n_threads = -1, bool force_compilation = false, bool force_load = false, bool suppress_compiler_output = true);
+		void compile(std::string working_directory, CompilationOptions options = CompilationOptions());
 		Assembled evaluate_E();
 		Assembled evaluate_E_grad();
 		Assembled evaluate_E_grad_hess();

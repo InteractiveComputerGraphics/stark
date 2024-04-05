@@ -1,7 +1,7 @@
 #include "EnergyDiscreteShells.h"
 
 #include "../../time_integration.h"
-#include "../../../utils/mesh_utils.h"
+#include "../../../utils/include.h"
 
 constexpr double EPSILON = 1e-12;
 
@@ -110,7 +110,7 @@ stark::EnergyDiscreteShells::Handler stark::EnergyDiscreteShells::add(const Poin
 
 	// Find internal_angles (dihedral) connectivity
 	std::vector<std::array<int, 4>> internal_angles;
-	utils::find_internal_angles(internal_angles, triangles, set.size());
+	find_internal_angles(internal_angles, triangles, set.size());
 
 	// Initialize structures
 	symx::LabelledConnectivity<6>* conn = params.elasticity_only == true ? &this->conn_elasticity_only : &this->conn_complete;

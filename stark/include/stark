@@ -3,6 +3,5 @@
 #include "../src/models/Simulation.h"
 //#include "../src/constructs/include_ui.h"
 
-#include "../src/utils/mesh_utils.h"
-#include "../src/utils/mesh_generators.h"
-#include "../src/utils/blends.h"
+#include "../src/utils/include.h"
+

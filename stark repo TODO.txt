@@ -1,576 +1,137 @@
 stark repo TODO
 ===============
 
-Presets
--------
-	- Flesh: Volumetric + skin
-	
-On the Desk
------------
-	- Adaptive time step and contact stiffness
-		- Test!
-	- Project on Demand
-	- rb_constraint_test_scenes is commented out
-	- mesh_utils
- 
- 
+
 Release
 -------
-	- Give a final good look to all the bindings and make sure they are up to date
-	- Script should be cleaned. Just leave the time events.
-	- `settings.debug.check_non_singular_hessian`
-		Maybe we can add a quick test while inverting the diagonal during preconditioning preparation?
-	- Make all arrows:
-		simulation.deformables->prescribed_positions->add
-		simulation->deformables->prescribed_positions->add
-	- contact_distance -> contact_thickness
-	- Prescribed meshes implemented as target rigid or deformable meshes with no mass.
-		This is because otherwise we don't get physically correct displacements with velocities for the prescribed mesh.
-		For example, a baseball bat hitting a ball. It's different if it has a continuous motion with actual angular velocity 
-		vs just teleporting clipping the ball.
-		- Deformable meshes can be used for character animation for instance.
-			PointSet + PrescribedPositions + triangle collision
-		- Rigidbodies
-			RigidBody + fix with target
-	- Rigidbodies have labels, but pointsets do not :(
-	- We don't have friction for any case of the edge-edge
-	- Memory error in BroadPhaseBase destructor
-	- Adaptive contact stiffness and time step size
-	- global log of parameters
-	- No output directory should be just a warning
-	- Automatic project to PD
-	- Per-handler contact distance
-	- move Script to Stark
-	- `using Vertices = std::vector<Eigen::Vector3d>`, `using Tets = std::vector<std::array<int, 4>>`
-	- stark::models and then include_ui.h really suck. I would just directly declare without "models".
-	- Maybe split mesh utils as it is getting quite large
-		Also, some methods have two versions (void and return) and others do not.
-	- Energy evaluation with non-DOF-dependent data (e.g. different X_inv per quadrature point)
-		Substitute summations over fixed values, with a more general connectivity based inner loop.
-		Sometimes there is per-integration point information that needs to be fetched.
-	- DeformableLine bending. Grispun equivalent?
-	- More default materials (including with skin)
-	- Get rid of Jan's code to make files and folders.
-	- For all meshes input, check all nodes are used, there are no zero-volume elements...
-	- vtkio is very nice but needs documentation and public/private. I lost half an hour because I used a private method instead of the indended one.
-
-	- GlobalEnergy.test_derivatives_with_FD();
+	- Roadmap: Documentation. Tutorials. Examples. Gallery.
 	
-	- Fabian on better rod models:
-		hm, I only looked at Tassilos rods paper. I think the basics were fairly simple. Need to track rotations though I think. But they are not free variables like in micropolar
-		In Theodor Kims curly hair paper they referenced "Discrete elastic rods" which is supposedly also some standard
-		the curly hair paper itself is probably not suitable because I think they said it doesn't work with straight hair or something like that
-		http://www.cs.columbia.edu/cg/pdfs/143-rods.pdf
-	- Material parametrizations should be constructed with the enum (no static function) so the user can't get invalid stuff
-		This also solves the `.use_skin` extra step
-	- The rod implementation is wrong. Damping for sure. Strain is softer then stiffer??
-	
-	// TODO: Try not "better friction mode"
-	// TODO: Test blend strategies.
-
-	[CRITICAL] There is definitely something wrong when reducing time step.
-	- [GENERAL PROBLEM] It is hard to 7827eally struggles, the collision struggles, projection leads to a lot of iterations, CG struggles, unclear if mass ratios are a problem...
-		Inspection tools would be great.
-		In general, rigid body sim is tough in this framework. Need to probably run much smaller dt.
-		
-		We need to really clarify a lot of stuff to set up expectations. Mass ratios, huge forces, runtimes, repulsions... But it works, look at the gallerie!
-	- Unclear deg/s is a good idea. Maybe we just make everything rad/s.
-	- Warn from starting huge pressure due to self contacts. I lost so much time with the tires!
-	- We need to check for penetrations in the rest configuration. People need this.
-	- Is `Id::get_local_idx()` fixed?
-	- No warnings. Ideally it should compile with -Werror.
-	- Print something while waiting for SymX.
-	- Error in NewtonsMethod: grad is not residual *forces*, as its the derivative of velocities
-	- Non-AVX2 mode for Mac
-	- Error messages and logging.
-	- Documentation.
-	- Examples.
-	- Tutorials.
-	- Gallery.
-	- Sanitize all the UI.
-	- Remove research materials.
-	- More materials. Not just towel and sorf_rubber.
-	- Headers with License at the top of every file?
-	
-	To clarify for users
-	~~~~~~~~~~~~~~~~~~~~
-		- It's all an approximation (numerical) of the approximation (modeling).
-			Some models and numerical solutions are easy to get to work quite well, others not so much.
-			Friction is particularly problematic in both departments:
-				a) The model is a very rough approximation or reality. Will work well for tidy contacts, but will be problematic for huge velocities and stickiness (despite what papers say).
-					Since it is "lagged", it can be very time step dependent.
-				b) It is numerically challenging, specially when the stick-slide condition is tightly define.
-			In highly dynamis scenes (car) small time steps and tight tolerances can make a big difference.
-		- Still sometimes the codegen folder needs to be recomputed or the program run again.
-		- The performance numbers from the paper might not be 100% accurate anymore as improvements to safety and other more flexible facilities were added.
-	
-	Comming
-		- Locally disabled collisions for attachments
-		- Generalize attachments beyond point-point -> point-triangle, point-edge... and other combinations between RB and deformables.
-
-
-Missing from the Python bindings
---------------------------------
-	- EventDrivenScript
-
-To Test (especially after python bindings)
-------------------------------------------
-	- EventDrivenScript
-		The basic functionality works, but I am not sure everything does.
-
-Simulation observations
------------------------
-In the car simulation, friction really behaves very differently between rigid wheels and soft tires.
-
-
-Simulations
------------
-	- Volumetric with skin
-	- Human arm (w/o hand)
-		This is a huge huge thing, and we have everything: flesh, skin, bones, joints.
-
-Oct unification
----------------
-	- Motors are very very stiff and mess the convergence so much.
-	- Delete Bergou06
-	- Remove labels from energies
-	- Is integration of bending damping consistent?
-	- Damping must be integrated by positions, not velocities!
-	- Bending damping seems to work but it is way too stiff.
-	- Newton max_step should not return double, but directly clamp the step.
-		Need to figure out how to nicely slide du for the user
-	- Why is mass not enough for a simulation??
-	- Clarify the projection matrices for 2D shells according to Fabian findings
-		Mathematical and experimental demonstrations
-		
-	Collision detection (It is quite good overall already)
-		- Parallelism.
-		- CCD.
-		- Disable/Enable pairs should detect redundancies and ignore them.
-
-	* Time step reduction leads to loss in inertia?? Certainly looks like it!
-		But then it catches up... wut?
-	* High level (Stark, Newton, Logger, Console, Callbacks) structures need refactoring.
-	* Is residual better as .norm() or .max()
-
-	* Attachments
-		- Attach by distance
-			This can be used to automatically stitch all the pieces of cloth of a dress.
-		- Tolerance
-
-	* Get collision mesh and distance of all deformables as well
-
-	* Add inspection to boundary conditions and attachments?
-
-	* Set collision meshes in a callback function `before_time_step()` when not initalized.
-		This way the user can set whatever needed before the simulation, and everything sets built just once.
-		Probably I should add another callback `.before_run()`
-
-	* Drop `IntervalConnectivity`, I don't need it. smash will do the job.
-	
-	* Console and Logger are just wrong.
-		- They are part of the core but know too much about the models.
-			I should have core stuff (output, newton...) but also model stuff.
-		- SymX energy initializations should be declared just before the simulation executes, not when the simulation object is created.
-			Otherwise I cannot set things like IPC barrier type. 
-				-> Move declarations to a lambda that gets executed sometime before the sim.
-					`callbacks.energy_declaration`
-			Actually... this is already happening!
-			
-	* For truly usable attachments I need to disable initial collisions.
-		Cloth stitching, for example.
-		At the moment is impossible to make a dress by stitching pieces of cloth.
-					
-	* Better output for symx compilation. At the moment is just waiting.
-		Probably better to pass a lambda for custom print.
-	
-	* Add debug option to load the DLL directly without checking.
-		Otherwise it's hard to work if I have to wait 1 min
-	
-	* Consistent error messages. Either all to std::out (likely) or to stark.console (have to pass stark everywhere.)
-	
-	* OOP UI to the creation and transformation of surface and volume meshes.
-	
-	* New strain material doesnt converge for large steps...
-	
-	* Check log barriers give the same result than cubic
-	
-	* Parallel contact data structure fill
-
-	* I can set BC for volumetrics from surfaces...
-	* Vehicle! https://www.reddit.com/r/interestingasfuck/comments/18p75uj/turning_diameter_comparison_of_lego_steering/
-	
-	* At the end, revise all user interface for consistency.
-		I don't love the `.local_to_global_point()` but `.get_velocity_at()`
-	* Test RB.get_velocity_at()
-	* Springs as distance or elongation? Same decision as with rods
-	* Try multi body of all systems
-	* SymX 
-		- Catch2
-		- Print
-		- No SIMD assembly
-		- Put back SymX fem_integrator.cpp.
-		- private/public
-		- Something is broken when loading an energy that has recently changed.
-		
-	* Remove the current logging system.
-	
-	* Stark core should have it's own settings. The user will have also their own settings.
-	
-	* CMake files are a mess. Lot's of duplicities.
-	* Fix all header includes. Compile on linux.
-	* Fix warnings from Eigen and par_shapes.
-	* Make sure all compiles in many OS as possible.
-
-	* Tolerances to deformables BC
-	* Attachments
-	* BlockedSparseMatrix is an old version!
-	* current_frame = zero runs for double the amount of iterations than the rest!
-	* run_accept_newton_iteration() is a terrible name
-		Clean callbacks and decide for a global strategy
-	* In this current design, Stark should also be a shared pointer.
-		Right now is a reference that is used during the simulation (e.g. write_frame) and could theoretically become invalid.
-	
-	* I need to clarify where things are initialized, who owns who, etc...
-	
-	* SymX doesnt recompile if the source array changes `this->dyn->da` to `this->dyn->a`
-
-	* Move adaptive contact stiffness into EnergyFrictionalContact.
-		This must be possible without hardcoding it in NewtonsMethod.
-		NewtonsMethod::Error and handling needs to be rewritten.
-			Restarts can be triggered by non-convergence, contacts, too soft constraints...
-			I need to handle this better. Everything should take care of itself except non-convergence
-	
-	* Document/refactor Id:
-		- While for deformables there is a distinction between local and global, for rigid bodies there is not.
-			- Also, "local" and "global" is a bit unfortunate.
-		- Maybe I should get rid of it as a global thing and have actual different types for Deformables and other PS
-			`DeformableId`, `RigidBodyId`... and they are specialised.
-			I think it is completely fine to specialize interaction energies in the interface for the type combinations.
-			Overall this is worse for the user and perhaps more clear internally (?)
-	* Consistent naming for Energies, PhysicalSystems and user interface
-		DynamicsPoints, DynamicsRigidBodies...
-	* PrescribedPositions stiffness is completely inconsistent across surface and volumes.
-		Multiply by thickness or sth
-	* casserts really suck because the debugger can't get there! Replace them.
-	* All boxes should be center + side. Not bottom and top.
-		Shell should have .add_grid_mesh() and just place it with a default transformation to avoid the unnecessary lines above.
-	* `stark.settings.contact.friction_displacement_perturbation` is hardcoded now
-	* We have many different index types. Do I want to hard-type them? GroupId, ObjId...
-		- Some functions are very confusing (volumetric._write_frame())
-	* PrescribedPositions
-		- Offer common lambdas uses cases (distance from line, plane... inside box, sphere...)
-	* `Settings` has things that really should not go into the core. Some stuff has to be placed outside. 
-		Maybe I can add custom entries ?
-		It should also be a pointer so the user can change it. Right now it's confusing.
-	* Sanitize all the UI
-		negative stiffness, tolerances, ...
-	* SymX uses "get_..." and Stark "make_..." for symbols
-		
-	* Modelling:
-		- Add twisting to rods
-		- Specialized corot triangle and tet damping is better as otherwise with edge we are adding unintentional "anisotropic" effects.
-		- Check consistency:
-			+ All forms of damping
-			+ All forms of strain limiting
-			+ Edge potentials
-		- Scale the parametrization of effects so it is easy to understand.
-			I have to give 1e6 strain damping to the rods to have an effect...
-		- The stiffness of strain limiting is very annoying. It is very scene dependent and it kills CG.
-			- It is 
+	- Check utils python bindings
 	
 
 High priority
 -------------
-	* Newton-CG. It's very very simple.
-		Nocedal 169.
-		When using the negative gradient descend, use the existing Hessian to compute
-			a newton step in that direction: d.T*H*d * dx = -d.T*g
-	* Lambdas to log the parameters of each system
-	* Output the gradient norm of each constraint to see the amount of force in the sim
-		- How to deal with torque?
-	* Blacklists in the intersection detection between cloth and rb are generating wrong results
+	- callback.exit_simulation()
+	- Constructs?
+	- Clear all warnings
+	- casserts really suck because the debugger can't get there! Replace them.
+	- DeformableLine bending. Grispun equivalent?
+		The current rod implementation is wrong. Damping for sure. Strain is softer then stiffer??
+		Tassilo's cosserat rods
+		http://www.cs.columbia.edu/cg/pdfs/143-rods.pdf
+	- Error messages and logging. Not just cout and exit.
+	- More materials
+		- Skin: Volumetric + skin
+		- Reinforced cloth: surface + rods
+	- Many energies are inconsistent across point volume/mass: prescribed points, contacts, damping (?)
 
 Mid priority
 ------------
-	* Option to controllably end the simulation using a custom callback
+	- Consistency in integration: cloth integrate by volume? Then bending and damping too!
+	* Interpolate frames
+	* Pause simulations. Sometimes you want to do something in the cluster and need pausing.
+	* Newton max_step should not return double, but directly clamp the step.
+		Need to figure out how to nicely slide du for the user
+	* (Fabian) Energy evaluation with non-DOF-dependent data (e.g. different X_inv per quadrature point)
+		Substitute summations over fixed values, with a more general connectivity based inner loop.
+		Sometimes there is per-integration point information that needs to be fetched.
 	* replace all the `reinterpret_cast<>` by `_mm256_loadu_pd`
-	* Project-on-Demand Newton.
-	* Newton-CG
-	* SymX still has some low level design problems in eval, hashing...
-	* SymX can't use const data arrays?????
-	* Rigid bodies are very complicated. Probably too complicated to be practical.
-		Just to get the velocity of a contact point is insane.
-		Cannot we find an easier formulation?
-	* Add boundary condition helpers
-		The 
-	* Verify edge energies are discretization consistent!
-		Strain, strain limiting, strain damping
-	* Verify damping is consistent with time step (I think it is not, it will apply the same force every time step regardless of time step size... which is correct! Time integration apply the force consistently.)
-		we should document this in a short latex document because it is a pain everytime starting from scratch
-	* Should we really have strain damping factors normalized to strain stiffness?
-		It's in the ICRA paper!
-		This is all numbers at input time. Not in the formulation. It can just be an option.
-		The point was to not need tiny numbers. But I am not sure it is an obvious relation and can be dangerous!
-		We say in the paper that it´s normalized, we could just have input that number into the solver by hand.
-	* Split the codebase into StarkCore/StarkLib (solver/engine) and Stark ("models")
-	* Gast paper has some hints on improving CG, also accounting for adaptive tolerances.
-	* Need to improve stopping criterion. See Andreas paper.
-		We can easily have a switch to decide if we enforce balance of forces or changes in the visuals of the simulation.
-		
-		Newton and CG non-smart and non-adaptive tolerances might be the real bottleneck here.
-		We can surely use a combined Newton-CG solver with much better criteria that should be *much* faster than what we got.
-		Projection might play a significant role here:
-			I could run large time steps with 1e-8 CG tolerance with projection, but not without projection. I had to go back to 1e-12.
-		Hard-coded tolerances are resolution dependent: stuff that works well for fine cloths (100x100), works pooly for very fine cloths (400x400).
-		
-		Note: Just hard-coded weaker CG convergence leads to more Newton iterations, being slower overall.
-		
-	* With the working project_to_PD, the door is open to much more efficient simulations as we can actually control the time step size.
-		Very large dt still is slower. But we no longer are forced to sub ms.
-		Now making the projection to PD faster would make much more sense.
-		Implement project-on-demand. The problem is that it's going to be required *always* at large time steps...
-	
 	* System to export frames as images so they can be inspected when running on the cluster.
 		Polyscope has few and simple dependencies and uses OpenGL to generate images from meshes
 		It is not ideal that uses OpenGL instead of software simulated rendering, but if you don't have OpenGL in a server, also you cannot open the images
 		https://github.com/nmwsharp/polyscope/tree/master
 		
 		-> This is going to need a rework of the `.write_frame()` facilities
-		
-	* Object thickness.
-		Decouple contact distance from object thickness. Specially important for co-dimensional: granular materials, rods, shells.
-	* Built-in renderer for the cluster to faster inspect results (I just set a camera within Stark)
-	* Separate rigid body and sof body BC stiffness
-	* Soft problems can be solved to 1e-8, but when things get even moderately stiff, the line search is so noisy that it's impossible.
-		I need better automatic debug info so it can let me know what is going wrong. Otherwise I really don't know if it's the collisions that are too tough, the line search, the indefiniteness...
-	* Change name "Cloth" for "EmbeddedSolids" or something like that. Shells might be more important than cloth for the robotics community.
-		Maybe "VolumetricSolids" and "SurfaceSolids"
-	* The controller should be it's own function as it might be used in more places than for the motor.
-	* ? Activate friction mid simulation is wrong!
-	* Check that all connectivity entries are used in CompiledInLoop
-	* Change everything to LabelledConnectivity
-	* We need measures on how stiff the problem is to solve and why.
-		It is too easy (most times!) to make an impossible scene with insane friction, collisions, BC...
-		But there is nothing to tell me that it is too hard and what exactly is happening
-	* Controlled collision bounciness/restoration. Cloth is extremely collision absorvent, it should not bounce.
-	* There is a BIG refactor to do in collisions and friction.
-		I should bring all the collisions to a single class and share all the tooling there.
-		In the end it's not going to be too bad (except building connectitivity)
-	* Cloth bending is way too elastic. We need damping and/or plasticity on that.
-	* SymX just load .dll, don't checksum. Too slow in debug mode.
-	* Contacts should be global as artificially splitting into physical systems leads to repeated CD, 
-		implicit handling of collision_x1 updates, and in general much less clarity
-	* Compute contact forces and show them somehow
-	* Python plots for time steps, stiffnesses, line search/CG iterations, number of contacts, etc...
-	* Initial intersection error.
-	* Friction data structures have a lot in common. Refactor.
-	* lambdas for get/set symx data and energies shuold be refactored into a common place to avoid duplicities in logic
-	* Penalty as a class so I can swap and easily change the gradient for the friction
-	* Pen and paper tests. Box on a plane:
-		- Contact forces. Total and per point.
-		- Friction forces.
-	* Probably better just to have the edge distance strain limiting as it poses way less convergence problems
-	* Change all explicit uses of time integration by the euler_integration function so I can better change it to other schemes later.
-	* [Important] v1 as initial guess with intersection test might significantly help convergence
-		cross system interactions are non-trivial to sync
-	* Add intersection step at the end of the line search to be able to accept the step
-		Maybe directly in the line search
-		This is because RB have curved trajectories
-	* RWTH Cluster to run many kobuki sims asynchronously
-	* Verlet lists for proximity detection might be necessary as CD starts to catch up to CG in terms of performance.
-	* Make indentifiers types instead of `int` to avoid using them incorrectly.
-		I was passing a cloth_id to a function asking for a RB.
-		Counter-argument: I could also make a mistake by passing the wrong cloth id.
-	* Investigate why it is so hard to simulate a bunch of spheres as triangular objects in a cup.
-	* Pause simulations. Sometimes you want to do something in the cluster and need pausing.
-	* We need extremely good documentation of the C++/Python library and the code.
-		Generate illustrations for everything: Joints, shells...
-		These pictures will get indexed by google and that will bring more people.
+	* Research solutions for the noisy line search when the stiffness is too high
+	* Newton-CG. It's very very simple.
+		Nocedal 169.
+		When using the negative gradient descend, use the existing Hessian to compute
+			a newton step in that direction: d.T*H*d * dx = -d.T*g
+
 		
 Low priority
 ------------
+	* Compute contact forces and show them somehow
+	* Controlled collision bounciness/restoration. Cloth is extremely collision absorvent, it should not bounce.
+	* We need measures on how stiff the problem is to solve and why.
+		It is too easy (most times!) to make an impossible scene with insane friction, collisions, BC...
+		But there is nothing to tell me that it is too hard and what exactly is happening
+	* Log all settings and models for reproducibility
 	* Auto adjust friction_stick_slide_threshold
-	* Only compile required energies.
-	Performance
-		* Coloring instead of mutexes
-		* Adaptive sparse matrix AMD reordering to keep the non-zero blocks near the diagonal
-		* MKL for CG (?) and projections
-		* Better preconditioners
-		* "Forcing sequence CG + projection to PD" seems to be the fastest. But it distributes the runtime into different bottlenecks.
-			Consider adding MKL as an optional dependency to speedup projections and CG.
-		* Collision dection could be improved by Verlet lists and to a lesser extent octree parallelization.
-		* Regardless of minimization technique, there is an optimal time step size and collision stiffness that we should try to track.
-	* Newton max_step should not return double, but directly clamp the step.
-		This is tricky because if we pass du to the user, they need to know that this is the Newton step, that is, delta from the last newton iteration configuration.
-		Need to figure out how to nicely slide du for the user.
-	* Rigid body limits trigger jitters when they suddenly increase.
-	* Perfomance analysis. It's definitely not linear and we should have a better understanding.
-		Large simulations are definitely much slower. Because CG. But because run out of cache? Super linear number of iterations?
-		We can't make the solution faster if we don't know what, when and how the current solution is slow.
-	* Versatile Boundary Conditions is a very important part of the simulation but it is hard.
-		I would like to support independent nodes, volume selectors, rigid transformations, activating/deactivating....
-	* Can we take a std::shared_ptr<> to Settings so the user can more intuitively edit it?
-		At the moment, copying it to an internal copy is confusing.
-	* Plugin API Generalization so other scientists can actually add and distribute their models without hacking.
-	* Attachments should not pull to zero distance, but rather keep 1.1*dhat
+	* Energy Plugin API Generalization so other scientists can actually add and distribute their models without touching too much of the high level classes
 	* Local line search step. Each dof has it's own allowed step to avoid locking of the whole simulation just because a node doesn't advance.
 		This is very discussed in literature but not sure the practical implications for me that I do very close to zero avg line search iterations.
 		It might be more important for quasi-Newton where the search direction is more random.
 	* Check for element inversion in the line search. This is kind of straightforward and guarantees that Newton doesn't try a stupid step.
-	* I really need a OOP system to handle higher level things. Right now, **I** know how to implement a parallel gripper with a logger, but it's impossible for an external person.
-	* Friction groups (or material groups)
-		In the loundry machine example, we have 100s of objects and the friction pair table is 100**2, literally for the same number.
-		We need maybe a better solution for user friendliness on interactive environments.
-	* Soften adaptive contact stiffness.
-		This is more relevant for rigid bodies as some high velocity impacts at very small time steps might require huge forces.
-		The laundry capped at 3e10.
-		But then we can soften this after resolving the collision as if makes the rest of the problem unnecessarily harder to converge.
-	* TriangleMeshCollisionDetection ownership in the hierarchy is very unclear, specially for clearing
-	* MaterialPresets are not being used
-	* Maybe merge time_integration, rigidbody_transformations...
-	* Function to delete cloth, rb...
-	* More input safety and documentation in the physical systems
-	* Naming of NewtonsMethod is confusing because it is technically the time step.
-	* Interpolate frames
 	* Timings per energy
-	* Magnetic simulations
     * Support for LBFGS. Probably is worse, but the sooned I confirm this, the better.
-	* Ask Jan how he wants to sort his code
-	* Better support for AMR. explicit .update(mesh_id) functions so I can track when to recompute stuff.
-	* Rigid bodies should output standar format poses for easy integration in other softwares.
+
+
+
+Very future work
+----------------
+	* Rigid body formulation based on positions (affine bodies?)
+		Then I can formulate everything in positions which opens the door to using different time integration schemes
+	* FCM for volumetrics to bypass tet meshes.
+	
+
+Models
+------
+	* Magnetic simulations
+	* MPM
+	* Plasticity
 	* Friction makes everything too slow. Implement fixed-branched friction energies.
-	* Tunable heavier cloth borders for added realism (sewed folds).
 
 		
-Convergence improvements
-------------------------
-Notes:
-	The bottleneck is clearly that I have am given many non-descend directions. That determines the time step size 100%.
-	Trying negative direction was slower and caused other problems.
-	I can check if the directions are also too long. Like, bad in general, not just orientation.
+Performance
+-----------
+	* Perfomance analysis. It's definitely not linear and we should have a better understanding.
+		Large simulations are definitely much slower. Because CG. But because run out of cache? Super linear number of iterations?
+		We can't make the solution faster if we don't know what, when and how the current solution is slow.
 
-Ideas:
-	- Higher order mollifiers ?
-	- Better and less stringent Newton and CG tolerance
-	- Flip search directions when uphill
-		- This has a direct influence on how the increase in barrier stiffness works as now you get arbitrary directions to handle
-		This really didn't work better at all.
-		I think I am getting bad directions in general. Not just wrong orientation but also too large.
-		Then the is_valid_step() struggles and we end up discarding the step.
-		It might be that it it works for Andreas but it is also slower for him. We just don't know.
-		It is definitely slower for me. It is faster to accept that I don't get a good direction with the current circumstances and I should reduce the time step to get comfy.
+	* Collision dection:
+		- Prune the tree
+		- Verlet lists
+		- Octree parallelization
 		
-	- Better descend methods (NewtonCG?)
-	- Newton's method needs a lot of work in understanding, convergence, when to repeat a time step...
-		* NewtonsMethod is a mess
-			callbacks and evaluation should go together
-			does it make sense that it is it's own class? Maybe a function is better?
+	* Make CG faster
+		- Log contact barrier pushes the bottleneck further to CG. Requires less Newton iterations overall.
 
-	* The criteria to increase the stiffness is not sound. It is seriously overestimating it and has many
-		unnecessary time step repeats.
-		Actually I am not sure about this. See next point.
-	* Rigid bodies are much harder on the collisions because they cannot store potential energy.
-		Soft bodies will deform so the collision energy only takes part of the impact.
-		Maybe a solution is affine bodies or to model damping forces when rigid bodies collide.
-		Also smaller time steps might make things worse as they divide the inertia force:
-			to completely stop a rigid object in one ms, one needs a huge force.
-				f = -1/dt*(v1 - vhat)*m
-		
-	* For rigid bodies, collision detection runtime becomes massively relevant
-		Slowest part is the line search as I need to run CD every evaluation.
-		Consider that for the paper about it.
-		
+	* Coloring/atomics instead of mutexes
+	* Adaptive sparse matrix AMD reordering to keep the non-zero blocks near the diagonal
+	* MKL for CG (?) and projections
+	* Incomplete Cholesky
+	* Regardless of minimization technique, there is an optimal time step size and collision stiffness that we should try to track.
+	* Adaptive Newton's Method
+
 		
 Documentation
 -------------
 	* The big contention point of the architecture is that we have a global `PointDynamics`
 		When this is explained and justified, everything else becomes much easier to understand.
 		This fundamental decision puts some stress on the mid complexity layer (user layer and core layer remain simple).
-		In order for Stark developers to leverage the power of automation, complexities related to multiple discretization are moved there,
-		where the harm is minimized. The mid-layer is a funnel. The user doesn't know about any of this and the core doesn't know about the user.
-	* DoFs must be non-empty at initialization time. Otherwise they will not be added to SymX.
-	* It needs to be revisited as building something completely from zero ala hello world.
-		There are a lot of error catches we should put in place (like no dofs, no energies, empty stuff...)
-	* We a tutorial for a simple sim. Otherwise it can be intimidating if jumped directly into the stark code..
-	* Explain IPC edge-edge
+	* We need a tutorial for a simple sim. Otherwise it can be intimidating if jumped directly into the stark code..
 	* Rigid body constraints
-	* CANNOT BE USED WITH TYPE FLOAT. make_vector uses sizeof()
-	* Very careful with rigid body declaration an placement:
-		- You are extremely engouraged to use primitive inetial tensor that approximate the shape of your objects.
-		- Rigid bodies must be created on the center and *then* moved later.
-	* Rigid bodies need much stiffer collision stiffness than soft bodies and cloth
 
 
-Debug
------
-	* Can I get the same dof multiple times? Eg calling this twice:
-		symx::Vector v1 = energy.make_dof_vector(this->dof_v, this->v1, rb_idx);
-	* Can I create the dof above and not use it? Eg. RelativeDirectionLock
+To clarify for users
+~~~~~~~~~~~~~~~~~~~~
+	- It's all an approximation (numerical) of the approximation (modeling).
+		Some models and numerical solutions are easy to get to work quite well, others not so much.
+		Friction is particularly problematic in both departments:
+			a) The model is a very rough approximation or reality. Will work well for tidy contacts, but will be problematic for huge velocities and stickiness (despite what papers say).
+				Since it is "lagged", it can be very time step dependent.
+			b) It is numerically challenging, specially when the stick-slide condition is tightly define.
+		In highly dynamis scenes (car) small time steps and tight tolerances can make a big difference.
+	- Still sometimes the codegen folder needs to be recomputed or the program run again.
+	- The performance numbers from the paper might not be 100% accurate anymore as improvements to safety and other more flexible facilities were added.
+	- Can't remove objects
 
 
-Specific to energies
---------------------
-	Strain limiting and damping
-		* Can I formulate damping from the vertex velocities and the deformation gradient?
-			I can also use finite differences as dF/dt = (F+ - F-)/dt.
-			Surely I have the analytic form, and I don't need that.
-		* I think the solution might be to use triangle/tet corot for cloth/volumetric
-	
-	Rigid Bodies
-		* Reusable symx functions to return primitive constraint energies.
-			Then I can compose complex constraints from the basic ones and still have CSE across.
-			The slider is a good example: RelativeDirectionLock, Spring, Damper
-
-Very future work
-----------------
-	* Rigid body formulation based on positions (affine bodies?)
-		Then I can formulate everything in positions which opens the door to using different time integration schemes
-	* Sooner or later we are going to need to support the FCM for volumetrics as tet meshes are a pain.
-	
-Architecture
-------------
-	* Remove dependency to JanBenderUtilities. We just need mkdirs.
-	* Consider moving all geometry utils to its own namespace
-	* Eigen and fopen warnings
-	
-	* How is Stark supposed to be used? From the app or from the lib? This influences the reach of libraries such as SymX
-		I would maybe need a new middle level of abstraction: app -> stark (simulator put together) -> stark_sim (core simulator)
-		I don't think this is really necessary. In splishsplash you just modify it directly
-
-	* Connectivity slices? (maybe I can already work with it)
-		At the moment I have to choose one material model. I can't have different cloth models in the same scene.
-		Changing materials would require recompilation.
-		This problem could be solved by having different connectivity arrays, one per material. But that would be insane in terms of combinations with everthing else.
-		This could be the solution to the collision combinatorial problem!!
-		A solution could be connectivity slices:
-			-> Use the lambdas to the pointer and size to point to differet ranges of the same array.
-		This allows to use the same array for different energies (materials).
-		
-		The problem of the combinatorial explosion is that is inverse: we want different connectivities concatenated into one.
-		Should I support multiple connectitivity pointers natively in symx? What about the data?
-			The way things work now, we need contiguous in memory conn and data!
-
-	
-	* Mesh deformables as a single set of dofs so I have less combinations in the collision detection?
-		It simplifies some things but complicates others
-		I guess I could concatenate the meshes only in the scope of the collision/friction energy. Not globally.
-		While that sounds good to merge cloth-softbody-rods, we still have a lot of combinations with rigidbody and static.
-		Probably the best option is to do the combinatorial explosion with test and pointers.
-	
-	
-Limitations (things I don't want to support)
+Limitations (no planned support)
 --------------------------------------------
-	* At simulation time...
-		- Removing objects.
-			Just teleport them out of view and freeze them.
-		- Changing energies (start with lumped mass and then change to FEM mass)
+	- Removing objects.
 	
-
-Adaptivity
-----------
-	* BC needs to be solved with bounding volumes that move.
-	* Coarsening should not happen where collisions are active.
 	
 
 	

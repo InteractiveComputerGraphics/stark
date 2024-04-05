@@ -4,7 +4,7 @@
 
 #include <Eigen/Dense>
 
-namespace stark::utils
+namespace stark
 {
 	template<std::size_t N>
 	struct Mesh

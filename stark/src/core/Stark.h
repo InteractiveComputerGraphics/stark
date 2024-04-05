@@ -8,6 +8,7 @@
 #include "NewtonsMethod.h"
 #include "Console.h"
 #include "Logger.h"
+#include "EventDrivenScript.h"
 
 namespace stark::core
 {
@@ -20,6 +21,7 @@ namespace stark::core
 		Callbacks callbacks;
 		Console console;
 		Logger logger;
+		EventDrivenScript script;
 
 		// Parameters
 		double current_time = 0.0;

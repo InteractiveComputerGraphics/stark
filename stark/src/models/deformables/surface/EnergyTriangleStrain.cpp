@@ -2,7 +2,7 @@
 
 #include "../deformable_tools.h"
 #include "../../time_integration.h"
-#include "../../../utils/mesh_utils.h"
+#include "../../../utils/include.h"
 
 
 stark::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& stark, spPointDynamics dyn)
@@ -65,7 +65,7 @@ stark::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& stark, spP
 			std::array<symx::Scalar, 2> s = eigenvalues_sym_2x2(E1);
 			symx::Scalar strain_limiting_energy_density = energy.make_zero();
 			for (int i = 0; i < 2; i++) {
-				symx::Scalar dl = s[i] - (strain_limit + 1.0);
+				symx::Scalar dl = s[i] - strain_limit;
 				strain_limiting_energy_density += symx::branch(dl > 0.0, strain_limit_stiffness*dl.powN(3)/3.0, 0.0);
 			}
 

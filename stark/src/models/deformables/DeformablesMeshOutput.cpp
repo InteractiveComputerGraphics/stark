@@ -1,12 +1,12 @@
 #include "DeformablesMeshOutput.h"
 
-#include "../../utils/mesh_utils.h"
+#include "../../utils/include.h"
 
 
 stark::DeformablesMeshOutput::DeformablesMeshOutput(stark::core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
 {
-	stark.callbacks.write_frame.push_back([&]() { this->_write_frame(stark); });
+	stark.callbacks.add_write_frame([&]() { this->_write_frame(stark); });
 }
 void stark::DeformablesMeshOutput::add_point_set(const std::string& label, const PointSetHandler& set)
 {
@@ -100,7 +100,7 @@ inline void stark::DeformablesMeshOutput::_write(stark::core::Stark& stark, cons
 				}
 			}
 		}
-		stark::utils::write_VTK(stark.get_frame_path(label) + ".vtk", this->vertices, conn_buffer);
+		stark::write_VTK(stark.get_frame_path(label) + ".vtk", this->vertices, conn_buffer);
 	}
 }
 // Forward declaration

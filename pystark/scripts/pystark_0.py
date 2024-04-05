@@ -17,7 +17,7 @@ else:
     sys.exit(0)
 
 # Add bin_folder to path
-sys.path.append(bin_folder)
+sys.path.append(pystark_paths.bin_dir)
 # =================================================================================================================
 
 import numpy as np

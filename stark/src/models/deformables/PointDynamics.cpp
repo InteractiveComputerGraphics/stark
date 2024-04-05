@@ -5,8 +5,8 @@
 stark::PointDynamics::PointDynamics(stark::core::Stark& stark)
 {
 	this->dof = stark.global_energy.add_dof_array(this->v1.data, "PointDynamics.v1");
-	stark.callbacks.before_time_step.push_back([&]() { this->_before_time_step(stark); });
-	stark.callbacks.on_time_step_accepted.push_back([&]() { this->_on_time_step_accepted(stark); });
+	stark.callbacks.add_before_time_step([&]() { this->_before_time_step(stark); });
+	stark.callbacks.add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
 }
 
 stark::PointSetHandler stark::PointDynamics::add(const std::vector<Eigen::Vector3d>& x, const std::string& label)

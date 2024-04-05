@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stark>
-
 void rb_constraints_point();
 void rb_constraints_direction();
 void rb_constraints_point_on_axis();

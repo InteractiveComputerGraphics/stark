@@ -1,6 +1,6 @@
 #include "deformables_preset_types.h"
 
-#include "../../utils/mesh_utils.h"
+#include "../../utils/include.h"
 
 /*
 *	Note on damping:
@@ -27,7 +27,7 @@ stark::Line::Params::Params(const Preset& preset)
 		this->strain.strain_limit = std::numeric_limits<double>::max();
 		this->strain.strain_limit_stiffness = 1e5;
 		this->strain.damping = 1e-4;
-		// Contact is felt as default
+		// Contact is left as default
 		break;
 	}
 }
@@ -49,12 +49,12 @@ stark::Surface::Params::Params(const Preset& preset)
 		this->strain.youngs_modulus = 1e3;
 		this->strain.poissons_ratio = 0.3;
 		this->strain.strain_limit = 0.1;
-		this->strain.strain_limit_stiffness = 1e5;
+		this->strain.strain_limit_stiffness = 1e6;
 		this->strain.damping = 0.1*this->strain.thickness*this->strain.youngs_modulus;
 		this->bending.flat_rest_angle = true;  // Cloth is usually manufactured from flat pieces stitched together. A Tshirt does not tend to keep its Tshirt shape.
 		this->bending.stiffness = 1e-6;
 		this->bending.damping = 0.1*this->bending.stiffness;
-		// Contact is felt as default
+		// Contact is left as default
 		break;
 	}
 }
@@ -62,7 +62,6 @@ stark::Surface::Params stark::Surface::Params::Cotton_Fabric()
 {
 	return Params(Preset::Cotton_Fabric);
 }
-
 
 stark::Volume::Params::Params(const Preset& preset)
 {
@@ -77,7 +76,7 @@ stark::Volume::Params::Params(const Preset& preset)
 		this->strain.strain_limit = 1.0;  // Can stretch 100% of its original size before extra stiffening
 		this->strain.strain_limit_stiffness = 1e2;  // Relatively soft Extra stiffening
 		this->strain.damping = 0.0;
-		// Contact is felt as default
+		// Contact is left as default
 		break;
 	}
 }

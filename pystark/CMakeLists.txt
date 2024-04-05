@@ -30,6 +30,11 @@ set(CORE_FILES
 	core/pystark_Settings.cpp
 	)
 
+set(UTILS_FILES
+	utils/pystark_utils.cpp
+	utils/pystark_utils.h
+	)
+
 set(MODELS_FILES
 	# General
 	models/pystark_models.h
@@ -70,6 +75,7 @@ set(MODELS_FILES
 set(PYSTARK_FILES
 	${CORE_FILES}
 	${MODELS_FILES}
+	${UTILS_FILES}
 
 	nanobind_stark_include_all.h
 	pystark_main.cpp

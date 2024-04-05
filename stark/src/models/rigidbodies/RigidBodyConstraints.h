@@ -8,7 +8,7 @@
 #include <Eigen/Dense>
 #include <symx>
 
-#include "../../utils/mesh_utils.h"
+#include "../../utils/include.h"
 #include "../distances.h"
 
 namespace stark
@@ -155,7 +155,7 @@ namespace stark
 				const double C = u.norm();
 				const Eigen::Vector3d force = -k*C*u/(C + EPS);
 
-				const double angle_deg = utils::rad2deg(std::asin(C));
+				const double angle_deg = rad2deg(std::asin(C));
 				const Eigen::Vector3d torque = d_target.cross(force);
 
 				return { angle_deg, torque.norm() };  // { [deg], [Nm] }
@@ -362,7 +362,7 @@ namespace stark
 				const double C = u.norm();
 				const Eigen::Vector3d force = k * C * u / (C + EPS);
 
-				const double angle_deg = utils::rad2deg(std::asin(C));
+				const double angle_deg = rad2deg(std::asin(C));
 				const Eigen::Vector3d torque = da.cross(force);
 
 				return { angle_deg, torque.norm() };  // { [deg], [Nm] }
@@ -398,11 +398,11 @@ namespace stark
 			}
 			static double opening_distance_of_angle(double angle_deg)
 			{
-				return std::sqrt(1.0 + 1.0 - 2.0*std::cos(utils::deg2rad(angle_deg))); // Law of cosines for sides of unit length
+				return std::sqrt(1.0 + 1.0 - 2.0*std::cos(deg2rad(angle_deg))); // Law of cosines for sides of unit length
 			}
 			static double angle_of_opening_distance(double d)
 			{
-				return utils::rad2deg(std::acos((1.0 + 1.0 - d*d) / 2.0)); // Law of cosines for sides of unit length
+				return rad2deg(std::acos((1.0 + 1.0 - d*d) / 2.0)); // Law of cosines for sides of unit length
 			}
 			static symx::Scalar energy(const symx::Scalar& k, const symx::Vector& da, const symx::Vector& db, const symx::Scalar& max_distance)
 			{
@@ -542,7 +542,7 @@ namespace stark
 			static std::array<double, 2> signed_angular_velocity_violation_in_deg_per_s_and_torque(const Eigen::Vector3d& da1, const Eigen::Vector3d& wa1, const Eigen::Vector3d& wb1, const double target_w, const double max_torque, const double delay)
 			{
 				auto [C, t] = signed_c1_controller_violation_and_force(da1, wa1, wb1, target_w, max_torque, delay);
-				return { utils::rad2deg(C), t };
+				return { rad2deg(C), t };
 			}
 		};
 	};
