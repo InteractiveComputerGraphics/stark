@@ -59,6 +59,8 @@ namespace stark
 	std::tuple<std::vector<std::array<int, 2>>, std::vector<int>> find_sharp_edges(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, double angle_deg_threshold);
 	void find_surface(std::vector<std::array<int, 3>>& out_triangles, std::vector<int>& out_triangle_to_tet_node_map, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets);
 	std::tuple<std::vector<std::array<int, 3>>, std::vector<int>> find_surface(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets);
+	void clean_triangle_mesh(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_triangles, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const double merge_by_distance = 0.0);
+	std::tuple<std::vector<Eigen::Vector3d>, std::vector<std::array<int, 3>>> clean_triangle_mesh(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const double merge_by_distance = 0.0);
 
 	// Geometry
 	double total_volume(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 4>>& tets);

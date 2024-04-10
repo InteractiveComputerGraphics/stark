@@ -9,3 +9,4 @@ app/debug.h
 blender/pyEffecto.cp310-win_amd64.pyd
 pystark/scripts/pystark/__init__.pyi
 *.pyi
+pystark/scripts/.vs/

@@ -11,6 +11,11 @@ double stark::Simulation::get_time_step_size() const
 	return this->stark.dt;
 }
 
+int stark::Simulation::get_frame() const
+{
+	return this->stark.current_frame;
+}
+
 Eigen::Vector3d stark::Simulation::get_gravity() const
 {
 	return this->stark.gravity;

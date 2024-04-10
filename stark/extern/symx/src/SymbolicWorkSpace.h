@@ -34,10 +34,10 @@ namespace symx
 		Matrix get_zero_matrix(const std::array<int32_t, 2> shape);
 		Matrix get_identity_matrix(const int32_t size);
 
-		const std::shared_ptr<Expressions>& get_expression_graph() const;
+		const Expressions& get_expression_graph() const;
 
 	private:
 		/* Fields */
-		std::shared_ptr<Expressions> expressions = nullptr;
+		Expressions expressions;
 	};
 }

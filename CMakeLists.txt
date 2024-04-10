@@ -8,5 +8,5 @@ add_subdirectory(tests)
 
 option(STARK_BUILD_PYTHON_BINDINGS "Build Python Bindings" ON)
 if(STARK_BUILD_PYTHON_BINDINGS)
-	add_subdirectory(pystark)
+	add_subdirectory(pystark/cpp)
 endif()

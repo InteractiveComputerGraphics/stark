@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
-import pystark_paths
-import sys
-sys.path.append(pystark_paths.bin_dir)
-
 import numpy as np
+import os
+import sys
+
+import pystark_paths
+sys.path.append(pystark_paths.pystark_path)
 import pystark
+
 
 settings = pystark.Settings()
 settings.output.simulation_name = "hanging_cloth"
-settings.output.output_directory = pystark_paths.build_dir + "/output/" + settings.output.simulation_name
-settings.output.codegen_directory = pystark_paths.build_dir + "/codegen"
+settings.output.output_directory = pystark_paths.output_dir + settings.output.simulation_name
+settings.output.codegen_directory = pystark_paths.codegen_dir
 settings.execution.end_simulation_time = 5.0
 settings.simulation.init_frictional_contact = False
 simulation = pystark.Simulation(settings)

@@ -18,7 +18,7 @@ namespace symx
 
 	private:
 		/* Methods */
-		Scalar(const int32_t expr_id, std::shared_ptr<Expressions> expressions)
+		Scalar(const int32_t expr_id, Expressions* expressions)
 			: expr_id(expr_id), expressions(expressions) 
 		{
 			this->expr = this->expressions->expressions[this->expr_id];
@@ -28,7 +28,7 @@ namespace symx
 		/* Fields */
 		int32_t expr_id;
 		Expr expr;
-		std::shared_ptr<Expressions> expressions;
+		Expressions* expressions = nullptr;
 
 		/* Methods */
 		Scalar& operator=(const Scalar& other);
@@ -87,7 +87,7 @@ namespace symx
 		int32_t get_symbol_idx() const;
 		bool is_symbol() const;
 		std::string get_name() const;
-		const std::shared_ptr<Expressions> get_expression_graph() const;
+		const Expressions* get_expression_graph() const;
 	};
 
 	// Operations

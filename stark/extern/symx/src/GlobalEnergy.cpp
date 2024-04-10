@@ -83,6 +83,10 @@ void symx::GlobalEnergy::_exit_if_not_initialized() const
 		exit(-1);
 	}
 }
+void symx::GlobalEnergy::compile(std::string working_directory)
+{
+	this->compile(working_directory, CompilationOptions());
+}
 void symx::GlobalEnergy::compile(std::string working_directory, CompilationOptions options)
 {
 	if (this->get_n_dof_sets() == 0) {

@@ -69,7 +69,16 @@ void pystark_utils_impl(nb::module_& m)
             return create_named_tuple("FindSurfaceOutput", { "triangles", "tri_to_tet_map" }, out);
         }, 
         "vertices"_a, "tets"_a);
+    m.def("clean_triangle_mesh", [](MatX3d& vertices, MatX3i& triangles, double merge_by_distance)
+        { 
+            auto [vertices_out, triangles_out] = clean_triangle_mesh(nb_to_stark(vertices), nb_to_stark(triangles), merge_by_distance);
+            nb::tuple out = nb::make_tuple(stark_to_nb(vertices_out), stark_to_nb(triangles_out));
+            return create_named_tuple("TriangleMesh", { "vertices", "triangles" }, out);
+        }, 
+        "vertices"_a, "triangles"_a, "merge_by_distance"_a = 0.0);
 
+
+    // Transformations
     m.def("move", [](MatX3d& vertices, const Eigen::Vector3d& translation) 
         { 
             auto vertices_ = nb_to_stark(vertices);

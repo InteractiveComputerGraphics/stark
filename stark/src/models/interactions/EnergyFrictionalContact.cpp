@@ -19,8 +19,8 @@ EnergyFrictionalContact::EnergyFrictionalContact(core::Stark& stark, const spPoi
 	// Callbacks
 	stark.callbacks.add_before_time_step([&]() { this->_before_time_step__update_friction_contacts(stark); });
 	stark.callbacks.add_before_energy_evaluation([&]() { this->_before_energy_evaluation__update_contacts(stark); });
-	stark.callbacks.add_is_intermidiate_state_valid([&]() { return this->_is_intermidiate_state_valid(stark); });
-	stark.callbacks.add_is_initial_state_valid([&]() { return this->_is_intermidiate_state_valid(stark); });
+	stark.callbacks.add_is_intermidiate_state_valid([&]() { return this->_is_intermidiate_state_valid(stark, /*is_initial_check=*/false); });
+	stark.callbacks.add_is_initial_state_valid([&]() { return this->_is_intermidiate_state_valid(stark, /*is_initial_check=*/true); });
 	stark.callbacks.add_on_intermidiate_state_invalid([&]() { this->_on_intermidiate_state_invalid(stark); });
 	stark.callbacks.add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
 
@@ -768,14 +768,31 @@ void EnergyFrictionalContact::_before_time_step__update_friction_contacts(core::
 		}
 	}
 }
-bool EnergyFrictionalContact::_is_intermidiate_state_valid(core::Stark& stark)
+bool EnergyFrictionalContact::_is_intermidiate_state_valid(core::Stark& stark, bool is_initial_check)
 {
 	if (!this->global_params.collisions_enabled) { return true; }
 	if (!this->global_params.intersection_test_enabled) { return true; }
 	if (this->is_empty()) { return true; }
 
 	const auto& intersections = this->_run_intersection_detection(stark, stark.dt);
-	return intersections.edge_triangle.size() == 0;
+	const bool collision_found = !intersections.edge_triangle.empty();
+
+	if (collision_found && is_initial_check) {
+		// Find unique colliding objects
+		unordered_array_set<int, 2> colliding_objects;
+		for (const auto& pair : intersections.edge_triangle) {
+			const std::array<int, 2> pair_set = { std::min(pair.first.set, pair.second.set), std::max(pair.first.set, pair.second.set) };
+			colliding_objects.insert(pair_set);
+		}
+		
+		// Print pairs found in collision
+		stark.console.print("Stark error: Initial collision detected between the following contact object pairs:\n", core::ConsoleVerbosity::Frames);
+		for (const auto& pair : colliding_objects) {
+			stark.console.print(fmt::format("\t- {} and {}\n", pair[0], pair[1]), core::ConsoleVerbosity::Frames);
+		}
+	}
+
+	return !collision_found;
 }
 void stark::EnergyFrictionalContact::_on_intermidiate_state_invalid(core::Stark& stark)
 {

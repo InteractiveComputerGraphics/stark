@@ -17,6 +17,7 @@ namespace stark
 		Simulation(const core::Settings& settings);
 		double get_time() const;
 		double get_time_step_size() const;
+		int get_frame() const;
 		Eigen::Vector3d get_gravity() const;
 		void set_gravity(const Eigen::Vector3d& gravity);
 		core::Logger& get_logger();

@@ -52,7 +52,7 @@ void symx::Energy::deferred_init(const bool force_compilation, const bool force_
 		id_string += get_float_type_as_string<COMPILED_FLOAT>(); // Float type
 
 		// All symbols
-		for (const std::string& s : this->sws.get_expression_graph()->get_symbol_names()) {
+		for (const std::string& s : this->sws.get_expression_graph().get_symbol_names()) {
 			id_string += s;
 		}
 	}
@@ -105,9 +105,9 @@ void symx::Energy::deferred_init(const bool force_compilation, const bool force_
 	}
 
 	// Clear symbolic allocations
-	this->n_bytes_symbols = this->sws.get_expression_graph()->size() * sizeof(symx::Expr);
+	this->n_bytes_symbols = this->sws.get_expression_graph().size() * sizeof(symx::Expr);
 	this->dof_symbols.clear();
-	this->sws = SymbolicWorkSpace();
+	//this->sws = SymbolicWorkSpace();
 	this->expr = nullptr;
 	this->cond = nullptr;
 }

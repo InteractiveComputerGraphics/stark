@@ -20,6 +20,8 @@
 	public: \
 		HandlerClass(RigidBodyHandler rb, std::shared_ptr<ConstraintClass> constraints, int idx) \
 			: rb(rb), constraints(constraints), idx(idx) {}; \
+		HandlerClass() = default; \
+		inline bool is_valid() const { return this->idx != -1; }; \
 		inline RigidBodyHandler& get_body() { return this->rb; }; \
 		inline std::string get_label() const { return this->constraints->labels[this->idx]; }; \
 		inline auto& set_label(std::string label) { this->constraints->labels[this->idx] = label; return (*this); }; \
@@ -34,6 +36,8 @@
 	public: \
 		HandlerClass(RigidBodyHandler rb_a, RigidBodyHandler rb_b, std::shared_ptr<ConstraintClass> constraints, int idx) \
 			: rb_a(rb_a), rb_b(rb_b), constraints(constraints), idx(idx) {}; \
+		HandlerClass() = default; \
+		inline bool is_valid() const { return this->idx != -1; }; \
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; }; \
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; }; \
 		inline std::string get_label() const { return this->constraints->labels[this->idx]; }; \
@@ -181,15 +185,15 @@ namespace stark
 			return RigidBodyConstraints::Directions::violation_in_deg_and_torque(get_stiffness(), 
 				rb_a.transform_local_to_global_direction(get_local_direction_body_a()), rb_b.transform_local_to_global_direction(get_local_direction_body_b()));
 		};
-		inline auto& set_opening_angle_rad(double angle_rad, const Eigen::Vector3d& normal_loc_a)
+		inline auto& set_opening_angle_rad(double angle_rad, const Eigen::Vector3d& normal_loc_da)
 		{
-			const Eigen::Matrix3d R = Eigen::AngleAxisd(angle_rad, normal_loc_a).toRotationMatrix();
+			const Eigen::Matrix3d R = Eigen::AngleAxisd(angle_rad, normal_loc_da).toRotationMatrix();
 			this->set_local_direction_body_b(R * this->constraints->db_loc_rest[this->idx]);
 			return (*this);
 		}
-		inline auto& set_opening_angle_deg(double angle_deg, const Eigen::Vector3d& normal_loc_a)
+		inline auto& set_opening_angle_deg(double angle_deg, const Eigen::Vector3d& normal_loc_da)
 		{
-			return this->set_opening_angle_rad(deg2rad(angle_deg), normal_loc_a);
+			return this->set_opening_angle_rad(deg2rad(angle_deg), normal_loc_da);
 		}
 	};
 
@@ -332,6 +336,8 @@ namespace stark
 	public:
 		RBCFixHandler(RigidBodyHandler rb, RBCGlobalPointHandler anchor_point, RBCGlobalDirectionHandler z_lock, RBCGlobalDirectionHandler x_lock)
 			: rb(rb), anchor_point(anchor_point), z_lock(z_lock), x_lock(x_lock) {};
+		RBCFixHandler() = default;
+		inline bool is_valid() const { return this->anchor_point.is_valid(); };
 		inline auto& get_body() { return this->rb; };
 		inline auto& get_anchor_point() { return this->anchor_point; };
 		inline auto& get_z_lock() { return this->z_lock; };
@@ -399,6 +405,8 @@ namespace stark
 	public:
 		RBCAttachmentHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCPointHandler point, RBCDirectionHandler z_lock, RBCDirectionHandler x_lock)
 			: rb_a(rb_a), rb_b(rb_b), point(point), z_lock(z_lock), x_lock(x_lock) {};
+		RBCAttachmentHandler() = default;
+		inline bool is_valid() const { return this->point.is_valid(); };
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
 		inline auto& get_point_constraint() { return this->point; };
@@ -454,6 +462,8 @@ namespace stark
 	public:
 		RBCPointWithAngleLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCPointHandler point, RBCAngleLimitHandler angle_limit)
 			: rb_a(rb_a), rb_b(rb_b), point(point), angle_limit(angle_limit) {};
+		RBCPointWithAngleLimitHandler() = default;
+		inline bool is_valid() const { return this->point.is_valid(); };
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
 		inline RBCPointHandler& get_point_constraint() { return this->point; };
@@ -503,6 +513,8 @@ namespace stark
 	public:
 		RBCHingeJointHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCPointHandler point, RBCDirectionHandler direction)
 			: rb_a(rb_a), rb_b(rb_b), point(point), direction(direction) {};
+		RBCHingeJointHandler() = default;
+		inline bool is_valid() const { return this->point.is_valid(); };
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
 		inline RBCPointHandler& get_point_constraint() { return this->point; };
@@ -552,6 +564,8 @@ namespace stark
 	public:
 		RBCHingeJointWithAngleLimitHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCHingeJointHandler hinge_joint, RBCAngleLimitHandler angle_limit)
 			: rb_a(rb_a), rb_b(rb_b), hinge_joint(hinge_joint), angle_limit(angle_limit) {};
+		RBCHingeJointWithAngleLimitHandler() = default;
+		inline bool is_valid() const { return this->hinge_joint.is_valid(); };
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
 		inline RBCHingeJointHandler& get_hinge_joint() { return this->hinge_joint; };
@@ -603,6 +617,8 @@ namespace stark
 	public:
 		RBCSpringWithLimitsHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCDampedSpringHandler spring, RBCDistanceLimitHandler distance_limit)
 			: rb_a(rb_a), rb_b(rb_b), spring(spring), distance_limit(distance_limit) {};
+		RBCSpringWithLimitsHandler() = default;
+		inline bool is_valid() const { return this->spring.is_valid(); };
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
 		inline RBCDampedSpringHandler& get_spring() { return this->spring; };
@@ -652,6 +668,8 @@ namespace stark
 	public:
 		RBCSliderHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCPointOnAxisHandler point_on_axis, RBCDirectionHandler direction)
 			: rb_a(rb_a), rb_b(rb_b), point_on_axis(point_on_axis), direction(direction) {};
+		RBCSliderHandler() = default;
+		inline bool is_valid() const { return this->point_on_axis.is_valid(); };
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
 		inline RBCPointOnAxisHandler& get_point_on_axis() { return this->point_on_axis; };
@@ -702,6 +720,8 @@ namespace stark
 	public:
 		RBCPrismaticSliderHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCSliderHandler slider, RBCDirectionHandler direction)
 			: rb_a(rb_a), rb_b(rb_b), slider(slider), direction(direction) {};
+		RBCPrismaticSliderHandler() = default;
+		inline bool is_valid() const { return this->slider.is_valid(); };
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
 		inline RBCSliderHandler& get_slider() { return this->slider; };
@@ -753,6 +773,8 @@ namespace stark
 	public:
 		RBCPrismaticPressHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCPrismaticSliderHandler prismatic_slider, RBCLinearVelocityHandler linear_velocity)
 			: rb_a(rb_a), rb_b(rb_b), prismatic_slider(prismatic_slider), linear_velocity(linear_velocity) {};
+		RBCPrismaticPressHandler() = default;
+		inline bool is_valid() const { return this->prismatic_slider.is_valid(); };
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
 		inline RBCPrismaticSliderHandler& get_prismatic_slider() { return this->prismatic_slider; };
@@ -802,6 +824,8 @@ namespace stark
 	public:
 		RBCMotorHandler(RigidBodyHandler rb_a, RigidBodyHandler rb_b, RBCHingeJointHandler hinge, RBCAngularVelocityHandler angular_velocity)
 			: rb_a(rb_a), rb_b(rb_b), hinge(hinge), angular_velocity(angular_velocity) {};
+		RBCMotorHandler() = default;
+		inline bool is_valid() const { return this->hinge.is_valid(); };
 		inline RigidBodyHandler& get_body_a() { return this->rb_a; };
 		inline RigidBodyHandler& get_body_b() { return this->rb_b; };
 		inline RBCHingeJointHandler& get_hinge_joint() { return this->hinge; };

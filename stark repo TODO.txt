@@ -6,8 +6,18 @@ Release
 -------
 	- Roadmap: Documentation. Tutorials. Examples. Gallery.
 	
+	- Broadcast friction from one object to all others with mode (min/max/avg)
 	- Check utils python bindings
-	
+	- setting.enable_output should be more clear: enable write_frame, enable_logger, ...
+	- stark::core::Logger::save_to_disk error: Cannot open file C:/Users/josea/Desktop/user_ouput_directory/rigidbody_constraints_logger_starkfx__2024-04-04__22-36-54.txt
+		- Maybe we are writting too fast
+	- Surface::Handler::set_params()
+		To handle setting all 4 handlers automatically
+	- handler.contact.set_params(pystark_params.contact)
+		Can't be that special
+		
+	- I am really not sure about handlers being invalid.
+		If I keep it I have to also update RB joints
 
 High priority
 -------------
@@ -27,6 +37,8 @@ High priority
 
 Mid priority
 ------------
+	- Option for automatic Convex Hull for collision meshes from a render mesh
+		Or at least a method in utils.
 	- Consistency in integration: cloth integrate by volume? Then bending and damping too!
 	* Interpolate frames
 	* Pause simulations. Sometimes you want to do something in the cluster and need pausing.

@@ -26,5 +26,6 @@ void pystark_EnergyPrescribedPositions(nb::module_& m)
             "t"_a, "R"_a = Eigen::Matrix3d::Identity())
         .def("set_transformation", nb::overload_cast<const Eigen::Vector3d&, const double, const Eigen::Vector3d&>(&Handler::set_transformation),
             "t"_a, "angle_deg"_a, "axis"_a)
+        .def("set_target_position", &Handler::set_target_position, "prescribed_idx"_a, "position"_a)
         ;
 }

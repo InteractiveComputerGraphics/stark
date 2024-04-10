@@ -2,6 +2,7 @@
 
 
 #define DEFINE_HEAD() \
+    .def("is_valid", &Self::is_valid) \
     .def("get_label", &Self::get_label) \
     .def("set_label", &Self::set_label) \
     .def("enable", &Self::enable) \
@@ -16,8 +17,8 @@
     .def("get_body_b", &Self::get_body_b) \
 
 #define DEFINE(NAME) \
-    .def(#NAME, &Self::##NAME) \
-
+    .def(#NAME, &Self::NAME) \
+	
 #define DEFINE_GETTER_SETTER(NAME) \
     .def("get_##NAME", &Self::get_##NAME) \
     .def("set_##NAME", &Self::set_##NAME) \

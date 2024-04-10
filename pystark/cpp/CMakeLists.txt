@@ -22,6 +22,16 @@ FetchContent_GetProperties(nanobind)
 # Add nanobind to the project
 add_subdirectory(${nanobind_SOURCE_DIR} ${CMAKE_BINARY_DIR}/nanobind)
 
+# Enable SIMD and suppress compiler warnings
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	add_compile_options("-march=native")
+    add_compile_options("-Wno-ignored-attributes")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+	add_compile_options("/arch:AVX")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	add_compile_options("-march=native")
+endif()
+
 # Source files
 set(CORE_FILES
 	core/pystark_core.h
@@ -86,7 +96,7 @@ nanobind_add_module(pystark ${PYSTARK_FILES})
 
 # Link the pystark module to the stark library
 target_link_libraries(pystark PUBLIC stark)
-target_include_directories(pystark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../stark/include)
+target_include_directories(pystark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../stark/include)
 
 # Group files
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${PYSTARK_FILES})

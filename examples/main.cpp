@@ -763,6 +763,57 @@ void sticky_cloth_corner()
 	// Run
 	simulation.run();
 }
+void robotic_hand()
+{
+	bool only_hand_motion = false;
+
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "robotic_hand";
+	settings.output.output_directory = OUTPUT_PATH + "/robotic_hand";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.execution.end_simulation_time = 15.0;
+	settings.debug.symx_check_for_NaNs = true;
+
+	settings.simulation.init_frictional_contact = !only_hand_motion;
+	settings.debug.symx_force_load = true;
+	stark::Simulation simulation(settings);
+
+	// Contact
+	simulation.interactions->contact->set_global_params(
+		stark::EnergyFrictionalContact::GlobalParams()
+		.set_default_contact_thickness(0.00025)
+		.set_min_contact_stiffness(1e7)
+		.set_friction_stick_slide_threshold(0.001)
+	);
+	
+	// Robotic Hand
+	stark::RoboticHand hand("hand", simulation);
+
+	// Soft object
+	if (!only_hand_motion) {
+		double s = 0.056;
+		int n = 15;
+		stark::Volume::Params material = stark::Volume::Params::Soft_Rubber();
+		material.strain.elasticity_only = true;
+		material.strain.poissons_ratio = 0.48;
+		material.strain.damping = 0.0;
+		material.inertia.damping = 0.0;
+		auto [V, T, H] = simulation.presets->deformables->add_volume_grid("soft_object", { s, s, s }, { n, n, n }, material);
+		H.point_set.add_rotation(-19.415, Eigen::Vector3d::UnitZ());
+		H.point_set.add_displacement({ 0.006279, 0.080215, 0.038145 });
+		hand.set_friction(H.contact, 2.0);
+	}
+
+	// Script
+	double begin = 2.0;
+	simulation.add_time_event(0.0, begin, [&](double t) { hand.set_finger_angle(stark::blend(0.0, 10.0, 0.0, begin, t, stark::BlendType::Linear)); });
+	simulation.add_time_event(begin + 0.0, begin + 1.0, [&](double t) { hand.set_finger_spread_angle(stark::blend(0.0, 5.0, begin + 0.0, begin + 1.0, t, stark::BlendType::Linear)); });
+	simulation.add_time_event(begin + 1.0, begin + 5.0, [&](double t) { hand.set_finger_angle(stark::blend(10.0, 75.0, begin + 1.0, begin + 5.0, t, stark::BlendType::Linear)); });
+	simulation.add_time_event(begin + 7.0, begin + 11.0, [&](double t) { hand.set_finger_angle(stark::blend(75.0, 10.0, begin + 7.0, begin + 11.0, t, stark::BlendType::Linear)); });
+
+	// Run
+	simulation.run();
+}
 
 
 int main()
@@ -781,8 +832,11 @@ int main()
 	//prescribed_deformable();
 	//prescribed_rigid();
 
-	sticky_cloth_corner();
+	//sticky_cloth_corner();
 
 	// Rigid bodies
 	//rb_constraints_all();
+
+	// Constructs
+	robotic_hand();
 }

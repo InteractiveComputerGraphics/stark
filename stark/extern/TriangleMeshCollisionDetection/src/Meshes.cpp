@@ -1,5 +1,28 @@
 #include "Meshes.h"
 
+#include <algorithm>
+
+// ==========================================================================================================
+#include <cstdint>
+#include <array>
+#include <unordered_set>
+
+template<std::size_t N, typename INT_TYPE = int>
+struct ArrayHasher {
+	std::size_t operator()(const std::array<INT_TYPE, N>& a) const {
+		std::size_t h = 0;
+		for (auto e : a) {
+			h ^= std::hash<INT_TYPE>{}(e)+0x9e3779b9 + (h << 6) + (h >> 2);
+		}
+		return h;
+	}
+};
+template<typename INT_TYPE, std::size_t N>
+using unordered_array_set = std::unordered_set<std::array<INT_TYPE, N>, ArrayHasher<N, INT_TYPE>>;
+// ==========================================================================================================
+
+
+
 const std::array<int32_t, 2> tmcd::internals::Meshes::get_edge_connectivity(const int32_t set, const int32_t idx) const
 {
 	const int32_t* e = &this->set_edges[set][2 * idx];
@@ -63,6 +86,42 @@ tmcd::info::Meshes tmcd::internals::Meshes::get_info() const
 
 int32_t tmcd::internals::Meshes::add_mesh(const double* x0, const double* x1, const double* xm, const int32_t n_vertices, const int32_t* triangles, const int32_t n_triangles, const int32_t* edges, const int32_t n_edges)
 {
+	// Check for mesh correctness: Unique non-degenerate elements
+	//// Triangles
+	unordered_array_set<int32_t, 3> unique_triangles;
+	for (int i = 0; i < n_triangles; i++) {
+		const int32_t* t = &triangles[3 * i];
+		if (t[0] == t[1] || t[0] == t[2] || t[1] == t[2]) {
+			std::cout << "TriangleMeshCollisionDetection error: degenerate triangle found in mesh." << std::endl;
+			exit(-1);
+		}
+		std::array<int32_t, 3> t_sorted = { t[0], t[1], t[2] };
+		std::sort(t_sorted.begin(), t_sorted.end());
+		unique_triangles.insert({ t_sorted[0], t_sorted[1], t_sorted[2] });
+	}
+	if (unique_triangles.size() != n_triangles) {
+		std::cout << "TriangleMeshCollisionDetection error: non-unique triangle found in mesh." << std::endl;
+		exit(-1);
+	}
+
+	//// Edges
+	unordered_array_set<int32_t, 2> unique_edges;
+	for (int i = 0; i < n_edges; i++) {
+		const int32_t* e = &edges[2 * i];
+		if (e[0] == e[1]) {
+			std::cout << "TriangleMeshCollisionDetection error: degenerate edge found in mesh." << std::endl;
+			exit(-1);
+		}
+		std::array<int32_t, 2> e_sorted = { e[0], e[1] };
+		std::sort(e_sorted.begin(), e_sorted.end());
+		unique_edges.insert({ e_sorted[0], e_sorted[1] });
+	}
+	if (unique_edges.size() != n_edges) {
+		std::cout << "TriangleMeshCollisionDetection error: non-unique edge found in mesh." << std::endl;
+		exit(-1);
+	}
+
+	// Add
 	const int mesh_id = this->get_n_meshes();
 
 	if (mesh_id == 0) {

@@ -57,7 +57,7 @@ void tmcd::Octree::_run_octree_node(RecursiveOctreeNode& node_buffer, const int3
 
 	//// Max recursion
 	if (depth > this->max_recursion) {
-		std::cout << "TriangleMeshCollisionDetection error: max recursion reached in Octree mode." << std::endl;
+		std::cout << "TriangleMeshCollisionDetection error: max recursion reached in Octree mode. This is probably due to a bad collision mesh, especifically high concentration of very small elements or simply overlapping vertices, near-zero area triangles..." << std::endl;
 		exit(-1);
 		return;
 	}

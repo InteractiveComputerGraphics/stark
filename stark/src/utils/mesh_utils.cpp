@@ -326,6 +326,74 @@ std::tuple<std::vector<std::array<int, 3>>, std::vector<int>> stark::find_surfac
 	find_surface(out_triangles, out_triangle_to_tet_node_map, vertices, tets);
 	return { out_triangles, out_triangle_to_tet_node_map };
 }
+void stark::clean_triangle_mesh(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_triangles, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const double merge_by_distance)
+{
+	// Quantize all vertices to a grid with cell size equal to merge_by_distance
+	if (merge_by_distance > 0.0) {
+
+		// AABB
+		Eigen::AlignedBox3d bbox;
+		for (const Eigen::Vector3d& v : vertices) {
+			bbox.extend(v);
+		}
+
+		// Check dimensions
+		double max_n_cells_double = bbox.diagonal().maxCoeff() / merge_by_distance;
+		if (max_n_cells_double > (double)std::numeric_limits<int>::max()) {
+			std::cout << "Stark error: clean_triangle_mesh merge_by_distance is too small." << std::endl;
+			exit(-1);
+		}
+
+		// Quantize
+		unordered_array_map<int, 3, int> unique_vertices;  // {cell_ijk: new_vertex_idx}
+		std::vector<int> old_to_new_map(vertices.size(), -1);
+		for (size_t old_i = 0; old_i < vertices.size(); ++old_i) {
+
+			const std::array<int, 3> ijk = { 
+				(int)((vertices[old_i].x() - bbox.min().x())/merge_by_distance),
+				(int)((vertices[old_i].y() - bbox.min().y())/merge_by_distance),
+				(int)((vertices[old_i].z() - bbox.min().z())/merge_by_distance)
+			};
+
+			int new_idx = old_i;
+			if (unique_vertices.find(ijk) == unique_vertices.end()) {
+				const int new_idx = out_vertices.size();
+				out_vertices.push_back(vertices[old_i]);
+				unique_vertices[ijk] = new_idx;
+			}
+			old_to_new_map[old_i] = new_idx;
+		}
+
+		// Update triangles
+		out_triangles = apply_map(triangles, old_to_new_map);
+	}
+	else {
+		out_vertices = vertices;
+		out_triangles = triangles;
+	}
+
+	// Remove duplicated and degenerated triangles
+	unordered_array_map<int, 3, int> unique_triangles;  //  {sorted_idx_triangle: old_triangle_idx}  We need this to conserve winding
+	for (int tri_i = 0; tri_i < (int)out_triangles.size(); tri_i++) {
+		std::array<int, 3> tri = out_triangles[tri_i];
+		if (tri[0] != tri[1] && tri[0] != tri[2] && tri[1] != tri[2]) {
+			std::sort(tri.begin(), tri.end());
+			unique_triangles[tri] = tri_i;
+		}
+	}
+	const std::vector<std::array<int, 3>> prev_triangles = out_triangles;
+	out_triangles.clear();
+	for (const auto& unique_tri : unique_triangles) {
+		out_triangles.push_back(prev_triangles[unique_tri.second]);
+	}
+}
+std::tuple<std::vector<Eigen::Vector3d>, std::vector<std::array<int, 3>>> stark::clean_triangle_mesh(const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, const double merge_by_distance)
+{
+	std::vector<Eigen::Vector3d> out_vertices;
+	std::vector<std::array<int, 3>> out_triangles;
+	clean_triangle_mesh(out_vertices, out_triangles, vertices, triangles, merge_by_distance);
+	return { out_vertices, out_triangles };
+}
 void stark::find_sharp_edges(std::vector<std::array<int, 2>>& out_edges, std::vector<int>& out_old_to_new_map, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles, double angle_deg_threshold)
 {
 	std::vector<std::array<int, 2>> edges;

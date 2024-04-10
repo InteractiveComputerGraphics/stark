@@ -129,13 +129,22 @@ set(MODELS_PRESETS_FILES
 	src/models/presets/RigidBodyPresets.h
 )
 
+set(MODELS_CONSTRUCTS_FILES
+	src/models/constructs/include.h
+	src/models/constructs/RoboticHand.cpp
+	src/models/constructs/RoboticHand.h
+	#src/models/constructs/VehicleFourWheels.cpp
+	#src/models/constructs/VehicleFourWheels.h
+)
 
 set(MODELS_FILES
 	${MODELS_DEFORMABLES_FILES}
 	${MODELS_RIGIDBODIES_FILES}
 	${MODELS_INTERACTIONS_FILES}
 	${MODELS_PRESETS_FILES}
+	${MODELS_CONSTRUCTS_FILES}
 
+	src/models/include.h
 	src/models/types.h
 	src/models/distances.cpp
 	src/models/distances.h
@@ -160,18 +169,11 @@ set(UTILS_FILES
 	src/utils/include.h
 	)
 
-set(CONSTRUCTS_FILES
-	src/constructs/include_ui.h
-	src/constructs/VehicleFourWheels.cpp
-	src/constructs/VehicleFourWheels.h
-)
-
 set(ALL_FILES
 	include/stark
 	${CORE_FILES} 
 	${MODELS_FILES} 
 	${UTILS_FILES}
-	#${CONSTRUCTS_FILES}
 )
 
 # Create lireary

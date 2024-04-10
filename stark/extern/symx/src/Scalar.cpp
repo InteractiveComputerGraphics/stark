@@ -17,7 +17,7 @@ symx::Scalar double_to_scalar(const symx::Scalar& seed, const double v)
 
 symx::Scalar& symx::Scalar::operator=(const Scalar& other)
 {
-	assert(this->expressions.get() == other.expressions.get() && "symx error: Cannot mix symbols from different workspaces");
+	assert(this->expressions == other.expressions && "symx error: Cannot mix symbols from different workspaces");
 	this->expr_id = other.expr_id;
 	this->expr = other.expr;
 	return *this;
@@ -440,7 +440,7 @@ std::string symx::Scalar::get_name() const
 	}
 	return this->expressions->symbols[this->expr.a];
 }
-const std::shared_ptr<symx::Expressions> symx::Scalar::get_expression_graph() const
+const symx::Expressions* symx::Scalar::get_expression_graph() const
 {
 	return this->expressions;
 }

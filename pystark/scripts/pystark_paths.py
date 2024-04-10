@@ -1,2 +1,6 @@
+import os
+
 build_dir = "D:/builds/stark"
-bin_dir = build_dir + "/pystark/RelWithDebInfo"
+codegen_dir = build_dir + "/codegen"
+output_dir = build_dir + "/output"
+pystark_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

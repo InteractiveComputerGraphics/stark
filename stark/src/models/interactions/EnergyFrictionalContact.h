@@ -146,7 +146,7 @@ namespace stark
 		// SymX callbacks
 		void _before_time_step__update_friction_contacts(core::Stark& stark);
 		void _before_energy_evaluation__update_contacts(core::Stark& stark);
-		bool _is_intermidiate_state_valid(core::Stark& stark);
+		bool _is_intermidiate_state_valid(core::Stark& stark, bool is_initial_check);
 		void _on_intermidiate_state_invalid(core::Stark& stark);
 		void _on_time_step_accepted(core::Stark& stark);
 
