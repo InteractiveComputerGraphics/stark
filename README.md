@@ -5,9 +5,9 @@ We appreciate your patience and interest.
 
 # Stark
 <p align=center>
- <img src="https://github.com/JoseAntFer/stark/blob/jose/release_v01/docs/images/robotic_hand.png" width="400">
+ <img src="https://github.com/InteractiveComputerGraphics/stark/blob/main/docs/images/robotic_hand.png" width="400">
   &nbsp;&nbsp;
- <img src="https://github.com/JoseAntFer/stark/blob/jose/release_v01/docs/images/franka_plastic_cup.jpg" width="400">
+ <img src="https://github.com/InteractiveComputerGraphics/stark/blob/main/docs/images/franka_plastic_cup.jpg" width="400">
 </p>
 
 Stark is a C++ and Python simulation _platform_ that provides easy access to state-of-the-art methods to robustly solve simulations of rigid and deformable objects in a strongly coupled manner.
