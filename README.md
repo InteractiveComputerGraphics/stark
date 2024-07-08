@@ -201,7 +201,7 @@ The following models can be found in symbolic form in `stark/stark/src/models/`:
 ```
 
 ## Acknowledgments
-Stark was made possible by Bosch Research and the Computer Animation Group at RWTH Aachen University.
+Robert Bosch GmbH is acknowledged for generous financial support of the development of the initial version of stark from 2019 to 2021.
 
 List of collaborators to the codebase:
   - [José Antonio Fernández-Fernández](https://github.com/JoseAntFer)
