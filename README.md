@@ -203,13 +203,13 @@ The following models can be found in symbolic form in `stark/stark/src/models/`:
 ## Acknowledgments
 
 <table border="0" style="align_center;border-radius: 20px;padding: 20px;margin:auto;border:0px">
-		<tr>
-			<td>
-				<img src="https://raw.githubusercontent.com/boschresearch/bosch-corporate-information/main/static/Bosch_symbol_logo_black_red.svg" width="300">
-			</td>
-			<td>
-    Robert Bosch GmbH is acknowledged for generous financial support of the development of the initial version of stark from 2019 to 2021.
-   </td>
+  <tr>
+    <td>
+      <img src="https://raw.githubusercontent.com/boschresearch/bosch-corporate-information/main/static/Bosch_symbol_logo_black_red.svg" width="300">
+    </td>
+    <td>
+      Robert Bosch GmbH is acknowledged for generous financial support of the development of the initial version of Stark from 2019 to 2021.
+    </td>
   </tr>
 </table>
 
