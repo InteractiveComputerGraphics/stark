@@ -189,6 +189,8 @@ The following models can be found in symbolic form in `stark/stark/src/models/`:
 
 ## Research using Stark
 [Micropolar Elasticity in Physically-Based Animation](https://www.animation.rwth-aachen.de/publication/0582/) - Löschner et al.
+[Curved Three-Director Cosserat Shells with Strong Coupling](https://www.animation.rwth-aachen.de/publication/0589/) - Löschner et al.
+[Strongly Coupled Simulation of Magnetic Rigid Bodies](https://www.animation.rwth-aachen.de/publication/0590/) - Westhofen et al.
 
 ## Cite Stark
 ```bibtex
