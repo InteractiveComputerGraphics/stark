@@ -5,9 +5,9 @@ We appreciate your patience and interest.
 
 # Stark
 <p align=center>
- <img src="https://github.com/InteractiveComputerGraphics/stark/blob/main/docs/images/robotic_hand.png" width="400">
+ <img src="docs/images/robotic_hand.png" width="400">
   &nbsp;&nbsp;
- <img src="https://github.com/InteractiveComputerGraphics/stark/blob/main/docs/images/franka_plastic_cup.jpg" width="400">
+ <img src="docs/images/franka_plastic_cup.jpg" width="400">
 </p>
 
 Stark is a C++ and Python simulation _platform_ that provides easy access to state-of-the-art methods to robustly solve simulations of rigid and deformable objects in a strongly coupled manner.
@@ -40,7 +40,7 @@ There are two use cases for Stark:
 The following is a script example using Stark's Python API to execute a simulation of a piece of cloth falling on a rigid box with a prescribed spinning motion.
 
 <p align=center>
- <img src="https://github.com/JoseAntFer/stark/blob/jose/release_v01/docs/images/spinning_box_cloth.gif?raw=true">
+ <img src="docs/images/spinning_box_cloth.gif">
 </p>
 
 ```python
@@ -188,17 +188,19 @@ The following models can be found in symbolic form in `stark/stark/src/models/`:
 * Event-based scripts
 
 ## Research using Stark
-* [Micropolar Elasticity in Physically-Based Animation](https://www.animation.rwth-aachen.de/publication/0582/) - Löschner et al.
-* [Curved Three-Director Cosserat Shells with Strong Coupling](https://www.animation.rwth-aachen.de/publication/0589/) - Löschner et al.
-* [Strongly Coupled Simulation of Magnetic Rigid Bodies](https://www.animation.rwth-aachen.de/publication/0590/) - Westhofen et al.
+* ["Micropolar Elasticity in Physically-Based Animation"](https://www.animation.rwth-aachen.de/publication/0582/) - Löschner et al., 2023
+* ["Curved Three-Director Cosserat Shells with Strong Coupling"](https://www.animation.rwth-aachen.de/publication/0589/) - Löschner et al., 2024
+* ["Strongly Coupled Simulation of Magnetic Rigid Bodies"](https://www.animation.rwth-aachen.de/publication/0590/) - Westhofen et al., 2024
 
 ## Cite Stark
 ```bibtex
-@INPROCEEDINGS{FLL+24,
+@InProceedings{FLL+24,
   author={Fernández-Fernández, José Antonio and Lange, Ralph and Laible, Stefan and Arras, Kai O. and Bender, Jan},
   booktitle={2024 IEEE International Conference on Robotics and Automation (ICRA)}, 
   title={STARK: A Unified Framework for Strongly Coupled Simulation of Rigid and Deformable Bodies with Frictional Contact}, 
-  year={2024}
+  year={2024},
+  pages={16888-16894},
+  doi={10.1109/ICRA57147.2024.10610574}}
 }
 ```
 
