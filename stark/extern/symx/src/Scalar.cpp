@@ -306,33 +306,38 @@ double symx::Scalar::eval()
 }
 std::string symx::Scalar::get_checksum()
 {
-	picosha2::hash256_one_by_one hasher;
-	hasher.init();
-	this->get_checksum(hasher);
-	hasher.finish();
+    std::unordered_set<int32_t > visited;
 
-	std::vector<unsigned char> out_hash(picosha2::k_digest_size);
-	hasher.get_hash_bytes(out_hash.begin(), out_hash.end());
-	std::string hex_str = picosha2::bytes_to_hex_string(out_hash.begin(), out_hash.end());
-	return hex_str;
+    picosha2::hash256_one_by_one hasher;
+    hasher.init();
+    this->get_checksum(hasher, visited);
+    hasher.finish();
+
+    std::vector<unsigned char> out_hash(picosha2::k_digest_size);
+    hasher.get_hash_bytes(out_hash.begin(), out_hash.end());
+    std::string hex_str = picosha2::bytes_to_hex_string(out_hash.begin(), out_hash.end());
+    return hex_str;
 }
-void symx::Scalar::get_checksum(picosha2::hash256_one_by_one& hasher)
+void symx::Scalar::get_checksum(picosha2::hash256_one_by_one& hasher, std::unordered_set<int32_t>& visited)
 {
+    visited.insert(this->expr_id);
+
 	std::array<int32_t, 4> expr_ints = { static_cast<int32_t>(this->expr.type), this->expr.a, this->expr.b, this->expr.cond };
 	std::array<char, sizeof(std::array<int32_t, 4>)>* expr_bytes = reinterpret_cast<std::array<char, sizeof(std::array<int32_t, 4>)>*>(&expr_ints);
 	hasher.process(expr_bytes->begin(), expr_bytes->end());
 
-	if (is_operation(this->expr.type) || this->expr.type == ExprType::Branch) {
-		this->left().get_checksum(hasher);
-		if (this->has_right()) {
-			this->right().get_checksum(hasher);
-		}
-	}
-	else if (this->expr.type == ExprType::Symbol) {
-		const std::string label = this->get_name();
-		std::vector<char> bytes(label.begin(), label.end());
-		hasher.process(bytes.begin(), bytes.end());
-	}
+    if (is_operation(this->expr.type) || this->expr.type == ExprType::Branch) {
+        if (visited.find(this->expr.a) == visited.end()) {
+            this->left().get_checksum(hasher, visited);
+        }
+        if (this->has_right() && visited.find(this->expr.b) == visited.end()) {
+            this->right().get_checksum(hasher, visited);
+        }
+    }
+    else if (this->expr.type == ExprType::Symbol) {
+        const std::string& label = this->get_name();
+        hasher.process(label.begin(), label.end());
+    }
 	else if (this->expr.type == ExprType::Zero || this->expr.type == ExprType::One || this->expr.type == ExprType::ConstantFloat) {
 		double value = 0.0;
 		switch (this->expr.type)
