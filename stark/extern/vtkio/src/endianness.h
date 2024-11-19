@@ -48,7 +48,7 @@ namespace endianness
 		}
 	}
 	template<size_t N_BYTES_PER_ELEMENT>
-	inline void swapByteArrayInplace(std::vector<char> &arr)
+	inline void swapByteArrayInplace(std::vector<char>& arr)
 	{
 		const size_t n_items = arr.size() / N_BYTES_PER_ELEMENT;
 		swapByteArrayInplace<N_BYTES_PER_ELEMENT>(arr.data(), n_items);
@@ -59,12 +59,12 @@ namespace endianness
 		swapBytesInplace<sizeof(T)>(reinterpret_cast<char*>(arr), n);
 	}
 	template<class T>
-	inline void swapBytesInplace(std::vector<T> &arr)
+	inline void swapBytesInplace(std::vector<T>& arr)
 	{
 		swapBytesInplace(arr.data(), arr.size());
 	}
 	template<class T>
-	inline std::vector<T> swap_bytes(const std::vector<T> &arr)
+	inline std::vector<T> swap_bytes(const std::vector<T>& arr)
 	{
 		std::vector<T> out = arr;
 		swapBytesInplace(out.data(), out.size());
@@ -74,6 +74,7 @@ namespace endianness
 	template<typename T_in, typename T_out>
 	inline void castBytesInPlace(std::vector<char>& arr)
 	{
+		// Early return if input and output types are the same
 		if constexpr (std::is_same<T_in, T_out>::value) {
 			return;
 		}
@@ -81,27 +82,26 @@ namespace endianness
 		const size_t size_in = sizeof(T_in);
 		const size_t size_out = sizeof(T_out);
 		const size_t n_char_in = arr.size();
+
+		// Ensure input buffer size aligns with T_in
+		if (n_char_in % size_in != 0) {
+			throw std::runtime_error("Input buffer size is not a multiple of T_in size.");
+		}
+
 		const size_t n_items = n_char_in / size_in;
 		const size_t n_char_out = n_items * size_out;
 
-		T_in* cast_in;
-		T_out* cast_out;
-		if constexpr (size_in >= size_out) {
-			cast_in = reinterpret_cast<T_in*>(arr.data());
-			cast_out = reinterpret_cast<T_out*>(arr.data());
-			for (size_t i = 0; i < n_items; i++) {
-				cast_out[i] = static_cast<T_out>(cast_in[i]);
-			}
-		}
-		else {
-			arr.resize(n_char_out);
-			cast_in = reinterpret_cast<T_in*>(arr.data() + n_char_out - n_char_in);
-			cast_out = reinterpret_cast<T_out*>(arr.data());
-			for (size_t i = 0; i < n_items; i++) {
-				cast_out[n_items - 1 - i] = static_cast<T_out>(cast_in[i]);
-			}
+		// Allocate a temporary buffer for the casted output
+		std::vector<char> tmp_buffer(n_char_out);
+
+		// Perform the casting
+		const T_in* cast_in = reinterpret_cast<const T_in*>(arr.data());
+		T_out* cast_out = reinterpret_cast<T_out*>(tmp_buffer.data());
+		for (size_t i = 0; i < n_items; ++i) {
+			cast_out[i] = static_cast<T_out>(cast_in[i]);
 		}
 
-		arr.resize(n_char_out);
+		// Replace the input array with the temporary buffer
+		arr = std::move(tmp_buffer);
 	}
 }

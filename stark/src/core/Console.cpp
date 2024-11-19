@@ -17,6 +17,7 @@ void stark::core::Console::initialize(const std::string path, const ConsoleVerbo
 }
 void stark::core::Console::set_path(const std::string path)
 {
+	this->path = path;
 }
 std::string stark::core::Console::get_frame_path() const
 {
@@ -24,9 +25,11 @@ std::string stark::core::Console::get_frame_path() const
 }
 void stark::core::Console::set_verbosity(const ConsoleVerbosity verbosity)
 {
+	this->verbosity = verbosity;
 }
 void stark::core::Console::set_output_target(const ConsoleOutputTo output_to)
 {
+	this->output_to = output_to;
 }
 void stark::core::Console::print(const std::string& msg, const ConsoleVerbosity verbosity)
 {
