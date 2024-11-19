@@ -137,9 +137,10 @@ symx::Scalar symx::diff_impl(const Scalar& scalar, const Scalar& wrt, std::unord
 			return (double)(c)*u.powN(c - 1) * du;
 		}
 		else if (scalar.expr.type == ExprType::PowF) {
-			std::cout << "symx error: ExprType::PowF not supported for diff." << std::endl;
-			exit(-1);
-			return scalar;
+			Scalar u = scalar.left();
+			Scalar du = diff(u, wrt, diff_map);
+			double v = scalar.expr.unpack_double();
+			return v * u.powF(v - 1.0) * du;
 		}
 
 		// Regular operations
