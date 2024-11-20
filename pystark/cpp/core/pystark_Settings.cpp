@@ -17,6 +17,9 @@ void pystark_Settings(nb::module_& m)
         .def_rw("type", &stark::Residual::type)
         .def_rw("tolerance", &stark::Residual::tolerance);
 
+    // Functions
+    m.def("set_compiler_command", &set_compiler_command);
+
     // Structs
     auto settings_struct = nb::class_<Settings>(m, "Settings")
         .def(nb::init<>())

@@ -88,6 +88,11 @@ namespace stark
 		inline auto& set_global_target_direction(const Eigen::Vector3d& x) { this->constraints->target_d_glob[this->idx] = x; return (*this); };
 		inline Eigen::Vector3d get_local_direction() const { return this->constraints->d_loc[this->idx]; };
 		inline auto& set_local_direction(const Eigen::Vector3d& x) { this->constraints->d_loc[this->idx] = x; return (*this); };
+		inline auto& set_rotation(const Eigen::Matrix3d& R) { this->constraints->d_loc[this->idx] = R*this->constraints->d_loc_rest[this->idx]; return (*this); };
+		inline auto& set_rotation(const double angle_deg, const Eigen::Vector3d& axis)
+		{
+			return this->set_rotation(Eigen::AngleAxisd(deg2rad(angle_deg), axis).toRotationMatrix());
+		}
 		inline std::array<double, 2> get_violation_in_deg_and_torque() const
 		{
 			return RigidBodyConstraints::GlobalDirections::violation_in_deg_and_torque(get_stiffness(), get_global_target_direction(), rb.transform_local_to_global_direction(get_local_direction()));
@@ -364,8 +369,8 @@ namespace stark
 		inline auto& set_transformation(const Eigen::Vector3d& translation, const Eigen::Matrix3d& rotation)
 		{
 			this->anchor_point.set_global_target_point(translation);
-			this->z_lock.set_global_target_direction(rotation.col(2));
-			this->x_lock.set_global_target_direction(rotation.col(0));
+			this->z_lock.set_rotation(rotation);
+			this->x_lock.set_rotation(rotation);
 			return (*this);
 		}
 		inline auto& set_transformation(const Eigen::Vector3d& translation, const double angle_deg, const Eigen::Vector3d& axis)

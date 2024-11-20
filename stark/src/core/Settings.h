@@ -7,12 +7,18 @@
 
 #include "Console.h"
 
-// User facing enums
 namespace stark
 {
+	// User facing enums
 	enum class ResidualType { Force, Acceleration };
 	enum class LinearSystemSolver { CG, DirectLU };
 	struct Residual { ResidualType type; double tolerance; };
+
+	// Wrapper to set SymX compiler
+	inline void set_compiler_command(const std::string& str)
+	{
+		symx::compiler_command = str;
+	}
 }
 
 namespace stark::core

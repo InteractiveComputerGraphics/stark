@@ -3,6 +3,7 @@
 #include <vector>
 #include <cassert>
 #include <memory>
+#include <unordered_set>
 
 #include <picoSHA2/picosha2.h>
 
@@ -71,7 +72,7 @@ namespace symx
 		double get_value() const;
 		double eval();
 		std::string get_checksum();
-		void get_checksum(picosha2::hash256_one_by_one& hasher);
+        void get_checksum(picosha2::hash256_one_by_one& hasher, std::unordered_set<int32_t>& visited);
 
 		Scalar left() const;
 		Scalar right() const;

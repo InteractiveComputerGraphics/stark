@@ -10,7 +10,6 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 	// Callbacks
 	stark.callbacks.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
 	stark.callbacks.add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
-	stark.callbacks.add_write_frame([&]() { this->_write_frame(stark); });
 
 	// Constraint containers initialization
 	this->global_points = std::make_shared<RigidBodyConstraints::GlobalPoints>();
@@ -244,7 +243,7 @@ bool stark::EnergyRigidBodyConstraints::_is_converged_state_valid(core::Stark& s
 		Hardens every constraints that has gone beyond the input tolerance.
 		If no constraint needs to be hardened, return true.
 	*/
-	const bool valid = this->_adjust_constraints_stiffness_and_log(stark, 1.0, this->stiffness_hard_multiplier, /*log = */ false, /* are_positions_set = */ false);
+	const bool valid = this->_adjust_constraints_stiffness_and_log(stark, 1.0, this->stiffness_hard_multiplier, /* are_positions_set = */ false);
 	if (!valid) {
 		stark.console.add_error_msg("Rigid body constraints are not within tolerance. Hardening bending_stiffness.");
 	}
@@ -260,16 +259,10 @@ void stark::EnergyRigidBodyConstraints::_on_time_step_accepted(core::Stark& star
 	*	Adaptive soft decrease is not done as it would require a base bending_stiffness value which is added responsibility to the user.
 	*	It's too easy to have an overly soft constraint parametrization that runs into force time restarts too frequently.
 	*/
-	this->_adjust_constraints_stiffness_and_log(stark, this->soft_constraint_capacity_hardening_point, this->stiffness_soft_multiplier, /* log = */ true, /* are_positions_set = */ true);
+	this->_adjust_constraints_stiffness_and_log(stark, this->soft_constraint_capacity_hardening_point, this->stiffness_soft_multiplier, /* are_positions_set = */ true);
 }
 
-void stark::EnergyRigidBodyConstraints::_write_frame(core::Stark& stark)
-{
-	auto& output = stark.settings.output;
-	this->logger.save_to_disk(fmt::format("{}/rigidbody_constraints_logger_{}__{}.txt", output.output_directory, output.simulation_name, output.time_stamp));
-}
-
-bool stark::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_and_log(core::Stark& stark, double cap, double multiplier, bool log, bool are_positions_set)
+bool stark::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_and_log(core::Stark& stark, double cap, double multiplier, bool are_positions_set)
 {
 	/*
 		This function evaluates all the constraints and serves multiple purposes:
@@ -283,11 +276,6 @@ bool stark::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_and_log(co
 	// Get correct points and directions according to `are_positions_set`
 	auto get_x1 = [&](int rb, Eigen::Vector3d& loc) { return (are_positions_set) ? this->rb->get_position_at(rb, loc) : this->rb->get_x1(rb, loc, dt); };
 	auto get_d1 = [&](int rb, Eigen::Vector3d& loc) { return (are_positions_set) ? this->rb->get_direction(rb, loc) : this->rb->get_d1(rb, loc, dt); };
-
-	if (log) {
-		this->logger.append_to_series("time [s]", stark.current_time);
-		this->logger.append_to_series("frame", stark.current_frame);
-	}
 
 	// Set true and make false if a constraint is violated beyond tolerance
 	bool is_valid = true;

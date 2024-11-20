@@ -27,7 +27,7 @@ void pystark_DeformablesPresets(nb::module_& m)
                 nb::tuple out = nb::make_tuple(stark_to_nb(V), stark_to_nb(C), H);
                 return create_named_tuple("SurfaceOutput", { "vertices", "triangles", "handler" }, out);
             },
-            "output_label"_a, "dim"_a, "subdivisions"_a, "params"_a)
+            "output_label"_a, "size"_a, "subdivisions"_a, "params"_a)
         .def("add_prescribed_surface", [](DeformablesPresets& self, const std::string& output_label, MatX3d& vertices, MatX3i& triangles, const PrescribedSurface::Params& params)
             { return self.add_prescribed_surface(output_label, nb_to_stark(vertices), nb_to_stark(triangles), params); },
             "output_label"_a, "vertices"_a, "triangles"_a, "params"_a)
@@ -42,7 +42,7 @@ void pystark_DeformablesPresets(nb::module_& m)
                 nb::tuple out = nb::make_tuple(stark_to_nb(V), stark_to_nb(C), H);
                 return create_named_tuple("VolumeOutput", { "vertices", "tets", "handler" }, out);
             },
-            "output_label"_a, "dim"_a, "subdivisions"_a, "params"_a)
+            "output_label"_a, "size"_a, "subdivisions"_a, "params"_a)
 
 
         /* Fields */

@@ -44,7 +44,9 @@ void pystark_rigidbody_constraints_ui(nb::module_& m)
             DEFINE_GETTER_SETTER(tolerance_in_deg)
             DEFINE_GETTER_SETTER(global_target_direction)
             DEFINE_GETTER_SETTER(local_direction)
-            .def("get_violation_in_deg_and_torque", &Self::get_violation_in_deg_and_torque);
+            .def("get_violation_in_deg_and_torque", &Self::get_violation_in_deg_and_torque)
+            .def("set_rotation", nb::overload_cast<const Eigen::Matrix3d&>(&Self::set_rotation))
+            .def("set_rotation", nb::overload_cast<const double, const Eigen::Vector3d&>(&Self::set_rotation));
     }
     {
         using Self = RBCPointHandler;
@@ -159,7 +161,12 @@ void pystark_rigidbody_constraints_ui(nb::module_& m)
             DEFINE(get_x_lock)
             DEFINE(set_stiffness)
             DEFINE(set_tolerance_in_m)
-            DEFINE(set_tolerance_in_deg);
+            DEFINE(set_tolerance_in_deg)
+            DEFINE(set_tolerance_in_deg)
+            .def("set_transformation", nb::overload_cast<const Eigen::Vector3d&, const Eigen::Matrix3d&>(&Self::set_transformation),
+                "translation"_a, "rotation"_a = Eigen::Matrix3d::Identity())
+            .def("set_transformation", nb::overload_cast<const Eigen::Vector3d&, const double, const Eigen::Vector3d&>(&Self::set_transformation),
+                "translation"_a, "angle_deg"_a, "axis"_a);
     }
     {
         using Self = RBCAttachmentHandler;

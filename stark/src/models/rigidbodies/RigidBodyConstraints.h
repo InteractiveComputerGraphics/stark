@@ -128,6 +128,7 @@ namespace stark
 		{
 			symx::LabelledConnectivity<2> conn{ { "idx", "rb" } };
 			std::vector<Eigen::Vector3d> d_loc;
+			std::vector<Eigen::Vector3d> d_loc_rest;
 			std::vector<Eigen::Vector3d> target_d_glob;
 			std::vector<double> stiffness;
 			std::vector<double> tolerance_in_deg;
@@ -138,6 +139,7 @@ namespace stark
 				const int id = (int)this->is_active.size();
 				this->conn.numbered_push_back({rb});
 				this->d_loc.push_back(d_loc.normalized());
+				this->d_loc_rest.push_back(d_loc.normalized());
 				this->target_d_glob.push_back(target_d_glob.normalized());
 				this->stiffness.push_back(stiffness);
 				this->tolerance_in_deg.push_back(tolerance_in_deg);

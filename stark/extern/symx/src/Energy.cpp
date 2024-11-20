@@ -107,7 +107,6 @@ void symx::Energy::deferred_init(const bool force_compilation, const bool force_
 	// Clear symbolic allocations
 	this->n_bytes_symbols = this->sws.get_expression_graph().size() * sizeof(symx::Expr);
 	this->dof_symbols.clear();
-	//this->sws = SymbolicWorkSpace();
 	this->expr = nullptr;
 	this->cond = nullptr;
 }

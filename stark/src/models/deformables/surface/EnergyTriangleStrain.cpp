@@ -49,7 +49,7 @@ stark::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& stark, spP
 
 			symx::Matrix dE_dt = (E1 - E0) / dt;
 
-			// Stable Neo-Hookean strain energy
+			// Neo-Hookean strain energy
 			symx::Scalar mu = e / (2.0 * (1.0 + nu));
 			symx::Scalar lambda = (e * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
 			symx::Scalar area = 0.5 * ((x1[0] - x1[2]).cross3(x1[1] - x1[2])).norm();
@@ -109,7 +109,7 @@ stark::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& stark, spP
 			symx::Matrix F1_32 = Dx1_32 * DXinv;  // 3x2
 			symx::Matrix C1 = F1_32.transpose() * F1_32;
 
-			// Stable Neo-Hookean strain energy
+			// Neo-Hookean strain energy
 			symx::Scalar mu = e / (2.0 * (1.0 + nu));
 			symx::Scalar lambda = (e * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
 			symx::Scalar area = 0.5 * ((x1[0] - x1[2]).cross3(x1[1] - x1[2])).norm();

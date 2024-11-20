@@ -129,20 +129,11 @@ set(MODELS_PRESETS_FILES
 	src/models/presets/RigidBodyPresets.h
 )
 
-set(MODELS_CONSTRUCTS_FILES
-	src/models/constructs/include.h
-	src/models/constructs/RoboticHand.cpp
-	src/models/constructs/RoboticHand.h
-	#src/models/constructs/VehicleFourWheels.cpp
-	#src/models/constructs/VehicleFourWheels.h
-)
-
 set(MODELS_FILES
 	${MODELS_DEFORMABLES_FILES}
 	${MODELS_RIGIDBODIES_FILES}
 	${MODELS_INTERACTIONS_FILES}
 	${MODELS_PRESETS_FILES}
-	${MODELS_CONSTRUCTS_FILES}
 
 	src/models/include.h
 	src/models/types.h

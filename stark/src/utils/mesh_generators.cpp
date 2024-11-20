@@ -63,6 +63,9 @@ stark::Mesh<3> stark::make_cylinder(const double radius, const double full_heigh
 stark::Mesh<3> stark::make_torus(const double outer_radius, const double inner_radius, const int slices, const int stacks)
 {
 	Mesh m = as_mesh(par_shapes_create_torus(slices, stacks, (float)(inner_radius/outer_radius)));
+	auto [v, t] = clean_triangle_mesh(m.vertices, m.conn, /* merge_by_distance = */inner_radius/(double)slices);
+	m.vertices = v;
+	m.conn = t;
 	scale(m.vertices, outer_radius);
 	return m;
 }

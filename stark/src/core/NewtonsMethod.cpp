@@ -266,7 +266,7 @@ double stark::core::NewtonsMethod::_compute_acceleration_correction(double du, d
 double stark::core::NewtonsMethod::_forcing_sequence(const Eigen::VectorXd& rhs)
 {
 	const double grad_norm = rhs.norm();
-	const double cg_tol = std::min(0.1 /*TODO: arbritrary.*/, grad_norm * std::min(0.5, std::sqrt(grad_norm)));
+	const double cg_tol = std::min(0.1 /* TODO: find a better cap.*/, grad_norm * std::min(0.5, std::sqrt(grad_norm)));
 	return cg_tol;
 }
 

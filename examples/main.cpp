@@ -2,90 +2,21 @@
 
 #include <stark>
 #include "paths.h"
-#include "rb_constraint_test_scenes.h"
+#include "rb_constraint_test_scenes.h"  // Contains a bunch of simple rigid body scenes with predictable outcomes
 
-void hanging_composite_box()
-{
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "hanging_composite_box";
-	settings.output.output_directory = OUTPUT_PATH + "/hanging_composite_box";
-	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
-	stark::Simulation simulation(settings);
 
-	// Geometry
-	const int n = 7;
-	const double d = 0.2;
-	const double hd = d/2.0;
-	auto [vertices, tets] = stark::generate_tet_grid({ 0.0, 0.0, 0.0 }, { d, d, d }, { n, n, n });
 
-	// Meshes
-	auto [triangles, tri_tet_map] = stark::find_surface(vertices, tets);
-	auto tri_vertices = stark::gather(vertices, tri_tet_map);
-	auto triangles_in_tet_connectivity = stark::apply_map(triangles, tri_tet_map);
-	auto [sharp_edges, edge_tri_map] = stark::find_sharp_edges(tri_vertices, triangles, 30.0);
-	std::vector<int> edge_tet_map = stark::gather(tri_tet_map, edge_tri_map);
-	auto edges_in_tet_connectivity = stark::apply_map(sharp_edges, edge_tet_map);
-
-	// Node set
-	const stark::PointSetHandler nodeset = simulation.deformables->point_sets->add(vertices)
-		.add_rotation(-90.0, Eigen::Vector3d::UnitX());
-
-	// Energies
-	auto inertia = simulation.deformables->lumped_inertia->add(nodeset, tets, 
-		stark::EnergyLumpedInertia::Params()
-		.set_density(1000.0)
-		.set_damping(0.5)
-	);
-	auto tet_strain = simulation.deformables->tet_strain->add(nodeset, tets, 
-		stark::EnergyTetStrain::Params()
-		.set_youngs_modulus(1e3)
-	);
-	auto segment_strain = simulation.deformables->segment_strain->add(nodeset, edges_in_tet_connectivity,
-		stark::EnergySegmentStrain::Params()
-		.set_section_radius(5e-3)
-		.set_youngs_modulus(1e5)
-		);
-	auto triangle_strain = simulation.deformables->triangle_strain->add(nodeset, triangles_in_tet_connectivity,
-		stark::EnergyTriangleStrain::Params()
-		.set_youngs_modulus(1e4)
-		.set_strain_limit(0.5)
-		.set_strain_limit_stiffness(100.0)
-		);
-	auto discrete_shells = simulation.deformables->discrete_shells->add(nodeset, triangles_in_tet_connectivity,
-		stark::EnergyDiscreteShells::Params()
-		.set_stiffness(1e-3)
-		.set_flat_rest_angle(true)
-		);
-	auto bc = simulation.deformables->prescribed_positions->add_inside_aabb(nodeset, { 0, hd, hd }, { hd, 0.001, 0.001 },
-		stark::EnergyPrescribedPositions::Params()
-		.set_tolerance(1e-2)
-	);
-
-	// Output
-	simulation.deformables->output->add_tet_mesh("tets", nodeset, tets);
-	simulation.deformables->output->add_triangle_mesh("triangles", nodeset, triangles, tri_tet_map);
-	simulation.deformables->output->add_segment_mesh("segments", nodeset, sharp_edges, edge_tet_map);
-	simulation.deformables->output->add_point_set("points", nodeset);
-
-	// Run
-	simulation.run(
-		[&]()
-		{
-			//const double t = simulation.get_time() / 5.0;
-			//bc.set_transformation({0.0, 0.0, t});
-		}
-	);
-}
 void hanging_net()
 {
+	/*
+		Simulation of net of segments fixed by its perimeter and hanging due to gravity.
+	*/
+
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "hanging_net";
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_net";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);
 
@@ -107,12 +38,15 @@ void hanging_net()
 }
 void hanging_cloth()
 {
+	/*
+		Simulation of a piece of cloth fixed by two corners and hanging due to gravity.
+	*/
+
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "hanging_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);
 
@@ -122,7 +56,6 @@ void hanging_cloth()
 	const double hd = d/2.0;
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { d, d }, { n, n }, stark::Surface::Params::Cotton_Fabric());
 
-
 	// BC
 	auto bc1 = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { hd, hd, 0.0 }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params());
 	auto bc2 = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { -hd, hd, 0.0 }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params());
@@ -130,14 +63,17 @@ void hanging_cloth()
 	// Run
 	simulation.run();
 }
-void hanging_box()
+void hanging_deformable_box()
 {
+	/*
+		Simulation of a deformable box fixed by two corners and hanging due to gravity.
+	*/
+
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "hanging_box";
-	settings.output.output_directory = OUTPUT_PATH + "/hanging_box";
+	settings.output.simulation_name = "hanging_deformable_box";
+	settings.output.output_directory = OUTPUT_PATH + "/hanging_deformable_box";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);
 
@@ -145,76 +81,26 @@ void hanging_box()
 	const int n = 10;
 	const double d = 0.5;
 	const double hd = d/2.0;
-	auto [V, T, H] = simulation.presets->deformables->add_volume_grid("surf", { d, d, d }, {n, n, n}, stark::Volume::Params::Soft_Rubber());
+	auto [V, T, H] = simulation.presets->deformables->add_volume_grid("box", { d, d, d }, {n, n, n}, stark::Volume::Params::Soft_Rubber());
 	
 	// BC
-	auto bc1 = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { hd, hd, hd }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params());
-	auto bc2 = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { -hd, hd, hd }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params());
-
-	// Run
-	simulation.run();
-}
-void ball_joints()
-{
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "ball_joints";
-	settings.output.output_directory = OUTPUT_PATH + "/ball_joints";
-	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
-	settings.simulation.init_frictional_contact = false;
-	stark::Simulation simulation(settings);
-
-	// Geometry
-	const double size = 0.1;
-	auto mesh = stark::make_box({ size, size, size });
-
-	// Add Objects
-	const int n = 10;
-	const double mass = 1.0;
-
-	std::vector<stark::RigidBodyHandler> rbs;
-	for (int i = 0; i < n; i++) {
-		// Add RB
-		rbs.push_back( 
-			simulation.rigidbodies->add(mass, stark::inertia_tensor_box(mass, { size, size, size })) 
-				.add_translation({ 0.0, i * size, 0.0 })
-		);
-
-		// Declare output
-		simulation.rigidbodies->output.add_triangle_mesh("boxes", rbs.back(), mesh.vertices, mesh.conn);
-	}
-
-	// Boundary Conditions
-	const Eigen::Vector3d bottom_corner = { -0.5 * size, -0.5 * size, -0.5 * size };
-	const Eigen::Vector3d top_corner = { +0.5 * size, -0.5 * size, +0.5 * size };
-
-	//// Pin the first box
-	simulation.rigidbodies->add_constraint_global_point(rbs[0], bottom_corner);
-
-	//// Ball joints
-	for (int i = 1; i < n; i++) {
-		if (i % 2) {
-			simulation.rigidbodies->add_constraint_point(rbs[i - 1], rbs[i], rbs[i].transform_local_to_global_point(top_corner) );
-		}
-		else {
-			simulation.rigidbodies->add_constraint_point(rbs[i - 1], rbs[i], rbs[i].transform_local_to_global_point(bottom_corner) );
-		}
-	}
+	auto bc1 = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { hd, hd, hd }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params().set_stiffness(1e7));
+	auto bc2 = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { -hd, hd, hd }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params().set_stiffness(1e7));
 
 	// Run
 	simulation.run();
 }
 void attachments()
 {
+	/*
+		Simulation of two pieces of cloth and a rigid body attached by distance constraints and hanging due to gravity.
+	*/
+
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "attachments";
 	settings.output.output_directory = OUTPUT_PATH + "/attachments";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
-
-	settings.debug.symx_force_load = true;
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);
 
@@ -250,176 +136,171 @@ void attachments()
 	// Run
 	simulation.run();
 }
-void deformable_box_collisions()
+void hanging_box_with_composite_material()
 {
+	/*
+		Simulation of a hanging box with composite material: Volumetric, shell and rod models for interior, surface and ridges.
+		The box is fixed by two corners and hanging due to gravity.
+
+		This scene exemplifies how to use individual energies to model different materials in a single deformable object,
+		as opose to using a preset with a pre-selection.
+	*/
+
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "deformable_box_collisions";
-	settings.output.output_directory = OUTPUT_PATH + "/deformable_box_collisions";
+	settings.output.simulation_name = "hanging_box_with_composite_material";
+	settings.output.output_directory = OUTPUT_PATH + "/hanging_box_with_composite_material";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.execution.end_simulation_time = 8.0;
+	settings.simulation.init_frictional_contact = false;
+	stark::Simulation simulation(settings);
+
+	// Geometry
+	const int n = 10;
+	const double d = 0.2;
+	const double hd = d/2.0;
+	auto [vertices, tets] = stark::generate_tet_grid({ 0.0, 0.0, 0.0 }, { d, d, d }, { n, n, n });
+
+	// Meshes
+	auto [triangles, tri_tet_map] = stark::find_surface(vertices, tets);
+	auto tri_vertices = stark::gather(vertices, tri_tet_map);
+	auto triangles_in_tet_connectivity = stark::apply_map(triangles, tri_tet_map);
+	auto [sharp_edges, edge_tri_map] = stark::find_sharp_edges(tri_vertices, triangles, 30.0);
+	std::vector<int> edge_tet_map = stark::gather(tri_tet_map, edge_tri_map);
+	auto edges_in_tet_connectivity = stark::apply_map(sharp_edges, edge_tet_map);
+
+	// Node set
+	const stark::PointSetHandler nodeset = simulation.deformables->point_sets->add(vertices)
+		.add_rotation(-90.0, Eigen::Vector3d::UnitX());
+
+	// Energies
+	auto inertia = simulation.deformables->lumped_inertia->add(nodeset, tets, 
+		stark::EnergyLumpedInertia::Params()
+		.set_density(1000.0)
+		.set_damping(0.5)
+	);
+	auto tet_strain = simulation.deformables->tet_strain->add(nodeset, tets, 
+		stark::EnergyTetStrain::Params()
+		.set_youngs_modulus(1e3)
+	);
+	auto segment_strain = simulation.deformables->segment_strain->add(nodeset, edges_in_tet_connectivity,
+		stark::EnergySegmentStrain::Params()
+		.set_section_radius(5e-3)
+		.set_youngs_modulus(5e5)
+		);
+	auto triangle_strain = simulation.deformables->triangle_strain->add(nodeset, triangles_in_tet_connectivity,
+		stark::EnergyTriangleStrain::Params()
+		.set_youngs_modulus(1e4)
+		.set_strain_limit(0.2)
+		.set_strain_limit_stiffness(100.0)
+		);
+	auto discrete_shells = simulation.deformables->discrete_shells->add(nodeset, triangles_in_tet_connectivity,
+		stark::EnergyDiscreteShells::Params()
+		.set_stiffness(2e-3)
+		.set_flat_rest_angle(true)
+		);
+	auto bc = simulation.deformables->prescribed_positions->add_inside_aabb(nodeset, { hd, hd, hd }, { 0.001, 0.001, 0.001 },
+		stark::EnergyPrescribedPositions::Params()
+		.set_stiffness(1e7)
+		.set_tolerance(1e-3)
+	);
+	simulation.deformables->prescribed_positions->add_inside_aabb(nodeset, { -hd, hd, hd }, { 0.001, 0.001, 0.001 },
+		stark::EnergyPrescribedPositions::Params()
+		.set_stiffness(1e7)
+		.set_tolerance(1e-3)
+	);
+
+	// Output
+	simulation.deformables->output->add_tet_mesh("tets", nodeset, tets);
+	simulation.deformables->output->add_triangle_mesh("triangles", nodeset, triangles, tri_tet_map);
+	simulation.deformables->output->add_segment_mesh("segments", nodeset, sharp_edges, edge_tet_map);
+	simulation.deformables->output->add_point_set("points", nodeset);
+
+	// Run
+	simulation.run();
+}
+void deformable_and_rigid_collisions()
+{
+	/*
+		Simulation of two stacked deformable boxes of different density and stiffness laying on a rigid, fixed, floor.
+	*/
+
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "deformable_and_rigid_collisions";
+	settings.output.output_directory = OUTPUT_PATH + "/deformable_and_rigid_collisions";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
 	stark::Simulation simulation(settings);
 
 	// Contact
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
 			.set_friction_stick_slide_threshold(0.01)
-			.set_min_contact_stiffness(1e7)
+			.set_min_contact_stiffness(1e8)
 	);
 
 	// Geometry
-	double gap = 0.01;
-	int n1 = 5;
-	double d1 = 0.25;
-	double hd1 = d1 / 2.0;
-	int n2 = n1;
-	double d2 = 0.1;
-	double hd2 = d2 / 2.0;
-	double contact_distance_1 = 0.004;
-	double contact_distance_2 = 0.001;
+	int n1 = 5; // subdivisions box 1
+	double d1 = 0.25; // size box 1
+	int n2 = 2; // subdivisions box 2
+	double d2 = 0.1; // size box 2
+	double gap = 0.01; // gap between boxes
 
 	// Deformables
 	stark::Volume::Params rubber = stark::Volume::Params::Soft_Rubber();
 	
-	rubber.contact.contact_thickness = contact_distance_1;
-	auto [V1, T1, H1] = simulation.presets->deformables->add_volume_grid("boxes", { d1, d1, d1 }, {n1, n1, n1}, rubber);
-	H1.point_set.add_displacement({ 0.0, 0.0, hd1 + gap });
+	rubber.contact.contact_thickness = 0.001*d1;
+	rubber.inertia.density = 1e3;
+	auto [V1, T1, H1] = simulation.presets->deformables->add_volume_grid("boxes", { d1, d1, d1 }, { n1, n1, n1 }, rubber);
+	H1.point_set.add_displacement({ 0.0, 0.0, 0.5*d1 + gap });
 
-	rubber.contact.contact_thickness = contact_distance_2;
-	auto [V2, T2, H2] = simulation.presets->deformables->add_volume_grid("boxes", { d2, d2, d2 }, {n2, n2, n2}, rubber);
-	H2.point_set.add_displacement({ 0.13*d2 , 0.07*d2, d1 + hd2 + 2*gap});
+	rubber.contact.contact_thickness = 0.001*d2;
+	rubber.inertia.density = 1e4;
+	rubber.strain.youngs_modulus = 1e5;
+	auto [V2, T2, H2] = simulation.presets->deformables->add_volume_grid("boxes", { d2, d2, d2 }, { n2, n2, n2 }, rubber);
+	H2.point_set.add_displacement({ 0.13*d2 , 0.07*d2, d1 + 0.5*d2 + 2*gap});
 
 	// Rigid
-	double fs = 1.0;
-	double fh = 0.1;
+	double d3 = 2.0;
 	double contact_distance_floor = gap;
-	auto [V, C, floor] = simulation.presets->rigidbodies->add_box("floor", 1.0, { fs, fs, fh }, stark::ContactParams().set_contact_thickness(gap));
-	floor.rigidbody.set_translation({ 0.0, 0.0, -0.5*fh });
+	auto [V, C, floor] = simulation.presets->rigidbodies->add_box("floor", 1.0, { d3, d3, 0.05*d3 }, stark::ContactParams().set_contact_thickness(0.001*d3));
+	floor.rigidbody.set_translation({ 0.0, 0.0, -0.025*d3 });
 	simulation.rigidbodies->add_constraint_fix(floor.rigidbody);
-
-	// BC
-	auto bc = simulation.deformables->prescribed_positions->add_inside_aabb(H1.point_set, { 0.0, 0.0, -hd1 }, { d1, d1, 0.001 }, 
-		stark::EnergyPrescribedPositions::Params().set_stiffness(1e5)
-		);
 
 	// Contact
 	double mu = 1.0;
 	simulation.interactions->contact->set_friction(floor.contact, H1.contact, mu);
+	simulation.interactions->contact->set_friction(floor.contact, H2.contact, mu);
 	simulation.interactions->contact->set_friction(H1.contact, H2.contact, mu);
 
 	// Run
 	simulation.run();
 }
-void floor()
+void simple_grasp()
 {
+	/*
+		Simulation of a simple two-finger parallel gripper grasping a deformable object.
+		Sequence:
+			1. In absence of gravity, the fingers close and squeeze the object.
+			2. Gravity is progressively turned on. The object stays between the fingers due to Coulomb friction coefficient slightly larger than the sticking threshold.
+			3. The friction coefficient is reduced to slightly below the sticking threshold. The object slides between the fingers.
+
+		This scene also shows how to anonymous lambdas to scope the script code, which is an option to avoid global variables.
+	*/
+
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "floor";
-	settings.output.output_directory = OUTPUT_PATH + "/floor";
+	settings.output.simulation_name = "simple_grasp";
+	settings.output.output_directory = OUTPUT_PATH + "/simple_grasp";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
-	stark::Simulation simulation(settings);
-
-
-	// Parameters
-	double gap = 0.01;
-	double contact_distance = 0.004;
-	int n1 = 2;
-	double d1 = 0.25;
-	double hd1 = d1 / 2.0;
-	double mu = 1.0;
-
-	// Contact
-	simulation.interactions->contact->set_global_params(
-		stark::EnergyFrictionalContact::GlobalParams()
-			.set_default_contact_thickness(contact_distance)
-			.set_friction_stick_slide_threshold(0.01)
-			.set_min_contact_stiffness(1e7)
-	);
-
-	// Deformables
-	auto [V1, T1, H1] = simulation.presets->deformables->add_volume_grid("box", { d1, d1, d1 }, {n1, n1, n1}, stark::Volume::Params::Soft_Rubber());
-	H1.point_set.add_displacement({ 0.0, 0.0, hd1 + gap });
-
-
-#if 1
-	// Deformable
-	auto [V, T] = stark::generate_triangle_grid({ 0.0, 0.0 }, { 1.0, 1.0 }, { 10, 10 });
-	auto HF = simulation.deformables->point_sets->add(V);
-	auto BC = simulation.deformables->prescribed_positions->add(HF, HF.all(), 
-		stark::EnergyPrescribedPositions::Params()
-			.set_stiffness(1e6)
-			//.set_tolerance(0.002)
-	);
-	simulation.deformables->output->add_triangle_mesh("floor", HF, T);
-	auto contact_handle_floor = simulation.interactions->contact->add_triangles(HF, T, { contact_distance });
-
-#else
-	// Rigid
-	double fs = 1.0;
-	double fh = 0.1;
-	auto floor = simulation.rigidbodies->add_with_box_inertia(1.0, { fs, fs, fh })
-		.set_translation({ 0.0, 0.0, -0.5*fh });
-	stark::Mesh<3> floor_mesh = stark::make_box({ fs, fs, fh });
-	simulation.rigidbodies->output.add_triangle_mesh("floor", floor, floor_mesh.vertices, floor_mesh.conn);
-	simulation.rigidbodies->add_constraint_fix(floor);
-
-#endif
-
-
-	simulation.interactions->contact->set_friction(H1.contact, contact_handle_floor, mu);
-
-	// Script
-	const double start = 2.0;
-	const double duration = 0.1;
-	//std::vector<Eigen::Vector3d> target;
-	//for (const auto& point : V) {
-	//	// Calculate azimuthal angle (phi) from the x-y plane
-	//	double phi = std::atan2(point.y(), point.x());
-
-	//	// Assuming a mapping that projects the points onto the upper hemisphere,
-	//	// calculate the polar angle (theta) based on the distance from the origin
-	//	// in the x-y plane since z is always 0 in the input.
-	//	double xyDistance = std::sqrt(point.x() * point.x() + point.y() * point.y());
-	//	double theta = std::acos(xyDistance / std::sqrt(2)); // Ensuring the point is on the positive z-side
-
-	//	// Convert spherical coordinates to Cartesian coordinates
-	//	double x = std::sqrt(2) * std::sin(theta) * std::cos(phi);
-	//	double y = std::sqrt(2) * std::sin(theta) * std::sin(phi);
-	//	double z = std::sqrt(2) * std::cos(theta);
-
-	//	target.push_back(Eigen::Vector3d(x, y, z));
-	//}
-
-	simulation.add_time_event(start, start + duration,
-	[&](double t) 
-	{
-		const double z = stark::blend(0.0, d1 - 2.0 * gap, start, start + duration, t, stark::BlendType::Linear);
-		BC.set_transformation({ 0.0, 0.0, z });
-	}
-	);
-
-	// Run
-	simulation.run();
-}
-void grasp_test()
-{
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "grasp_test";
-	settings.output.output_directory = OUTPUT_PATH + "/grasp_test";
-	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
+	settings.execution.end_simulation_time = 7.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
 	stark::Simulation simulation(settings);
 
-
 	// Parameters
-	int n = 2;
-	double s = 0.2;
-	double hs = s/2.0;
+	int n = 5;
+	double d = 0.2;
+	double hd = d/2.0;
 	double gap = 0.02;
-	double contact_thickness = 0.005;
+	double contact_thickness = 0.001;
 	double mass = 1.0;
 	double gravity = -10.0;
 	double pressure = 10.0; // [N]
@@ -430,53 +311,41 @@ void grasp_test()
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
 		.set_default_contact_thickness(contact_thickness)
-		.set_friction_stick_slide_threshold(0.001)
+		.set_friction_stick_slide_threshold(0.001) // Tighther threshold for more accurate frictional forces
 		.set_min_contact_stiffness(1e7)
 	);
 
-	// obj
-#if 1  // Rigid
-	auto [obj, obj_c] = [&]() 
-	{
-		auto [V, C, H] = simulation.presets->rigidbodies->add_box("rigid", mass, s);
-		return std::make_tuple( H.rigidbody, H.contact );
-	}();
-#else  // Deformable
+	// Object
 	auto [obj, obj_c] = [&]()
 		{
 		auto params = stark::Volume::Params::Soft_Rubber();
-		params.inertia.damping = 0.0;
-		params.inertia.density = mass/std::pow(s, 3);
-		params.strain.elasticity_only = true;
-		params.strain.youngs_modulus = 1e7;
-		auto [vertices, tets, obj] = simulation.deformables->add_volume_grid({ s, s, s }, { n, n, n }, params, "deformable");
-		auto [tris, tri_tet_map] = stark::find_surface(vertices, tets);
-		auto contact = simulation.interactions->contact->add_triangles(obj.point_set, contact_distance, tris, tri_tet_map);
-		return std::make_tuple( obj, contact );
+		params.inertia.density = mass/std::pow(d, 3);
+		params.strain.elasticity_only = true;  // We don't need material damping nor strain limiting for this scene
+		params.strain.youngs_modulus = 2e3;
+		auto [V, T, H] = simulation.presets->deformables->add_volume_grid("deformable", { d, d, d }, { n, n, n }, params);
+		return std::make_tuple( H, H.contact);
 	}();
-#endif
-
 
 	// Hand
 	auto [hand, hand_c] = [&]()
 	{
-		auto [V, C, H] = simulation.presets->rigidbodies->add_box("hand", mass, { 3*s, 3*s, 3*s });
-		H.rigidbody.set_translation({ 0.0, -(3 * hs + hs + gap), 0.0 });
+		auto [V, C, H] = simulation.presets->rigidbodies->add_box("hand", mass, { 3*d, 3*d, 3*d });
+		H.rigidbody.set_translation({ 0.0, -(3 * hd + hd + gap), 0.0 });
 		return std::make_tuple(H.rigidbody, H.contact);
 	}();
 
 	// Fingers
-	const Eigen::Vector3d fingers_size = { 0.5 * s, 2 * s, 2 * s };
+	const Eigen::Vector3d fingers_size = { 0.5*d, 2*d, 2*d };
 	auto [left_finger, left_finger_c] = [&]()
 	{
 		auto [V, C, H] = simulation.presets->rigidbodies->add_box("hand", mass, fingers_size);
-		H.rigidbody.set_translation({ -(hs + 0.5 * hs + gap), -gap, 0.0 });
+		H.rigidbody.set_translation({ -(hd + 0.5 * hd + gap), -gap, 0.0 });
 		return std::make_tuple(H.rigidbody, H.contact);
 	}();
 	auto [right_finger, right_finger_c] = [&]()
 	{
 		auto [V, C, H] = simulation.presets->rigidbodies->add_box("hand", mass, fingers_size);
-		H.rigidbody.set_translation({ (hs + 0.5 * hs + gap), -gap, 0.0 });
+		H.rigidbody.set_translation({ (hd + 0.5 * hd + gap), -gap, 0.0 });
 		return std::make_tuple(H.rigidbody, H.contact);
 	}();
 
@@ -486,22 +355,25 @@ void grasp_test()
 
 	// BC
 	const Eigen::Vector3d p = Eigen::Vector3d::Zero();
-	const Eigen::Vector3d d = Eigen::Vector3d::UnitX();
+	const Eigen::Vector3d dir = Eigen::Vector3d::UnitX();
 
 	simulation.rigidbodies->add_constraint_fix(hand);
-	simulation.rigidbodies->add_constraint_prismatic_press(hand, left_finger, p, d, 1.0, 0.5*pressure);
-	simulation.rigidbodies->add_constraint_prismatic_press(hand, right_finger, p, d, -1.0, 0.5*pressure);
+	simulation.rigidbodies->add_constraint_prismatic_press(hand, left_finger, p, dir, 1.0, 0.5*pressure);
+	simulation.rigidbodies->add_constraint_prismatic_press(hand, right_finger, p, dir, -1.0, 0.5*pressure);
+
+	// Friction
+	simulation.interactions->contact->set_friction(left_finger_c, obj_c, mu_sticking);
+	simulation.interactions->contact->set_friction(right_finger_c, obj_c, mu_sticking);
 
 	// Script
-	simulation.add_time_event(1.0, 5.0, [&](double t) { simulation.set_gravity({ 0.0, 0.0, gravity }); });
-	simulation.add_time_event(1.0, 3.0, 
+	simulation.add_time_event(2.0, 3.0, 
 		[&](double t) 
 		{ 
-			simulation.interactions->contact->set_friction(left_finger_c, obj_c, mu_sticking);
-			simulation.interactions->contact->set_friction(right_finger_c, obj_c, mu_sticking);
+			const double gz = stark::blend(0.0, gravity, 2.0, 3.0, t, stark::BlendType::Linear);
+			simulation.set_gravity({ 0.0, 0.0, gz }); 
 		}
 	);
-	simulation.add_time_event(3.0, 5.0, 
+	simulation.add_time_event(5.0, 7.0, 
 		[&](double t) 
 		{ 
 			simulation.interactions->contact->set_friction(left_finger_c, obj_c, mu_sliding);
@@ -512,124 +384,42 @@ void grasp_test()
 	// Run
 	simulation.run();
 }
-void inflation()
-{
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "inflation";
-	settings.output.output_directory = OUTPUT_PATH + "/inflation";
-	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
-	settings.simulation.init_frictional_contact = false;
-	stark::Simulation simulation(settings);
-
-	// Contact
-	simulation.interactions->contact->set_global_params(
-		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(0.002)
-		.set_friction_enabled(false)
-		.set_min_contact_stiffness(1e7)
-	);
-
-	// Cloth
-	int n = 50;
-	double d = 1.0;
-	double hd = d / 2.0;
-	double gap = 0.001;
-
-	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
-	material.inertia.damping = 1.0;
-	material.strain.damping = 0.1;
-	//material.bending.damping = 1e-4;
-	material.bending.damping = 5e-6;
-	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { d, d }, { n, n }, material);
-
-	// BC
-	std::vector<int> prescribed_indices;
-	for (int i = 0; i < (int)V.size(); i++) {
-		const Eigen::Vector3d& p = V[i];
-		const double x_ = std::abs(p.x());
-		const double y_ = std::abs(p.y());
-
-		// Perimeter
-		if (std::max(x_, y_) > hd - gap) {
-			prescribed_indices.push_back(i);
-		} 
-		
-		// Cross
-		else if (std::min(x_, y_) < gap) {
-			prescribed_indices.push_back(i);
-		}
-
-		// Diagonal
-		else if (std::abs(p.x() - p.y()) < gap) {
-			prescribed_indices.push_back(i);
-		}
-	}
-	simulation.deformables->prescribed_positions->add(H.point_set, prescribed_indices, stark::EnergyPrescribedPositions::Params());
-
-	// Run
-	simulation.run();
-}
-void parachute()
-{
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "parachute";
-	settings.output.output_directory = OUTPUT_PATH + "/parachute";
-	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
-	settings.simulation.init_frictional_contact = false;
-	stark::Simulation simulation(settings);
-
-	// Cloth
-	int n = 50;
-	double d = 1.0;
-	double hd = d / 2.0;
-	double gap = 0.15;
-
-	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
-	material.inertia.damping = 1.0;
-	material.strain.damping = 0.1;
-	material.strain.inflation = 1e4;
-	material.bending.damping = 5e-6;
-	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { d, d }, { n, n }, material);
-
-	// BC
-	auto bc_params = stark::EnergyPrescribedPositions::Params();
-	simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { hd, hd, 0.0 }, { gap, gap, gap }, bc_params);
-	simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { hd, -hd, 0.0 }, { gap, gap, gap }, bc_params);
-	simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { -hd, -hd, 0.0 }, { gap, gap, gap }, bc_params);
-	simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { -hd, hd, 0.0 }, { gap, gap, gap }, bc_params);
-
-	// Run
-	simulation.run();
-}
 void twisting_cloth()
 {
+	/*
+		Simulation of a cloth twisted by rotating two sides in opposite directions in absence of gravity.
+		This scene shows how to use boundary condition transformations together with time events to animate the simulation.
+		
+		Also interesting to note in this simulation is that we can use a high acceleration residual value in Newton's Method to avoid excessive Newton iterations.
+		In simulations when objects might fall due to gravity, the acceleration residual must be set to a lower value than the gravity itself to avoid excessive 
+		numerical damping or even the objects not falling at all. Since in this simulation there is no gravity involved, we can use a higher residual to obtain 
+		a faster simulation while preserving fidelity.
+	*/
+
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "twisting_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/twisting_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
-	settings.debug.symx_check_for_NaNs = true;
+	settings.newton.residual = { stark::ResidualType::Acceleration, 100.0 };
 	stark::Simulation simulation(settings);
 
 	// Contact
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(5e-4)
-		.set_min_contact_stiffness(1e1)
+		.set_default_contact_thickness(0.0005)
+		.set_min_contact_stiffness(1e6)
 	);
 	
 	// Cloth
 	double s = 0.5;
-	int n = 20;
+	int n = 50;
 	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
-	material.inertia.damping = 0.0;
+	material.strain.elasticity_only = true;  // Strain limiting would make the cloth too stiff and would fight with the prescribed BC, leading to unrealistic stresses
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
 	H.point_set.add_rotation(90.0, Eigen::Vector3d::UnitX());
+	H.contact.set_friction(H.contact, 1.0);
 
 	// BC
 	auto bc_params = stark::EnergyPrescribedPositions::Params();
@@ -645,198 +435,129 @@ void twisting_cloth()
 	// Run
 	simulation.run();
 }
-void prescribed_deformable()
+void magnetic_deformables()
 {
+	/*
+		Simulation of a stack of deformable objects attracted by a magnet scripted to move up and down.
+	*/
+
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "prescribed_deformable";
-	settings.output.output_directory = OUTPUT_PATH + "/prescribed_deformable";
+	settings.output.simulation_name = "magnetic_deformables";
+	settings.output.output_directory = OUTPUT_PATH + "/magnetic_deformables";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
+	settings.execution.end_simulation_time = 7.0;
 	stark::Simulation simulation(settings);
 
 	// Contact
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(0.005)
-		.set_min_contact_stiffness(1e4)
+		.set_default_contact_thickness(0.002)
+		.set_min_contact_stiffness(1e7)
 	);
-	
-	// Cloth
-	double s = 0.5;
-	int n = 20;
-	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
-	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
 
-	// Prescribed
-	auto sphere = stark::make_sphere(0.1, 3);
-	stark::move(sphere.vertices, { 0.0, 0.0, -0.15 });
-	auto pH = simulation.presets->deformables->add_prescribed_surface("prescribed", sphere.vertices, sphere.conn, stark::PrescribedSurface::Params());
+	// Add floor
+	auto [floor_vertices, floor_triangles, floor] = simulation.presets->rigidbodies->add_box("floor", 1.0, { 3.0, 3.0, 0.01 });
+	floor.rigidbody.add_translation({ 0.0, 0.0, -0.01 });
+	simulation.rigidbodies->add_constraint_fix(floor.rigidbody);
 
-	simulation.interactions->contact->set_friction(H.contact, pH.contact, 1.0);
+	// Add objects
+	std::vector<stark::Volume::Handler> objs;
+	{
+		double size = 0.1;
+		int n = 2;
+		std::array<int, 3> grid = { 4, 4, 4 };
+		double spacing = size * 1.8;
+		double height = 0.5;
+		Eigen::Vector3d center = { 0.5*(grid[0]-1)*spacing, 0.5*(grid[1]-1)*spacing, 0.5*(grid[2]-1)*spacing };
+		auto material = stark::Volume::Params::Soft_Rubber();
+		material.strain.youngs_modulus = 2e4;
+		for (int i = 0; i < grid[0]; i++) {
+			for (int j = 0; j < grid[1]; j++) {
+				for (int k = 0; k < grid[2]; k++) {
+					auto [V, C, obj] = simulation.presets->deformables->add_volume_grid("objects", { size, size, size }, { n, n, n }, material);
+					obj.point_set.add_rotation(Eigen::Vector3d::Random().x() * 90.0, Eigen::Vector3d::Random());
+					obj.point_set.add_displacement({ i * spacing - center.x(), j * spacing - center.y(), k * spacing - center.z() + height});
+					objs.push_back(obj);
+				}
+			}
+		}
+	}
 
-	// Run
+	// Magnet
+	const double magnet_height = 1.5;
+	auto [magnet_vertices, magnet_triangles, magnet] = simulation.presets->rigidbodies->add_sphere("magnet", 1.0, 0.2, 3);
+	magnet.rigidbody.add_translation({ 0.0, 0.0, magnet_height });
+	auto magnet_fix = simulation.rigidbodies->add_constraint_fix(magnet.rigidbody);
+
+	// Friction
+	double friction = 0.5;
+	for (int i = 0; i < (int)objs.size(); i++) {
+		simulation.interactions->contact->set_friction(objs[i].contact, magnet.contact, friction);
+		simulation.interactions->contact->set_friction(objs[i].contact, floor.contact, friction);
+		for (int j = i + 1; j < (int)objs.size(); j++) {
+			simulation.interactions->contact->set_friction(objs[i].contact, objs[j].contact, friction);
+		}
+	}
+
+	// Magnet script
+	simulation.add_time_event(1.5, 3.0,
+		[&](double t) {
+			double height = stark::blend(magnet_height, 0.5, 1.5, 3.0, t, stark::BlendType::Linear);
+			magnet_fix.set_transformation({ 0.0, 0.0, height }, Eigen::Matrix3d::Identity());
+		}
+	);
+	simulation.add_time_event(4.5, 6.0,
+		[&](double t) {
+			double height = stark::blend(0.5, magnet_height, 4.5, 6.0, t, stark::BlendType::Linear);
+			magnet_fix.set_transformation({ 0.0, 0.0, height }, Eigen::Matrix3d::Identity());
+		}
+	);
+
+	// Run with a callback function that is executed every time step (same than a time event but without time bounds)
 	simulation.run(
-		[&]() 
+		[&]()
 		{
-			const double t = simulation.get_time() / 5.0;
-			for (int i = 0; i < (int)sphere.vertices.size(); i++) {
-				const Eigen::Vector3d p = sphere.vertices[i];
-				pH.prescribed.set_target_position(i, { p.x() + std::sin(10.0 * p.y() * t), p.y() + std::sin(10.0 * p.x() * t), p.z() });
+			double magnet_force = 0.1;
+			const Eigen::Vector3d magnet_center = magnet.rigidbody.get_translation();
+			for (auto& obj : objs) {
+				for (int vertex_idx = 0; vertex_idx < (int)obj.point_set.size(); vertex_idx++) {
+					const Eigen::Vector3d vertex = obj.point_set.get_position(vertex_idx);
+					const Eigen::Vector3d u = magnet_center - vertex;
+					const double d = u.norm();
+					const double force = magnet_force / (d * d);
+					obj.point_set.set_force(vertex_idx, force * u.normalized());
+				}
 			}
 		}
 	);
 }
-void prescribed_rigid()
-{
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "prescribed_rigid";
-	settings.output.output_directory = OUTPUT_PATH + "/prescribed_rigid";
-	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
-	stark::Simulation simulation(settings);
-
-	// Contact
-	simulation.interactions->contact->set_global_params(
-		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(0.005)
-		.set_min_contact_stiffness(1e4)
-	);
-	
-	// Cloth
-	double s = 0.5;
-	int n = 20;
-	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
-	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
-	H.point_set.add_displacement({ 0.0, 0.0, 0.15 });
-
-	// Prescribed
-	auto [pV, pT, pH] = simulation.presets->rigidbodies->add_cylinder("prescribed", 0.1, 0.05, 0.3);
-	pH.rigidbody.add_rotation(90.0, Eigen::Vector3d::UnitX());
-	auto bc = simulation.rigidbodies->add_constraint_fix(pH.rigidbody);
-
-	simulation.interactions->contact->set_friction(H.contact, pH.contact, 1.0);
-
-	// Run
-	simulation.run(
-		[&]() 
-		{
-			const double t = simulation.get_time() / 5.0;
-			bc.set_transformation({ 0.0, 0.0, t}, 500.0*t, Eigen::Vector3d::UnitZ());
-		}
-	);
-}
-void sticky_cloth_corner()
-{
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "sticky_cloth_corner";
-	settings.output.output_directory = OUTPUT_PATH + "/sticky_cloth_corner";
-	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
-	stark::Simulation simulation(settings);
-
-	// Contact
-	simulation.interactions->contact->set_global_params(
-		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(0.005)
-		.set_min_contact_stiffness(1e4)
-		.set_friction_stick_slide_threshold(0.001)
-	);
-	
-	// Cloth
-	double s = 0.5;
-	int n = 20;
-	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
-	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
-	H.point_set.add_displacement({ 0.0, 0.0, 0.5 });
-
-	// Floor
-	auto [fV, fT, fH] = simulation.presets->rigidbodies->add_box("floor", 1.0, { 1.0, 1.0, 0.01 });
-	fH.rigidbody.add_translation({ 0.5, 0.5, 0.0 });
-	fH.rigidbody.add_rotation(30.0, Eigen::Vector3d::UnitY());
-	simulation.rigidbodies->add_constraint_fix(fH.rigidbody);
-
-	simulation.interactions->contact->set_friction(H.contact, fH.contact, 1.0);
-
-	// Run
-	simulation.run();
-}
-void robotic_hand()
-{
-	bool only_hand_motion = false;
-
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "robotic_hand";
-	settings.output.output_directory = OUTPUT_PATH + "/robotic_hand";
-	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 15.0;
-	settings.debug.symx_check_for_NaNs = true;
-
-	settings.simulation.init_frictional_contact = !only_hand_motion;
-	settings.debug.symx_force_load = true;
-	stark::Simulation simulation(settings);
-
-	// Contact
-	simulation.interactions->contact->set_global_params(
-		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(0.00025)
-		.set_min_contact_stiffness(1e7)
-		.set_friction_stick_slide_threshold(0.001)
-	);
-	
-	// Robotic Hand
-	stark::RoboticHand hand("hand", simulation);
-
-	// Soft object
-	if (!only_hand_motion) {
-		double s = 0.056;
-		int n = 15;
-		stark::Volume::Params material = stark::Volume::Params::Soft_Rubber();
-		material.strain.elasticity_only = true;
-		material.strain.poissons_ratio = 0.48;
-		material.strain.damping = 0.0;
-		material.inertia.damping = 0.0;
-		auto [V, T, H] = simulation.presets->deformables->add_volume_grid("soft_object", { s, s, s }, { n, n, n }, material);
-		H.point_set.add_rotation(-19.415, Eigen::Vector3d::UnitZ());
-		H.point_set.add_displacement({ 0.006279, 0.080215, 0.038145 });
-		hand.set_friction(H.contact, 2.0);
-	}
-
-	// Script
-	double begin = 2.0;
-	simulation.add_time_event(0.0, begin, [&](double t) { hand.set_finger_angle(stark::blend(0.0, 10.0, 0.0, begin, t, stark::BlendType::Linear)); });
-	simulation.add_time_event(begin + 0.0, begin + 1.0, [&](double t) { hand.set_finger_spread_angle(stark::blend(0.0, 5.0, begin + 0.0, begin + 1.0, t, stark::BlendType::Linear)); });
-	simulation.add_time_event(begin + 1.0, begin + 5.0, [&](double t) { hand.set_finger_angle(stark::blend(10.0, 75.0, begin + 1.0, begin + 5.0, t, stark::BlendType::Linear)); });
-	simulation.add_time_event(begin + 7.0, begin + 11.0, [&](double t) { hand.set_finger_angle(stark::blend(75.0, 10.0, begin + 7.0, begin + 11.0, t, stark::BlendType::Linear)); });
-
-	// Run
-	simulation.run();
-}
-
 
 int main()
 {
-	//hanging_net();
-	//hanging_cloth();
-	//hanging_box();
-	//attachments();
-	//ball_joints();
-	//inflation();
-	//parachute();
-	//deformable_box_collisions();
-	//grasp_test();
-	//floor();
-	//twisting_cloth();
-	//prescribed_deformable();
-	//prescribed_rigid();
+	/*
+		Here you can find a list of simple scenes to test the library.
+		Each function contains a different scene with a brief description of the simulation.
+		To run a scene, simply comment everything else and call the desired function.
 
-	//sticky_cloth_corner();
+		Note that STARK can handle much more complex simulations than the ones presented here, 
+		these are just simple examples that don't require external assets to get you started.
+	*/
 
-	// Rigid bodies
-	//rb_constraints_all();
+	// Simple rigid body scenes
+	rb_constraints_all();
 
-	// Constructs
-	robotic_hand();
+	// Simple simulations: No collisions, only presets
+	hanging_net();
+	hanging_cloth();
+	hanging_deformable_box();
+	attachments();
+
+	// Composite materials
+	hanging_box_with_composite_material();
+
+	// Simulations with collisions
+	deformable_and_rigid_collisions();
+	simple_grasp(); 
+	twisting_cloth();
+	magnetic_deformables();
 }

@@ -101,7 +101,7 @@ void symx::GlobalEnergy::compile(std::string working_directory, CompilationOptio
 	};
 
 	this->working_directory = working_directory;
-	this->n_threads = n_threads;
+	this->n_threads = options.n_threads;
 	if (this->n_threads == -1) {
 		this->n_threads = omp_get_max_threads();
 	}

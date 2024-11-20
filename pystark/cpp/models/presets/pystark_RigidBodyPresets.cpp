@@ -23,7 +23,7 @@ void pystark_RigidBodyPresets(nb::module_& m)
 				nb::tuple out = nb::make_tuple(stark_to_nb(V), stark_to_nb(C), H);
 				return create_named_tuple("RigidBodyOutput", { "vertices", "segments", "handler" }, out);
 			},
-			"output_label"_a, "mass"_a, "radius"_a, "subdivisions"_a, "contact_params"_a = ContactParams())
+			"output_label"_a, "mass"_a, "radius"_a, "subdivisions"_a = 2, "contact_params"_a = ContactParams())
 		.def("add_box", [](RigidBodyPresets& self, const std::string& output_label, double mass, const Eigen::Vector3d& size, const ContactParams& contact_params)
 			{ 
 				auto [V, C, H] = self.add_box(output_label, mass, size, contact_params);

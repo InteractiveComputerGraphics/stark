@@ -61,17 +61,12 @@ namespace stark
 		std::shared_ptr<RigidBodyConstraints::LinearVelocity> linear_velocity;
 		std::shared_ptr<RigidBodyConstraints::AngularVelocity> angular_velocity;
 
-		// Output
-		core::Logger logger;
-
 	private:
         /* Methods */
-        void _set_c1_controller_energy(symx::Energy& energy, const symx::Scalar& v, const symx::Scalar& target_v, const symx::Scalar& max_force, const symx::Scalar& delay, const symx::Scalar& dt, const symx::Scalar& is_active);
-		bool _adjust_constraints_stiffness_and_log(core::Stark& stark, double cap, double multiplier, bool log, bool are_positions_set);
+		bool _adjust_constraints_stiffness_and_log(core::Stark& stark, double cap, double multiplier, bool are_positions_set);
 
 		// SymX callbacks
 		bool _is_converged_state_valid(core::Stark& stark);
 		void _on_time_step_accepted(core::Stark& stark);
-		void _write_frame(core::Stark& stark);
 	};
 }

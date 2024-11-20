@@ -927,7 +927,7 @@ namespace bsm
 		}
 		
 		const int n_threads_ = (n_threads == -1) ? omp_get_num_procs() / 2 : n_threads;
-		const bool sequential = n_threads_ < this->n_block_rows;
+		const bool sequential = n_threads_ > this->n_block_rows;
 		constexpr int BLOCK_SIZE = BLOCK_ROWS * BLOCK_COLS;
 #ifdef BSM_ENABLE_AVX
 		constexpr int NUMBERS_PER_AVX_LINE = sizeof(__m256d) / sizeof(OPERATION_FLOAT);

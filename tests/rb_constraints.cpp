@@ -1,3 +1,7 @@
+/*
+	This is a collection of tests for rigid body constraints.
+*/
+
 #include <iostream>
 #include <random>
 
@@ -7,7 +11,7 @@
 
 #include "../examples/paths.h"
 
-#define ENABLE_THESE_TESTS true
+#define ENABLE_TESTS_IN_THIS_FILE true
 
 
 using namespace Catch::Matchers;
@@ -22,7 +26,7 @@ const double MASS = rng();
 const double PERTURBATION = rng() + 10.0;  // Too small force/acceleration will take too long to reach constraint limits
 
 
-#if ENABLE_THESE_TESTS
+#if ENABLE_TESTS_IN_THIS_FILE
 stark::Settings test_settings(std::string name)
 {
 	stark::Settings settings = stark::Settings();
@@ -34,9 +38,6 @@ stark::Settings test_settings(std::string name)
 	settings.execution.end_simulation_time = 3.0;
 	settings.simulation.gravity = {0, 0, 0};
 	settings.simulation.init_frictional_contact = false;
-
-	// Debug
-	//settings.debug.symx_force_load = true;
 
 	// High resolution for accurate results
 	settings.simulation.max_time_step_size = 0.002;
@@ -237,7 +238,7 @@ TEST_CASE("linear_velocity", "[rb_constraints]")
 	stark::Settings settings = test_settings("linear_velocity");
 	stark::Simulation simulation(settings);
 	const double max_force = 50.0;
-	const double target_v = 3.7;// PERTURBATION / 100.0;
+	const double target_v = 3.7;
 	const double delay = 0.01;
 
 	auto box0 = simulation.rigidbodies->add(MASS, stark::inertia_tensor_box(MASS, { 0.1, 0.1, 0.1 }));

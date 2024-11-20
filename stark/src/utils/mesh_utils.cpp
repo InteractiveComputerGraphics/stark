@@ -186,11 +186,11 @@ double stark::triangle_area(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1
 }
 double stark::unsigned_tetra_volume(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2, const Eigen::Vector3d& p3)
 {
-	return (1.0 / 6.0) * ((p1 - p0).cross(p2 - p0)).dot(p3 - p0);
+	return std::abs(signed_tetra_volume(p0, p1, p2, p3));
 }
 double stark::signed_tetra_volume(const Eigen::Vector3d& p0, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2, const Eigen::Vector3d& p3)
 {
-	return std::abs(unsigned_tetra_volume(p0, p1, p2, p3));
+	return (1.0 / 6.0) * ((p1 - p0).cross(p2 - p0)).dot(p3 - p0);
 }
 
 void stark::find_node_node_map_simplex(std::vector<std::vector<int>>& output, const int32_t* connectivity, const int32_t n_simplices, const int32_t n_nodes_per_simplex, const int32_t n_nodes)
@@ -355,11 +355,15 @@ void stark::clean_triangle_mesh(std::vector<Eigen::Vector3d>& out_vertices, std:
 				(int)((vertices[old_i].z() - bbox.min().z())/merge_by_distance)
 			};
 
-			int new_idx = old_i;
-			if (unique_vertices.find(ijk) == unique_vertices.end()) {
-				const int new_idx = out_vertices.size();
+			int new_idx = -1;
+			auto it = unique_vertices.find(ijk);
+			if (it == unique_vertices.end()) {
+				new_idx = out_vertices.size();
 				out_vertices.push_back(vertices[old_i]);
 				unique_vertices[ijk] = new_idx;
+			}
+			else {
+				new_idx = it->second;
 			}
 			old_to_new_map[old_i] = new_idx;
 		}

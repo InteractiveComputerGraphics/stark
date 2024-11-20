@@ -5,7 +5,6 @@
 #ifdef _MSC_VER
 #define NOMINMAX
 #include <windows.h>
-//std::string symx::compiler_command = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"";
 std::string symx::compiler_command = "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"";
 #else
 #include <dlfcn.h>
@@ -477,7 +476,6 @@ void symx::Compilation::_add_instructions_simd(std::string& code, Sequence& eval
 void symx::Compilation::_add_core_simd_functions(std::string& code, OpType op_type)
 {
 #ifdef SYMX_ENABLE_AVX
-	// TODO: Fix iterations and types for special vector functions
 	if (op_type != OpType::SIMD4d) {
 		std::cout << "symx error: SIMD compilation only possible with type __m256d." << std::endl;
 		exit(-1);

@@ -4,11 +4,7 @@ import pickle
 from typing import List, Tuple, Optional
 
 def get_full_type(obj):
-    module = obj.__class__.__module__
-    if module is None or module == str.__class__.__module__:
-        return obj.__class__.__name__  # Avoid reporting __builtin__
-    else:
-        return module + '.' + obj.__class__.__name__
+    return str(obj).split(" object")[0][1:]
 
 def get_type_from_string(enum_string):
     components = enum_string.split('.')
@@ -63,12 +59,16 @@ class SFXSIM_Cloth:
         self.params = []  # This switches between pystark.Surface.Params and the serialized version
         self.prescribed_positions : List[SFXSIM_PrescribedPositions] = []
 
+# TODO: all of this should go to the Blender addon code. I need to solve the "include pystark" thing
 class SFXSIM:
     def __init__(self):
 
         # General
-        self.settings = None   # This switches between pystark.Settings and the serialized version
-        self.contact_params = None  # This switches between pystark.EnergyFrictionalContact.GlobalParams and the serialized version
+        self.settings = pystark.Settings()   # This switches between pystark.Settings and the serialized version
+        self.contact_params = pystark.EnergyFrictionalContact.GlobalParams()  # This switches between pystark.EnergyFrictionalContact.GlobalParams and the serialized version
+        
+        # Blender specifics
+        self.prescribed_tolerance = -1.0
         
         # Objects
         self.cloths : List[SFXSIM_Cloth] = []
@@ -85,11 +85,11 @@ class SFXSIM:
         prescribed_positions.indices = indices
         self.cloths[-1].prescribed_positions.append(prescribed_positions)
 
-    def add_cloth_params_update(self, params : pystark.Surface.Params):
-        self.cloths[-1].params.append(params)
+    def add_cloth_params_update(self, cloth_i : int, params : pystark.Surface.Params):
+        self.cloths[cloth_i].params.append(params)
 
-    def add_cloth_prescribed_positions_update(self, positions : np.array):
-        prescribed_positions = self.cloths[-1].prescribed_positions[-1]
+    def add_cloth_prescribed_positions_update(self, cloth_i : int, bc_i : int, positions : np.array):
+        prescribed_positions = self.cloths[cloth_i].prescribed_positions[bc_i]
         if len(prescribed_positions.indices) != len(positions):
             raise ValueError("The number of indices and positions must match")
         prescribed_positions.positions.append(positions)
@@ -101,15 +101,15 @@ class SFXSIM:
         self.settings = to_python(self.settings)
         self.contact_params = to_python(self.contact_params)
         for cloth in self.cloths:
-            for param in cloth.params:
-                param = to_python(param)
+            for frame in range(len(cloth.params)):
+                cloth.params[frame] = to_python(cloth.params[frame])
 
     def to_pystark_form(self):
         self.settings = from_python(self.settings)
         self.contact_params = from_python(self.contact_params)
         for cloth in self.cloths:
-            for param in cloth.params:
-                param = from_python(param)
+            for frame in range(len(cloth.params)):
+                cloth.params[frame] = from_python(cloth.params[frame])
     
     def write(self, filename):
         if not self.is_valid():
@@ -117,4 +117,11 @@ class SFXSIM:
         self.to_pickle_form()
         pickle.dump(self, open(filename, "wb"))
         self.to_pystark_form()
+
+    def read(self, filename):
+        with open(filename, 'rb') as file:
+            self = pickle.load(file)
+        self.to_pystark_form()
+        print(self.settings)
+        return self
 
