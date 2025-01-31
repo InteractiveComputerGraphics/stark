@@ -85,7 +85,7 @@ std::string to_string(const Eigen::Vector3d& v)
 Settings::Settings()
 {
 	// Initialize default parameters
-	this->execution.n_threads = omp_get_max_threads();
+	this->execution.n_threads = omp_get_max_threads()/2;
 	this->output.time_stamp = time_stamp();
 }
 
