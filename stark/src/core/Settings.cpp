@@ -120,6 +120,7 @@ std::string Settings::as_string() const
 	out += "\n         project_to_PD: " + to_string(this->newton.project_to_PD);
 	out += "\n         max_newton_iterations: " + std::to_string(this->newton.max_newton_iterations);
 	out += "\n         max_line_search_iterations: " + std::to_string(this->newton.max_line_search_iterations);
+	out += "\n         projection_eps: " + std::to_string(this->newton.projection_eps);
 	out += "\n         line_search_multiplier: " + fmt::format("{:f}", this->newton.line_search_multiplier);
 	out += "\n         cg_max_iterations_multiplier: " + fmt::format("{:f}", this->newton.cg_max_iterations_multiplier);
 	out += "\n         epsilon_residual: " + fmt::format("{:.1e}", this->newton.epsilon_residual);

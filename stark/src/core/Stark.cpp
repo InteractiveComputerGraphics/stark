@@ -250,7 +250,7 @@ void Stark::_initialize()
 
 	//// Parameters
 	if (this->settings.newton.project_to_PD) {
-		this->global_energy.set_project_to_PD(true);
+		this->global_energy.set_project_to_PD(true, this->settings.newton.projection_eps);
 	}
 	this->global_energy.set_check_for_NaNs(this->settings.debug.symx_check_for_NaNs);
 

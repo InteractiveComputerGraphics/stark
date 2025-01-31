@@ -66,6 +66,7 @@ namespace symx
 		std::string working_directory;
 		int n_dofs = -1;
 		bool project_to_PD = false;
+		double projection_eps = 0.0;
 		bool is_active = true;
 		bool check_for_duplicate_dofs = true;
 
@@ -101,7 +102,7 @@ namespace symx
 
 		void set(const Scalar& expr);
 		void set_with_condition(const Scalar& expr, const Scalar& cond);
-		void set_project_to_PD(const bool project_to_PD);
+		void set_project_to_PD(const bool project_to_PD, const double projection_eps);
 		void set_cse_mode(CSE mode = CSE::Safe);
 		bool is_expression_set() const;
 		void activate(const bool activate);

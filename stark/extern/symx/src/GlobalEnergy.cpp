@@ -268,10 +268,10 @@ void symx::GlobalEnergy::set_dofs(const double* u)
 		}
 	}
 }
-void symx::GlobalEnergy::set_project_to_PD(const bool activate)
+void symx::GlobalEnergy::set_project_to_PD(const bool activate, const double projection_eps)
 {
 	for (auto& energy : this->energies) {
-		energy->set_project_to_PD(activate);
+		energy->set_project_to_PD(activate, projection_eps);
 	}
 }
 void symx::GlobalEnergy::set_cse_mode(CSE mode)

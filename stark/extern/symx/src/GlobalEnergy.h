@@ -83,7 +83,7 @@ namespace symx
 		void get_dofs(double* u) const;
 		void apply_dof_increment(const double* du);
 		void set_dofs(const double* u);
-		void set_project_to_PD(const bool activate);
+		void set_project_to_PD(const bool activate, const double projection_eps);
 		void set_cse_mode(CSE mode = CSE::Safe);
 		void set_check_for_NaNs(const bool activate);
 		void test_derivatives_with_FD(const double h = 1e-7);

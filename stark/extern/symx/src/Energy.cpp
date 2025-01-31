@@ -19,9 +19,10 @@ void symx::Energy::set_with_condition(const Scalar& expr, const Scalar& cond)
 	this->expr = std::make_unique<Scalar>(expr);
 	this->cond = std::make_unique<Scalar>(cond);
 }
-void symx::Energy::set_project_to_PD(const bool project_to_PD)
+void symx::Energy::set_project_to_PD(const bool project_to_PD, const double projection_eps)
 {
 	this->project_to_PD = project_to_PD;
+	this->projection_eps = projection_eps;
 }
 void symx::Energy::deferred_init(const bool force_compilation, const bool force_load, const bool suppress_compiler_output)
 {
@@ -336,7 +337,7 @@ void symx::Energy::evaluate_E_grad_hess(Assembly& assembly)
 
 			double* hess_loc = grad_loc + this->n_dofs;
 			if (this->project_to_PD) {
-				project_to_PD_from_pointer(hess_loc, this->n_dofs, /*debug_print_lowest = */ false);
+				project_to_PD_from_pointer(hess_loc, this->n_dofs, this->projection_eps, /*debug_print_lowest = */ false);
 			}
 
 			for (int block_i = 0; block_i < n_blocks; block_i++) {

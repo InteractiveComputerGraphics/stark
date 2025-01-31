@@ -32,9 +32,6 @@ namespace symx
 		}
 		// Check if all eigen values are positive.
 		// The eigenvalues are sorted in increasing order.
-		//if (eigensolver.eigenvalues()[0] > 0.0) {
-		//	return A;
-		//}
 		Eigen::DiagonalMatrix<double, Eigen::Dynamic> D(eigensolver.eigenvalues());
 		// Save a little time and only project the negative or zero values
 		for (int i = 0; i < A.rows(); i++) {
@@ -49,7 +46,7 @@ namespace symx
 			* eigensolver.eigenvectors().transpose();
 	}
 
-	inline void project_to_PD_from_pointer(double* symMtr, const int size, const bool debug_print_lowest = false)
+	inline void project_to_PD_from_pointer(double* symMtr, const int size, const double eps, const bool debug_print_lowest = false)
 	{
 		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> m;
 		m.resize(size, size);
@@ -71,7 +68,7 @@ namespace symx
 			}
 		}
 
-		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> m1 = project_to_PD(m, /*eps = */0.0);
+		Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> m1 = project_to_PD(m, eps);
 
 		if (debug_print_lowest) {
 			Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> eigensolver(m1);
