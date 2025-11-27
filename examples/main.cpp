@@ -531,17 +531,82 @@ void magnetic_deformables()
 		}
 	);
 }
+void meshes_from_file()
+{
+	/*
+		Simulation demonstrating how to load meshes from VTK 4.2 files and simulate them as deformable objects.
+		This example loads:
+		1. A tetrahedral mesh (armadillo_tet.vtk) simulated as a volumetric deformable object
+		2. A triangle mesh (armadillo_tri.vtk) simulated as a surface/cloth object
+	*/
+
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "meshes_from_file";
+	settings.output.output_directory = OUTPUT_PATH + "/meshes_from_file";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.execution.end_simulation_time = 5.0;
+	stark::Simulation simulation(settings);
+
+	// Contact parameters
+	simulation.interactions->contact->set_global_params(
+		stark::EnergyFrictionalContact::GlobalParams()
+		.set_default_contact_thickness(0.001)
+		.set_min_contact_stiffness(1e7)
+	);
+
+	// Load tetrahedral mesh from VTK file
+	auto tet_mesh = stark::load_vtk<4>(MODELS_PATH + "/armadillo_tet.vtk");  // Must be VTK 4.2
+
+	// Create volumetric deformable object from tet mesh
+	//// Material
+	stark::Volume::Params vol_params = stark::Volume::Params::Soft_Rubber();
+	vol_params.strain.youngs_modulus = 1e5;
+	vol_params.strain.elasticity_only = true; // No strain limiting and damping (expensive)
+	
+	//// Declare simulation object
+	auto tet_obj = simulation.presets->deformables->add_volume("tet_armadillo", tet_mesh.vertices, tet_mesh.conn, vol_params);
+	
+	//// Displacement and BC
+	tet_obj.point_set.add_displacement({ -0.6, 0.0, 0.7 });  // Position in the scene
+	auto bc_tet = simulation.deformables->prescribed_positions->add_inside_aabb(tet_obj.point_set, { -0.94, 0.33, 0.91 }, { 0.22, 0.22, 0.22 }, 
+		stark::EnergyPrescribedPositions::Params().set_stiffness(1e7));
+		
+	// Load triangle mesh from VTK file
+	auto tri_mesh = stark::load_vtk<3>(MODELS_PATH + "/armadillo_tri.vtk");  // Must be VTK 4.2
+	
+	// Create surface deformable object from triangle mesh
+	//// Material
+	stark::Surface::Params surf_params = stark::Surface::Params::Cotton_Fabric();
+	surf_params.inertia.density = 1.0;
+	surf_params.strain.youngs_modulus = 1e5;
+	surf_params.bending.stiffness = 1e-4;
+	surf_params.strain.elasticity_only = true; // No strain limiting and damping (expensive)
+	
+	//// Declare simulation object
+	auto tri_obj = simulation.presets->deformables->add_surface("tri_armadillo", tri_mesh.vertices, tri_mesh.conn, surf_params);
+
+	//// Displacement and BC
+	tri_obj.point_set.add_displacement({ 0.6, 0.0, 0.7 });  // Position in the scene
+	auto bc_tri = simulation.deformables->prescribed_positions->add_inside_aabb(tri_obj.point_set, { 0.25, 0.33, 0.91 }, { 0.22, 0.22, 0.22 }, 
+		stark::EnergyPrescribedPositions::Params().set_stiffness(1e7));
+
+	// Run
+	simulation.run();
+}
 
 int main()
 {
 	/*
-		Here you can find a list of simple scenes to test the library.
-		Each function contains a different scene with a brief description of the simulation.
-		To run a scene, simply comment everything else and call the desired function.
-
-		Note that STARK can handle much more complex simulations than the ones presented here, 
-		these are just simple examples that don't require external assets to get you started.
+	Here you can find a list of simple scenes to test the library.
+	Each function contains a different scene with a brief description of the simulation.
+	To run a scene, simply comment everything else and call the desired function.
+	
+	Note that STARK can handle much more complex simulations than the ones presented here, 
+	these are just simple examples that don't require external assets to get you started.
 	*/
+
+	// Optionally set compiler command. E.g.
+	// symx::compiler_command = "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\"";
 
 	// Simple rigid body scenes
 	rb_constraints_all();
@@ -560,4 +625,7 @@ int main()
 	simple_grasp(); 
 	twisting_cloth();
 	magnetic_deformables();
+
+	// Misc
+	meshes_from_file();
 }

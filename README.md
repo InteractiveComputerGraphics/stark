@@ -108,7 +108,13 @@ Users looking to work on their own new models to _extend_ Stark with new functio
 Every time Stark encounters a new potential energy, it will generate and compile code to compute its derivatives.
 Therefore, a C++17 compiler is required.
 You can specify the command to invoke a compatible compiler using `pystark.set_compiler_command(str)` in Python and `stark::set_compiler_command(str)` in C++.
-By default, it is `"g++"` in Unix and `"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvarsx86_amd64.bat"` in Windows.
+By default, it is `"g++"` in Unix and 
+```
+pystark.set_compiler_command("\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"")
+```
+in Windows.
+Use `pystark.Settings().debug.symx_suppress_compiler_output = False` to inspect the compiler's output.
+
 
 If you don't have a C++17 compiler and just want to use the models shipped with Stark by default, you can download the corresponding compiled binaries [here](https://rwth-aachen.sciebo.de/s/5NXgsPtoDyVl8Yo).
 Don't forget to point Stark to the folder containing those in `settings.output.codegen_directory`.

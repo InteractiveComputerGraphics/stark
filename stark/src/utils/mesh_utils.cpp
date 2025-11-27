@@ -227,6 +227,7 @@ void stark::find_internal_angles(std::vector<std::array<int, 4>>& internal_angle
 	std::vector<std::array<int, 2>> edges;
 	find_edges_from_simplices(edges, triangles, n_nodes);
 
+	bool issue_warning = false;
 	std::vector<int> buffer;
 	internal_angles.reserve(edges.size());
 	for (int edge_i = 0; edge_i < (int)edges.size(); edge_i++) {
@@ -239,9 +240,11 @@ void stark::find_internal_angles(std::vector<std::array<int, 4>>& internal_angle
 			internal_angles.push_back({ edge[0], edge[1], buffer[0], buffer[1] });
 		}
 		else if (buffer.size() > 2) {
-			std::cout << "Stark error: triangle mesh has edges with more than two incident triangles." << std::endl;
-			exit(-1);
+			issue_warning = true;
 		}
+	}
+	if (issue_warning) {
+		std::cout << "Stark warning: triangle mesh has edges with more than two incident triangles." << std::endl;
 	}
 }
 void stark::find_perimeter_edges(std::vector<std::array<int, 2>>& out_perimeter_edges, std::vector<int>& out_edge_to_triangle_node_map, const std::vector<std::array<int, 3>>& triangles, const int n_nodes)
