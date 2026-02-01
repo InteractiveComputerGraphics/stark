@@ -695,7 +695,7 @@ namespace symx
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run(const int32_t n_threads)
 	{
-		this->run(this->n_threads, this->evaluation_callback, this->conditional_evaluation_callback);
+		this->run(n_threads, this->evaluation_callback, this->conditional_evaluation_callback);
 	}
 }
 
