@@ -10,3 +10,8 @@
 
 * Revamp and cleanup Stark.run_one_step()
     Take inspiration from the new Newton's Method
+
+* Massive duplication of mesh generation and utils
+    I think we ship symx with minimal tooling for ease of ramping up
+    And preserve the heavy stuff in Stark. This is what stark is.
+

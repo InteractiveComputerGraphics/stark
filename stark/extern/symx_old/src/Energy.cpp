@@ -195,13 +195,13 @@ symx::Vector symx::Energy::make_vector(std::function<const double*()> data, std:
 	this->_for_each_compiled([&](CompiledInLoop<double>& compiled) { compiled.set_vectors({ vector }, { idx }, data, size); });
 	return vector;
 }
-symx::Vector symx::Energy::make_dof_vector(const DoF& dof, std::function<const double* ()> data, std::function<int32_t()> size, const int32_t stride, const Index& idx, const std::string name)
+symx::Vector symx::Energy::make_vector(const DoF& dof, std::function<const double* ()> data, std::function<int32_t()> size, const int32_t stride, const Index& idx, const std::string name)
 {
 	// Check that this dof has not been created yet
 	if (this->check_for_duplicate_dofs) {
 		for (const auto& dof_block : this->dof_in_conn) {
 			if (dof_block.dof_set == dof.idx && dof_block.conn_idx == idx.idx) {
-				std::cout << "symx error: Energy::make_dof_vector() tried to create a symbol for a DoF that already exists for energy " + this->name << std::endl;
+				std::cout << "symx error: Energy::make_vector() tried to create a symbol for a DoF that already exists for energy " + this->name << std::endl;
 				exit(-1);
 			}
 		}
@@ -225,12 +225,12 @@ std::vector<symx::Vector> symx::Energy::make_vectors(std::function<const double*
 	}
 	return vectors;
 }
-std::vector<symx::Vector> symx::Energy::make_dof_vectors(const DoF& dof, std::function<const double* ()> data, std::function<int32_t()> size, const int32_t stride, const std::vector<Index>& indices, const std::string name)
+std::vector<symx::Vector> symx::Energy::make_vectors(const DoF& dof, std::function<const double* ()> data, std::function<int32_t()> size, const int32_t stride, const std::vector<Index>& indices, const std::string name)
 {
 	const std::string name_ = this->_get_symbol_name(name);
 	std::vector<Vector> vectors;
 	for (size_t i = 0; i < indices.size(); i++) {
-		vectors.push_back(this->make_dof_vector(dof, data, size, stride, indices[i], name_ + std::to_string(i)));
+		vectors.push_back(this->make_vector(dof, data, size, stride, indices[i], name_ + std::to_string(i)));
 	}
 	return vectors;
 }

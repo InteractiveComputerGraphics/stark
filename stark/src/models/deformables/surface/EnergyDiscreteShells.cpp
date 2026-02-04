@@ -3,12 +3,13 @@
 #include "../../time_integration.h"
 #include "../../../utils/include.h"
 
+using namespace symx;
 constexpr double EPSILON = 1e-12;
 
 stark::EnergyDiscreteShells::EnergyDiscreteShells(stark::core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
 {
-	auto dihedral_angle_rad_f = [](std::vector<symx::Vector>& x)
+	auto dihedral_angle_rad_f = [](std::vector<Vector>& x)
 		{
 			auto e0 = x[1] - x[0];
 			auto e1 = x[2] - x[0];
@@ -22,78 +23,78 @@ stark::EnergyDiscreteShells::EnergyDiscreteShells(stark::core::Stark& stark, spP
 		};
 
 
-	stark.global_potential.add_energy("EnergyDiscreteShells", this->conn_complete,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("EnergyDiscreteShells", this->conn_complete,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			// Unpack connectivity
-			std::vector<symx::Index> internal_edge = conn.slice(2, 6);
+			std::vector<Index> internal_edge = conn.slice(2, 6);
 
 			// Create symbols
-			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dyn->dof, this->dyn->v1.data, internal_edge);
-			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, internal_edge);
-			symx::Scalar rest_dihedral_angle = energy.make_scalar(this->rest_dihedral_angle_rad, conn["idx"]);
-			symx::Scalar rest_edge_length = energy.make_scalar(this->rest_edge_length, conn["idx"]);
-			symx::Scalar rest_height = energy.make_scalar(this->rest_height, conn["idx"]);
-			symx::Scalar scale = energy.make_scalar(this->scale, conn["group"]);
-			symx::Scalar stiffness = energy.make_scalar(this->bending_stiffness, conn["group"]);
-			symx::Scalar flat_rest_angle_activation = energy.make_scalar(this->flat_rest_angle_activation, conn["group"]);
-			symx::Scalar damping = energy.make_scalar(this->bending_damping, conn["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			std::vector<Vector> v1 = mws.make_vectors(this->dyn->v1.data, internal_edge);
+			std::vector<Vector> x0 = mws.make_vectors(this->dyn->x0.data, internal_edge);
+			Scalar rest_dihedral_angle = mws.make_scalar(this->rest_dihedral_angle_rad, conn["idx"]);
+			Scalar rest_edge_length = mws.make_scalar(this->rest_edge_length, conn["idx"]);
+			Scalar rest_height = mws.make_scalar(this->rest_height, conn["idx"]);
+			Scalar scale = mws.make_scalar(this->scale, conn["group"]);
+			Scalar stiffness = mws.make_scalar(this->bending_stiffness, conn["group"]);
+			Scalar flat_rest_angle_activation = mws.make_scalar(this->flat_rest_angle_activation, conn["group"]);
+			Scalar damping = mws.make_scalar(this->bending_damping, conn["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+			std::vector<Vector> x1 = time_integration(x0, v1, dt);
 
 			// Scaling
-			symx::Scalar scaled_rest_edge_length = rest_edge_length * scale;
-			symx::Scalar scaled_rest_height = rest_height * scale;
+			Scalar scaled_rest_edge_length = rest_edge_length * scale;
+			Scalar scaled_rest_height = rest_height * scale;
 
 			// Bending (da: dihedral angle)
-			symx::Scalar da_rest = flat_rest_angle_activation * rest_dihedral_angle;
-			symx::Scalar da_1 = dihedral_angle_rad_f(x1);
-			symx::Scalar da_delta = da_1 - da_rest;
-			symx::Scalar Energy_bending = stiffness * (da_delta * da_delta) * (scaled_rest_edge_length / scaled_rest_height);
+			Scalar da_rest = flat_rest_angle_activation * rest_dihedral_angle;
+			Scalar da_1 = dihedral_angle_rad_f(x1);
+			Scalar da_delta = da_1 - da_rest;
+			Scalar Energy_bending = stiffness * (da_delta * da_delta) * (scaled_rest_edge_length / scaled_rest_height);
 
 			// Damping
-			symx::Scalar da_0 = dihedral_angle_rad_f(x0);
-			symx::Scalar Energy_damping = damping * 1.0 / dt * (0.5 * da_1.powN(2) - da_0 * da_1) * (scaled_rest_edge_length / scaled_rest_height);
+			Scalar da_0 = dihedral_angle_rad_f(x0);
+			Scalar Energy_damping = damping * 1.0 / dt * (0.5 * da_1.powN(2) - da_0 * da_1) * (scaled_rest_edge_length / scaled_rest_height);
 
 			// Total energy
-			energy.set(Energy_bending + Energy_damping);
+			return Energy_bending + Energy_damping;
 		}
 	);
 
-	stark.global_potential.add_energy("EnergyDiscreteShells_Elasticity_Only", this->conn_elasticity_only,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("EnergyDiscreteShells_Elasticity_Only", this->conn_elasticity_only,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			// Unpack connectivity
-			std::vector<symx::Index> internal_edge = conn.slice(2, 6);
+			std::vector<Index> internal_edge = conn.slice(2, 6);
 
 			// Create symbols
-			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dyn->dof, this->dyn->v1.data, internal_edge);
-			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, internal_edge);
-			symx::Scalar rest_dihedral_angle = energy.make_scalar(this->rest_dihedral_angle_rad, conn["idx"]);
-			symx::Scalar rest_edge_length = energy.make_scalar(this->rest_edge_length, conn["idx"]);
-			symx::Scalar rest_height = energy.make_scalar(this->rest_height, conn["idx"]);
-			symx::Scalar scale = energy.make_scalar(this->scale, conn["group"]);
-			symx::Scalar stiffness = energy.make_scalar(this->bending_stiffness, conn["group"]);
-			symx::Scalar flat_rest_angle_activation = energy.make_scalar(this->flat_rest_angle_activation, conn["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			std::vector<Vector> v1 = mws.make_vectors(this->dyn->v1.data, internal_edge);
+			std::vector<Vector> x0 = mws.make_vectors(this->dyn->x0.data, internal_edge);
+			Scalar rest_dihedral_angle = mws.make_scalar(this->rest_dihedral_angle_rad, conn["idx"]);
+			Scalar rest_edge_length = mws.make_scalar(this->rest_edge_length, conn["idx"]);
+			Scalar rest_height = mws.make_scalar(this->rest_height, conn["idx"]);
+			Scalar scale = mws.make_scalar(this->scale, conn["group"]);
+			Scalar stiffness = mws.make_scalar(this->bending_stiffness, conn["group"]);
+			Scalar flat_rest_angle_activation = mws.make_scalar(this->flat_rest_angle_activation, conn["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+			std::vector<Vector> x1 = time_integration(x0, v1, dt);
 
 			// Scaling
-			symx::Scalar scaled_rest_edge_length = rest_edge_length * scale;
-			symx::Scalar scaled_rest_height = rest_height * scale;
+			Scalar scaled_rest_edge_length = rest_edge_length * scale;
+			Scalar scaled_rest_height = rest_height * scale;
 
 			// Bending (da: dihedral angle)
-			symx::Scalar da_rest = flat_rest_angle_activation * rest_dihedral_angle;
-			symx::Scalar da_1 = dihedral_angle_rad_f(x1);
-			symx::Scalar da_delta = da_1 - da_rest;
-			symx::Scalar Energy_bending = stiffness * (da_delta * da_delta) * (scaled_rest_edge_length / scaled_rest_height);
+			Scalar da_rest = flat_rest_angle_activation * rest_dihedral_angle;
+			Scalar da_1 = dihedral_angle_rad_f(x1);
+			Scalar da_delta = da_1 - da_rest;
+			Scalar Energy_bending = stiffness * (da_delta * da_delta) * (scaled_rest_edge_length / scaled_rest_height);
 
 			// Total energy
-			energy.set(Energy_bending);
+			return Energy_bending;
 		}
 	);
 }
@@ -113,7 +114,7 @@ stark::EnergyDiscreteShells::Handler stark::EnergyDiscreteShells::add(const Poin
 	find_internal_angles(internal_angles, triangles, set.size());
 
 	// Initialize structures
-	symx::LabelledConnectivity<6>* conn = params.elasticity_only == true ? &this->conn_elasticity_only : &this->conn_complete;
+	LabelledConnectivity<6>* conn = params.elasticity_only == true ? &this->conn_elasticity_only : &this->conn_complete;
 	for (int internal_angle_i = 0; internal_angle_i < (int)internal_angles.size(); internal_angle_i++) {
 
 		// Connectivity

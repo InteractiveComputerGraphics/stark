@@ -222,7 +222,7 @@ void stark::core::Stark::print()
 	// }
 	// this->console.print(fmt::format("\t before_energy_evaluation: {:.3f} s\n", this->logger.get_double("before_energy_evaluation")), ConsoleVerbosity::Frames);
 	// this->console.print(fmt::format("\t after_energy_evaluation: {:.3f} s\n", this->logger.get_double("after_energy_evaluation")), ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t is_intermidiate_state_valid: {:.3f} s\n", this->logger.get_double("is_intermidiate_state_valid")), ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t is_intermediate_state_valid: {:.3f} s\n", this->logger.get_double("is_intermediate_state_valid")), ConsoleVerbosity::Frames);
 	// this->console.print(fmt::format("\t failed steps: {:.3f} s\n", this->logger.get_double("failed_steps")), ConsoleVerbosity::Frames);
 	// this->console.print(fmt::format("\t write_frame: {:.3f} s\n", this->logger.get_double("write_frame")), ConsoleVerbosity::Frames);
 }

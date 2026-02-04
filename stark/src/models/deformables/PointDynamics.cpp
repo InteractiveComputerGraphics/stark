@@ -4,7 +4,7 @@
 
 stark::PointDynamics::PointDynamics(stark::core::Stark& stark)
 {
-	this->dof = stark.global_potential.add_dof_array(this->v1.data, "PointDynamics.v1");
+	stark.global_potential->add_dof(this->v1.data);
 	stark.callbacks.add_before_time_step([&]() { this->_before_time_step(stark); });
 	stark.callbacks.add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
 }

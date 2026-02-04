@@ -3,30 +3,31 @@
 #include "../../time_integration.h"
 #include "../../../utils/include.h"
 
+using namespace symx;
 
 stark::EnergyPrescribedPositions::EnergyPrescribedPositions(core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
 {
 	// Callbacks
-	stark.callbacks.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
+	stark.callbacks.newton.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
 
 	// Declare the energy
-	stark.global_potential.add_energy("EnergyPrescribedPositions", this->conn,
-		[&](symx::Energy& energy, symx::Element& node)
+	stark.global_potential->add_potential("EnergyPrescribedPositions", this->conn,
+		[&](MappedWorkspace<double>& mws, Element& node)
 		{
 			// Create symbols
-			symx::Vector v1 = energy.make_dof_vector(this->dyn->dof, this->dyn->v1.data, node["point"]);
-			symx::Vector x0 = energy.make_vector(this->dyn->x0.data, node["point"]);
-			symx::Vector x1_prescribed = energy.make_vector(this->target_positions, node["idx"]);
-			symx::Scalar k = energy.make_scalar(this->stiffness, node["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Vector v1 = mws.make_vector(this->dyn->v1.data, node["point"]);
+			Vector x0 = mws.make_vector(this->dyn->x0.data, node["point"]);
+			Vector x1_prescribed = mws.make_vector(this->target_positions, node["idx"]);
+			Scalar k = mws.make_scalar(this->stiffness, node["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
 			// Time integration
-			symx::Vector x1 = time_integration(x0, v1, dt);
+			Vector x1 = time_integration(x0, v1, dt);
 
 			// Energy
-			symx::Scalar E = 0.5 * k * (x1 - x1_prescribed).squared_norm();
-			energy.set(E);
+			Scalar E = 0.5 * k * (x1 - x1_prescribed).squared_norm();
+			return E;
 		}
 	);
 }

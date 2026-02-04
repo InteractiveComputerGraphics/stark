@@ -5,131 +5,132 @@
 #include "../rigidbodies/rigidbody_transformations.h"
 #include <tmd/TriangleMeshDistance.h>
 
+using namespace symx;
 
 stark::EnergyAttachments::EnergyAttachments(core::Stark& stark, const spPointDynamics dyn, const spRigidBodyDynamics rb)
 	: dyn(dyn), rb(rb)
 {
 	// Callbacks
-	stark.callbacks.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
+	stark.callbacks.newton.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
 
 	// Declare the energies
-	stark.global_potential.add_energy("EnergyAttachments_d_d_p_p", this->conn_d_d_p_p,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("EnergyAttachments_d_d_p_p", this->conn_d_d_p_p,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto nodes = { conn["a"], conn["b"] };
 
 			// Create symbols
-			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dyn->dof, this->dyn->v1.data, nodes);
-			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, nodes);
-			symx::Scalar k = energy.make_scalar(this->stiffness_d_d_p_p, conn["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			std::vector<Vector> v1 = mws.make_vectors(this->dyn->v1.data, nodes);
+			std::vector<Vector> x0 = mws.make_vectors(this->dyn->x0.data, nodes);
+			Scalar k = mws.make_scalar(this->stiffness_d_d_p_p, conn["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+			std::vector<Vector> x1 = time_integration(x0, v1, dt);
 
 			// Energy
-			symx::Scalar E = 0.5 * k * (x1[1] - x1[0]).squared_norm();
-			energy.set(E);
+			Scalar E = 0.5 * k * (x1[1] - x1[0]).squared_norm();
+			return E;
 		}
 	);
 
-	stark.global_potential.add_energy("EnergyAttachments_d_d_p_e", this->conn_d_d_p_e,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("EnergyAttachments_d_d_p_e", this->conn_d_d_p_e,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto nodes = { conn["p"], conn["e0"], conn["e1"] };
 
 			// Create symbols
-			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dyn->dof, this->dyn->v1.data, nodes);
-			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, nodes);
-			symx::Vector bary = energy.make_vector(this->bary_p_e, conn["idx"]);
-			symx::Scalar k = energy.make_scalar(this->stiffness_d_d_p_e, conn["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			std::vector<Vector> v1 = mws.make_vectors(this->dyn->v1.data, nodes);
+			std::vector<Vector> x0 = mws.make_vectors(this->dyn->x0.data, nodes);
+			Vector bary = mws.make_vector(this->bary_p_e, conn["idx"]);
+			Scalar k = mws.make_scalar(this->stiffness_d_d_p_e, conn["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+			std::vector<Vector> x1 = time_integration(x0, v1, dt);
 
 			// Projection
-			symx::Vector p = x1[0];
-			symx::Vector q = bary[0] * x1[1] + bary[1] * x1[2];
+			Vector p = x1[0];
+			Vector q = bary[0] * x1[1] + bary[1] * x1[2];
 
 			// Energy
-			symx::Scalar E = 0.5 * k * (q - p).squared_norm();
-			energy.set(E);
+			Scalar E = 0.5 * k * (q - p).squared_norm();
+			return E;
 		}
 	);
 
-	stark.global_potential.add_energy("EnergyAttachments_d_d_p_t", this->conn_d_d_p_t,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("EnergyAttachments_d_d_p_t", this->conn_d_d_p_t,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto nodes = { conn["p"], conn["t0"], conn["t1"], conn["t2"] };
 
 			// Create symbols
-			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dyn->dof, this->dyn->v1.data, nodes);
-			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, nodes);
-			symx::Vector bary = energy.make_vector(this->bary_p_t, conn["idx"]);
-			symx::Scalar k = energy.make_scalar(this->stiffness_d_d_p_t, conn["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			std::vector<Vector> v1 = mws.make_vectors(this->dyn->v1.data, nodes);
+			std::vector<Vector> x0 = mws.make_vectors(this->dyn->x0.data, nodes);
+			Vector bary = mws.make_vector(this->bary_p_t, conn["idx"]);
+			Scalar k = mws.make_scalar(this->stiffness_d_d_p_t, conn["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+			std::vector<Vector> x1 = time_integration(x0, v1, dt);
 
 			// Projection
-			symx::Vector p = x1[0];
-			symx::Vector q = bary[0] * x1[1] + bary[1] * x1[2] + bary[2] * x1[3];
+			Vector p = x1[0];
+			Vector q = bary[0] * x1[1] + bary[1] * x1[2] + bary[2] * x1[3];
 
 			// Energy
-			symx::Scalar E = 0.5 * k * (q - p).squared_norm();
-			energy.set(E);
+			Scalar E = 0.5 * k * (q - p).squared_norm();
+			return E;
 		}
 	);
 
-	stark.global_potential.add_energy("EnergyAttachments_d_d_e_e", this->conn_d_d_e_e,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("EnergyAttachments_d_d_e_e", this->conn_d_d_e_e,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto nodes = { conn["ea0"], conn["ea1"], conn["eb0"], conn["eb1"] };
 
 			// Create symbols
-			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dyn->dof, this->dyn->v1.data, nodes);
-			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, nodes);
-			symx::Vector bary_0 = energy.make_vector(this->bary_e_e_0, conn["idx"]);
-			symx::Vector bary_1 = energy.make_vector(this->bary_e_e_1, conn["idx"]);
-			symx::Scalar k = energy.make_scalar(this->stiffness_d_d_e_e, conn["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			std::vector<Vector> v1 = mws.make_vectors(this->dyn->v1.data, nodes);
+			std::vector<Vector> x0 = mws.make_vectors(this->dyn->x0.data, nodes);
+			Vector bary_0 = mws.make_vector(this->bary_e_e_0, conn["idx"]);
+			Vector bary_1 = mws.make_vector(this->bary_e_e_1, conn["idx"]);
+			Scalar k = mws.make_scalar(this->stiffness_d_d_e_e, conn["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+			std::vector<Vector> x1 = time_integration(x0, v1, dt);
 
 			// Projection
-			symx::Vector p = bary_0[0] * x1[0] + bary_0[1] * x1[1];
-			symx::Vector q = bary_1[0] * x1[2] + bary_1[1] * x1[3];
+			Vector p = bary_0[0] * x1[0] + bary_0[1] * x1[1];
+			Vector q = bary_1[0] * x1[2] + bary_1[1] * x1[3];
 
 			// Energy
-			symx::Scalar E = 0.5 * k * (q - p).squared_norm();
-			energy.set(E);
+			Scalar E = 0.5 * k * (q - p).squared_norm();
+			return E;
 		}
 	);
 
-	stark.global_potential.add_energy("EnergyAttachments_rb_d", this->conn_rb_d,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("EnergyAttachments_rb_d", this->conn_rb_d,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			// Create symbols
-			symx::Scalar k = energy.make_scalar(this->stiffness_rb_d, conn["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Scalar k = mws.make_scalar(this->stiffness_rb_d, conn["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
 			//// Deformable
-			symx::Vector v1_d = energy.make_dof_vector(this->dyn->dof, this->dyn->v1.data, conn["p"]);
-			symx::Vector x0_d = energy.make_vector(this->dyn->x0.data, conn["p"]);
+			Vector v1_d = mws.make_vector(this->dyn->v1.data, conn["p"]);
+			Vector x0_d = mws.make_vector(this->dyn->x0.data, conn["p"]);
 
 			//// Rigid body
-			symx::Vector x_loc = energy.make_vector(this->rb_points_loc, conn["idx"]);
-			symx::Vector x1_rb = this->rb->get_x1(energy, conn["rb"], x_loc, dt);
+			Vector x_loc = mws.make_vector(this->rb_points_loc, conn["idx"]);
+			Vector x1_rb = this->rb->get_x1(mws, conn["rb"], x_loc, dt);
 
 			// Time integration
-			symx::Vector x1_d = time_integration(x0_d, v1_d, dt);
+			Vector x1_d = time_integration(x0_d, v1_d, dt);
 
 			// Energy
-			symx::Scalar E = 0.5 * k * (x1_d - x1_rb).squared_norm();
-			energy.set(E);
+			Scalar E = 0.5 * k * (x1_d - x1_rb).squared_norm();
+			return E;
 		}
 	);
 }

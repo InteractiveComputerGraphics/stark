@@ -4,11 +4,13 @@
 
 #include "rigidbody_transformations.h"
 
+using namespace symx;
+
 stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark& stark, spRigidBodyDynamics rb)
 	: rb(rb)
 {
 	// Callbacks
-	stark.callbacks.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
+	stark.callbacks.newton.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
 	stark.callbacks.add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
 
 	// Constraint containers initialization
@@ -25,214 +27,214 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 	this->angular_velocity = std::make_shared<RigidBodyConstraints::AngularVelocity>();
 
 	// Energy declarations
-	stark.global_potential.add_energy("rb_constraint_global_points", this->global_points->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("rb_constraint_global_points", this->global_points->conn,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto& data = this->global_points;
 
-			symx::Vector loc = energy.make_vector(data->loc, conn["idx"]);
-			symx::Vector target_glob = energy.make_vector(data->target_glob, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Vector loc = mws.make_vector(data->loc, conn["idx"]);
+			Vector target_glob = mws.make_vector(data->target_glob, conn["idx"]);
+			Scalar stiffness = mws.make_scalar(data->stiffness, conn["idx"]);
+			Scalar is_active = mws.make_scalar(data->is_active, conn["idx"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
-			symx::Vector glob = this->rb->get_x1(energy, conn["rb"], loc, dt);
-			symx::Scalar E = RigidBodyConstraints::GlobalPoints::energy(stiffness, target_glob, glob);
-			energy.set_with_condition(E, is_active > 0.0);
+			Vector glob = this->rb->get_x1(mws, conn["rb"], loc, dt);
+			Scalar E = RigidBodyConstraints::GlobalPoints::energy(stiffness, target_glob, glob);
+			return std::pair(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_potential.add_energy("rb_constraint_global_directions", this->global_directions->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("rb_constraint_global_directions", this->global_directions->conn,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto& data = this->global_directions;
 
-			symx::Vector d_loc = energy.make_vector(data->d_loc, conn["idx"]);
-			symx::Vector target_d_glob = energy.make_vector(data->target_d_glob, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Vector d_loc = mws.make_vector(data->d_loc, conn["idx"]);
+			Vector target_d_glob = mws.make_vector(data->target_d_glob, conn["idx"]);
+			Scalar stiffness = mws.make_scalar(data->stiffness, conn["idx"]);
+			Scalar is_active = mws.make_scalar(data->is_active, conn["idx"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
-			symx::Vector d_glob = this->rb->get_d1(energy, conn["rb"], d_loc, dt);
-			symx::Scalar E = RigidBodyConstraints::GlobalDirections::energy(stiffness, target_d_glob, d_glob);
-			energy.set_with_condition(E, is_active > 0.0);
+			Vector d_glob = this->rb->get_d1(mws, conn["rb"], d_loc, dt);
+			Scalar E = RigidBodyConstraints::GlobalDirections::energy(stiffness, target_d_glob, d_glob);
+			return std::pair(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_potential.add_energy("rb_constraint_points", this->points->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("rb_constraint_points", this->points->conn,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto& data = this->points;
 
-			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
-			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Vector a_loc = mws.make_vector(data->a_loc, conn["idx"]);
+			Vector b_loc = mws.make_vector(data->b_loc, conn["idx"]);
+			Scalar stiffness = mws.make_scalar(data->stiffness, conn["idx"]);
+			Scalar is_active = mws.make_scalar(data->is_active, conn["idx"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
-			symx::Vector a1 = this->rb->get_x1(energy, conn["a"], a_loc, dt);
-			symx::Vector b1 = this->rb->get_x1(energy, conn["b"], b_loc, dt);
-			symx::Scalar E = RigidBodyConstraints::Points::energy(stiffness, a1, b1);
-			energy.set_with_condition(E, is_active > 0.0);
+			Vector a1 = this->rb->get_x1(mws, conn["a"], a_loc, dt);
+			Vector b1 = this->rb->get_x1(mws, conn["b"], b_loc, dt);
+			Scalar E = RigidBodyConstraints::Points::energy(stiffness, a1, b1);
+			return std::pair(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_potential.add_energy("rb_constraint_point_on_axis", this->point_on_axes->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("rb_constraint_point_on_axis", this->point_on_axes->conn,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto& data = this->point_on_axes;
 
-			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
-			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
-			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Vector a_loc = mws.make_vector(data->a_loc, conn["idx"]);
+			Vector da_loc = mws.make_vector(data->da_loc, conn["idx"]);
+			Vector b_loc = mws.make_vector(data->b_loc, conn["idx"]);
+			Scalar stiffness = mws.make_scalar(data->stiffness, conn["idx"]);
+			Scalar is_active = mws.make_scalar(data->is_active, conn["idx"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
-			auto [a1, da1] = this->rb->get_x1_d1(energy, conn["a"], a_loc, da_loc, dt);
-			symx::Vector b1 = this->rb->get_x1(energy, conn["b"], b_loc, dt);
-			symx::Scalar E = RigidBodyConstraints::PointOnAxes::energy(stiffness, a1, da1, b1);
-			energy.set_with_condition(E, is_active > 0.0);
+			auto [a1, da1] = this->rb->get_x1_d1(mws, conn["a"], a_loc, da_loc, dt);
+			Vector b1 = this->rb->get_x1(mws, conn["b"], b_loc, dt);
+			Scalar E = RigidBodyConstraints::PointOnAxes::energy(stiffness, a1, da1, b1);
+			return std::pair(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_potential.add_energy("rb_constraint_distances", this->distances->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("rb_constraint_distances", this->distances->conn,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto& data = this->distances;
 
-			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
-			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
-			symx::Scalar target_distance = energy.make_scalar(data->target_distance, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Vector a_loc = mws.make_vector(data->a_loc, conn["idx"]);
+			Vector b_loc = mws.make_vector(data->b_loc, conn["idx"]);
+			Scalar target_distance = mws.make_scalar(data->target_distance, conn["idx"]);
+			Scalar stiffness = mws.make_scalar(data->stiffness, conn["idx"]);
+			Scalar is_active = mws.make_scalar(data->is_active, conn["idx"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
-			symx::Vector a1 = this->rb->get_x1(energy, conn["a"], a_loc, dt);
-			symx::Vector b1 = this->rb->get_x1(energy, conn["b"], b_loc, dt);
-			symx::Scalar E = RigidBodyConstraints::Distance::energy(stiffness, a1, b1, target_distance);
-			energy.set_with_condition(E, is_active > 0.0);
+			Vector a1 = this->rb->get_x1(mws, conn["a"], a_loc, dt);
+			Vector b1 = this->rb->get_x1(mws, conn["b"], b_loc, dt);
+			Scalar E = RigidBodyConstraints::Distance::energy(stiffness, a1, b1, target_distance);
+			return std::pair(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_potential.add_energy("rb_constraint_distance_limits", this->distance_limits->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("rb_constraint_distance_limits", this->distance_limits->conn,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto& data = this->distance_limits;
 
-			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
-			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
-			symx::Scalar min_distance = energy.make_scalar(data->min_distance, conn["idx"]);
-			symx::Scalar max_distance = energy.make_scalar(data->max_distance, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Vector a_loc = mws.make_vector(data->a_loc, conn["idx"]);
+			Vector b_loc = mws.make_vector(data->b_loc, conn["idx"]);
+			Scalar min_distance = mws.make_scalar(data->min_distance, conn["idx"]);
+			Scalar max_distance = mws.make_scalar(data->max_distance, conn["idx"]);
+			Scalar stiffness = mws.make_scalar(data->stiffness, conn["idx"]);
+			Scalar is_active = mws.make_scalar(data->is_active, conn["idx"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
-			symx::Vector a1 = this->rb->get_x1(energy, conn["a"], a_loc, dt);
-			symx::Vector b1 = this->rb->get_x1(energy, conn["b"], b_loc, dt);
-			symx::Scalar E = RigidBodyConstraints::DistanceLimits::energy(stiffness, a1, b1, min_distance, max_distance);
-			energy.set_with_condition(E, is_active > 0.0);
+			Vector a1 = this->rb->get_x1(mws, conn["a"], a_loc, dt);
+			Vector b1 = this->rb->get_x1(mws, conn["b"], b_loc, dt);
+			Scalar E = RigidBodyConstraints::DistanceLimits::energy(stiffness, a1, b1, min_distance, max_distance);
+			return std::pair(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_potential.add_energy("rb_constraint_directions", this->directions->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("rb_constraint_directions", this->directions->conn,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto& data = this->directions;
 
-			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
-			symx::Vector db_loc = energy.make_vector(data->db_loc, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Vector da_loc = mws.make_vector(data->da_loc, conn["idx"]);
+			Vector db_loc = mws.make_vector(data->db_loc, conn["idx"]);
+			Scalar stiffness = mws.make_scalar(data->stiffness, conn["idx"]);
+			Scalar is_active = mws.make_scalar(data->is_active, conn["idx"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
-			symx::Vector da = this->rb->get_d1(energy, conn["a"], da_loc, dt);
-			symx::Vector db = this->rb->get_d1(energy, conn["b"], db_loc, dt);
-			symx::Scalar E = RigidBodyConstraints::Directions::energy(stiffness, da, db);
-			energy.set_with_condition(E, is_active > 0.0);
+			Vector da = this->rb->get_d1(mws, conn["a"], da_loc, dt);
+			Vector db = this->rb->get_d1(mws, conn["b"], db_loc, dt);
+			Scalar E = RigidBodyConstraints::Directions::energy(stiffness, da, db);
+			return std::pair(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_potential.add_energy("rb_constraint_angle_limits", this->angle_limits->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("rb_constraint_angle_limits", this->angle_limits->conn,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto& data = this->angle_limits;
 
-			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
-			symx::Vector db_loc = energy.make_vector(data->db_loc, conn["idx"]);
-			symx::Scalar max_distance = energy.make_scalar(data->max_distance, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Vector da_loc = mws.make_vector(data->da_loc, conn["idx"]);
+			Vector db_loc = mws.make_vector(data->db_loc, conn["idx"]);
+			Scalar max_distance = mws.make_scalar(data->max_distance, conn["idx"]);
+			Scalar stiffness = mws.make_scalar(data->stiffness, conn["idx"]);
+			Scalar is_active = mws.make_scalar(data->is_active, conn["idx"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
-			symx::Vector da1 = this->rb->get_d1(energy, conn["a"], da_loc, dt);
-			symx::Vector db1 = this->rb->get_d1(energy, conn["b"], db_loc, dt);
-			symx::Scalar E = RigidBodyConstraints::AngleLimits::energy(stiffness, da1, db1, max_distance);
-			energy.set_with_condition(E, is_active > 0.0);
+			Vector da1 = this->rb->get_d1(mws, conn["a"], da_loc, dt);
+			Vector db1 = this->rb->get_d1(mws, conn["b"], db_loc, dt);
+			Scalar E = RigidBodyConstraints::AngleLimits::energy(stiffness, da1, db1, max_distance);
+			return std::pair(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_potential.add_energy("rb_constraint_damped_spring", this->damped_springs->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("rb_constraint_damped_spring", this->damped_springs->conn,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto& data = this->damped_springs;
 
-			symx::Vector a_loc = energy.make_vector(data->a_loc, conn["idx"]);
-			symx::Vector b_loc = energy.make_vector(data->b_loc, conn["idx"]);
-			symx::Scalar rest_length = energy.make_scalar(data->rest_length, conn["idx"]);
-			symx::Scalar stiffness = energy.make_scalar(data->stiffness, conn["idx"]);
-			symx::Scalar damping = energy.make_scalar(data->damping, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Vector a_loc = mws.make_vector(data->a_loc, conn["idx"]);
+			Vector b_loc = mws.make_vector(data->b_loc, conn["idx"]);
+			Scalar rest_length = mws.make_scalar(data->rest_length, conn["idx"]);
+			Scalar stiffness = mws.make_scalar(data->stiffness, conn["idx"]);
+			Scalar damping = mws.make_scalar(data->damping, conn["idx"]);
+			Scalar is_active = mws.make_scalar(data->is_active, conn["idx"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
-			auto [a0, a1] = this->rb->get_x0_x1(energy, conn["a"], a_loc, dt);
-			auto [b0, b1] = this->rb->get_x0_x1(energy, conn["b"], b_loc, dt);
+			auto [a0, a1] = this->rb->get_x0_x1(mws, conn["a"], a_loc, dt);
+			auto [b0, b1] = this->rb->get_x0_x1(mws, conn["b"], b_loc, dt);
 
-			symx::Scalar E = RigidBodyConstraints::DampedSprings::energy(stiffness, damping, a0, a1, b0, b1, rest_length, dt);
-			energy.set_with_condition(E, is_active > 0.0);
+			Scalar E = RigidBodyConstraints::DampedSprings::energy(stiffness, damping, a0, a1, b0, b1, rest_length, dt);
+			return std::pair(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_potential.add_energy("rb_constraint_linear_velocity", this->linear_velocity->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("rb_constraint_linear_velocity", this->linear_velocity->conn,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto& data = this->linear_velocity;
 
-			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
-			symx::Scalar target_v = energy.make_scalar(data->target_v, conn["idx"]);
-			symx::Scalar max_force = energy.make_scalar(data->max_force, conn["idx"]);
-			symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Vector va1 = energy.make_dof_vector(this->rb->dof_v, this->rb->v1, conn["a"]);
-			symx::Vector vb1 = energy.make_dof_vector(this->rb->dof_v, this->rb->v1, conn["b"]);
-			symx::Vector wa1 = energy.make_dof_vector(this->rb->dof_w, this->rb->w1, conn["a"]);
-			symx::Vector qa0 = energy.make_vector(this->rb->q0_, conn["a"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Vector da_loc = mws.make_vector(data->da_loc, conn["idx"]);
+			Scalar target_v = mws.make_scalar(data->target_v, conn["idx"]);
+			Scalar max_force = mws.make_scalar(data->max_force, conn["idx"]);
+			Scalar delay = mws.make_scalar(data->delay, conn["idx"]);
+			Scalar is_active = mws.make_scalar(data->is_active, conn["idx"]);
+			Vector va1 = mws.make_vector(this->rb->v1, conn["a"]);
+			Vector vb1 = mws.make_vector(this->rb->v1, conn["b"]);
+			Vector wa1 = mws.make_vector(this->rb->w1, conn["a"]);
+			Vector qa0 = mws.make_vector(this->rb->q0_, conn["a"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
-			symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
-			symx::Scalar E = RigidBodyConstraints::LinearVelocity::energy(da1, va1, vb1, target_v, max_force, delay, dt);
-			energy.set_with_condition(E, is_active > 0.0);
+			Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
+			Scalar E = RigidBodyConstraints::LinearVelocity::energy(da1, va1, vb1, target_v, max_force, delay, dt);
+			return std::pair(E, is_active > 0.0);
 		}
 	);
 
-	stark.global_potential.add_energy("rb_constraint_angular_velocity", this->angular_velocity->conn,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("rb_constraint_angular_velocity", this->angular_velocity->conn,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			auto& data = this->angular_velocity;
 
-			symx::Vector da_loc = energy.make_vector(data->da_loc, conn["idx"]);
-			symx::Scalar target_w = energy.make_scalar(data->target_w, conn["idx"]);
-			symx::Scalar max_torque = energy.make_scalar(data->max_torque, conn["idx"]);
-			symx::Scalar delay = energy.make_scalar(data->delay, conn["idx"]);
-			symx::Scalar is_active = energy.make_scalar(data->is_active, conn["idx"]);
-			symx::Vector wa1 = energy.make_dof_vector(this->rb->dof_w, this->rb->w1, conn["a"]);
-			symx::Vector wb1 = energy.make_dof_vector(this->rb->dof_w, this->rb->w1, conn["b"]);
-			symx::Vector qa0 = energy.make_vector(this->rb->q0_, conn["a"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			Vector da_loc = mws.make_vector(data->da_loc, conn["idx"]);
+			Scalar target_w = mws.make_scalar(data->target_w, conn["idx"]);
+			Scalar max_torque = mws.make_scalar(data->max_torque, conn["idx"]);
+			Scalar delay = mws.make_scalar(data->delay, conn["idx"]);
+			Scalar is_active = mws.make_scalar(data->is_active, conn["idx"]);
+			Vector wa1 = mws.make_vector(this->rb->w1, conn["a"]);
+			Vector wb1 = mws.make_vector(this->rb->w1, conn["b"]);
+			Vector qa0 = mws.make_vector(this->rb->q0_, conn["a"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
-			symx::Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
-			symx::Scalar E = RigidBodyConstraints::AngularVelocity::energy(da1, wa1, wb1, target_w, max_torque, delay, dt);
-			energy.set_with_condition(E, is_active > 0.0);
+			Vector da1 = integrate_loc_direction(da_loc, qa0, wa1, dt);
+			Scalar E = RigidBodyConstraints::AngularVelocity::energy(da1, wa1, wb1, target_w, max_torque, delay, dt);
+			return std::pair(E, is_active > 0.0);
 		}
 	);
 }

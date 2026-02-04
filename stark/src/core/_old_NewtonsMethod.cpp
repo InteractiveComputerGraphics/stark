@@ -91,7 +91,7 @@ stark::core::NewtonState stark::core::NewtonsMethod::solve(const double& dt, sym
 		// Max step in the search direction
 		double step_valid_configuration = this->_inplace_max_step_in_search_direction(this->du);
 		if (step_valid_configuration < 0.01) {
-			callbacks.run_on_intermidiate_state_invalid();
+			callbacks.run_on_intermediate_state_invalid();
 			newton_state = NewtonState::InvalidIntermediateConfiguration;
 			break;
 		}
@@ -348,9 +348,9 @@ double stark::core::NewtonsMethod::_inplace_max_step_in_search_direction(const E
 		this->u1 = this->u0 + step * this->du;
 		this->global_energy->set_dofs(this->u1.data());
 
-		this->logger->start_timing("is_intermidiate_state_valid");
-		const bool is_valid_state = this->callbacks->run_is_intermidiate_state_valid();
-		this->logger->stop_timing_add("is_intermidiate_state_valid");
+		this->logger->start_timing("is_intermediate_state_valid");
+		const bool is_valid_state = this->callbacks->run_is_intermediate_state_valid();
+		this->logger->stop_timing_add("is_intermediate_state_valid");
 
 		if (is_valid_state) {
 			break;

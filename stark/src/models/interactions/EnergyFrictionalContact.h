@@ -146,8 +146,8 @@ namespace stark
 		// SymX callbacks
 		void _before_time_step__update_friction_contacts(core::Stark& stark);
 		void _before_energy_evaluation__update_contacts(core::Stark& stark);
-		bool _is_intermidiate_state_valid(core::Stark& stark, bool is_initial_check);
-		void _on_intermidiate_state_invalid(core::Stark& stark);
+		bool _is_intermediate_state_valid(core::Stark& stark, bool is_initial_check);
+		void _on_intermediate_state_invalid(core::Stark& stark);
 		void _on_time_step_accepted(core::Stark& stark);
 
 		// SymX definitions
@@ -160,7 +160,7 @@ namespace stark
 		void _energies_friction_rb_deformables(core::Stark& stark);
 
 		// IPC
-		symx::Scalar _get_contact_distance(symx::Energy& energy, const symx::Index& group_a, const symx::Index& group_b);
+		symx::Scalar _get_contact_distance(symx::MappedWorkspace<double>& mws, const symx::Index& group_a, const symx::Index& group_b);
 		double _get_contact_distance(int group_a, int group_b);
 		symx::Scalar _barrier_potential(const symx::Scalar& d, const symx::Scalar& dhat, const symx::Scalar& k);
 		double _barrier_force(const double d, const double dhat, const double k);
@@ -168,27 +168,27 @@ namespace stark
 		symx::Scalar _friction_potential(const symx::Vector& v, const symx::Scalar& fn, const symx::Scalar& mu, const symx::Matrix& T, const symx::Scalar& epsv, const symx::Scalar& dt);
 
 		// SymX setters
-		void _set_barrier_potential(symx::Energy& energy, const core::Stark& stark, const symx::Scalar& d, const symx::Index& group_a, const symx::Index& group_b);
-		void _set_edge_edge_mollified_barrier_potential(symx::Energy& energy, const core::Stark& stark, const symx::Scalar& d, const std::vector<symx::Vector>& ea, const std::vector<symx::Vector>& eb, const std::vector<symx::Vector>& ea_rest, const std::vector<symx::Vector>& eb_rest, const symx::Index& group_a, const symx::Index& group_b);
-		void _set_friction_potential(symx::Energy& energy, const core::Stark& stark, const symx::Vector& v, const symx::Index& contact_idx, const FrictionContact& contact);
-		void _set_friction_point_edge(symx::Energy& energy, const core::Stark& stark, const symx::Vector& vp, const std::vector<symx::Vector>& ve, const symx::Index& contact_idx, FrictionPointEdge& data);
-		void _set_friction_point_triangle(symx::Energy& energy, const core::Stark& stark, const symx::Vector& vp, const std::vector<symx::Vector>& vt, const symx::Index& contact_idx, FrictionPointTriangle& data);
-		void _set_friction_edge_edge(symx::Energy& energy, const core::Stark& stark, const std::vector<symx::Vector>& vea, const std::vector<symx::Vector>& veb, const symx::Index& contact_idx, FrictionEdgeEdge& data);
+		symx::Scalar _set_barrier_potential(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Scalar& d, const symx::Index& group_a, const symx::Index& group_b);
+		symx::Scalar _set_edge_edge_mollified_barrier_potential(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Scalar& d, const std::vector<symx::Vector>& ea, const std::vector<symx::Vector>& eb, const std::vector<symx::Vector>& ea_rest, const std::vector<symx::Vector>& eb_rest, const symx::Index& group_a, const symx::Index& group_b);
+		symx::Scalar _set_friction_potential(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Vector& v, const symx::Index& contact_idx, const FrictionContact& contact);
+		symx::Scalar _set_friction_point_edge(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Vector& vp, const std::vector<symx::Vector>& ve, const symx::Index& contact_idx, FrictionPointEdge& data);
+		symx::Scalar _set_friction_point_triangle(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Vector& vp, const std::vector<symx::Vector>& vt, const symx::Index& contact_idx, FrictionPointTriangle& data);
+		symx::Scalar _set_friction_edge_edge(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const std::vector<symx::Vector>& vea, const std::vector<symx::Vector>& veb, const symx::Index& contact_idx, FrictionEdgeEdge& data);
 
 		// SymX data-symbol getters
 		//// Rigid bodies
-		std::vector<symx::Vector> _get_rb_v1(symx::Energy& energy, const core::Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn);
-		std::vector<symx::Vector> _get_rb_x1(symx::Energy& energy, const core::Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn);
-		std::vector<symx::Vector> _get_rb_X(symx::Energy& energy, const std::vector<symx::Index>& conn);
-		std::array<std::vector<symx::Vector>, 2> _get_rb_edge(symx::Energy& energy, const core::Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn);
-		std::array<std::vector<symx::Vector>, 3> _get_rb_edge_point(symx::Energy& energy, const core::Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn);
+		std::vector<symx::Vector> _get_rb_v1(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn);
+		std::vector<symx::Vector> _get_rb_x1(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn);
+		std::vector<symx::Vector> _get_rb_X(symx::MappedWorkspace<double>& mws, const std::vector<symx::Index>& conn);
+		std::array<std::vector<symx::Vector>, 2> _get_rb_edge(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn);
+		std::array<std::vector<symx::Vector>, 3> _get_rb_edge_point(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Index& rb_idx, const std::vector<symx::Index>& conn);
 
 		//// Deformables
-		std::vector<symx::Vector> _get_d_v1(symx::Energy& energy, const std::vector<symx::Index>& conn);
-		std::vector<symx::Vector> _get_d_x1(symx::Energy& energy, const core::Stark& stark, const std::vector<symx::Index>& conn);
-		std::vector<symx::Vector> _get_d_X(symx::Energy& energy, const std::vector<symx::Index>& conn);
-		std::array<std::vector<symx::Vector>, 2> _get_d_edge(symx::Energy& energy, const core::Stark& stark, const std::vector<symx::Index>& conn);
-		std::array<std::vector<symx::Vector>, 3> _get_d_edge_point(symx::Energy& energy, const core::Stark& stark, const std::vector<symx::Index>& conn);
+		std::vector<symx::Vector> _get_d_v1(symx::MappedWorkspace<double>& mws, const std::vector<symx::Index>& conn);
+		std::vector<symx::Vector> _get_d_x1(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const std::vector<symx::Index>& conn);
+		std::vector<symx::Vector> _get_d_X(symx::MappedWorkspace<double>& mws, const std::vector<symx::Index>& conn);
+		std::array<std::vector<symx::Vector>, 2> _get_d_edge(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const std::vector<symx::Index>& conn);
+		std::array<std::vector<symx::Vector>, 3> _get_d_edge_point(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const std::vector<symx::Index>& conn);
 
 		// Misc
 		std::string _get_contact_label(const std::string physical_system, const std::string pair) const;
