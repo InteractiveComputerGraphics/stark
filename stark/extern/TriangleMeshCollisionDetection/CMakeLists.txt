@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.10)
 
 set(TMCD_ENABLE_AVX ON CACHE BOOL "Flag to enable AVX for TriangleMeshCollisionDetection")
 

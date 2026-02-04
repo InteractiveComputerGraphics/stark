@@ -6,44 +6,19 @@
 #include <mutex>
 #include <memory>
 #include <cassert>
+#include <cstdint>
 #include <type_traits>
+#include <string.h>
 #include <omp.h>
-#ifdef BSM_ENABLE_AVX
+#ifdef BSM_ENABLE_AVX2
 #include <immintrin.h>
 #endif
 
 #include "types.h"
+#include "solve_pcg.h"
 
 namespace bsm
 {
-	/* ===============================  DECLARATIONS  =============================== */
-	enum class Preconditioner { Diagonal, BlockDiagonal };
-	enum class Ordering { RowMajor, ColMajor };
-	enum class ThreadSafety { Safe, Unsafe };
-
-	template<typename FLOAT, Ordering ORDERING, size_t BLOCK_ROWS, size_t BLOCK_COLS>
-	class MatrixIndexer
-	{
-	private:
-		const FLOAT* m_data;
-
-	public:
-		MatrixIndexer(const FLOAT* data) : m_data(data) {};
-		inline const FLOAT& operator()(const int row, const int col) const {
-			return at(this->m_data, row, col);
-		};
-
-		static const FLOAT& at(const FLOAT* data, const int row, const int col)
-		{
-			if constexpr (ORDERING == Ordering::RowMajor) {
-				return data[BLOCK_COLS * row + col];
-			}
-			else {
-				return data[BLOCK_ROWS * col + row];
-			}
-		}
-	};
-
 	/**
 	* @brief Blocked sparse matrix.
 	* 
@@ -68,6 +43,7 @@ namespace bsm
 		* @param n_cols Number of cols of the matrix
 		*/
 		void start_insertion(const int n_rows, const int n_cols);
+		void start_empty(const int n_rows, const int n_cols);
 
 		/**
 		* @brief Builds the BlockedSparseMatrix from the added blocks.
@@ -132,13 +108,13 @@ namespace bsm
 		 * can be disabled with the second template argument which should increase performance substantially.
 		 *
 		 * @tparam MATRIX_PARENTHESIS_INDEXABLE Type that uses parenthesis to index a matrix. ie matrix(i, j).
-		 * @tparam THREAD_SAFETY Whether to use mutexes to block write access to other threads. Default ThreadSafety::Safe.
+		 * @tparam THREAD_SAFETY Whether to use mutexes to block write access to other threads. Default ThreadSafety::UseMutex.
 		 * 
 		 * @param base_row row of the element m(0, 0)
 		 * @param base_col col of the element m(0, 0)
 		 * @param m	Matrix to insert
 		 */
-		template<typename MATRIX_PARENTHESIS_INDEXABLE, ThreadSafety THREAD_SAFETY = ThreadSafety::Safe>
+		template<typename MATRIX_PARENTHESIS_INDEXABLE, ThreadSafety THREAD_SAFETY = ThreadSafety::UseMutex>
 		void add_block(const int base_row, const int base_col, const MATRIX_PARENTHESIS_INDEXABLE& m);
 
 		/**
@@ -151,14 +127,48 @@ namespace bsm
 		 *
 		 * @tparam FLOAT Float type of the numbers to insert.
 		 * @tparam ORDERING Ordering (RowMajor or ColMajor) of the matrix according to the layout of its numbers.
-		 * @tparam THREAD_SAFETY Whether to use mutexes to block write access to other threads. Default ThreadSafety::Safe.
+		 * @tparam THREAD_SAFETY Whether to use mutexes to block write access to other threads. Default ThreadSafety::UseMutex.
 		 *
 		 * @param base_row row of the element m(0, 0)
 		 * @param base_col col of the element m(0, 0)
 		 * @param m	Matrix to insert stored flat in memory with single index access.
 		 */
-		template<typename FLOAT, Ordering ORDERING, ThreadSafety THREAD_SAFETY = ThreadSafety::Safe>
+		template<typename FLOAT, Ordering ORDERING, ThreadSafety THREAD_SAFETY = ThreadSafety::UseMutex>
 		void add_block_from_ptr(const int base_row, const int base_col, const FLOAT* m);
+
+		/**
+		 * @brief (Thread safe) Updates (adds to) an existing block in the CRS data structure.
+		 *
+		 * @details Unlike add_block(), this method only works on blocks that already exist in the CRS structure.
+		 * It is used for incremental updates to the matrix without changing its sparsity pattern.
+		 *
+		 * @tparam MATRIX_PARENTHESIS_INDEXABLE Type that uses parenthesis to index a matrix. ie matrix(i, j).
+		 * @tparam THREAD_SAFETY Whether to use mutexes to block write access to other threads. Default ThreadSafety::UseMutex.
+		 *
+		 * @param base_row row of the element m(0, 0)
+		 * @param base_col col of the element m(0, 0)
+		 * @param m	Matrix to add to the existing block
+		 * @return true if block was found and updated, false otherwise
+		*/
+		template<typename MATRIX_PARENTHESIS_INDEXABLE, ThreadSafety THREAD_SAFETY = ThreadSafety::UseMutex>
+		bool update_block(const int base_row, const int base_col, const MATRIX_PARENTHESIS_INDEXABLE& m);
+
+		/**
+		 * @brief (Thread safe) Updates (adds to) an existing block from a pointer.
+		 *
+		 * @details (... see `.update_block()` documentation)
+		 *
+		 * @tparam FLOAT Float type of the numbers to insert.
+		 * @tparam ORDERING Ordering (RowMajor or ColMajor) of the matrix according to the layout of its numbers.
+		 * @tparam THREAD_SAFETY Whether to use mutexes to block write access to other threads. Default ThreadSafety::UseMutex.
+		 *
+		 * @param base_row row of the element m(0, 0)
+		 * @param base_col col of the element m(0, 0)
+		 * @param m	Matrix to add stored flat in memory with single index access.
+		 * @return true if block was found and updated, false otherwise
+		*/
+		template<typename FLOAT, Ordering ORDERING, ThreadSafety THREAD_SAFETY = ThreadSafety::UseMutex>
+		bool update_block_from_ptr(const int base_row, const int base_col, const FLOAT* m);
 
 		/**
 		* @brief Sparse Matrix - Dense Vector product.
@@ -216,15 +226,37 @@ namespace bsm
 		template<typename Triplet>
 		void to_triplets(std::vector<Triplet>& triplets);
 
+		/**
+		 * @brief Slices the current matrix with only the (block) rows
+		 *        and (block) columns for which section_blocks[i] is non-zero.
+		 *        Conceptually equivalent to A[subset, subset] in NumPy.
+		 *
+		 * @param section_blocks A vector of length >= max(n_block_rows, n_block_cols).
+		 *                       Each entry is 0 or 1 indicating whether that block-row
+		 *                       (and block-column of same index) should be included.
+		 *
+		 * @return A newly constructed BlockedSparseMatrix containing only the
+		 *         selected rows/columns (by entire blocks).
+		 */
+		void slice(std::vector<int>& old_to_new_map, std::vector<int>& new_to_old_map, const std::vector<uint8_t>& section_blocks, const int n_threads = -1);
+
+		void expand_one_ring_symmetric(std::vector<uint8_t>& block_flags);
+
 		void clear();
 
+		// Allow PCG solver access to internal _spmxv
+		template<typename BSM_TYPE>
+		friend PCGInfo bsm::solve_pcg(BSM_TYPE&, double*, const double*, int, double, double, int, int, bool);
+		template<typename BSM_TYPE>
+		friend PCGInfo bsm::solve_pcg(BSM_TYPE&, double*, const double*, int, double, double, int, int, bool, PCGContext&);
+		
 	private:
 		/* Methods */
 		// Insertion
 		template<ThreadSafety THREAD_SAFETY, typename MATRIX_PARENTHESIS_INDEXABLE>
 		void _insert_new_block(const int base_row, const int base_col, const MATRIX_PARENTHESIS_INDEXABLE& m);
 		template<ThreadSafety THREAD_SAFETY, typename MATRIX_PARENTHESIS_INDEXABLE>
-		void _sum_to_existing_block(const int base_row, const int block_n, const MATRIX_PARENTHESIS_INDEXABLE& m);
+		void _sum_to_existing_block(const int base_row, const uint64_t block_i, const MATRIX_PARENTHESIS_INDEXABLE& m, bool flag_nnz = true);
 		template<typename MATRIX_PARENTHESIS_INDEXABLE>
 		void _sum_block(STORAGE_FLOAT* dest, const MATRIX_PARENTHESIS_INDEXABLE& m);
 
@@ -239,7 +271,7 @@ namespace bsm
 
 		struct CRS
 		{
-			std::vector<int> rows; // Offsets to the beginning of the block rows
+			std::vector<uint64_t> rows; // Offsets to the beginning of the block rows
 			std::vector<int> cols; // Columns of the first element of each block
 			bsm::avx::avector<STORAGE_FLOAT, 64> vals;  // bsm::avx::avector is a std::vector that is aligned to memory registers
 		};
@@ -309,7 +341,7 @@ namespace bsm
 		this->n_rows = n_rows;
 		this->n_cols = n_cols;
 		this->n_block_rows = (n_rows % BLOCK_ROWS == 0) ? n_rows / BLOCK_ROWS : n_rows / BLOCK_ROWS + 1;
-		this->n_block_cols = (n_cols % BLOCK_COLS == 0) ? n_cols / BLOCK_COLS : n_cols / BLOCK_COLS + 1;;
+		this->n_block_cols = (n_cols % BLOCK_COLS == 0) ? n_cols / BLOCK_COLS : n_cols / BLOCK_COLS + 1;
 
 		// First insertion
 		if (this->crs_current == nullptr) {
@@ -323,14 +355,30 @@ namespace bsm
 		std::fill(this->crs_current->vals.begin(), this->crs_current->vals.end(), static_cast<STORAGE_FLOAT>(0.0));
 		this->curr_crs_vals_is_nnz.resize(this->crs_current->cols.size());
 		std::fill(this->curr_crs_vals_is_nnz.begin(), this->curr_crs_vals_is_nnz.end(), static_cast<char>(0));
-		if (this->row_crs_mutexes.size() != this->n_rows_current_crs / BLOCK_ROWS) {
-			this->row_crs_mutexes = std::vector<std::mutex>(this->n_rows_current_crs);
+		if (this->row_crs_mutexes.size() != n_block_rows) {
+			this->row_crs_mutexes = std::vector<std::mutex>(n_block_rows);
 		}
 
 		//// New bucket entries
 		this->dynamic_row_buckets.resize(this->n_block_rows);
 		if (this->row_bucket_mutexes.size() != this->n_block_rows) {
 			this->row_bucket_mutexes = std::vector<std::mutex>(n_block_rows);
+		}
+	}
+
+	template<size_t BLOCK_ROWS, size_t BLOCK_COLS, typename STORAGE_FLOAT>
+	inline void BlockedSparseMatrix<BLOCK_ROWS, BLOCK_COLS, STORAGE_FLOAT>::start_empty(const int n_rows, const int n_cols)
+	{
+		// Dimensions
+		this->n_rows = n_rows;
+		this->n_cols = n_cols;
+		this->n_block_rows = (n_rows % BLOCK_ROWS == 0) ? n_rows / BLOCK_ROWS : n_rows / BLOCK_ROWS + 1;
+		this->n_block_cols = (n_cols % BLOCK_COLS == 0) ? n_cols / BLOCK_COLS : n_cols / BLOCK_COLS + 1;;
+
+		// First insertion
+		if (this->crs_current == nullptr) {
+			this->crs_current = std::make_unique<CRS>();
+			this->crs_next = std::make_unique<CRS>();
 		}
 	}
 
@@ -379,7 +427,7 @@ namespace bsm
 		this->crs_next->rows.resize(this->n_block_rows + 1);
 		#pragma omp parallel for num_threads(n_threads_) schedule(static)
 		for (int i = 0; i < this->n_block_rows; i++) {
-			this->crs_next->rows[i + 1] = (int)this->dynamic_row_buckets[i].size();
+			this->crs_next->rows[i + 1] = this->dynamic_row_buckets[i].size();
 		}
 
 		// [Case 2] There is no old matrix. Will happen in the first usage.
@@ -395,7 +443,7 @@ namespace bsm
 			const int n_blocks = this->crs_next->rows.back();
 			constexpr int BLOCK_SIZE = BLOCK_ROWS * BLOCK_COLS;
 			this->crs_next->cols.resize(n_blocks);
-#ifdef BSM_ENABLE_AVX
+#ifdef BSM_ENABLE_AVX2
 			this->crs_next->vals.reserve(BLOCK_SIZE * n_blocks + sizeof(__m256) / sizeof(STORAGE_FLOAT));  // Reserve an extra __m256 space for padding
 #else
 			this->crs_next->vals.reserve(BLOCK_SIZE * n_blocks + 1);
@@ -406,7 +454,7 @@ namespace bsm
 			#pragma omp parallel for num_threads(n_threads_) schedule(static)
 			for (int block_row_i = 0; block_row_i < this->n_block_rows; block_row_i++) {
 				std::vector<ColBlock>& bucket = this->dynamic_row_buckets[block_row_i];
-				const int begin = this->crs_next->rows[block_row_i];
+				const uint64_t begin = this->crs_next->rows[block_row_i];
 
 				for (int j = 0; j < bucket.size(); j++) {
 					this->crs_next->cols[begin + j] = bucket[j].base_col;
@@ -432,7 +480,7 @@ namespace bsm
 		#pragma omp parallel for num_threads(n_threads_) schedule(static)
 		for (int i = 0; i < min_common_n_block_rows; i++) {
 			int existing_count = 0;
-			for (int j = this->crs_current->rows[i]; j < this->crs_current->rows[i + 1]; j++) {
+			for (uint64_t j = this->crs_current->rows[i]; j < this->crs_current->rows[i + 1]; j++) {
 				existing_count += (int)this->curr_crs_vals_is_nnz[j];
 			}
 			this->crs_next->rows[i + 1] += existing_count;
@@ -453,7 +501,7 @@ namespace bsm
 		//// Allocate new matrix
 		const int n_blocks = this->crs_next->rows.back();
 		this->crs_next->cols.resize(n_blocks);
-#ifdef BSM_ENABLE_AVX
+#ifdef BSM_ENABLE_AVX2
 		this->crs_next->vals.reserve(BLOCK_SIZE * n_blocks + sizeof(__m256)/sizeof(STORAGE_FLOAT));  // Reserve an extra __m256 space for padding
 #else
 		this->crs_next->vals.reserve(BLOCK_SIZE * n_blocks + 1);
@@ -467,8 +515,8 @@ namespace bsm
 
 			// Current CRS
 			//// Find the block range we have in the current CRS row
-			int current_cursor = 0;
-			int current_end_cursor = 0;
+			uint64_t current_cursor = 0;
+			uint64_t current_end_cursor = 0;
 			if (block_row_i < n_current_block_rows) { // The row might not exist
 				current_cursor = this->crs_current->rows[block_row_i];
 				current_end_cursor = this->crs_current->rows[block_row_i + 1];
@@ -479,17 +527,17 @@ namespace bsm
 			
 			// New CRS buckets
 			//// Find how many blocks we have in the row bucket
-			const int bucket_end_cursor = (int)bucket.size();
+			const uint64_t bucket_end_cursor = (int)bucket.size();
 
 			//// Ser a cursor for the new buckets (we don't have zero blocks there)
 			int new_cursor = 0;
 
 			// Loop over the the new CRS blocks to be filled picking the smallest block from current CRS and the bucket
-			for (int offset = this->crs_next->rows[block_row_i]; offset < this->crs_next->rows[block_row_i + 1]; offset++) {
+			for (uint64_t offset = this->crs_next->rows[block_row_i]; offset < this->crs_next->rows[block_row_i + 1]; offset++) {
 				
 				// [Early exit] No more new blocks
 				if (new_cursor == bucket_end_cursor) {
-					for (int block_i = offset; block_i < this->crs_next->rows[block_row_i + 1]; block_i++) {
+					for (uint64_t block_i = offset; block_i < this->crs_next->rows[block_row_i + 1]; block_i++) {
 						// Set column
 						this->crs_next->cols[block_i] = this->crs_current->cols[current_cursor];
 
@@ -505,7 +553,7 @@ namespace bsm
 
 				// [Early exit] No more current blocks
 				else if (current_cursor == current_end_cursor) {
-					for(int block_i = offset; block_i < this->crs_next->rows[block_row_i + 1]; block_i++) {
+					for(uint64_t block_i = offset; block_i < this->crs_next->rows[block_row_i + 1]; block_i++) {
 						// Set column
 						this->crs_next->cols[block_i] = bucket[new_cursor].base_col;
 
@@ -779,11 +827,52 @@ namespace bsm
 	}
 
 	template<size_t BLOCK_ROWS, size_t BLOCK_COLS, typename STORAGE_FLOAT>
+	template<typename MATRIX_PARENTHESIS_INDEXABLE, ThreadSafety THREAD_SAFETY>
+	inline bool BlockedSparseMatrix<BLOCK_ROWS, BLOCK_COLS, STORAGE_FLOAT>::update_block(const int base_row, const int base_col, const MATRIX_PARENTHESIS_INDEXABLE& m)
+	{
+		assert(base_row < this->n_rows);
+		assert(base_col < this->n_cols);
+		const int block_row = base_row / BLOCK_ROWS;
+
+		// Beyond existing rows: non-existing entry
+		if (base_row >= this->n_rows) {
+			return false;
+		}
+
+		// Binary search the block row
+		const auto begin = this->crs_current->cols.begin() + this->crs_current->rows[block_row];
+		const auto end = this->crs_current->cols.begin() + this->crs_current->rows[block_row + 1];
+		const auto pos = std::lower_bound(begin, end, base_col);
+
+		bool found = true;
+		if (pos == end || (*pos) != base_col) {
+			found = false;
+		}
+
+		// Update only if found
+		if (!found) {
+			return false;
+		}
+		else {
+			const int block_n = static_cast<int>(std::distance(this->crs_current->cols.begin(), pos));
+			this->_sum_to_existing_block<THREAD_SAFETY>(base_row, block_n, m, /* flag_nnz = */ false);
+			return true;
+		}
+	}
+
+	template<size_t BLOCK_ROWS, size_t BLOCK_COLS, typename STORAGE_FLOAT>
+	template<typename FLOAT, Ordering ORDERING, ThreadSafety THREAD_SAFETY>
+	inline bool BlockedSparseMatrix<BLOCK_ROWS, BLOCK_COLS, STORAGE_FLOAT>::update_block_from_ptr(const int base_row, const int base_col, const FLOAT* m)
+	{
+		return this->update_block<MatrixIndexer<FLOAT, ORDERING, BLOCK_ROWS, BLOCK_COLS>, THREAD_SAFETY>(base_row, base_col, MatrixIndexer<FLOAT, ORDERING, BLOCK_ROWS, BLOCK_COLS>(m));
+	}
+
+	template<size_t BLOCK_ROWS, size_t BLOCK_COLS, typename STORAGE_FLOAT>
 	template<ThreadSafety THREAD_SAFETY, typename MATRIX_PARENTHESIS_INDEXABLE>
 	inline void BlockedSparseMatrix<BLOCK_ROWS, BLOCK_COLS, STORAGE_FLOAT>::_insert_new_block(const int base_row, const int base_col, const MATRIX_PARENTHESIS_INDEXABLE& m)
 	{
 		const int block_row = base_row / BLOCK_ROWS;
-		if constexpr (THREAD_SAFETY == ThreadSafety::Safe) { this->row_bucket_mutexes[block_row].lock(); }
+		if constexpr (THREAD_SAFETY == ThreadSafety::UseMutex) { this->row_bucket_mutexes[block_row].lock(); }
 		std::vector<ColBlock>& bucket = this->dynamic_row_buckets[block_row];
 		auto it = std::lower_bound(bucket.begin(), bucket.end(), base_col, [](const ColBlock& block, const int value) { return block.base_col < value; });
 		const bool found = (it != bucket.end()) && (it->base_col == base_col);
@@ -795,20 +884,20 @@ namespace bsm
 			ColBlock new_block(base_col, m);
 			bucket.insert(it, new_block);
 		}
-		if constexpr (THREAD_SAFETY == ThreadSafety::Safe) { this->row_bucket_mutexes[block_row].unlock(); }
+		if constexpr (THREAD_SAFETY == ThreadSafety::UseMutex) { this->row_bucket_mutexes[block_row].unlock(); }
 	}
 
 	template<size_t BLOCK_ROWS, size_t BLOCK_COLS, typename STORAGE_FLOAT>
 	template<ThreadSafety THREAD_SAFETY, typename MATRIX_PARENTHESIS_INDEXABLE>
-	inline void BlockedSparseMatrix<BLOCK_ROWS, BLOCK_COLS, STORAGE_FLOAT>::_sum_to_existing_block(const int base_row, const int block_n, const MATRIX_PARENTHESIS_INDEXABLE& m)
+	inline void BlockedSparseMatrix<BLOCK_ROWS, BLOCK_COLS, STORAGE_FLOAT>::_sum_to_existing_block(const int base_row, const uint64_t block_i, const MATRIX_PARENTHESIS_INDEXABLE& m, bool flag_nnz)
 	{
 		const int block_row = base_row / BLOCK_ROWS;
-		STORAGE_FLOAT* vals = this->crs_current->vals.data() + BLOCK_ROWS * BLOCK_COLS * block_n;
+		STORAGE_FLOAT* vals = this->crs_current->vals.data() + BLOCK_ROWS * BLOCK_COLS * block_i;
 
-		if constexpr (THREAD_SAFETY == ThreadSafety::Safe) { this->row_crs_mutexes[block_row].lock(); }
-		this->curr_crs_vals_is_nnz[block_n] = static_cast<char>(1);
+		if constexpr (THREAD_SAFETY == ThreadSafety::UseMutex) { this->row_crs_mutexes[block_row].lock(); }
+		if (flag_nnz) { this->curr_crs_vals_is_nnz[block_i] = static_cast<char>(1); }
 		this->_sum_block(vals, m);
-		if constexpr (THREAD_SAFETY == ThreadSafety::Safe) { this->row_crs_mutexes[block_row].unlock(); }
+		if constexpr (THREAD_SAFETY == ThreadSafety::UseMutex) { this->row_crs_mutexes[block_row].unlock(); }
 	}
 
 	template<size_t BLOCK_ROWS, size_t BLOCK_COLS, typename STORAGE_FLOAT>
@@ -929,14 +1018,14 @@ namespace bsm
 		const int n_threads_ = (n_threads == -1) ? omp_get_num_procs() / 2 : n_threads;
 		const bool sequential = n_threads_ > this->n_block_rows;
 		constexpr int BLOCK_SIZE = BLOCK_ROWS * BLOCK_COLS;
-#ifdef BSM_ENABLE_AVX
+#ifdef BSM_ENABLE_AVX2
 		constexpr int NUMBERS_PER_AVX_LINE = sizeof(__m256d) / sizeof(OPERATION_FLOAT);
 #else
 		constexpr int NUMBERS_PER_AVX_LINE = 1;
 #endif
 		constexpr int N_AVX_LINES_PER_BLOCK_COLUMN = (BLOCK_ROWS % NUMBERS_PER_AVX_LINE == 0) ? BLOCK_ROWS / NUMBERS_PER_AVX_LINE : BLOCK_ROWS / NUMBERS_PER_AVX_LINE + 1;
 
-#ifdef BSM_ENABLE_AVX
+#ifdef BSM_ENABLE_AVX2
         if constexpr (N_AVX_LINES_PER_BLOCK_COLUMN > 1) {
             std::cout << "BlockedSparseMatrix.spmxv() error: Currently can't handle larger than 4x4 blocks (bug in solution scattering)." << std::endl;
             exit(-1);
@@ -976,15 +1065,15 @@ namespace bsm
 			for (int block_row_i = block_row_begin; block_row_i < block_row_end; block_row_i++) {
 
 				// Use the CRS row offset vector to fetch the begin and end of the blocks
-				const int begin = this->crs_current->rows[block_row_i];
-				const int end = this->crs_current->rows[block_row_i + 1];
+				const uint64_t begin = this->crs_current->rows[block_row_i];
+				const uint64_t end = this->crs_current->rows[block_row_i + 1];
 
 				// Set a pointer (moving cursor) to the begining of the CRS base column indices and values
 				STORAGE_FLOAT* vals_scalar = this->crs_current->vals.data() + BLOCK_SIZE * begin;
 				int* block_col_ptr = this->crs_current->cols.data() + begin;
 
 				// Initialize the result of the rows dot products in the AVX temporal lines
-#ifdef BSM_ENABLE_AVX
+#ifdef BSM_ENABLE_AVX2
 				std::array<__m256d, N_AVX_LINES_PER_BLOCK_COLUMN> solution_local;
 				for (int avx_i = 0; avx_i < N_AVX_LINES_PER_BLOCK_COLUMN; avx_i++) {
 					solution_local[avx_i] = _mm256_set1_pd(0.0);
@@ -1008,11 +1097,11 @@ namespace bsm
 
 						// For each AVX line in the block column
 						for (int avx_i = 0; avx_i < N_AVX_LINES_PER_BLOCK_COLUMN; avx_i++) {
-#ifdef BSM_ENABLE_AVX
+#ifdef BSM_ENABLE_AVX2
 							// Fetch the values (if STORAGE_FLOAT != OPERATION_FLOAT -> cast)
 							__m256d vals;
 							if constexpr (std::is_same_v<STORAGE_FLOAT, float>) {
-								vals = _mm256_cvtps_pd(_mm128_loadu_ps(vals_scalar + NUMBERS_PER_AVX_LINE * avx_i));
+								vals = _mm256_cvtps_pd(_mm_loadu_ps(vals_scalar + NUMBERS_PER_AVX_LINE * avx_i));
 							}
 							else if constexpr (std::is_same_v<STORAGE_FLOAT, double>) {
 								vals = _mm256_loadu_pd(vals_scalar + NUMBERS_PER_AVX_LINE * avx_i);
@@ -1037,7 +1126,7 @@ namespace bsm
 
 				// Once `solution_local` contains the result of all rows dot products, copy them to the solution vector
                 double* res_scalar = nullptr;
-#ifdef BSM_ENABLE_AVX
+#ifdef BSM_ENABLE_AVX2
                 std::array<double, 4> res_scalar_arr;
 				_mm256_storeu_pd(res_scalar_arr.data(), solution_local[0]);
                 res_scalar = res_scalar_arr.data();
@@ -1053,7 +1142,7 @@ namespace bsm
 			}
 		}
 	}
-	
+
 	template<size_t BLOCK_ROWS, size_t BLOCK_COLS, typename STORAGE_FLOAT>
 	inline void BlockedSparseMatrix<BLOCK_ROWS, BLOCK_COLS, STORAGE_FLOAT>::spmxv_from_ptr(double* solution, const double* v, const int n_threads)
 	{
@@ -1067,7 +1156,7 @@ namespace bsm
 		constexpr int BLOCK_SIZE = BLOCK_ROWS * BLOCK_COLS;
 
 		if (this->preconditioner == Preconditioner::Diagonal) {
-#ifdef BSM_ENABLE_AVX
+#ifdef BSM_ENABLE_AVX2
 			this->diag_inv.resize(this->n_block_rows * BLOCK_ROWS + sizeof(__m256)/sizeof(STORAGE_FLOAT));
 #else
 			this->diag_inv.resize(this->n_block_rows * BLOCK_ROWS);
@@ -1076,7 +1165,7 @@ namespace bsm
 			#pragma omp parallel for schedule(static) num_threads(n_threads_)
 			for (int block_row_i = 0; block_row_i < this->n_block_rows; block_row_i++) {
 				const int base_row_i = BLOCK_ROWS*block_row_i;
-				for (int j = this->crs_current->rows[block_row_i]; j < this->crs_current->rows[block_row_i + 1]; j++) {
+				for (uint64_t j = this->crs_current->rows[block_row_i]; j < this->crs_current->rows[block_row_i + 1]; j++) {
 					if (this->crs_current->cols[j] == base_row_i) {
 						STORAGE_FLOAT* vals = this->crs_current->vals.data() + BLOCK_SIZE * j;
 						for (int i = 0; i < BLOCK_ROWS; i++) {
@@ -1088,7 +1177,7 @@ namespace bsm
 			}
 		}
 		else if (this->preconditioner == Preconditioner::BlockDiagonal) {
-#ifdef BSM_ENABLE_AVX
+#ifdef BSM_ENABLE_AVX2
 			this->diag_inv.resize(this->n_block_rows * BLOCK_SIZE + sizeof(__m256)/sizeof(STORAGE_FLOAT));
 #else
 			this->diag_inv.resize(this->n_block_rows * BLOCK_SIZE);
@@ -1097,7 +1186,7 @@ namespace bsm
 			#pragma omp parallel for schedule(static) num_threads(n_threads_)
 			for (int block_row_i = 0; block_row_i < this->n_block_rows; block_row_i++) {
 				const int base_row_i = BLOCK_ROWS * block_row_i;
-				for (int j = this->crs_current->rows[block_row_i]; j < this->crs_current->rows[block_row_i + 1]; j++) {
+				for (uint64_t j = this->crs_current->rows[block_row_i]; j < this->crs_current->rows[block_row_i + 1]; j++) {
 					if (this->crs_current->cols[j] == base_row_i) {
 						STORAGE_FLOAT* m = this->crs_current->vals.data() + BLOCK_SIZE * j;
 						STORAGE_FLOAT* m_inv = this->diag_inv.data() + BLOCK_SIZE * block_row_i;
@@ -1207,20 +1296,25 @@ namespace bsm
 		const int n_threads_ = (n_threads == -1) ? omp_get_num_procs() / 2 : n_threads;
 
 		if (this->preconditioner == Preconditioner::Diagonal) {
-#ifdef BSM_ENABLE_AVX
-			const int n_avx = this->n_rows / 4;
-
+#ifdef BSM_ENABLE_AVX2
 			#pragma omp parallel for schedule(static) num_threads(n_threads_)
 			for (int i = 0; i < this->n_rows; i += 4) {
-				_mm256_storeu_pd(&solution[i], _mm256_mul_pd(_mm256_loadu_pd(&this->diag_inv[i]), _mm256_loadu_pd(&v[i])) );
+				__m256d diag;
+				if constexpr (std::is_same_v<STORAGE_FLOAT, float>) {
+					diag = _mm256_cvtps_pd(_mm_loadu_ps(&this->diag_inv[i]));
+				}
+				else if constexpr (std::is_same_v<STORAGE_FLOAT, double>) {
+					diag = _mm256_loadu_pd(&this->diag_inv[i]);
+				}
+				_mm256_storeu_pd(&solution[i], _mm256_mul_pd(diag, _mm256_loadu_pd(&v[i])));
             }
 
 			for (int i = 4 * (this->n_rows / 4); i < this->n_rows; i++) {
-				solution[i] = this->diag_inv[i] * v[i];
+				solution[i] = static_cast<double>(this->diag_inv[i]) * v[i];
 			}
 #else
 			for (int i = 0; i < this->n_rows; i++) {
-				solution[i] = this->diag_inv[i] * v[i];
+				solution[i] = static_cast<double>(this->diag_inv[i]) * v[i];
 			}
 #endif
 		}
@@ -1231,12 +1325,12 @@ namespace bsm
 
 				STORAGE_FLOAT* vals_scalar = this->diag_inv.data() + BLOCK_SIZE * block_row_i;
 
-#ifdef BSM_ENABLE_AVX
+#ifdef BSM_ENABLE_AVX2
 				__m256d sol = _mm256_set1_pd(0.0);
 				for (int col = 0; col < BLOCK_COLS; col++) {
 					__m256d vals;
 					if constexpr (std::is_same_v<STORAGE_FLOAT, float>) {
-						vals = _mm256_cvtps_pd(_mm128_loadu_ps(vals_scalar + BLOCK_ROWS * col));
+						vals = _mm256_cvtps_pd(_mm_loadu_ps(vals_scalar + BLOCK_ROWS * col));
 					}
 					else if constexpr (std::is_same_v<STORAGE_FLOAT, double>) {
 						vals = _mm256_loadu_pd(vals_scalar + BLOCK_ROWS * col);
@@ -1277,13 +1371,14 @@ namespace bsm
 	inline void BlockedSparseMatrix<BLOCK_ROWS, BLOCK_COLS, STORAGE_FLOAT>::to_triplets(std::vector<Triplet>& triplets)
 	{
 		triplets.clear();
+		triplets.reserve(this->crs_current->rows.back() * BLOCK_ROWS * BLOCK_COLS);
 
 		for (int block_row_i = 0; block_row_i < this->n_block_rows; block_row_i++) {
 			const int base_row = BLOCK_ROWS * block_row_i;
 
 			// Use the CRS row offset vector to fetch the begin and end of the blocks
-			const int begin = this->crs_current->rows[block_row_i];
-			const int end = this->crs_current->rows[block_row_i + 1];
+			const uint64_t begin = this->crs_current->rows[block_row_i];
+			const uint64_t end = this->crs_current->rows[block_row_i + 1];
 
 			// Set a pointer (moving cursor) to the begining of the CRS base column indices and values
 			STORAGE_FLOAT* vals_scalar = this->crs_current->vals.data() + BLOCK_ROWS*BLOCK_COLS * begin;
@@ -1302,5 +1397,8 @@ namespace bsm
 			}
 		}
 	}
+
+	template<size_t BLOCK_ROWS, size_t BLOCK_COLS, typename STORAGE_FLOAT>
+	using spBlockedSparseMatrix = std::shared_ptr<BlockedSparseMatrix<BLOCK_ROWS, BLOCK_COLS, STORAGE_FLOAT> >;
 }
 

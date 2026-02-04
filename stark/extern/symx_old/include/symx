@@ -1,0 +1,17 @@
+#pragma once
+#include "../src/SymbolicWorkSpace.h"
+#include "../src/Scalar.h"
+#include "../src/Vector.h"
+#include "../src/Matrix.h"
+
+#include "../src/EvalSequence.h"
+#include "../src/utils.h"
+#include "../src/diff.h"
+
+#include "../src/Compilation.h"
+#include "../src/Compiled.h"
+#include "../src/CompiledInLoop.h"
+
+#include "../src/Energy.h"
+#include "../src/GlobalEnergy.h"
+#include "../src/Assembly.h"

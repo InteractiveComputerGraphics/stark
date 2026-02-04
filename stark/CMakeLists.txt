@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.10)
 
 # Option to disable AVX for ARM-based devices
 set(STARK_ENABLE_AVX ON CACHE BOOL "Flag to enable AVX for Stark and its dependencies")
@@ -9,12 +9,6 @@ if(NOT ${STARK_ENABLE_AVX})
 	set(TMCD_ENABLE_AVX OFF CACHE BOOL "Flag to enable AVX for tmcd" FORCE)
 endif()
 
-# Eigen path (also used in projects below)
-set(EIGEN3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/Eigen)
-if( NOT EIGEN3_INCLUDE_DIR )
-    message( FATAL_ERROR "Please point the environment variable EIGEN3_INCLUDE_DIR to the include directory of your Eigen3 installation.")
-endif()
-add_compile_options("-DEIGEN_MPL2_ONLY")
 
 # Parallel compilation in MSVC
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -34,7 +28,6 @@ endif()
 # Dependencies
 add_subdirectory(extern/symx)
 add_subdirectory(extern/TriangleMeshCollisionDetection)
-add_subdirectory(extern/fmt)
 
 # Source files
 set(CORE_FILES
@@ -183,21 +176,14 @@ target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/symx/
 target_link_libraries(stark TriangleMeshCollisionDetection)
 target_include_directories(stark PUBLIC extern/TriangleMeshCollisionDetection/include)
 
-## Conjugate Gradient
-target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/symx/extern)
-
 ## vtkio
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/vtkio/include)
 
 ## TriangleMeshDistance
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/TriangleMeshDistance/include)
 
-## fmt
-target_link_libraries(stark fmt::fmt)
-target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/fmt/include)
-
-## Eigen
-target_include_directories(stark PUBLIC ${EIGEN3_INCLUDE_DIR})
+## fmt (provided by symx transitively)
+## Eigen (provided by symx transitively)
 
 ## par_shapes
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/par_shapes/include)

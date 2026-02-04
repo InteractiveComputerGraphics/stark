@@ -17,6 +17,7 @@ namespace bsm
 		FLOAT& end();
 		FLOAT& get(const int thread_id);
 		FLOAT& get_solution();
+		FLOAT get_sum() const;
 	};
 
 	// ============================================================================
@@ -47,5 +48,15 @@ namespace bsm
 	inline FLOAT& ParallelNumber<FLOAT>::get_solution()
 	{
 		return this->values[0];
+	}
+	template<typename FLOAT>
+	inline FLOAT ParallelNumber<FLOAT>::get_sum() const
+	{
+		const int n = (int)this->values.size() / this->padding;
+		FLOAT sum = 0.0;
+		for (int i = 0; i < n; i++) {
+			sum += this->values[i * this->padding];
+		}
+		return sum;
 	}
 }
