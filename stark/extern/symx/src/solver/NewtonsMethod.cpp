@@ -14,6 +14,11 @@ symx::NewtonsMethod::NewtonsMethod(spGlobalPotential global_potential, spContext
     this->compiled = std::make_shared<SecondOrderCompiledGlobal>(global_potential, context);
 }
 
+spNewtonsMethod symx::NewtonsMethod::create(spGlobalPotential global_potential, spContext context)
+{
+    return std::make_shared<NewtonsMethod>(global_potential, context);
+}
+
 // Force rebuild
 SolverReturn NewtonsMethod::solve()
 {
@@ -160,7 +165,15 @@ SolverReturn NewtonsMethod::solve()
         if (du_max > this->settings.step_cap) {
             this->du *= this->settings.step_cap / du_max;
             du_max = this->settings.step_cap;
-            this->_print(fmt::format("du capped to {:.1e} | ", du_max), Verbosity::StepIterations);
+            this->_print(fmt::format("du cap {:.1e} | ", du_max), Verbosity::StepIterations);
+        }
+
+        // Max allowed step (e.g. CCD)
+        double max_step = this->callbacks.run_max_allowed_step();
+        if (du_max > max_step) {
+            this->du *= max_step / du_max;
+            du_max = max_step;
+            this->_print(fmt::format("du cap {:.1e} | ", du_max), Verbosity::StepIterations);
         }
 
         // Line search

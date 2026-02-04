@@ -30,6 +30,7 @@ namespace symx
 		std::vector<std::function<bool()>> is_intermediate_state_valid;
 		std::vector<std::function<void()>> on_intermediate_state_invalid;
 		std::vector<std::function<bool()>> is_converged_state_valid;
+        std::vector<std::function<double()>> max_allowed_step;
         std::function<double(Eigen::VectorXd&)> residual = default_residual;
 
 		/* Methods */
@@ -57,6 +58,7 @@ namespace symx
 		void add_is_intermediate_state_valid(std::function<bool()> f) { this->is_intermediate_state_valid.push_back(f); }
 		void add_on_intermediate_state_invalid(std::function<void()> f) { this->on_intermediate_state_invalid.push_back(f); }
 		void add_is_converged_state_valid(std::function<bool()> f) { this->is_converged_state_valid.push_back(f); }
+        void set_max_allowed_step(std::function<double()> f) { this->max_allowed_step.push_back(f); }
 
 		// Run callbacks
 		void run_before_energy_evaluation() { this->_run(this->before_energy_evaluation); }
@@ -65,6 +67,14 @@ namespace symx
 		bool run_is_intermediate_state_valid() { return this->_run_bool(this->is_intermediate_state_valid); }
 		void run_on_intermediate_state_invalid() { this->_run(this->on_intermediate_state_invalid); }
 		bool run_is_converged_state_valid() { return this->_run_bool(this->is_converged_state_valid); }
+        double run_max_allowed_step()
+        {
+			double max_step = 1.0;
+			for (auto f : this->max_allowed_step) {
+				max_step = std::min(max_step, f());
+			}
+			return max_step;
+        }
 		
 		// Residual computation
 		double compute_residual(Eigen::VectorXd& r) { return this->residual(r); }

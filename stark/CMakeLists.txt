@@ -37,8 +37,6 @@ set(CORE_FILES
 	src/core/include_ui.h
 	src/core/Logger.cpp
 	src/core/Logger.h
-	src/core/NewtonsMethod.cpp
-	src/core/NewtonsMethod.h
 	src/core/Settings.cpp
 	src/core/Settings.h
 	src/core/EventDrivenScript.cpp

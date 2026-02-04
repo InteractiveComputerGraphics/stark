@@ -836,7 +836,7 @@ void stark::EnergyFrictionalContact::_energies_contact_deformables(core::Stark& 
 {
 	// Point - Triangle
 	//// Point - Point
-	stark.global_energy.add_energy(this->_get_contact_label("d_d", "pt_pp"), this->contacts_deformables.point_triangle.point_point,
+	stark.global_potential.add_energy(this->_get_contact_label("d_d", "pt_pp"), this->contacts_deformables.point_triangle.point_point,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Vector> p = this->_get_d_x1(energy, stark, { conn["p"] });
@@ -847,7 +847,7 @@ void stark::EnergyFrictionalContact::_energies_contact_deformables(core::Stark& 
 	);
 
 	//// Point - Edge
-	stark.global_energy.add_energy(this->_get_contact_label("d_d", "pt_pe"), this->contacts_deformables.point_triangle.point_edge,
+	stark.global_potential.add_energy(this->_get_contact_label("d_d", "pt_pe"), this->contacts_deformables.point_triangle.point_edge,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Vector> p = this->_get_d_x1(energy, stark, { conn["p"] });

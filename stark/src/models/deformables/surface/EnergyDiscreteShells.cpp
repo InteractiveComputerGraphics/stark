@@ -22,7 +22,7 @@ stark::EnergyDiscreteShells::EnergyDiscreteShells(stark::core::Stark& stark, spP
 		};
 
 
-	stark.global_energy.add_energy("EnergyDiscreteShells", this->conn_complete,
+	stark.global_potential.add_energy("EnergyDiscreteShells", this->conn_complete,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			// Unpack connectivity
@@ -62,7 +62,7 @@ stark::EnergyDiscreteShells::EnergyDiscreteShells(stark::core::Stark& stark, spP
 		}
 	);
 
-	stark.global_energy.add_energy("EnergyDiscreteShells_Elasticity_Only", this->conn_elasticity_only,
+	stark.global_potential.add_energy("EnergyDiscreteShells_Elasticity_Only", this->conn_elasticity_only,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			// Unpack connectivity

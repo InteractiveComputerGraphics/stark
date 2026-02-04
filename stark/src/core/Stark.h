@@ -5,7 +5,6 @@
 
 #include "Settings.h"
 #include "Callbacks.h"
-#include "NewtonsMethod.h"
 #include "Console.h"
 #include "Logger.h"
 #include "EventDrivenScript.h"
@@ -17,7 +16,7 @@ namespace stark::core
 	public:
 		/* Fields */
 		const Settings settings;
-		symx::GlobalEnergy global_energy;
+		symx::spGlobalPotential global_potential;
 		Callbacks callbacks;
 		Console console;
 		Logger logger;
@@ -38,7 +37,7 @@ namespace stark::core
 
 	private:
 		/* Fields */
-		NewtonsMethod newton;
+		symx::spNewtonsMethod newton;
 		bool is_init = false;
 		double next_frame_time = -std::numeric_limits<double>::epsilon();
 		double execution_time = 0.0;

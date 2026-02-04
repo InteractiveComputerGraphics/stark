@@ -25,7 +25,7 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 	this->angular_velocity = std::make_shared<RigidBodyConstraints::AngularVelocity>();
 
 	// Energy declarations
-	stark.global_energy.add_energy("rb_constraint_global_points", this->global_points->conn,
+	stark.global_potential.add_energy("rb_constraint_global_points", this->global_points->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto& data = this->global_points;
@@ -42,7 +42,7 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_global_directions", this->global_directions->conn,
+	stark.global_potential.add_energy("rb_constraint_global_directions", this->global_directions->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto& data = this->global_directions;
@@ -59,7 +59,7 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_points", this->points->conn,
+	stark.global_potential.add_energy("rb_constraint_points", this->points->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto& data = this->points;
@@ -77,7 +77,7 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_point_on_axis", this->point_on_axes->conn,
+	stark.global_potential.add_energy("rb_constraint_point_on_axis", this->point_on_axes->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto& data = this->point_on_axes;
@@ -96,7 +96,7 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_distances", this->distances->conn,
+	stark.global_potential.add_energy("rb_constraint_distances", this->distances->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto& data = this->distances;
@@ -115,7 +115,7 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_distance_limits", this->distance_limits->conn,
+	stark.global_potential.add_energy("rb_constraint_distance_limits", this->distance_limits->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto& data = this->distance_limits;
@@ -135,7 +135,7 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_directions", this->directions->conn,
+	stark.global_potential.add_energy("rb_constraint_directions", this->directions->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto& data = this->directions;
@@ -153,7 +153,7 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_angle_limits", this->angle_limits->conn,
+	stark.global_potential.add_energy("rb_constraint_angle_limits", this->angle_limits->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto& data = this->angle_limits;
@@ -172,7 +172,7 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_damped_spring", this->damped_springs->conn,
+	stark.global_potential.add_energy("rb_constraint_damped_spring", this->damped_springs->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto& data = this->damped_springs;
@@ -193,7 +193,7 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_linear_velocity", this->linear_velocity->conn,
+	stark.global_potential.add_energy("rb_constraint_linear_velocity", this->linear_velocity->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto& data = this->linear_velocity;
@@ -215,7 +215,7 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 		}
 	);
 
-	stark.global_energy.add_energy("rb_constraint_angular_velocity", this->angular_velocity->conn,
+	stark.global_potential.add_energy("rb_constraint_angular_velocity", this->angular_velocity->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto& data = this->angular_velocity;

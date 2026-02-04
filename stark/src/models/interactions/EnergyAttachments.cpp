@@ -13,7 +13,7 @@ stark::EnergyAttachments::EnergyAttachments(core::Stark& stark, const spPointDyn
 	stark.callbacks.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
 
 	// Declare the energies
-	stark.global_energy.add_energy("EnergyAttachments_d_d_p_p", this->conn_d_d_p_p,
+	stark.global_potential.add_energy("EnergyAttachments_d_d_p_p", this->conn_d_d_p_p,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto nodes = { conn["a"], conn["b"] };
@@ -33,7 +33,7 @@ stark::EnergyAttachments::EnergyAttachments(core::Stark& stark, const spPointDyn
 		}
 	);
 
-	stark.global_energy.add_energy("EnergyAttachments_d_d_p_e", this->conn_d_d_p_e,
+	stark.global_potential.add_energy("EnergyAttachments_d_d_p_e", this->conn_d_d_p_e,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto nodes = { conn["p"], conn["e0"], conn["e1"] };
@@ -58,7 +58,7 @@ stark::EnergyAttachments::EnergyAttachments(core::Stark& stark, const spPointDyn
 		}
 	);
 
-	stark.global_energy.add_energy("EnergyAttachments_d_d_p_t", this->conn_d_d_p_t,
+	stark.global_potential.add_energy("EnergyAttachments_d_d_p_t", this->conn_d_d_p_t,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto nodes = { conn["p"], conn["t0"], conn["t1"], conn["t2"] };
@@ -83,7 +83,7 @@ stark::EnergyAttachments::EnergyAttachments(core::Stark& stark, const spPointDyn
 		}
 	);
 
-	stark.global_energy.add_energy("EnergyAttachments_d_d_e_e", this->conn_d_d_e_e,
+	stark.global_potential.add_energy("EnergyAttachments_d_d_e_e", this->conn_d_d_e_e,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			auto nodes = { conn["ea0"], conn["ea1"], conn["eb0"], conn["eb1"] };
@@ -109,7 +109,7 @@ stark::EnergyAttachments::EnergyAttachments(core::Stark& stark, const spPointDyn
 		}
 	);
 
-	stark.global_energy.add_energy("EnergyAttachments_rb_d", this->conn_rb_d,
+	stark.global_potential.add_energy("EnergyAttachments_rb_d", this->conn_rb_d,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			// Create symbols

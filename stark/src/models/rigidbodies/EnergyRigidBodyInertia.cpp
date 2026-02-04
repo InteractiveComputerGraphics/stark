@@ -8,7 +8,7 @@ stark::EnergyRigidBodyInertia::EnergyRigidBodyInertia(core::Stark& stark, spRigi
 	stark.callbacks.add_before_time_step([&]() { this->_before_time_step(stark); });
 
 	// Linear inertia
-	stark.global_energy.add_energy("EnergyRigidBodyInertia_Linear", this->conn,
+	stark.global_potential.add_energy("EnergyRigidBodyInertia_Linear", this->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			symx::Vector v1 = energy.make_dof_vector(this->rb->dof_v, this->rb->v1, conn["rb"]);
@@ -29,7 +29,7 @@ stark::EnergyRigidBodyInertia::EnergyRigidBodyInertia(core::Stark& stark, spRigi
 	);
 
 	// Angular inertia
-	stark.global_energy.add_energy("EnergyRigidBodyInertia_Angular", this->conn,
+	stark.global_potential.add_energy("EnergyRigidBodyInertia_Angular", this->conn,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			symx::Vector w1 = energy.make_dof_vector(this->rb->dof_w, this->rb->w1, conn["rb"]);

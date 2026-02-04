@@ -90,6 +90,11 @@ int32_t symx::GlobalPotential::get_n_dof_sets() const
     return (int32_t)this->dof_maps.size();
 }
 
+int32_t symx::GlobalPotential::get_n_dofs(int32_t set_i) const
+{
+    return (int32_t)this->dof_maps[set_i].size();
+}
+
 int32_t symx::GlobalPotential::get_total_n_dofs() const
 {
     int32_t total_n_dofs = 0;

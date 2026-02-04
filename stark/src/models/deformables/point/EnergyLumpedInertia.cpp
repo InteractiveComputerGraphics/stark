@@ -6,7 +6,7 @@ stark::EnergyLumpedInertia::EnergyLumpedInertia(stark::core::Stark& stark, const
 	: dyn(dyn)
 {
 	// Energy definition
-	stark.global_energy.add_energy("EnergyLumpedInertia", this->conn,
+	stark.global_potential.add_energy("EnergyLumpedInertia", this->conn,
 		[&](symx::Energy& energy, symx::Element& node)
 		{
 			PointDynamics& dyn = *(this->dyn);

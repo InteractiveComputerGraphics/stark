@@ -42,6 +42,7 @@ namespace symx
 
         /* Methods */
         NewtonsMethod(spGlobalPotential global_potential, spContext context);
+		static spNewtonsMethod create(spGlobalPotential global_potential, spContext context);
         SolverReturn solve();
         const Log& get_log() const { return this->log; }
 
@@ -56,4 +57,5 @@ namespace symx
 		void _print_return(SolverReturn result, int newton_iterations, int line_search_iterations) const;
 		void _print(const std::string& msg, Verbosity verbosity) const;
 	};
+	using spNewtonsMethod = std::shared_ptr<NewtonsMethod>;
 }

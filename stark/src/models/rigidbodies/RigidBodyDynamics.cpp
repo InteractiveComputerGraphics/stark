@@ -6,8 +6,8 @@
 
 stark::RigidBodyDynamics::RigidBodyDynamics(stark::core::Stark& stark)
 {
-	this->dof_v = stark.global_energy.add_dof_array(this->v1, "rb_v1");
-	this->dof_w = stark.global_energy.add_dof_array(this->w1, "rb_w1");
+	this->dof_v = stark.global_potential.add_dof_array(this->v1, "rb_v1");
+	this->dof_w = stark.global_potential.add_dof_array(this->w1, "rb_w1");
 
 	stark.callbacks.add_before_time_step([&]() { this->_before_time_step(stark); });
 	stark.callbacks.add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });

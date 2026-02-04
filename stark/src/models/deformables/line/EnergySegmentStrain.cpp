@@ -6,7 +6,7 @@
 stark::EnergySegmentStrain::EnergySegmentStrain(stark::core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
 {
-	stark.global_energy.add_energy("EnergySegmentStrain", this->conn_complete,
+	stark.global_potential.add_energy("EnergySegmentStrain", this->conn_complete,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Index> edge = { conn["i"], conn["j"] };
@@ -52,7 +52,7 @@ stark::EnergySegmentStrain::EnergySegmentStrain(stark::core::Stark& stark, spPoi
 			energy.set(E);
 		}
 	);
-	stark.global_energy.add_energy("EnergySegmentStrain_Elasticity_Only", this->conn_elasticity_only,
+	stark.global_potential.add_energy("EnergySegmentStrain_Elasticity_Only", this->conn_elasticity_only,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			std::vector<symx::Index> edge = { conn["i"], conn["j"] };

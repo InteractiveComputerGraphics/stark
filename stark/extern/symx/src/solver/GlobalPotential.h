@@ -54,6 +54,7 @@ namespace symx
         // DoF operations
         const std::vector<int32_t>& get_dofs_offsets();
         int32_t get_n_dof_sets() const;
+        int32_t get_n_dofs(int32_t set_i) const;
         int32_t get_total_n_dofs() const;
 		void get_dofs(double* u) const;
 		void apply_dof_increment(const double* du);

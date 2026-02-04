@@ -11,7 +11,7 @@ stark::EnergyPrescribedPositions::EnergyPrescribedPositions(core::Stark& stark, 
 	stark.callbacks.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
 
 	// Declare the energy
-	stark.global_energy.add_energy("EnergyPrescribedPositions", this->conn,
+	stark.global_potential.add_energy("EnergyPrescribedPositions", this->conn,
 		[&](symx::Energy& energy, symx::Element& node)
 		{
 			// Create symbols

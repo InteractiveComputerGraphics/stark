@@ -543,21 +543,21 @@ int main()
 		these are just simple examples that don't require external assets to get you started.
 	*/
 
-	// Simple rigid body scenes
-	rb_constraints_all();
-
-	// Simple simulations: No collisions, only presets
-	hanging_net();
+// // Simple rigid body scenes
+//	rb_constraints_all();
+//
+//	// Simple simulations: No collisions, only presets
+//	hanging_net();
 	hanging_cloth();
-	hanging_deformable_box();
-	attachments();
-
-	// Composite materials
-	hanging_box_with_composite_material();
-
-	// Simulations with collisions
-	deformable_and_rigid_collisions();
-	simple_grasp(); 
-	twisting_cloth();
-	magnetic_deformables();
+//	hanging_deformable_box();
+//	attachments();
+//
+//	// Composite materials
+//	hanging_box_with_composite_material();
+//
+//	// Simulations with collisions
+//	deformable_and_rigid_collisions();
+//	simple_grasp(); 
+//	twisting_cloth();
+//	magnetic_deformables();
 }

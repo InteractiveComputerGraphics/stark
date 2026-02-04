@@ -17,6 +17,9 @@ Stark::Stark(const Settings& settings)
 	this->dt = this->settings.simulation.max_time_step_size;
 	this->gravity = this->settings.simulation.gravity;
 
+	// Create global potential
+	this->global_potential = symx::GlobalPotential::create();
+
 	// Check mandatory arguments
 	if (settings.output.codegen_directory == "") {
 		std::cout << "Stark::setup() error: Settings.output.codegen_directory must be set" << std::endl;
@@ -49,13 +52,9 @@ Stark::Stark(const Settings& settings)
 	const std::string ending = "_" + settings.output.simulation_name + "__" + settings.output.time_stamp + ".txt";
 	this->console.initialize(settings.output.output_directory + "/console" + ending, settings.output.console_verbosity, settings.output.console_output_to);
 	this->logger.set_path(settings.output.output_directory + "/logger" + ending);
-	this->newton.line_search_debug_logger.set_path(settings.output.output_directory + "/line_search" + ending);
 
 	// Print settings
 	this->console.print(this->settings.as_string(), ConsoleVerbosity::TimeSteps);
-
-	// SymX
-	this->global_energy.set_cse_mode(symx::CSE::Safe);
 }
 bool Stark::run(double duration, std::function<void()> callback)
 {
@@ -126,10 +125,10 @@ bool Stark::run_one_step()
 
 	// Use Newton's Method to solve the time step update
 	const double t0 = omp_get_wtime();
-	NewtonState newton = this->newton.solve(this->dt, this->global_energy, this->callbacks, this->settings, this->console, this->logger);
+	symx::SolverReturn newton = this->newton->solve();
 
 	// Time step ended with success
-	if (newton == NewtonState::Successful) {
+	if (newton == symx::SolverReturn::Successful) {
 
 		// After successful time step
 		this->callbacks.run_on_time_step_accepted(); // Sets solution. x0 = x1. Exits minimization.
@@ -164,7 +163,7 @@ bool Stark::run_one_step()
 		this->logger.add("failed_steps", runtime);
 
 		// The failure was due to loose stiffnesses
-		if (newton == NewtonState::InvalidConvergedState || newton == NewtonState::InvalidIntermediateConfiguration) {
+		if (newton == symx::SolverReturn::InvalidConvergedState || newton == symx::SolverReturn::InvalidIntermediateConfiguration) {
 			// Tighter stiffess should be already when measured during Newton's solve.
 			// Do nothing, just run the time step again.
 		}
@@ -196,69 +195,61 @@ std::string Stark::get_frame_path(std::string name) const
 }
 void stark::core::Stark::print()
 {
-	// Info
-	this->console.print("\nInfo\n", ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t # time_steps: {:d}\n", this->logger.get_int("time_steps")), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t # newton/time_steps: {:.1f}\n", (double)this->logger.get_int("newton_iterations") / (double)this->logger.get_int("time_steps")), ConsoleVerbosity::Frames);
-	if (this->settings.newton.linear_system_solver == LinearSystemSolver::CG) {
-		this->console.print(fmt::format("\t # CG_iterations/newton: {:.1f}\n", (double)this->logger.get_int("CG_iterations") / (double)this->logger.get_int("newton_iterations")), ConsoleVerbosity::Frames);
-	}
-	this->console.print(fmt::format("\t # line_search/newton: {:.1f}\n", (double)this->logger.get_int("line_search_iterations") / (double)this->logger.get_int("newton_iterations")), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t avg dt: {:.6f} ms\n", 1000.0 * this->logger.get_double("avg dt")), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t cr: {:.1f}\n", this->logger.get_double("cr")), ConsoleVerbosity::Frames);
+	std::cout << "TODO: Final Stark::print() implementation" << std::endl;
 
-	// Runtime
-	this->console.print("Runtime\n", ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t total: {:.3f} s\n", this->logger.get_double("total")), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t evaluate_E_grad_hess: {:.3f} s\n", this->logger.get_double("evaluate_E_grad_hess")), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t evaluate_E_grad: {:.3f} s\n", this->logger.get_double("evaluate_E_grad")), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t evaluate_E: {:.3f} s\n", this->logger.get_double("evaluate_E")), ConsoleVerbosity::Frames);
-	if (this->settings.newton.linear_system_solver == LinearSystemSolver::CG) {
-		this->console.print(fmt::format("\t CG: {:.3f} s\n", this->logger.get_double("CG")), ConsoleVerbosity::Frames);
-	}
-	else if (this->settings.newton.linear_system_solver == LinearSystemSolver::DirectLU) {
-		this->console.print(fmt::format("\t directLU: {:.3f} s\n", this->logger.get_double("directLU")), ConsoleVerbosity::Frames);
-	}
-	this->console.print(fmt::format("\t before_energy_evaluation: {:.3f} s\n", this->logger.get_double("before_energy_evaluation")), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t after_energy_evaluation: {:.3f} s\n", this->logger.get_double("after_energy_evaluation")), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t is_intermidiate_state_valid: {:.3f} s\n", this->logger.get_double("is_intermidiate_state_valid")), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t failed steps: {:.3f} s\n", this->logger.get_double("failed_steps")), ConsoleVerbosity::Frames);
-	this->console.print(fmt::format("\t write_frame: {:.3f} s\n", this->logger.get_double("write_frame")), ConsoleVerbosity::Frames);
+	// // Info
+	// this->console.print("\nInfo\n", ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t # time_steps: {:d}\n", this->logger.get_int("time_steps")), ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t # newton/time_steps: {:.1f}\n", (double)this->logger.get_int("newton_iterations") / (double)this->logger.get_int("time_steps")), ConsoleVerbosity::Frames);
+	// if (this->settings.newton.linear_system_solver == LinearSystemSolver::CG) {
+	// 	this->console.print(fmt::format("\t # CG_iterations/newton: {:.1f}\n", (double)this->logger.get_int("CG_iterations") / (double)this->logger.get_int("newton_iterations")), ConsoleVerbosity::Frames);
+	// }
+	// this->console.print(fmt::format("\t # line_search/newton: {:.1f}\n", (double)this->logger.get_int("line_search_iterations") / (double)this->logger.get_int("newton_iterations")), ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t avg dt: {:.6f} ms\n", 1000.0 * this->logger.get_double("avg dt")), ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t cr: {:.1f}\n", this->logger.get_double("cr")), ConsoleVerbosity::Frames);
+
+	// // Runtime
+	// this->console.print("Runtime\n", ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t total: {:.3f} s\n", this->logger.get_double("total")), ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t evaluate_E_grad_hess: {:.3f} s\n", this->logger.get_double("evaluate_E_grad_hess")), ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t evaluate_E_grad: {:.3f} s\n", this->logger.get_double("evaluate_E_grad")), ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t evaluate_E: {:.3f} s\n", this->logger.get_double("evaluate_E")), ConsoleVerbosity::Frames);
+	// if (this->settings.newton.linear_system_solver == LinearSystemSolver::CG) {
+	// 	this->console.print(fmt::format("\t CG: {:.3f} s\n", this->logger.get_double("CG")), ConsoleVerbosity::Frames);
+	// }
+	// else if (this->settings.newton.linear_system_solver == LinearSystemSolver::DirectLU) {
+	// 	this->console.print(fmt::format("\t directLU: {:.3f} s\n", this->logger.get_double("directLU")), ConsoleVerbosity::Frames);
+	// }
+	// this->console.print(fmt::format("\t before_energy_evaluation: {:.3f} s\n", this->logger.get_double("before_energy_evaluation")), ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t after_energy_evaluation: {:.3f} s\n", this->logger.get_double("after_energy_evaluation")), ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t is_intermidiate_state_valid: {:.3f} s\n", this->logger.get_double("is_intermidiate_state_valid")), ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t failed steps: {:.3f} s\n", this->logger.get_double("failed_steps")), ConsoleVerbosity::Frames);
+	// this->console.print(fmt::format("\t write_frame: {:.3f} s\n", this->logger.get_double("write_frame")), ConsoleVerbosity::Frames);
 }
 
 void Stark::_initialize()
 {
 	this->is_init = true;
 
-	if (this->global_energy.get_total_n_dofs() == 0) {
+	if (this->global_potential->get_total_n_dofs() == 0) {
 		this->console.print("Stark::_initialize() error: No degrees of freedom. Exiting simulation.", ConsoleVerbosity::Frames);
 		exit(-1);
 	}
 
-	// SymX
-	//// Compile
-	symx::GlobalEnergy::CompilationOptions options;
-	options.n_threads = this->settings.execution.n_threads;
-	options.force_compilation = this->settings.debug.symx_force_compilation;
-	options.force_load = this->settings.debug.symx_force_load;
-	options.suppress_compiler_output = this->settings.debug.symx_suppress_compiler_output;
-	options.msg_callback = [&](const std::string& msg) { this->console.print(msg, ConsoleVerbosity::Frames); };
-	this->global_energy.compile(this->settings.output.codegen_directory, options);
-	if (this->settings.debug.symx_force_load) {
-		this->console.print("\t-|-|-|-|- WARNING: Forced load enabled. Loaded expressions might be outdated. -|-|-|-|-", ConsoleVerbosity::Frames);
-	}
+    // Newton Solver
+    symx::spContext context = symx::Context::create();
+    context->compilation_directory = this->settings.output.codegen_directory;
+	context->n_threads = this->settings.execution.n_threads;
+	context->print = [&](const std::string& msg) { this->console.print(msg, ConsoleVerbosity::Frames); };
+    this->newton = symx::NewtonsMethod::create(this->global_potential, context);  // Compilation occurs here
+	this->newton->settings = this->settings.newton;
 
-	//// Parameters
-	if (this->settings.newton.project_to_PD) {
-		this->global_energy.set_project_to_PD(true, this->settings.newton.projection_eps);
-	}
-	this->global_energy.set_check_for_NaNs(this->settings.debug.symx_check_for_NaNs);
-
-	//// Print ndofs
+	// Print ndofs
 	this->console.print("\nDegrees of freedom:", ConsoleVerbosity::Frames);
-	for (int i = 0; i < (int)this->global_energy.dof_labels.size(); i++) {
-		this->console.print(fmt::format("\n\t {} {:d}", this->global_energy.dof_labels[i], this->global_energy.dof_ndofs[i]()), ConsoleVerbosity::Frames);
+	for (int set_i = 0; set_i < this->global_potential->get_n_dof_sets(); set_i++) {
+		this->console.print(fmt::format("\n\t Set {}: {:d}", set_i, this->global_potential->get_n_dofs(set_i)), ConsoleVerbosity::Frames);
 	}
+	this->console.print(fmt::format("\n\t Total: {:d}", this->global_potential->get_total_n_dofs()), ConsoleVerbosity::Frames);
 	this->console.print("\n\n", ConsoleVerbosity::Frames);
 
 	// Write frame zero
@@ -268,7 +259,7 @@ void Stark::_initialize()
 	this->callbacks.run_before_simulation();
 
 	// Check that the initial state is valid
-	if (!this->callbacks.run_is_initial_state_valid()) {
+	if (!this->callbacks.newton.run_is_initial_state_valid()) {
 		this->console.print("Initial state is not valid. Exiting simulation.", ConsoleVerbosity::Frames);
 		exit(-1);
 	}

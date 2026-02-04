@@ -9,7 +9,7 @@ stark::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& stark, spP
 	: dyn(dyn)
 {
 	// Energies
-	stark.global_energy.add_energy("EnergyTriangleStrain", this->conn_complete,
+	stark.global_potential.add_energy("EnergyTriangleStrain", this->conn_complete,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			// Unpack connectivity
@@ -79,7 +79,7 @@ stark::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& stark, spP
 		}
 	);
 
-	stark.global_energy.add_energy("EnergyTriangleStrain_Elasticity_Only", this->conn_elasticity_only,
+	stark.global_potential.add_energy("EnergyTriangleStrain_Elasticity_Only", this->conn_elasticity_only,
 		[&](symx::Energy& energy, symx::Element& conn)
 		{
 			// Unpack connectivity
