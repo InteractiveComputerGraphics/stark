@@ -1,5 +1,7 @@
 # symx port TODO
 
+* energy.disable_check_for_duplicate_dofs();
+
 * symx has a cmake option to set compilation path.
     How do we handle it being in stark.settings?
 
