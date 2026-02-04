@@ -1,0 +1,70 @@
+# shuttle job configuration
+# Reference example demonstrating all features
+#   python /local-ssd/libs/shuttle/shuttle /local-ssd/libs/stark/stark.yaml run
+#   python /local-hdd/libs/shuttle/shuttle /local-hdd/libs/stark/stark.yaml run
+
+
+job:
+  name: "stark"
+  id: 0  # 0 = auto-generate from unix timestamp, or set a fixed ID.
+  description: "."
+
+vars:
+  # User-defined variables for easy customization
+  lib: "stark"
+  scene: "stark"
+
+  local_mnt: "/local-hdd"
+  remote_mnt: "/local-ssd"
+
+  local_lib_folder: "${vars.local_mnt}/libs/${vars.lib}"
+  local_out: "${vars.local_lib_folder}"
+
+remote:
+  name: "hook"
+  host: "${remote.name}.animation.rwth-aachen.de"  # "localhost"
+  user: "jfernandez"
+  workspace: "${vars.remote_mnt}/jfernandez/shuttle/${vars.lib}" # root remote wd. Use job.id for unique wd per job
+  workspace_policy: "reuse"  # "reuse" keeps existing files, "clean" deletes first
+  cleanup: false # Deletes the remote workspace at the end of the job
+
+stage:
+  # Local → Remote transfers (many entries allowed)
+  # src: local path (must exist)
+  # dst: remote path (relative to workspace, or absolute)
+  
+  - name: "src"
+    src: "${vars.local_lib_folder}"
+    dst: "."
+    include: []  # Empty = sync all files (default). Non-empty = whitelist mode.
+    exclude:
+      - ".git"
+      - "build"
+      - "output"
+      - "docs"
+
+collect:
+  # Remote → Local transfer (single target)
+  # src: remote path (relative to workspace, or absolute)
+  # dst: local path
+  
+  # name: "frames_back"
+  src: "build/output/"
+  dst: "${vars.local_out}/build/output/shuttle"
+  include: []  # Empty = sync all files (default). Non-empty = whitelist mode.
+  exclude: []
+  enabled: true # false to leave the results online
+  only_after_staging_files: true # False to sync back everything
+  stream:
+    enabled: true # keeps a runner rsyncing regularly
+    interval_sec: 10
+
+run:
+  # Bash script executed on remote (inside workspace or run.cwd)
+  bash: |
+    mkdir -p build
+    cd build
+    cmake .. -DCMAKE_BUILD_TYPE=Release
+    make -j
+    examples/./examples
+
