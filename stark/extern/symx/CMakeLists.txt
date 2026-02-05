@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 
+# Default to Release build if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
+endif()
+
 set(SYMX_ENABLE_AVX2 ON CACHE BOOL "Flag to enable AVX2 for symx")
 set(BSM_ENABLE_AVX2 ON CACHE BOOL "Flag to enable AVX2 for BlockedSparseMatrix")
 set(SYMX_COMPILER_PATH "AUTO" CACHE STRING "Path to the compiler to use for runtime compilation. Set to AUTO to auto-detect.")

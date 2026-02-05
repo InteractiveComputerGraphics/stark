@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 
+# Default to Release build if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
+endif()
+
 set(TMCD_ENABLE_AVX ON CACHE BOOL "Flag to enable AVX for TriangleMeshCollisionDetection")
 
 # Enable SIMD and suppress compiler warnings
