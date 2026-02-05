@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15...3.27)
 project(stark)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Suppress warnings about ignored attributes when using SIMD types as template arguments
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
