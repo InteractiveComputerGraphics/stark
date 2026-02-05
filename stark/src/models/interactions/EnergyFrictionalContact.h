@@ -168,12 +168,12 @@ namespace stark
 		symx::Scalar _friction_potential(const symx::Vector& v, const symx::Scalar& fn, const symx::Scalar& mu, const symx::Matrix& T, const symx::Scalar& epsv, const symx::Scalar& dt);
 
 		// SymX setters
-		symx::Scalar _set_barrier_potential(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Scalar& d, const symx::Index& group_a, const symx::Index& group_b);
-		symx::Scalar _set_edge_edge_mollified_barrier_potential(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Scalar& d, const std::vector<symx::Vector>& ea, const std::vector<symx::Vector>& eb, const std::vector<symx::Vector>& ea_rest, const std::vector<symx::Vector>& eb_rest, const symx::Index& group_a, const symx::Index& group_b);
-		symx::Scalar _set_friction_potential(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Vector& v, const symx::Index& contact_idx, const FrictionContact& contact);
-		symx::Scalar _set_friction_point_edge(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Vector& vp, const std::vector<symx::Vector>& ve, const symx::Index& contact_idx, FrictionPointEdge& data);
-		symx::Scalar _set_friction_point_triangle(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Vector& vp, const std::vector<symx::Vector>& vt, const symx::Index& contact_idx, FrictionPointTriangle& data);
-		symx::Scalar _set_friction_edge_edge(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const std::vector<symx::Vector>& vea, const std::vector<symx::Vector>& veb, const symx::Index& contact_idx, FrictionEdgeEdge& data);
+		symx::Scalar _barrier_potential(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Scalar& d, const symx::Index& group_a, const symx::Index& group_b);
+		symx::Scalar _edge_edge_mollified_barrier_potential(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Scalar& d, const std::vector<symx::Vector>& ea, const std::vector<symx::Vector>& eb, const std::vector<symx::Vector>& ea_rest, const std::vector<symx::Vector>& eb_rest, const symx::Index& group_a, const symx::Index& group_b);
+		symx::Scalar _friction_potential(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Vector& v, const symx::Index& contact_idx, const FrictionContact& contact);
+		symx::Scalar _friction_point_edge(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Vector& vp, const std::vector<symx::Vector>& ve, const symx::Index& contact_idx, FrictionPointEdge& data);
+		symx::Scalar _friction_point_triangle(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const symx::Vector& vp, const std::vector<symx::Vector>& vt, const symx::Index& contact_idx, FrictionPointTriangle& data);
+		symx::Scalar _friction_edge_edge(symx::MappedWorkspace<double>& mws, const core::Stark& stark, const std::vector<symx::Vector>& vea, const std::vector<symx::Vector>& veb, const symx::Index& contact_idx, FrictionEdgeEdge& data);
 
 		// SymX data-symbol getters
 		//// Rigid bodies

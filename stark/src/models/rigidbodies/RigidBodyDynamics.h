@@ -32,8 +32,6 @@ namespace stark
 		std::vector<Eigen::Vector3d> aa;  // [rad/s^2] Angular acceleration
 		std::vector<Eigen::Vector3d> force;  // [N] Force
 		std::vector<Eigen::Vector3d> torque;  // [Nm] Torque
-		symx::DoF dof_v;
-		symx::DoF dof_w;
 		std::vector<std::string> labels;
 
 		/* Methods */

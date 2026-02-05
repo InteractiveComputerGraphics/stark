@@ -210,7 +210,7 @@ std::vector<Scalar> symx::value_gradient_hessian(const Scalar& expr, const std::
 {
 	Vector g = gradient(expr, wrt, diff_cache);
 	Matrix h = gradient(g, wrt, true, diff_cache);
-	return gather({{expr}, g.values(), h.values()});
+	return collect_scalars({{expr}, g.values(), h.values()});
 }
 std::vector<Scalar> symx::value_gradient(const Scalar& expr, const std::vector<Scalar>& wrt)
 {
@@ -220,5 +220,5 @@ std::vector<Scalar> symx::value_gradient(const Scalar& expr, const std::vector<S
 std::vector<Scalar> symx::value_gradient(const Scalar& expr, const std::vector<Scalar>& wrt, DiffCache& diff_cache)
 {
 	Vector g = gradient(expr, wrt, diff_cache);
-	return gather({{expr}, g.values()});
+	return collect_scalars({{expr}, g.values()});
 }

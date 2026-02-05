@@ -39,15 +39,14 @@ stark::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& stark, spP
 			// Kinematics
 			Scalar rest_area = 0.5 * ((Xs[0] - Xs[2]).cross3(Xs[1] - Xs[2])).norm();
 			Matrix DXinv = triangle_jacobian(Xs).inv();
-			Matrix Dx1_32 = Matrix(gather({ x1[1] - x1[0], x1[2] - x1[0] }), { 2, 3 }).transpose();
+			Matrix Dx1_32 = Matrix(collect_scalars({ x1[1] - x1[0], x1[2] - x1[0] }), { 2, 3 }).transpose();
 			Matrix F1_32 = Dx1_32 * DXinv;  // 3x2
 			Matrix C1 = F1_32.transpose() * F1_32;
-			Matrix E1 = 0.5 * (C1 - energy.make_identity_matrix(2));
+			Matrix E1 = 0.5 * (C1 - mws.make_identity_matrix(2));
 
-			Matrix Dx0_32 = Matrix(gather({ x0[1] - x0[0], x0[2] - x0[0] }), { 2, 3 }).transpose();
+			Matrix Dx0_32 = Matrix(collect_scalars({ x0[1] - x0[0], x0[2] - x0[0] }), { 2, 3 }).transpose();
 			Matrix F0_32 = Dx0_32 * DXinv;  // 3x2
-			Matrix E0 = 0.5 * (F0_32.transpose() * F0_32 - energy.make_identity_matrix(2));
-
+			Matrix E0 = 0.5 * (F0_32.transpose() * F0_32 - mws.make_identity_matrix(2));
 			Matrix dE_dt = (E1 - E0) / dt;
 
 			// Neo-Hookean strain energy
@@ -106,7 +105,7 @@ stark::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& stark, spP
 			// Kinematics
 			Scalar rest_area = 0.5 * ((Xs[0] - Xs[2]).cross3(Xs[1] - Xs[2])).norm();
 			Matrix DXinv = triangle_jacobian(Xs).inv();
-			Matrix Dx1_32 = Matrix(gather({ x1[1] - x1[0], x1[2] - x1[0] }), { 2, 3 }).transpose();
+			Matrix Dx1_32 = Matrix(collect_scalars({ x1[1] - x1[0], x1[2] - x1[0] }), { 2, 3 }).transpose();
 			Matrix F1_32 = Dx1_32 * DXinv;  // 3x2
 			Matrix C1 = F1_32.transpose() * F1_32;
 

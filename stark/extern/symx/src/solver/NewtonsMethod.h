@@ -42,7 +42,7 @@ namespace symx
 
         /* Methods */
         NewtonsMethod(spGlobalPotential global_potential, spContext context);
-		static spNewtonsMethod create(spGlobalPotential global_potential, spContext context);
+		static std::shared_ptr<NewtonsMethod> create(spGlobalPotential global_potential, spContext context);
         SolverReturn solve();
         const Log& get_log() const { return this->log; }
 

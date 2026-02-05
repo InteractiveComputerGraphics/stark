@@ -38,12 +38,12 @@ stark::EnergyTetStrain::EnergyTetStrain(stark::core::Stark& stark, spPointDynami
 	// 		Matrix DXinv = DX.inv();
 	// 		Matrix Dx1 = tet_jacobian(x1);
 	// 		Matrix F1 = Dx1 * DXinv;
-	// 		Matrix E1 = 0.5*(F1.transpose() * F1 - energy.make_identity_matrix(3));
+	// 		Matrix E1 = 0.5*(F1.transpose() * F1 - mws.make_identity_matrix(3));
 	// 		Scalar tet_rest_volume = DX.det()/6.0;
 
-	// 		Matrix Dx0 = Matrix(gather({ x0[1] - x0[0], x0[2] - x0[0], x0[3] - x0[0] }), { 3, 3 }).transpose();
+	// 		Matrix Dx0 = Matrix(collect_scalars({ x0[1] - x0[0], x0[2] - x0[0], x0[3] - x0[0] }), { 3, 3 }).transpose();
 	// 		Matrix F0 = Dx0 * DXinv;
-	// 		Matrix E0 = 0.5*(F0.transpose() * F0 - energy.make_identity_matrix(3));
+	// 		Matrix E0 = 0.5*(F0.transpose() * F0 - mws.make_identity_matrix(3));
 
 	// 		Matrix dE_dt = (E1 - E0) / dt;
 
@@ -96,9 +96,9 @@ stark::EnergyTetStrain::EnergyTetStrain(stark::core::Stark& stark, spPointDynami
 			std::vector<Vector> Xs = { scale * X[0], scale * X[1], scale * X[2], scale * X[3] };
 
 			// Kinematics
-			Matrix DX = Matrix(symx::gather({ Xs[1] - Xs[0], Xs[2] - Xs[0] , Xs[3] - Xs[0] }), { 3, 3 }).transpose();
+			Matrix DX = Matrix(collect_scalars({ Xs[1] - Xs[0], Xs[2] - Xs[0] , Xs[3] - Xs[0] }), { 3, 3 }).transpose();
 			Matrix DXinv = DX.inv();
-			Matrix Dx1 = Matrix(symx::gather({ x1[1] - x1[0], x1[2] - x1[0], x1[3] - x1[0] }), { 3, 3 }).transpose();
+			Matrix Dx1 = Matrix(collect_scalars({ x1[1] - x1[0], x1[2] - x1[0], x1[3] - x1[0] }), { 3, 3 }).transpose();
 			Matrix F1 = Dx1 * DXinv;
 			Scalar tet_rest_volume = DX.det() / 6.0; // Specific for linear tet elements
 

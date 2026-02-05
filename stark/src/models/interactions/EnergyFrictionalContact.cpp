@@ -821,7 +821,7 @@ void EnergyFrictionalContact::_energies_contact_deformables(core::Stark& stark)
 			std::vector<Vector> p = this->_get_d_x1(mws, stark, { conn["p"] });
 			std::vector<Vector> q = this->_get_d_x1(mws, stark, { conn["q"] });
 			Scalar d = distance_point_point(p[0], q[0]);
-			return this->_set_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
+			return this->_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -832,7 +832,7 @@ void EnergyFrictionalContact::_energies_contact_deformables(core::Stark& stark)
 			std::vector<Vector> p = this->_get_d_x1(mws, stark, { conn["p"] });
 			std::vector<Vector> e = this->_get_d_x1(mws, stark, { conn["e0"], conn["e1"] });
 			Scalar d = distance_point_line(p[0], e[0], e[1]);
-			return this->_set_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
+			return this->_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -843,7 +843,7 @@ void EnergyFrictionalContact::_energies_contact_deformables(core::Stark& stark)
 			std::vector<Vector> p = this->_get_d_x1(mws, stark, { conn["p"] });
 			std::vector<Vector> t = this->_get_d_x1(mws, stark, { conn["t0"], conn["t1"], conn["t2"] });
 			Scalar d = distance_point_plane(p[0], t[0], t[1], t[2]);
-			return this->_set_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
+			return this->_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -856,7 +856,7 @@ void EnergyFrictionalContact::_energies_contact_deformables(core::Stark& stark)
 			auto [ea, ea_rest, p] = this->_get_d_edge_point(mws, stark, { conn["ea0"], conn["ea1"], conn["p"] });
 			auto [eb, eb_rest, q] = this->_get_d_edge_point(mws, stark, { conn["eb0"], conn["eb1"], conn["q"] });
 			Scalar d = distance_point_point(p[0], q[0]);
-			return this->_set_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -867,7 +867,7 @@ void EnergyFrictionalContact::_energies_contact_deformables(core::Stark& stark)
 			auto [ea, ea_rest, p] = this->_get_d_edge_point(mws, stark, { conn["ea0"], conn["ea1"], conn["p"] });
 			auto [eb, eb_rest] = this->_get_d_edge(mws, stark, { conn["eb0"], conn["eb1"] });
 			Scalar d = distance_point_line(p[0], eb[0], eb[1]);
-			return this->_set_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -878,7 +878,7 @@ void EnergyFrictionalContact::_energies_contact_deformables(core::Stark& stark)
 			auto [ea, ea_rest] = this->_get_d_edge(mws, stark, { conn["ea0"], conn["ea1"] });
 			auto [eb, eb_rest] = this->_get_d_edge(mws, stark, { conn["eb0"], conn["eb1"] });
 			Scalar d = distance_line_line(ea[0], ea[1], eb[0], eb[1]);
-			return this->_set_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
 		}
 	);
 }
@@ -892,7 +892,7 @@ void EnergyFrictionalContact::_energies_contact_rb(core::Stark& stark)
 			std::vector<Vector> p = this->_get_rb_x1(mws, stark, conn["a"], { conn["p"] });
 			std::vector<Vector> q = this->_get_rb_x1(mws, stark, conn["b"], { conn["q"] });
 			Scalar d = distance_point_point(p[0], q[0]);
-			return this->_set_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
+			return this->_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -903,7 +903,7 @@ void EnergyFrictionalContact::_energies_contact_rb(core::Stark& stark)
 			std::vector<Vector> p = this->_get_rb_x1(mws, stark, conn["a"], { conn["p"] });
 			std::vector<Vector> e = this->_get_rb_x1(mws, stark, conn["b"], { conn["e0"], conn["e1"] });
 			Scalar d = distance_point_line(p[0], e[0], e[1]);
-			return this->_set_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
+			return this->_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -914,7 +914,7 @@ void EnergyFrictionalContact::_energies_contact_rb(core::Stark& stark)
 			std::vector<Vector> p = this->_get_rb_x1(mws, stark, conn["a"], { conn["p"] });
 			std::vector<Vector> t = this->_get_rb_x1(mws, stark, conn["b"], { conn["t0"], conn["t1"], conn["t2"] });
 			Scalar d = distance_point_plane(p[0], t[0], t[1], t[2]);
-			return this->_set_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
+			return this->_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -923,11 +923,10 @@ void EnergyFrictionalContact::_energies_contact_rb(core::Stark& stark)
 	stark.global_potential->add_potential(this->_get_contact_label("rb_rb", "ee_pp"), this->contacts_rb.edge_edge.point_point,
 		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
-			energy.disable_check_for_duplicate_dofs();
 			auto [ea, ea_rest, p] = this->_get_rb_edge_point(mws, stark, conn["a"], { conn["ea0"], conn["ea1"], conn["p"] });
 			auto [eb, eb_rest, q] = this->_get_rb_edge_point(mws, stark, conn["b"], { conn["eb0"], conn["eb1"], conn["q"] });
 			Scalar d = distance_point_point(p[0], q[0]);
-			return this->_set_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -935,11 +934,10 @@ void EnergyFrictionalContact::_energies_contact_rb(core::Stark& stark)
 	stark.global_potential->add_potential(this->_get_contact_label("rb_rb", "ee_pe"), this->contacts_rb.edge_edge.point_edge,
 		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
-			energy.disable_check_for_duplicate_dofs();
 			auto [ea, ea_rest, p] = this->_get_rb_edge_point(mws, stark, conn["a"], { conn["ea0"], conn["ea1"], conn["p"] });
 			auto [eb, eb_rest] = this->_get_rb_edge(mws, stark, conn["b"], { conn["eb0"], conn["eb1"] });
 			Scalar d = distance_point_line(p[0], eb[0], eb[1]);
-			return this->_set_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -947,11 +945,10 @@ void EnergyFrictionalContact::_energies_contact_rb(core::Stark& stark)
 	stark.global_potential->add_potential(this->_get_contact_label("rb_rb", "ee_ee"), this->contacts_rb.edge_edge.edge_edge,
 		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
-			energy.disable_check_for_duplicate_dofs();
 			auto [ea, ea_rest] = this->_get_rb_edge(mws, stark, conn["a"], { conn["ea0"], conn["ea1"] });
 			auto [eb, eb_rest] = this->_get_rb_edge(mws, stark, conn["b"], { conn["eb0"], conn["eb1"] });
 			Scalar d = distance_line_line(ea[0], ea[1], eb[0], eb[1]);
-			return this->_set_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
 		}
 	);
 }
@@ -965,7 +962,7 @@ void EnergyFrictionalContact::_energies_contact_rb_deformables(core::Stark& star
 			std::vector<Vector> p = this->_get_rb_x1(mws, stark, conn["rb"], { conn["p"] });
 			std::vector<Vector> q = this->_get_d_x1(mws, stark, { conn["q"] });
 			Scalar d = distance_point_point(p[0], q[0]);
-			return this->_set_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
+			return this->_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -976,7 +973,7 @@ void EnergyFrictionalContact::_energies_contact_rb_deformables(core::Stark& star
 			std::vector<Vector> p = this->_get_rb_x1(mws, stark, conn["rb"], { conn["p"] });
 			std::vector<Vector> e = this->_get_d_x1(mws, stark, { conn["e0"], conn["e1"] });
 			Scalar d = distance_point_line(p[0], e[0], e[1]);
-			return this->_set_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
+			return this->_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -987,7 +984,7 @@ void EnergyFrictionalContact::_energies_contact_rb_deformables(core::Stark& star
 			std::vector<Vector> p = this->_get_rb_x1(mws, stark, conn["rb"], { conn["p"] });
 			std::vector<Vector> t = this->_get_d_x1(mws, stark, { conn["t0"], conn["t1"], conn["t2"] });
 			Scalar d = distance_point_plane(p[0], t[0], t[1], t[2]);
-			return this->_set_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
+			return this->_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -998,7 +995,7 @@ void EnergyFrictionalContact::_energies_contact_rb_deformables(core::Stark& star
 			std::vector<Vector> e = this->_get_rb_x1(mws, stark, conn["rb"], { conn["e0"], conn["e1"] });
 			std::vector<Vector> p = this->_get_d_x1(mws, stark, { conn["p"] });
 			Scalar d = distance_point_line(p[0], e[0], e[1]);
-			return this->_set_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
+			return this->_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -1009,7 +1006,7 @@ void EnergyFrictionalContact::_energies_contact_rb_deformables(core::Stark& star
 			std::vector<Vector> t = this->_get_rb_x1(mws, stark, conn["rb"], { conn["t0"], conn["t1"], conn["t2"] });
 			std::vector<Vector> p = this->_get_d_x1(mws, stark, { conn["p"] });
 			Scalar d = distance_point_plane(p[0], t[0], t[1], t[2]);
-			return this->_set_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
+			return this->_barrier_potential(mws, stark, d, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -1019,11 +1016,10 @@ void EnergyFrictionalContact::_energies_contact_rb_deformables(core::Stark& star
 	stark.global_potential->add_potential(this->_get_contact_label("rb_d", "ee_pp"), this->contacts_rb_deformables.edge_edge.rb_d_point_point,
 		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
-			energy.disable_check_for_duplicate_dofs();
 			auto [ea, ea_rest, p] = this->_get_rb_edge_point(mws, stark, conn["rb"], { conn["ea0"], conn["ea1"], conn["p"] });
 			auto [eb, eb_rest, q] = this->_get_d_edge_point(mws, stark, { conn["eb0"], conn["eb1"], conn["q"] });
 			Scalar d = distance_point_point(p[0], q[0]);
-			return this->_set_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -1031,11 +1027,10 @@ void EnergyFrictionalContact::_energies_contact_rb_deformables(core::Stark& star
 	stark.global_potential->add_potential(this->_get_contact_label("rb_d", "ee_pe"), this->contacts_rb_deformables.edge_edge.rb_d_point_edge,
 		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
-			energy.disable_check_for_duplicate_dofs();
 			auto [ea, ea_rest, p] = this->_get_rb_edge_point(mws, stark, conn["rb"], { conn["ea0"], conn["ea1"], conn["p"] });
 			auto [eb, eb_rest] = this->_get_d_edge(mws, stark, { conn["eb0"], conn["eb1"] });
 			Scalar d = distance_point_line(p[0], eb[0], eb[1]);
-			return this->_set_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -1046,7 +1041,7 @@ void EnergyFrictionalContact::_energies_contact_rb_deformables(core::Stark& star
 			auto [ea, ea_rest] = this->_get_rb_edge(mws, stark, conn["rb"], { conn["ea0"], conn["ea1"] });
 			auto [eb, eb_rest] = this->_get_d_edge(mws, stark, { conn["eb0"], conn["eb1"] });
 			Scalar d = distance_line_line(ea[0], ea[1], eb[0], eb[1]);
-			return this->_set_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
 		}
 	);
 
@@ -1057,7 +1052,7 @@ void EnergyFrictionalContact::_energies_contact_rb_deformables(core::Stark& star
 			auto [ea, ea_rest] = this->_get_rb_edge(mws, stark, conn["rb"], { conn["ea0"], conn["ea1"] });
 			auto [eb, eb_rest, q] = this->_get_d_edge_point(mws, stark, { conn["eb0"], conn["eb1"], conn["q"] });
 			Scalar d = distance_point_line(q[0], ea[0], ea[1]);
-			return this->_set_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
 		}
 	);
 }
@@ -1071,7 +1066,7 @@ void EnergyFrictionalContact::_energies_friction_deformables(core::Stark& stark)
 			std::vector<Vector> vp = this->_get_d_v1(mws, { conn["p"] });
 			std::vector<Vector> vq = this->_get_d_v1(mws, { conn["q"] });
 			Vector v = vq[0] - vp[0];
-			return this->_set_friction_potential(mws, stark, v, conn["idx"], this->friction_deformables.point_point.contact);
+			return this->_friction_potential(mws, stark, v, conn["idx"], this->friction_deformables.point_point.contact);
 		}
 	);
 
@@ -1081,7 +1076,7 @@ void EnergyFrictionalContact::_energies_friction_deformables(core::Stark& stark)
 		{
 			std::vector<Vector> vp = this->_get_d_v1(mws, { conn["p"] });
 			std::vector<Vector> ve = this->_get_d_v1(mws, { conn["e0"], conn["e1"] });
-			return this->_set_friction_point_edge(mws, stark, vp[0], ve, conn["idx"], this->friction_deformables.point_edge.data);
+			return this->_friction_point_edge(mws, stark, vp[0], ve, conn["idx"], this->friction_deformables.point_edge.data);
 		}
 	);
 
@@ -1091,7 +1086,7 @@ void EnergyFrictionalContact::_energies_friction_deformables(core::Stark& stark)
 		{
 			std::vector<Vector> vp = this->_get_d_v1(mws, { conn["p"] });
 			std::vector<Vector> vt = this->_get_d_v1(mws, { conn["t0"], conn["t1"], conn["t2"] });
-			return this->_set_friction_point_triangle(mws, stark, vp[0], vt, conn["idx"], this->friction_deformables.point_triangle.data);
+			return this->_friction_point_triangle(mws, stark, vp[0], vt, conn["idx"], this->friction_deformables.point_triangle.data);
 		}
 	);
 
@@ -1101,7 +1096,7 @@ void EnergyFrictionalContact::_energies_friction_deformables(core::Stark& stark)
 		{
 			std::vector<Vector> vea = this->_get_d_v1(mws, { conn["ea0"], conn["ea1"] });
 			std::vector<Vector> veb = this->_get_d_v1(mws, { conn["eb0"], conn["eb1"] });
-			return this->_set_friction_edge_edge(mws, stark, vea, veb, conn["idx"], this->friction_deformables.edge_edge.data);
+			return this->_friction_edge_edge(mws, stark, vea, veb, conn["idx"], this->friction_deformables.edge_edge.data);
 		}
 	);
 }
@@ -1114,7 +1109,7 @@ void EnergyFrictionalContact::_energies_friction_rb(core::Stark& stark)
 			std::vector<Vector> vp = this->_get_rb_v1(mws, stark, conn["a"], { conn["p"] });
 			std::vector<Vector> vq = this->_get_rb_v1(mws, stark, conn["b"], { conn["q"] });
 			Vector v = vq[0] - vp[0];
-			return this->_set_friction_potential(mws, stark, v, conn["idx"], this->friction_rb.point_point.contact);
+			return this->_friction_potential(mws, stark, v, conn["idx"], this->friction_rb.point_point.contact);
 		}
 	);
 
@@ -1124,7 +1119,7 @@ void EnergyFrictionalContact::_energies_friction_rb(core::Stark& stark)
 		{
 			std::vector<Vector> vp = this->_get_rb_v1(mws, stark, conn["a"], { conn["p"] });
 			std::vector<Vector> ve = this->_get_rb_v1(mws, stark, conn["b"], { conn["e0"], conn["e1"] });
-			return this->_set_friction_point_edge(mws, stark, vp[0], ve, conn["idx"], this->friction_rb.point_edge.data);
+			return this->_friction_point_edge(mws, stark, vp[0], ve, conn["idx"], this->friction_rb.point_edge.data);
 		}
 	);
 
@@ -1134,7 +1129,7 @@ void EnergyFrictionalContact::_energies_friction_rb(core::Stark& stark)
 		{
 			std::vector<Vector> vp = this->_get_rb_v1(mws, stark, conn["a"], { conn["p"] });
 			std::vector<Vector> vt = this->_get_rb_v1(mws, stark, conn["b"], { conn["t0"], conn["t1"], conn["t2"] });
-			return this->_set_friction_point_triangle(mws, stark, vp[0], vt, conn["idx"], this->friction_rb.point_triangle.data);
+			return this->_friction_point_triangle(mws, stark, vp[0], vt, conn["idx"], this->friction_rb.point_triangle.data);
 		}
 	);
 
@@ -1144,7 +1139,7 @@ void EnergyFrictionalContact::_energies_friction_rb(core::Stark& stark)
 		{
 			std::vector<Vector> vea = this->_get_rb_v1(mws, stark, conn["a"], { conn["ea0"], conn["ea1"] });
 			std::vector<Vector> veb = this->_get_rb_v1(mws, stark, conn["b"], { conn["eb0"], conn["eb1"] });
-			return this->_set_friction_edge_edge(mws, stark, vea, veb, conn["idx"], this->friction_rb.edge_edge.data);
+			return this->_friction_edge_edge(mws, stark, vea, veb, conn["idx"], this->friction_rb.edge_edge.data);
 		}
 	);
 }
@@ -1158,7 +1153,7 @@ void EnergyFrictionalContact::_energies_friction_rb_deformables(core::Stark& sta
 			std::vector<Vector> vq = this->_get_d_v1(mws, { conn["q"] });
 
 			Vector v = vq[0] - vp[0];
-			return this->_set_friction_potential(mws, stark, v, conn["idx"], this->friction_rb_deformables.point_point.contact);
+			return this->_friction_potential(mws, stark, v, conn["idx"], this->friction_rb_deformables.point_point.contact);
 		}
 	);
 	// Point - Edge
@@ -1167,7 +1162,7 @@ void EnergyFrictionalContact::_energies_friction_rb_deformables(core::Stark& sta
 		{
 			std::vector<Vector> vp = this->_get_rb_v1(mws, stark, conn["rb"], { conn["p"] });
 			std::vector<Vector> ve = this->_get_d_v1(mws, { conn["e0"], conn["e1"] });
-			return this->_set_friction_point_edge(mws, stark, vp[0], ve, conn["idx"], this->friction_rb_deformables.point_edge.data);
+			return this->_friction_point_edge(mws, stark, vp[0], ve, conn["idx"], this->friction_rb_deformables.point_edge.data);
 		}
 	);
 	// Point - Triangle
@@ -1176,7 +1171,7 @@ void EnergyFrictionalContact::_energies_friction_rb_deformables(core::Stark& sta
 		{
 			std::vector<Vector> vp = this->_get_rb_v1(mws, stark, conn["rb"], { conn["p"] });
 			std::vector<Vector> vt = this->_get_d_v1(mws, { conn["t0"], conn["t1"], conn["t2"] });
-			return this->_set_friction_point_triangle(mws, stark, vp[0], vt, conn["idx"], this->friction_rb_deformables.point_triangle.data);
+			return this->_friction_point_triangle(mws, stark, vp[0], vt, conn["idx"], this->friction_rb_deformables.point_triangle.data);
 		}
 	);
 	// Edge - Edge
@@ -1185,7 +1180,7 @@ void EnergyFrictionalContact::_energies_friction_rb_deformables(core::Stark& sta
 		{
 			std::vector<Vector> vea = this->_get_rb_v1(mws, stark, conn["rb"], { conn["ea0"], conn["ea1"] });
 			std::vector<Vector> veb = this->_get_d_v1(mws, { conn["eb0"], conn["eb1"] });
-			return this->_set_friction_edge_edge(mws, stark, vea, veb, conn["idx"], this->friction_rb_deformables.edge_edge.data);
+			return this->_friction_edge_edge(mws, stark, vea, veb, conn["idx"], this->friction_rb_deformables.edge_edge.data);
 		}
 	);
 	// D -> RB: Point - Edge
@@ -1194,7 +1189,7 @@ void EnergyFrictionalContact::_energies_friction_rb_deformables(core::Stark& sta
 		{
 			std::vector<Vector> ve = this->_get_rb_v1(mws, stark, conn["rb"], { conn["e0"], conn["e1"] });
 			std::vector<Vector> vp = this->_get_d_v1(mws, { conn["p"] });
-			return this->_set_friction_point_edge(mws, stark, vp[0], ve, conn["idx"], this->friction_rb_deformables.edge_point.data);
+			return this->_friction_point_edge(mws, stark, vp[0], ve, conn["idx"], this->friction_rb_deformables.edge_point.data);
 		}
 	);
 	// D -> RB: Point - Triangle
@@ -1203,7 +1198,7 @@ void EnergyFrictionalContact::_energies_friction_rb_deformables(core::Stark& sta
 		{
 			std::vector<Vector> vt = this->_get_rb_v1(mws, stark, conn["rb"], { conn["t0"], conn["t1"], conn["t2"] });
 			std::vector<Vector> vp = this->_get_d_v1(mws, { conn["p"] });
-			return this->_set_friction_point_triangle(mws, stark, vp[0], vt, conn["idx"], this->friction_rb_deformables.triangle_point.data);
+			return this->_friction_point_triangle(mws, stark, vp[0], vt, conn["idx"], this->friction_rb_deformables.triangle_point.data);
 		}
 	);
 }
@@ -1296,56 +1291,53 @@ double stark::EnergyFrictionalContact::_get_contact_distance(int group_a, int gr
 	double dhat_b = this->contact_thicknesses[group_b];
 	return dhat_a + dhat_b;
 }
-Scalar EnergyFrictionalContact::_set_barrier_potential(MappedWorkspace<double>& mws, const core::Stark& stark, const Scalar& d, const Index& group_a, const Index& group_b)
+Scalar EnergyFrictionalContact::_barrier_potential(MappedWorkspace<double>& mws, const core::Stark& stark, const Scalar& d, const Index& group_a, const Index& group_b)
 {
 	Scalar dhat = this->_get_contact_distance(mws, group_a, group_b);
 	Scalar k = mws.make_scalar(this->contact_stiffness);
-	Scalar E = this->_barrier_potential(d, dhat, k);
-	return E;
+	return this->_barrier_potential(d, dhat, k);
 }
-Scalar EnergyFrictionalContact::_set_edge_edge_mollified_barrier_potential(MappedWorkspace<double>& mws, const core::Stark& stark, const Scalar& d, const std::vector<Vector>& ea, const std::vector<Vector>& eb, const std::vector<Vector>& ea_rest, const std::vector<Vector>& eb_rest, const Index& group_a, const Index& group_b)
+Scalar EnergyFrictionalContact::_edge_edge_mollified_barrier_potential(MappedWorkspace<double>& mws, const core::Stark& stark, const Scalar& d, const std::vector<Vector>& ea, const std::vector<Vector>& eb, const std::vector<Vector>& ea_rest, const std::vector<Vector>& eb_rest, const Index& group_a, const Index& group_b)
 {
 	Scalar k = mws.make_scalar(this->contact_stiffness);
 	Scalar dhat = this->_get_contact_distance(mws, group_a, group_b);
-	Scalar E = this->_edge_edge_mollifier(ea, eb, ea_rest, eb_rest) * this->_barrier_potential(d, dhat, k);
-	return E;
+	return this->_edge_edge_mollifier(ea, eb, ea_rest, eb_rest) * this->_barrier_potential(d, dhat, k);
 }
-Scalar EnergyFrictionalContact::_set_friction_potential(MappedWorkspace<double>& mws, const core::Stark& stark, const Vector& v, const Index& contact_idx, const FrictionContact& contact)
+Scalar EnergyFrictionalContact::_friction_potential(MappedWorkspace<double>& mws, const core::Stark& stark, const Vector& v, const Index& contact_idx, const FrictionContact& contact)
 {
 	Matrix T = mws.make_matrix(contact.T, { 2, 3 }, contact_idx);
 	Scalar mu = mws.make_scalar(contact.mu, contact_idx);
 	Scalar fn = mws.make_scalar(contact.fn, contact_idx);
 	Scalar epsv = mws.make_scalar(this->global_params.friction_stick_slide_threshold);
 	Scalar dt = mws.make_scalar(stark.dt);
-	Scalar E = this->_friction_potential(v, fn, mu, T, epsv, dt);
-	return E;
+	return this->_friction_potential(v, fn, mu, T, epsv, dt);
 }
-Scalar EnergyFrictionalContact::_set_friction_point_edge(MappedWorkspace<double>& mws, const core::Stark& stark, const Vector& vp, const std::vector<Vector>& ve, const Index& contact_idx, FrictionPointEdge& data)
+Scalar EnergyFrictionalContact::_friction_point_edge(MappedWorkspace<double>& mws, const core::Stark& stark, const Vector& vp, const std::vector<Vector>& ve, const Index& contact_idx, FrictionPointEdge& data)
 {
 	Vector bary = mws.make_vector(data.bary, contact_idx);
 
 	Vector va = vp;
 	Vector vb = bary[0] * ve[0] + bary[1] * ve[1];
 	Vector v = vb - va;
-	this->_set_friction_potential(mws, stark, v, contact_idx, data.contact);
+	return this->_friction_potential(mws, stark, v, contact_idx, data.contact);
 }
-Scalar EnergyFrictionalContact::_set_friction_point_triangle(MappedWorkspace<double>& mws, const core::Stark& stark, const Vector& vp, const std::vector<Vector>& vt, const Index& contact_idx, FrictionPointTriangle& data)
+Scalar EnergyFrictionalContact::_friction_point_triangle(MappedWorkspace<double>& mws, const core::Stark& stark, const Vector& vp, const std::vector<Vector>& vt, const Index& contact_idx, FrictionPointTriangle& data)
 {
 	Vector bary = mws.make_vector(data.bary, contact_idx);
 
 	Vector va = vp;
 	Vector vb = bary[0] * vt[0] + bary[1] * vt[1] + bary[2] * vt[2];
 	Vector v = vb - va;
-	this->_set_friction_potential(mws, stark, v, contact_idx, data.contact);
+	return this->_friction_potential(mws, stark, v, contact_idx, data.contact);
 }
-Scalar EnergyFrictionalContact::_set_friction_edge_edge(MappedWorkspace<double>& mws, const core::Stark& stark, const std::vector<Vector>& vea, const std::vector<Vector>& veb, const Index& contact_idx, FrictionEdgeEdge& data)
+Scalar EnergyFrictionalContact::_friction_edge_edge(MappedWorkspace<double>& mws, const core::Stark& stark, const std::vector<Vector>& vea, const std::vector<Vector>& veb, const Index& contact_idx, FrictionEdgeEdge& data)
 {
 	Vector bary = mws.make_vector(data.bary, contact_idx);
 
 	Vector va = vea[0] + bary[0] * (vea[1] - vea[0]);
 	Vector vb = veb[0] + bary[1] * (veb[1] - veb[0]);
 	Vector v = vb - va;
-	this->_set_friction_potential(mws, stark, v, contact_idx, data.contact);
+	return this->_friction_potential(mws, stark, v, contact_idx, data.contact);
 }
 
 

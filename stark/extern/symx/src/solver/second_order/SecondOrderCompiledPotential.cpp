@@ -70,10 +70,10 @@ symx::SecondOrderCompiledPotential::SecondOrderCompiledPotential(const Potential
             this->P.compile(this->mws, { v }, name + "_P", compilation_directory, checksum);
         });
         tasks.add([this, v, g_vals = g.values(), name, compilation_directory, checksum]() {
-            this->P__dP_du.compile(this->mws, gather({{ v }, g_vals}), name + "_P__dP_du", compilation_directory, checksum);
+            this->P__dP_du.compile(this->mws, collect_scalars({{ v }, g_vals}), name + "_P__dP_du", compilation_directory, checksum);
         });
         tasks.add([this, v, g_vals = g.values(), h_vals = h.values(), name, compilation_directory, checksum]() {
-            this->P__dP_du__d2P_du2.compile(this->mws, gather({{ v }, g_vals, h_vals}), name + "_P__dP_du__d2P_du2", compilation_directory, checksum);
+            this->P__dP_du__d2P_du2.compile(this->mws, collect_scalars({{ v }, g_vals, h_vals}), name + "_P__dP_du__d2P_du2", compilation_directory, checksum);
         });
         if (potential.has_conditional()) {
             tasks.add([this, cond = potential.get_condition(), name, compilation_directory, checksum]() {

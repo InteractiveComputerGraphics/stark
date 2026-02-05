@@ -2,7 +2,7 @@
 
 using namespace symx;
 
-std::vector<Scalar> symx::gather(const std::vector<Vector>& vectors)
+std::vector<Scalar> symx::collect_scalars(const std::vector<Vector>& vectors)
 {
 	std::vector<Scalar> scalars;
 	for (const Vector& v : vectors) {
@@ -13,7 +13,7 @@ std::vector<Scalar> symx::gather(const std::vector<Vector>& vectors)
 	return scalars;
 }
 
-std::vector<Scalar> symx::gather(const std::vector<std::vector<Scalar>> &vectors)
+std::vector<Scalar> symx::collect_scalars(const std::vector<std::vector<Scalar>> &vectors)
 {
 	std::vector<Scalar> scalars;
 	for (const std::vector<Scalar>& v : vectors) {
