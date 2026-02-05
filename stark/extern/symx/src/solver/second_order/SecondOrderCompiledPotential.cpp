@@ -9,8 +9,8 @@ symx::SecondOrderCompiledPotential::SecondOrderCompiledPotential(const Potential
     // Identity DoF scalars
     std::vector<Scalar> dofs;
     for (int dof_set = 0; dof_set < (int)dofs_maps.size(); dof_set++) {
-        const std::vector<DataMap<const double>> original_maps = this->mws->get_original_maps(dofs_maps[dof_set]);
-        const std::vector<Scalar> set_dofs = this->mws->get_symbols(dofs_maps[dof_set]);
+        const std::vector<DataMap<const double>> original_maps = this->mws->get_original_maps(dofs_maps[dof_set]);  // Get local array maps that are global DoFs
+        const std::vector<Scalar> set_dofs = this->mws->get_symbols(dofs_maps[dof_set]); // Get DoF symbols
 
         // Append dof symbols
         dofs.insert(dofs.end(), set_dofs.begin(), set_dofs.end());

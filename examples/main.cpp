@@ -48,6 +48,8 @@ void hanging_cloth()
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.init_frictional_contact = false;
+
+	settings.execution.n_threads = 1;  // DEBUG
 	stark::Simulation simulation(settings);
 
 	// Cloth

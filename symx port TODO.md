@@ -17,3 +17,6 @@
 * Make sure optimization from the ppn branch are ported
     We are building from ~github version
 
+* Check the whole symx use and logic for consistency and latent bugs
+    We are comparing many pointers, and fetching and storing... Extensive check!
+

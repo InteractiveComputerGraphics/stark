@@ -53,27 +53,27 @@ namespace symx
 		void set_name(const std::string& name);
 
 		// Make fixed data (no indexing)
-		inline Scalar make_scalar(std::function<const FLOAT* ()> data, const std::string& name = "");
+		inline Scalar make_scalar(std::function<std::uintptr_t()> id, std::function<const FLOAT* ()> data, const std::string& name = "");
 		inline Scalar make_scalar(const FLOAT& scalar, const std::string& name = "");
-		inline Vector make_vector(std::function<const FLOAT* ()> data, const int32_t stride, const std::string& name = "");
+		inline Vector make_vector(std::function<std::uintptr_t()> id, std::function<const FLOAT* ()> data, const int32_t stride, const std::string& name = "");
 		template<typename STATIC_VECTOR>
 		inline Vector make_vector(const STATIC_VECTOR& arr, const std::string& name = "");
-		inline Matrix make_matrix(std::function<const FLOAT* ()> data, const std::array<int, 2> shape, const std::string& name = "");
+		inline Matrix make_matrix(std::function<std::uintptr_t()> id, std::function<const FLOAT* ()> data, const std::array<int, 2> shape, const std::string& name = "");
 		template<typename DYNAMIC_VECTOR>
 		inline Matrix make_matrix(const DYNAMIC_VECTOR& arr, const std::array<int, 2> shape, const std::string& name = "");
 
 		// Make Scalar
-		inline Scalar make_scalar(std::function<const FLOAT* ()> data, std::function<int32_t()> n_elements, const Index& idx, const std::string& name = "");
+		inline Scalar make_scalar(std::function<std::uintptr_t()> id, std::function<const FLOAT* ()> data, std::function<int32_t()> n_elements, const Index& idx, const std::string& name = "");
 		template<typename DYNAMIC_VECTOR>
 		inline Scalar make_scalar(const DYNAMIC_VECTOR& arr, const Index& idx, const std::string& name = "");
 
 		// Make Scalars
-		inline std::vector<Scalar> make_scalars(std::function<const FLOAT* ()> data, std::function<int32_t()> n_elements, const std::vector<Index>& indices, const std::string& name = "");
+		inline std::vector<Scalar> make_scalars(std::function<std::uintptr_t()> id, std::function<const FLOAT* ()> data, std::function<int32_t()> n_elements, const std::vector<Index>& indices, const std::string& name = "");
 		template<typename DYNAMIC_VECTOR>
 		inline std::vector<Scalar> make_scalars(const DYNAMIC_VECTOR& arr, const std::vector<Index>& indices, const std::string& name = "");
 
 		// Make Vector
-		inline Vector make_vector(std::function<const FLOAT* ()> data, std::function<int32_t()> n_elements, const int32_t stride, const Index& idx, const std::string& name = "");
+		inline Vector make_vector(std::function<std::uintptr_t()> id, std::function<const FLOAT* ()> data, std::function<int32_t()> n_elements, const int32_t stride, const Index& idx, const std::string& name = "");
 		template<typename STATIC_VECTOR>
 		inline Vector make_vector(const std::vector<STATIC_VECTOR>& arr, const Index& idx, const std::string& name = "");
 		inline Vector make_vector(const EigenMatrixRM<FLOAT>& arr, const Index& idx, const std::string& name = "");
@@ -81,7 +81,7 @@ namespace symx
 		inline Vector make_vector(const DYNAMIC_VECTOR& arr, const int32_t stride, const Index& idx, const std::string& name = "");
 
 		// Make Vectors
-		inline std::vector<Vector> make_vectors(std::function<const FLOAT* ()> data, std::function<int32_t()> n_elements, const int32_t stride, const std::vector<Index>& indices, const std::string& name = "");
+		inline std::vector<Vector> make_vectors(std::function<std::uintptr_t()> id, std::function<const FLOAT* ()> data, std::function<int32_t()> n_elements, const int32_t stride, const std::vector<Index>& indices, const std::string& name = "");
 		template<typename STATIC_VECTOR>
 		inline std::vector<Vector> make_vectors(const std::vector<STATIC_VECTOR>& arr, const std::vector<Index>& indices, const std::string& name = "");
 		inline std::vector<Vector> make_vectors(const EigenMatrixRM<FLOAT>& arr, const std::vector<Index>& indices, const std::string& name = "");
@@ -92,7 +92,7 @@ namespace symx
 		inline std::vector<Vector> make_vectors(const DYNAMIC_VECTOR& arr, const int32_t stride, const std::vector<Index>& indices, const std::string& name = "");
 
 		// Make Matrix
-		inline Matrix make_matrix(std::function<const FLOAT* ()> data, std::function<int32_t()> n_elements, const std::array<int, 2> shape, const Index& idx, const std::string& name = "");
+		inline Matrix make_matrix(std::function<std::uintptr_t()> id, std::function<const FLOAT* ()> data, std::function<int32_t()> n_elements, const std::array<int, 2> shape, const Index& idx, const std::string& name = "");
 		template<typename STATIC_VECTOR>
 		inline Matrix make_matrix(const std::vector<STATIC_VECTOR>& arr, const std::array<int, 2> shape, const Index& idx, const std::string& name = "");
 		inline Matrix make_matrix(const EigenMatrixRM<FLOAT>& arr, const std::array<int, 2> shape, const Index& idx, const std::string& name = "");
@@ -100,7 +100,7 @@ namespace symx
 		inline Matrix make_matrix(const DYNAMIC_VECTOR& arr, const std::array<int, 2> shape, const Index& idx, const std::string& name = "");
 
 		// Make Matrices
-		inline std::vector<Matrix> make_matrices(std::function<const FLOAT* ()> data, std::function<int32_t()> n_elements, const std::array<int, 2> shape, const std::vector<Index>& indices, const std::string& name = "");
+		inline std::vector<Matrix> make_matrices(std::function<std::uintptr_t()> id, std::function<const FLOAT* ()> data, std::function<int32_t()> n_elements, const std::array<int, 2> shape, const std::vector<Index>& indices, const std::string& name = "");
 		template<typename STATIC_VECTOR>
 		inline std::vector<Matrix> make_matrices(const std::vector<STATIC_VECTOR>& arr, const std::array<int, 2> shape, const std::vector<Index>& indices, const std::string& name = "");
 		inline std::vector<Matrix> make_matrices(const EigenMatrixRM<FLOAT>& arr, const std::array<int, 2> shape, const std::vector<Index>& indices, const std::string& name = "");
@@ -201,9 +201,10 @@ namespace symx
     // Make fixed data (no indexing)
     // ============================================================================
 	template<typename FLOAT>
-	inline Scalar MappedWorkspace<FLOAT>::make_scalar(std::function<const FLOAT* ()> data, const std::string& name)
+	inline Scalar MappedWorkspace<FLOAT>::make_scalar(std::function<std::uintptr_t()> id, std::function<const FLOAT* ()> data, const std::string& name)
 	{
 		this->maps.emplace_back(
+			/*id=*/ id,
 			/*data=*/ data, 
 			/*n_elements=*/ []() { return 1; }, 
 			/*stride=*/ 1,
@@ -214,12 +215,16 @@ namespace symx
 	template<typename FLOAT>
 	inline Scalar MappedWorkspace<FLOAT>::make_scalar(const FLOAT& scalar, const std::string& name)
 	{
-		return this->make_scalar([&scalar]() { return &scalar; }, name);
+		return this->make_scalar(
+			[&scalar]() { return reinterpret_cast<std::uintptr_t>(&scalar); },
+			[&scalar]() { return &scalar; }, 
+			name);
 	}
 	template<typename FLOAT>
-	inline Vector MappedWorkspace<FLOAT>::make_vector(std::function<const FLOAT*()> data, const int32_t stride, const std::string& name)
+	inline Vector MappedWorkspace<FLOAT>::make_vector(std::function<std::uintptr_t()> id, std::function<const FLOAT*()> data, const int32_t stride, const std::string& name)
 	{
 		this->maps.emplace_back(
+			/*id=*/ id,
 			/*data=*/ data, 
 			/*n_elements=*/ []() { return 1; }, 
 			/*stride=*/ stride, 
@@ -231,12 +236,17 @@ namespace symx
 	template<typename STATIC_VECTOR>
 	inline Vector MappedWorkspace<FLOAT>::make_vector(const STATIC_VECTOR& arr, const std::string& name)
 	{
-		return this->make_vector([&arr]() { return arr.data(); }, (int32_t)arr.size(), name);
+		return this->make_vector(
+			[&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
+			[&arr]() { return arr.data(); }, 
+			(int32_t)arr.size(), 
+			name);
 	}
 	template<typename FLOAT>
-	inline Matrix MappedWorkspace<FLOAT>::make_matrix(std::function<const FLOAT*()> data, const std::array<int, 2> shape, const std::string& name)
+	inline Matrix MappedWorkspace<FLOAT>::make_matrix(std::function<std::uintptr_t()> id, std::function<const FLOAT*()> data, const std::array<int, 2> shape, const std::string& name)
 	{
 		this->maps.emplace_back(
+			/*id=*/ id,
 			/*data=*/ data, 
 			/*n_elements=*/ []() { return 1; }, 
 			/*stride=*/ shape[0] * shape[1], 
@@ -248,16 +258,20 @@ namespace symx
 	template<typename DYNAMIC_VECTOR>
 	inline Matrix MappedWorkspace<FLOAT>::make_matrix(const DYNAMIC_VECTOR& arr, const std::array<int, 2> shape, const std::string& name)
 	{
-		return this->make_matrix(std::function<const FLOAT*()>([&arr]() { return arr.data(); }), shape, name);
+		return this->make_matrix(
+			[&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
+			std::function<const FLOAT*()>([&arr]() { return arr.data(); }), 
+			shape, 
+			name);
 	}
 
 	// ============================================================================
 	// Make Scalar(s)
 	// ============================================================================
 	template<typename FLOAT>
-	inline Scalar MappedWorkspace<FLOAT>::make_scalar(std::function<const FLOAT*()> data, std::function<int32_t()> n_elements, const Index& idx, const std::string& name)
+	inline Scalar MappedWorkspace<FLOAT>::make_scalar(std::function<std::uintptr_t()> id, std::function<const FLOAT*()> data, std::function<int32_t()> n_elements, const Index& idx, const std::string& name)
 	{
-		this->maps.emplace_back(data, n_elements, 1, idx.idx, this->ws.get_n_symbols());
+		this->maps.emplace_back(id, data, n_elements, 1, idx.idx, this->ws.get_n_symbols());
 		return this->ws.make_scalar(name);
 	}
 	template<typename FLOAT>
@@ -265,17 +279,18 @@ namespace symx
 	inline Scalar MappedWorkspace<FLOAT>::make_scalar(const DYNAMIC_VECTOR& arr, const Index& idx, const std::string& name)
 	{
 		return this->make_scalar(
+			[&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
 			[&arr]() { return arr.data(); }, 
 			[&arr]() { return (int32_t)arr.size(); }, 
 			idx, 
 			name);
 	}
     template <typename FLOAT>
-    inline std::vector<Scalar> MappedWorkspace<FLOAT>::make_scalars(std::function<const FLOAT *()> data, std::function<int32_t()> n_elements, const std::vector<Index> &indices, const std::string& name)
+    inline std::vector<Scalar> MappedWorkspace<FLOAT>::make_scalars(std::function<std::uintptr_t()> id, std::function<const FLOAT *()> data, std::function<int32_t()> n_elements, const std::vector<Index> &indices, const std::string& name)
     {
         std::vector<Scalar> scalars;
         for (const auto &idx : indices) {
-            scalars.push_back(this->make_scalar(data, n_elements, idx, name));
+            scalars.push_back(this->make_scalar(id, data, n_elements, idx, name));
         }
         return scalars;
     }
@@ -295,9 +310,9 @@ namespace symx
 	// Make Vector(s)
 	// ============================================================================
 	template<typename FLOAT>
-	inline Vector MappedWorkspace<FLOAT>::make_vector(std::function<const FLOAT*()> data, std::function<int32_t()> n_elements, const int32_t stride, const Index& idx, const std::string& name)
+	inline Vector MappedWorkspace<FLOAT>::make_vector(std::function<std::uintptr_t()> id, std::function<const FLOAT*()> data, std::function<int32_t()> n_elements, const int32_t stride, const Index& idx, const std::string& name)
 	{
-		this->maps.emplace_back(data, n_elements, stride, idx.idx, this->ws.get_n_symbols());
+		this->maps.emplace_back(id, data, n_elements, stride, idx.idx, this->ws.get_n_symbols());
 		return this->ws.make_vector(name, stride);
 	}
     template <typename FLOAT>
@@ -305,6 +320,7 @@ namespace symx
     {
 		this->_check_Eigen_stride_inferrable(arr, "in make_vector");
 		return this->make_vector(
+			[&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
 			[&arr]() { return arr.data(); },
 			[&arr]() { return (int32_t)arr.rows(); },
 			(int32_t)arr.cols(),
@@ -317,6 +333,7 @@ namespace symx
 	{
 		constexpr int32_t stride = sizeof(STATIC_VECTOR) / sizeof(FLOAT);
 		return this->make_vector(
+			[&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
 			[&arr]() { return arr[0].data(); },
 			[&arr]() { return (int32_t)arr.size(); },
 			stride,
@@ -328,6 +345,7 @@ namespace symx
 	inline Vector MappedWorkspace<FLOAT>::make_vector(const DYNAMIC_VECTOR& arr, const int32_t stride, const Index& idx, const std::string& name)
 	{
 		return this->make_vector(
+			[&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
 			[&arr]() { return arr.data(); },
 			[&arr, stride]() { return (int32_t)arr.size()/stride; },
 			stride,
@@ -336,11 +354,11 @@ namespace symx
 	}
 
 	template<typename FLOAT>
-	inline std::vector<Vector> MappedWorkspace<FLOAT>::make_vectors(std::function<const FLOAT*()> data, std::function<int32_t()> n_elements, const int32_t stride, const std::vector<Index>& indices, const std::string& name)
+	inline std::vector<Vector> MappedWorkspace<FLOAT>::make_vectors(std::function<std::uintptr_t()> id, std::function<const FLOAT*()> data, std::function<int32_t()> n_elements, const int32_t stride, const std::vector<Index>& indices, const std::string& name)
 	{
 		std::vector<Vector> vectors;
 		for (size_t i = 0; i < indices.size(); i++) {
-			vectors.push_back(this->make_vector(data, n_elements, stride, indices[i], name + std::to_string(i)));
+			vectors.push_back(this->make_vector(id, data, n_elements, stride, indices[i], name + std::to_string(i)));
 		}
 		return vectors;
 	}
@@ -394,9 +412,9 @@ namespace symx
 	// Make Matrix/Matrices
 	// ============================================================================
 	template<typename FLOAT>
-	inline Matrix MappedWorkspace<FLOAT>::make_matrix(std::function<const FLOAT*()> data, std::function<int32_t()> n_elements, const std::array<int, 2> shape, const Index& idx, const std::string& name)
+	inline Matrix MappedWorkspace<FLOAT>::make_matrix(std::function<std::uintptr_t()> id, std::function<const FLOAT*()> data, std::function<int32_t()> n_elements, const std::array<int, 2> shape, const Index& idx, const std::string& name)
 	{
-		this->maps.emplace_back(data, n_elements, shape[0] * shape[1], idx.idx, this->ws.get_n_symbols());
+		this->maps.emplace_back(id, data, n_elements, shape[0] * shape[1], idx.idx, this->ws.get_n_symbols());
 		return this->ws.make_matrix(name, shape);
 	}
 	template<typename FLOAT>
@@ -413,6 +431,7 @@ namespace symx
 			exit(-1);
 		}
 		return this->make_matrix(
+			[&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
 			[&arr]() { return arr[0].data(); },
 			[&arr]() { return (int32_t)arr.size(); },
 			shape,
@@ -424,6 +443,7 @@ namespace symx
 	{
 		this->_check_Eigen_stride_inferrable(arr, "when creating matrix \"" + name + "\"");
 		return this->make_matrix(
+			[&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
 			[&arr]() { return arr.data(); },
 			[&arr]() { return (int32_t)arr.rows(); },
 			shape,
@@ -435,6 +455,7 @@ namespace symx
 	inline Matrix MappedWorkspace<FLOAT>::make_matrix(const DYNAMIC_VECTOR& arr, const std::array<int, 2> shape, const Index& idx, const std::string& name)
 	{
 		return this->make_matrix(
+			[&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
 			[&arr]() { return arr.data(); },
 			[&arr, shape]() { return (int32_t)arr.size() / (shape[0] * shape[1]); },
 			shape,
@@ -443,11 +464,11 @@ namespace symx
 	}
 
 	template<typename FLOAT>
-	inline std::vector<Matrix> MappedWorkspace<FLOAT>::make_matrices(std::function<const FLOAT*()> data, std::function<int32_t()> n_elements, const std::array<int, 2> shape, const std::vector<Index>& indices, const std::string& name)
+	inline std::vector<Matrix> MappedWorkspace<FLOAT>::make_matrices(std::function<std::uintptr_t()> id, std::function<const FLOAT*()> data, std::function<int32_t()> n_elements, const std::array<int, 2> shape, const std::vector<Index>& indices, const std::string& name)
 	{
 		std::vector<Matrix> matrices;
 		for (size_t i = 0; i < indices.size(); i++) {
-			matrices.push_back(this->make_matrix(data, n_elements, shape, indices[i], name + std::to_string(i)));
+			matrices.push_back(this->make_matrix(id, data, n_elements, shape, indices[i], name + std::to_string(i)));
 		}
 		return matrices;
 	}
@@ -790,7 +811,7 @@ namespace symx
     {
         std::vector<Scalar> symbols;
 		for (const auto& map : this->maps) {
-			if ((const void*)map.data() == (const void*)data_map.data()) {  // Compare data pointers
+			if ((const void*)map.id() == (const void*)data_map.id()) {
 				for (int i = 0; i < map.stride; ++i) {
 					symbols.push_back(this->ws.get_scalar(map.first_symbol_idx + i));
 				}
@@ -804,7 +825,7 @@ namespace symx
     {
         std::vector<DataMap<const FLOAT>> original_maps;
 		for (const auto& map : this->maps) {
-			if ((const void*)map.data() == (const void*)data_map.data()) {  // Compare data pointers
+			if ((const void*)map.id() == (const void*)data_map.id()) {
 				original_maps.push_back(map);
 			}
 		}

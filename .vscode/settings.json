@@ -3,6 +3,7 @@
         "make": true,
         "timeout": true,
         "tee": true,
-        "cmake": true
+        "cmake": true,
+        "nproc": true
     }
 }

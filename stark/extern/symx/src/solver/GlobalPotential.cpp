@@ -56,13 +56,14 @@ void symx::GlobalPotential::add_potential(const std::string& name, const std::ve
     this->add_potential(name, mws, elem, definition_with_conditional_callback);
 }
 
-void symx::GlobalPotential::add_dof(std::function<double *()> data, std::function<int32_t()> flat_size, const std::string &name)
+void symx::GlobalPotential::add_dof(std::function<std::uintptr_t()> id, std::function<double *()> data, std::function<int32_t()> flat_size, const std::string &name)
 {
-    this->dof_maps.emplace_back(data, flat_size, /*stride=*/ 1, /*connectivity_index=*/-1, /*first_symbol_idx=*/-1);
+    this->dof_maps.emplace_back(id, data, flat_size, /*stride=*/ 1, /*connectivity_index=*/-1, /*first_symbol_idx=*/-1);
 }
 void symx::GlobalPotential::add_dof(EigenMatrixRM<double> &arr, const std::string &name)
 {
     this->add_dof(
+        [&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
         [&arr]() { return arr.data(); }, 
         [&arr]() { return (int32_t)(arr.size()); }, 
         name);
@@ -70,6 +71,7 @@ void symx::GlobalPotential::add_dof(EigenMatrixRM<double> &arr, const std::strin
 void symx::GlobalPotential::add_dof(double &scalar, const std::string &name)
 {
     this->add_dof(
+        [&scalar]() { return reinterpret_cast<std::uintptr_t>(&scalar); },
         [&scalar]() { return &scalar; }, 
         []() { return 1; }, 
         name);

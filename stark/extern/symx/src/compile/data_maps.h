@@ -85,6 +85,7 @@ namespace symx
     template<typename T>
     struct DataMap
     {
+        std::function<std::uintptr_t()> id = nullptr;  // Unique identifier: address of the data source container (e.g. &std::vector, &Eigen::Matrix). Used for identity checks.
         std::function<T*()> data = nullptr;            // Lambda to obtain pointer to the beginning
         std::function<int32_t()> n_elements = nullptr; // Lambda to obtain current number of elements (e.g. vertices)
         int32_t stride = -1;                           // Stride in the array (e.g. 3 for 3D vectors)
@@ -92,9 +93,14 @@ namespace symx
         int32_t first_symbol_idx = -1;                 // Location of the first symbol in the global symbols (an input) array
 
         DataMap() = default;
-        DataMap(std::function<T*()> data, std::function<int32_t()> n_elements, int32_t stride, int32_t connectivity_index, int32_t first_symbol_idx)
-            : data(data), n_elements(n_elements), stride(stride), connectivity_index(connectivity_index), first_symbol_idx(first_symbol_idx)
-        {}
+        DataMap(std::function<std::uintptr_t()> id, std::function<T*()> data, std::function<int32_t()> n_elements, int32_t stride, int32_t connectivity_index, int32_t first_symbol_idx)
+            : id(id), data(data), n_elements(n_elements), stride(stride), connectivity_index(connectivity_index), first_symbol_idx(first_symbol_idx)
+        {
+            if (!id) {
+                std::cout << "symx error: DataMap id must not be null. All data sources must provide a unique identifier." << std::endl;
+                exit(-1);
+            }
+        }
         inline int32_t size() const { return n_elements() * stride; }
     };
 }

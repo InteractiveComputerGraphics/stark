@@ -43,7 +43,7 @@ namespace symx
 		void add_potential(const std::string& name, const LabelledConnectivity<N>& conn, DefWCondFunc definition_with_conditional_callback);
 
         // Add DoFs
-        void add_dof(std::function<double*()> data, std::function<int32_t()> flat_size, const std::string& name = "");
+        void add_dof(std::function<std::uintptr_t()> id, std::function<double*()> data, std::function<int32_t()> flat_size, const std::string& name = "");
         void add_dof(EigenMatrixRM<double>& arr, const std::string& name = "");
         template<typename STATIC_VECTOR>
         void add_dof(std::vector<STATIC_VECTOR>& arr, const std::string& name = "");
@@ -100,6 +100,7 @@ namespace symx
     {
         constexpr int32_t stride = sizeof(STATIC_VECTOR) / sizeof(double);
         this->add_dof(
+            [&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
             [&arr]() { return arr[0].data(); }, 
             [&arr]() { return (int32_t)(arr.size()*stride); }, 
             name);
@@ -108,6 +109,7 @@ namespace symx
     void symx::GlobalPotential::add_dof(DYNAMIC_VECTOR& arr, const std::string& name)
     {
         this->add_dof(
+            [&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
             [&arr]() { return arr.data(); }, 
             [&arr]() { return (int32_t)(arr.size()); }, 
             name);
