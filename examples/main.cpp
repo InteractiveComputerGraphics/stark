@@ -46,7 +46,7 @@ void hanging_cloth()
 	settings.output.simulation_name = "hanging_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
+	settings.execution.end_simulation_time = 0.01;
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);
 
@@ -534,6 +534,7 @@ void magnetic_deformables()
 
 int main()
 {
+	// symx::enable_load_compiled(false);
 	/*
 		Here you can find a list of simple scenes to test the library.
 		Each function contains a different scene with a brief description of the simulation.
@@ -548,7 +549,7 @@ int main()
 //
 //	// Simple simulations: No collisions, only presets
 //	hanging_net();
-//	hanging_cloth();
+//  hanging_cloth();
 //	hanging_deformable_box();
 //	attachments();
 //

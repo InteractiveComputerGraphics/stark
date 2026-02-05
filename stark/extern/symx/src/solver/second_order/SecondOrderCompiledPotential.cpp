@@ -6,6 +6,11 @@
 symx::SecondOrderCompiledPotential::SecondOrderCompiledPotential(const Potential &potential, const std::vector<DataMap<double>> &dofs_maps, const std::string &compilation_directory, DeferredParallelTasks& tasks)
     : mws(potential.mws)
 {
+    if ("contact_d_d_pt_pp_cubic" == potential.get_name()) {
+        std::cout << "DEBUG" << std::endl;
+    }
+
+
     // Identity DoF scalars
     std::vector<Scalar> dofs;
     for (int dof_set = 0; dof_set < (int)dofs_maps.size(); dof_set++) {
@@ -49,6 +54,7 @@ symx::SecondOrderCompiledPotential::SecondOrderCompiledPotential(const Potential
     }
     const std::string checksum = potential.get_checksum(pre_hash);
 
+    
     // Try to load
     const std::string name = potential.get_name();
     this->cached = this->P.load_if_cached(this->mws, name + "_P", compilation_directory, checksum);

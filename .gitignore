@@ -3,3 +3,4 @@
 *.pyd
 build/
 output/
+profile/

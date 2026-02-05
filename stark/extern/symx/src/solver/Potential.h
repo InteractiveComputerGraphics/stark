@@ -18,7 +18,7 @@ namespace symx
         Potential(const std::string& name, spMWS<double> mws, const Scalar& expr, const Scalar& cond);
         Potential(const std::string& name, spMWS<double> mws, const Scalar& expr);
         const std::string& get_name() const;
-        std::string get_checksum(const std::string& pre_hash) const;
+        std::string get_checksum(const std::string& pre_hash = "") const;
 
         Scalar get_expression() const;
         bool has_conditional() const;
