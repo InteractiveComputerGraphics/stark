@@ -89,6 +89,11 @@ Settings::Settings()
 	// Initialize default parameters
 	this->execution.n_threads = omp_get_max_threads()/2;
 	this->output.time_stamp = time_stamp();
+
+	// Override symx defaults for simulation
+	this->newton.residual_tolerance = 1e-6;
+	this->newton.step_tolerance = 1e-4;
+	this->newton.projection_mode = symx::ProjectionToPD::Progressive;
 }
 
 std::string Settings::as_string() const
