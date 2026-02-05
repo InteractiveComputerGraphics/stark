@@ -14,3 +14,6 @@
     I think we ship symx with minimal tooling for ease of ramping up
     And preserve the heavy stuff in Stark. This is what stark is.
 
+* Make sure optimization from the ppn branch are ported
+    We are building from ~github version
+

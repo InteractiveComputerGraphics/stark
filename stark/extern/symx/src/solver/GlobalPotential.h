@@ -98,9 +98,10 @@ namespace symx
     template<typename STATIC_VECTOR>
     void symx::GlobalPotential::add_dof(std::vector<STATIC_VECTOR>& arr, const std::string& name)
     {
+        constexpr int32_t stride = sizeof(STATIC_VECTOR) / sizeof(double);
         this->add_dof(
             [&arr]() { return arr[0].data(); }, 
-            [&arr]() { return (int32_t)(arr.size()*arr[0].size()); }, 
+            [&arr]() { return (int32_t)(arr.size()*stride); }, 
             name);
     }
     template<typename DYNAMIC_VECTOR>

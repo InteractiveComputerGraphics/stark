@@ -137,6 +137,9 @@ namespace symx
 		// Misc
 		std::vector<Scalar> get_symbols(const DataMap<double>& data_map);
 		std::vector<DataMap<const FLOAT>> get_original_maps(const DataMap<double>& data_map);
+
+	private:
+		inline void _check_Eigen_stride_inferrable(const EigenMatrixRM<FLOAT>& arr, const std::string& operation_description) const;
     };
 	// =========================================================================================================================
 	// =========================================================================================================================
@@ -300,6 +303,7 @@ namespace symx
     template <typename FLOAT>
     inline Vector MappedWorkspace<FLOAT>::make_vector(const EigenMatrixRM<FLOAT> &arr, const Index &idx, const std::string& name)
     {
+		this->_check_Eigen_stride_inferrable(arr, "in make_vector");
 		return this->make_vector(
 			[&arr]() { return arr.data(); },
 			[&arr]() { return (int32_t)arr.rows(); },
@@ -311,10 +315,11 @@ namespace symx
 	template<typename STATIC_VECTOR>
 	inline Vector MappedWorkspace<FLOAT>::make_vector(const std::vector<STATIC_VECTOR>& arr, const Index& idx, const std::string& name)
 	{
+		constexpr int32_t stride = sizeof(STATIC_VECTOR) / sizeof(FLOAT);
 		return this->make_vector(
 			[&arr]() { return arr[0].data(); },
 			[&arr]() { return (int32_t)arr.size(); },
-			(int32_t)arr[0].size(),
+			stride,
 			idx,
 			name);
 	}
@@ -398,6 +403,15 @@ namespace symx
 	template<typename STATIC_VECTOR>
 	inline Matrix MappedWorkspace<FLOAT>::make_matrix(const std::vector<STATIC_VECTOR>& arr, const std::array<int, 2> shape, const Index& idx, const std::string& name)
 	{
+		constexpr int32_t expected_size = sizeof(STATIC_VECTOR) / sizeof(FLOAT);
+		if (expected_size != shape[0] * shape[1]) {
+			const std::string name_prefix = this->name.empty() ? "" : "\"" + this->name + "\" ";
+			std::cout << "symx error: MappedWorkspace " << name_prefix
+					  << "matrix \"" << name << "\" shape [" << shape[0] << "," << shape[1] 
+					  << "] requires " << shape[0] * shape[1] << " elements but STATIC_VECTOR has " 
+					  << expected_size << " elements" << std::endl;
+			exit(-1);
+		}
 		return this->make_matrix(
 			[&arr]() { return arr[0].data(); },
 			[&arr]() { return (int32_t)arr.size(); },
@@ -408,6 +422,7 @@ namespace symx
 	template<typename FLOAT>
 	inline Matrix MappedWorkspace<FLOAT>::make_matrix(const EigenMatrixRM<FLOAT>& arr, const std::array<int, 2> shape, const Index& idx, const std::string& name)
 	{
+		this->_check_Eigen_stride_inferrable(arr, "when creating matrix \"" + name + "\"");
 		return this->make_matrix(
 			[&arr]() { return arr.data(); },
 			[&arr]() { return (int32_t)arr.rows(); },
@@ -517,7 +532,7 @@ namespace symx
 	template<typename STATIC_VECTOR>
 	inline Vector MappedWorkspace<FLOAT>::make_summation_vector(const std::vector<STATIC_VECTOR>& iteration_vectors)
 	{
-		const int32_t stride = (int32_t)iteration_vectors[0].size();
+		constexpr int32_t stride = sizeof(STATIC_VECTOR) / sizeof(FLOAT);
 		const int32_t n_iterations = (int32_t)iteration_vectors.size();
 		return this->make_summation_vector(iteration_vectors[0].data(), stride, n_iterations);
 	}
@@ -533,6 +548,7 @@ namespace symx
     template <typename FLOAT>
     inline Scalar MappedWorkspace<FLOAT>::add_for_each(const EigenMatrixRM<FLOAT> &iteration_vectors, std::function<Scalar(Vector &vec)> f)
     {
+		this->_check_Eigen_stride_inferrable(iteration_vectors, "in add_for_each");
 		const int32_t stride = (int32_t)iteration_vectors.cols();
 		const int32_t n_iterations = (int32_t)iteration_vectors.rows();
 		Vector summation_vector = this->make_summation_vector(iteration_vectors.data(), stride, n_iterations);
@@ -793,6 +809,19 @@ namespace symx
 			}
 		}
         return original_maps;
+    }
+
+    template <typename FLOAT>
+    inline void symx::MappedWorkspace<FLOAT>::_check_Eigen_stride_inferrable(const EigenMatrixRM<FLOAT> &arr, const std::string &operation_description) const
+    {
+		{
+			if (arr.size() == 0) {
+				const std::string name_prefix = this->name.empty() ? "" : "\"" + this->name + "\" ";
+				std::cout << "symx error: MappedWorkspace " << name_prefix
+						  << "cannot infer stride from uninitialized/empty Eigen matrix " << operation_description << std::endl;
+				exit(-1);
+			}
+		}
     }
 
     template <typename FLOAT>
