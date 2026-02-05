@@ -50,21 +50,23 @@ std::string to_string(ConsoleOutputTo v)
 	default: return ""; break;
 	}
 }
-std::string to_string(ResidualType v)
+std::string to_string(symx::LinearSolver v)
 {
 	switch (v)
 	{
-	case ResidualType::Force: return "Force"; break;
-	case ResidualType::Acceleration: return "Acceleration"; break;
+	case symx::LinearSolver::BDPCG: return "BDPCG"; break;
+	case symx::LinearSolver::DirectLU: return "DirectLU"; break;
 	default: return ""; break;
 	}
 }
-std::string to_string(LinearSystemSolver v)
+std::string to_string(symx::ProjectionToPD v)
 {
 	switch (v)
 	{
-	case LinearSystemSolver::CG: return "CG"; break;
-	case LinearSystemSolver::DirectLU: return "DirectLU"; break;
+	case symx::ProjectionToPD::Newton: return "Newton"; break;
+	case symx::ProjectionToPD::ProjectedNewton: return "ProjectedNewton"; break;
+	case symx::ProjectionToPD::ProjectOnDemand: return "ProjectOnDemand"; break;
+	case symx::ProjectionToPD::Progressive: return "Progressive"; break;
 	default: return ""; break;
 	}
 }
@@ -113,16 +115,27 @@ std::string Settings::as_string() const
 	out += "\n         time_step_size_success_muliplier: " + to_string(this->simulation.time_step_size_success_muliplier);
 	out += "\n         time_step_size_lower_bound: " + fmt::format("{:.1e}", this->simulation.time_step_size_lower_bound);
 
-	out += "\n     Newton's Method";
-	out += "\n         residual_type: " + to_string(this->newton.residual.type);
-	out += "\n         newton_tolerance: " + fmt::format("{:.1e}", this->newton.residual.tolerance);
-	out += "\n         linear_system_solver: " + to_string(this->newton.linear_system_solver);
-	out += "\n         project_to_PD: " + to_string(this->newton.project_to_PD);
-	out += "\n         max_newton_iterations: " + std::to_string(this->newton.max_newton_iterations);
+	out += "\n     Newton's Method (symx::NewtonSettings)";
+	// SolverSettings (base class)
+	out += "\n         max_iterations: " + std::to_string(this->newton.max_iterations);
+	out += "\n         min_iterations: " + std::to_string(this->newton.min_iterations);
 	out += "\n         max_line_search_iterations: " + std::to_string(this->newton.max_line_search_iterations);
-	out += "\n         projection_eps: " + std::to_string(this->newton.projection_eps);
-	out += "\n         line_search_multiplier: " + fmt::format("{:f}", this->newton.line_search_multiplier);
-	out += "\n         cg_max_iterations_multiplier: " + fmt::format("{:f}", this->newton.cg_max_iterations_multiplier);
+	out += "\n         step_cap: " + fmt::format("{:.1e}", this->newton.step_cap);
+	out += "\n         residual_tolerance: " + fmt::format("{:.1e}", this->newton.residual_tolerance);
+	out += "\n         step_tolerance: " + fmt::format("{:.1e}", this->newton.step_tolerance);
+	out += "\n         line_search_armijo_beta: " + fmt::format("{:.1e}", this->newton.line_search_armijo_beta);
+	// NewtonSettings
+	out += "\n         projection_mode: " + to_string(this->newton.projection_mode);
+	out += "\n         projection_eps: " + fmt::format("{:.1e}", this->newton.projection_eps);
+	out += "\n         project_to_pd_use_mirroring: " + to_string(this->newton.project_to_pd_use_mirroring);
+	out += "\n         project_on_demand_countdown: " + std::to_string(this->newton.project_on_demand_countdown);
+	out += "\n         ppn_tightening_factor: " + fmt::format("{:.2f}", this->newton.ppn_tightening_factor);
+	out += "\n         ppn_release_factor: " + fmt::format("{:.2f}", this->newton.ppn_release_factor);
+	out += "\n         linear_solver: " + to_string(this->newton.linear_solver);
+	out += "\n         cg_max_iterations: " + fmt::format("{:.0f}", this->newton.cg_max_iterations);
+	out += "\n         cg_abs_tolerance: " + fmt::format("{:.1e}", this->newton.cg_abs_tolerance);
+	out += "\n         cg_rel_tolerance: " + fmt::format("{:.1e}", this->newton.cg_rel_tolerance);
+	out += "\n         cg_stop_on_indefiniteness: " + to_string(this->newton.cg_stop_on_indefiniteness);
 	out += "\n         epsilon_residual: " + fmt::format("{:.1e}", this->newton.epsilon_residual);
 
 	out += "\n     Execution";
@@ -130,13 +143,6 @@ std::string Settings::as_string() const
 	out += "\n         end_simulation_time: " + fmt::format("{:.1e}", this->execution.end_simulation_time);
 	out += "\n         end_frame: " + fmt::format("{:d}", this->execution.end_frame);
 	out += "\n         n_threads: " + fmt::format("{:d}", this->execution.n_threads);
-
-	out += "\n     Debug";
-	out += "\n         symx_check_for_NaNs: " + to_string(this->debug.symx_check_for_NaNs);
-	out += "\n         symx_suppress_compiler_output: " + to_string(this->debug.symx_suppress_compiler_output);
-	out += "\n         symx_force_compilation: " + to_string(this->debug.symx_force_compilation);
-	out += "\n         symx_force_load: " + to_string(this->debug.symx_force_load);
-	out += "\n         debug_line_search_output: " + to_string(this->debug.line_search_output);
 	out += "\n\n";
 	return out;
 }

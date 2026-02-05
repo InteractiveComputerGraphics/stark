@@ -5,10 +5,9 @@ set(BSM_ENABLE_AVX2 ON CACHE BOOL "Flag to enable AVX2 for BlockedSparseMatrix")
 set(SYMX_COMPILER_PATH "AUTO" CACHE STRING "Path to the compiler to use for runtime compilation. Set to AUTO to auto-detect.")
 set(SYMX_HESS_STORAGE_FLOAT "float" CACHE STRING "Storage type for Hessian matrices (float or double)")
 
-# Enable SIMD and suppress compiler warnings
+# Enable SIMD
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	add_compile_options("-march=native")
-    add_compile_options("-Wno-ignored-attributes")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	add_compile_options("/arch:AVX")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

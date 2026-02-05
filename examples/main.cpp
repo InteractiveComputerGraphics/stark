@@ -402,7 +402,7 @@ void twisting_cloth()
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
-	settings.newton.residual = { stark::ResidualType::Acceleration, 100.0 };
+	settings.newton.residual_tolerance = 100.0;  // Higher tolerance for faster simulation without gravity
 	stark::Simulation simulation(settings);
 
 	// Contact

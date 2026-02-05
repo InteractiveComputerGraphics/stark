@@ -18,7 +18,6 @@ endif()
 # Enable SIMD and suppress compiler warnings
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	add_compile_options("-march=native")
-    add_compile_options("-Wno-ignored-attributes")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	add_compile_options("/arch:AVX")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

@@ -2,20 +2,16 @@
 
 void pystark_Settings(nb::module_& m)
 {
-    // Enums
-    nb::enum_<stark::ResidualType>(m, "ResidualType")
-        .value("Force", stark::ResidualType::Force)
-        .value("Acceleration", stark::ResidualType::Acceleration)
-        .export_values();
+    // symx enums
+    nb::enum_<symx::LinearSolver>(m, "LinearSolver")
+        .value("DirectLU", symx::LinearSolver::DirectLU)
+        .value("BDPCG", symx::LinearSolver::BDPCG);
 
-    nb::enum_<stark::LinearSystemSolver>(m, "LinearSystemSolver")
-        .value("CG", stark::LinearSystemSolver::CG)
-        .value("DirectLU", stark::LinearSystemSolver::DirectLU);
-
-    nb::class_<stark::Residual>(m, "Residual")
-        .def(nb::init<>())
-        .def_rw("type", &stark::Residual::type)
-        .def_rw("tolerance", &stark::Residual::tolerance);
+    nb::enum_<symx::ProjectionToPD>(m, "ProjectionToPD")
+        .value("Newton", symx::ProjectionToPD::Newton)
+        .value("ProjectedNewton", symx::ProjectionToPD::ProjectedNewton)
+        .value("ProjectOnDemand", symx::ProjectionToPD::ProjectOnDemand)
+        .value("Progressive", symx::ProjectionToPD::Progressive);
 
     // Functions
     m.def("set_compiler_command", &set_compiler_command);
@@ -27,8 +23,7 @@ void pystark_Settings(nb::module_& m)
         .def_rw("output", &Settings::output)
         .def_rw("simulation", &Settings::simulation)
         .def_rw("newton", &Settings::newton)
-        .def_rw("execution", &Settings::execution)
-        .def_rw("debug", &Settings::debug);
+        .def_rw("execution", &Settings::execution);
 
     auto output_struct = nb::class_<Settings::Output>(settings_struct, "Output")
         .def(nb::init<>())
@@ -50,15 +45,19 @@ void pystark_Settings(nb::module_& m)
         .def_rw("time_step_size_success_muliplier", &Settings::Simulation::time_step_size_success_muliplier)
         .def_rw("time_step_size_lower_bound", &Settings::Simulation::time_step_size_lower_bound);
 
-    auto newtons_method_struct = nb::class_<Settings::NewtonsMethod>(settings_struct, "NewtonsMethod")
+    // symx::NewtonSettings bindings
+    auto newton_settings_struct = nb::class_<symx::NewtonSettings>(m, "NewtonSettings")
         .def(nb::init<>())
-        .def_rw("residual", &Settings::NewtonsMethod::residual)
-        .def_rw("linear_system_solver", &Settings::NewtonsMethod::linear_system_solver)
-        .def_rw("project_to_PD", &Settings::NewtonsMethod::project_to_PD)
-        .def_rw("max_newton_iterations", &Settings::NewtonsMethod::max_newton_iterations)
-        .def_rw("max_line_search_iterations", &Settings::NewtonsMethod::max_line_search_iterations)
-        .def_rw("line_search_multiplier", &Settings::NewtonsMethod::line_search_multiplier)
-        .def_rw("cg_max_iterations_multiplier", &Settings::NewtonsMethod::cg_max_iterations_multiplier);
+        .def_rw("max_iterations", &symx::NewtonSettings::max_iterations)
+        .def_rw("max_line_search_iterations", &symx::NewtonSettings::max_line_search_iterations)
+        .def_rw("residual_tolerance", &symx::NewtonSettings::residual_tolerance)
+        .def_rw("linear_solver", &symx::NewtonSettings::linear_solver)
+        .def_rw("projection_mode", &symx::NewtonSettings::projection_mode)
+        .def_rw("projection_eps", &symx::NewtonSettings::projection_eps)
+        .def_rw("cg_max_iterations", &symx::NewtonSettings::cg_max_iterations)
+        .def_rw("cg_abs_tolerance", &symx::NewtonSettings::cg_abs_tolerance)
+        .def_rw("cg_rel_tolerance", &symx::NewtonSettings::cg_rel_tolerance)
+        .def_rw("epsilon_residual", &symx::NewtonSettings::epsilon_residual);
 
     auto execution_struct = nb::class_<Settings::Execution>(settings_struct, "Execution")
         .def(nb::init<>())
@@ -66,14 +65,4 @@ void pystark_Settings(nb::module_& m)
         .def_rw("end_simulation_time", &Settings::Execution::end_simulation_time)
         .def_rw("end_frame", &Settings::Execution::end_frame)
         .def_rw("n_threads", &Settings::Execution::n_threads);
-
-    auto debug_struct = nb::class_<Settings::Debug>(settings_struct, "Debug")
-        .def(nb::init<>())
-        .def_rw("symx_check_for_NaNs", &Settings::Debug::symx_check_for_NaNs)
-        .def_rw("symx_suppress_compiler_output", &Settings::Debug::symx_suppress_compiler_output)
-        .def_rw("symx_force_compilation", &Settings::Debug::symx_force_compilation)
-        .def_rw("symx_force_load", &Settings::Debug::symx_force_load)
-        .def_rw("symx_finite_difference_check", &Settings::Debug::symx_finite_difference_check)
-        .def_rw("line_search_output", &Settings::Debug::line_search_output);
-
 }

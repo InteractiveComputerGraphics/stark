@@ -129,7 +129,7 @@ namespace symx
         
         // Progressive (PPN) settings
         double ppn_tightening_factor = 0.5;         // Factor to tighten threshold when direction does not descend
-        double ppn_release_factor = 2.0;            // Factor to relax threshold after successful step (unused)
+        double ppn_release_factor = 2.0;            // Factor to relax threshold after successful step
         
         // Linear solver settings
         LinearSolver linear_solver = LinearSolver::BDPCG;
@@ -153,5 +153,4 @@ namespace symx
 
         return result + str2;
     }
-
 }

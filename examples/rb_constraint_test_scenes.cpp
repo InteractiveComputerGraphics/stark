@@ -20,7 +20,6 @@ void template_sim(std::string name, std::function<void(stark::Simulation& simula
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = stark::ConsoleVerbosity::Frames;
 	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);
 

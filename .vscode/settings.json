@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "make": true,
+        "timeout": true,
+        "tee": true,
+        "cmake": true
+    }
+}
