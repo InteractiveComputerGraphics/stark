@@ -86,18 +86,18 @@ namespace symx
     struct DataMap
     {
         std::function<std::uintptr_t()> id = nullptr;  // Unique identifier: address of the data source container (e.g. &std::vector, &Eigen::Matrix). Used for identity checks.
-        std::function<T*()> data = nullptr;            // Lambda to obtain pointer to the beginning
+        std::function<T*()> data = nullptr;            // Lambda to obtain pointer to the beginning of data
         std::function<int32_t()> n_elements = nullptr; // Lambda to obtain current number of elements (e.g. vertices)
         int32_t stride = -1;                           // Stride in the array (e.g. 3 for 3D vectors)
         int32_t connectivity_index = -1;               // Entry idx in the connectivity array the symbol is associated with. -1 for no connectivity (fixed) values
-        int32_t first_symbol_idx = -1;                 // Location of the first symbol in the global symbols (an input) array
+        int32_t first_symbol_idx = -1;                 // Location of the first symbol in the workspace's symbols array.
 
         DataMap() = default;
         DataMap(std::function<std::uintptr_t()> id, std::function<T*()> data, std::function<int32_t()> n_elements, int32_t stride, int32_t connectivity_index, int32_t first_symbol_idx)
             : id(id), data(data), n_elements(n_elements), stride(stride), connectivity_index(connectivity_index), first_symbol_idx(first_symbol_idx)
         {
             if (!id) {
-                std::cout << "symx error: DataMap id must not be null. All data sources must provide a unique identifier." << std::endl;
+                std::cout << "symx error: DataMap requires a non-null id lambda. Pass [&container]() { return reinterpret_cast<std::uintptr_t>(&container); }" << std::endl;
                 exit(-1);
             }
         }

@@ -58,6 +58,8 @@ void symx::GlobalPotential::add_potential(const std::string& name, const std::ve
 
 void symx::GlobalPotential::add_dof(std::function<std::uintptr_t()> id, std::function<double *()> data, std::function<int32_t()> flat_size, const std::string &name)
 {
+    // DOF maps store flat arrays: stride=1, no connectivity, no symbol binding (first_symbol_idx=-1)
+    // flat_size returns total number of doubles, treated as n_elements with stride=1
     this->dof_maps.emplace_back(id, data, flat_size, /*stride=*/ 1, /*connectivity_index=*/-1, /*first_symbol_idx=*/-1);
 }
 void symx::GlobalPotential::add_dof(EigenMatrixRM<double> &arr, const std::string &name)

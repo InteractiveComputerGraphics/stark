@@ -26,19 +26,32 @@ namespace symx
     };
 
 	/*
-	 * Puts together a symbolic workspace with actual data bindings in the context of loop evaluation within SymX.
-	 * However, this does not evaluate, it will be passed to one or multiple CompiledInLoop instances for evaluation of expressions.
-	*/
+	 * MappedWorkspace: Binds a symbolic Workspace to actual data for loop-based evaluation.
+	 * 
+	 * Key concepts:
+	 *   - Workspace (ws): Contains symbolic expressions (Scalar, Vector, Matrix)
+	 *   - DataMaps (maps): Bind symbols to actual memory via lambdas. Each map tracks:
+	 *       - id: container address for identity matching across contexts
+	 *       - data: pointer to actual memory
+	 *       - n_elements: number of rows/items in the array
+	 *       - stride: elements per row (e.g., 3 for Vec3)
+	 *       - connectivity_index: which connectivity column indexes this data (-1 for fixed/global data)
+	 *       - first_symbol_idx: where in the symbol array this binding starts
+	 *   - ConnectivityMap (conn): Defines which elements (triangles, edges, etc.) to iterate over
+	 *   - Summation: Optional mechanism for summing over a vector of values e.g. quadrature points
+	 * 
+	 * This class does not evaluate - it's passed to CompiledInLoop for actual evaluation.
+	 */
     template<typename FLOAT>
     class MappedWorkspace
     {
     public:
         /* Fields */
-        Workspace ws;
-        Summation<FLOAT> summation;
-        std::vector<DataMap<const FLOAT>> maps;
-		ConnectivityMap conn;
-		std::string name = "NO_NAME";
+        Workspace ws;                            // Symbolic expressions
+        Summation<FLOAT> summation;              // Optional: data for summation loops
+        std::vector<DataMap<const FLOAT>> maps;  // Bindings: symbols -> actual data (const because inputs are read-only)
+		ConnectivityMap conn;                    // Connectivity: defines loop iteration structure
+		std::string name = "NO_NAME";            // Debug name for error messages
 
         /* Methods */
 		MappedWorkspace(ConnectivityMap conn);
@@ -199,6 +212,8 @@ namespace symx
 
 	// ============================================================================
     // Make fixed data (no indexing)
+    // Fixed data: connectivity_index=-1 means the value is the same for all elements
+    // (e.g., global parameters like time step size)
     // ============================================================================
 	template<typename FLOAT>
 	inline Scalar MappedWorkspace<FLOAT>::make_scalar(std::function<std::uintptr_t()> id, std::function<const FLOAT* ()> data, const std::string& name)
@@ -266,7 +281,10 @@ namespace symx
 	}
 
 	// ============================================================================
-	// Make Scalar(s)
+	// Make Scalar(s) - Indexed by connectivity
+	// Indexed data: connectivity_index=idx.idx tells which column of the connectivity
+	// array provides the index into this data array.
+	// E.g., for triangles [v0,v1,v2], idx=0 means use v0 to index into data.
 	// ============================================================================
 	template<typename FLOAT>
 	inline Scalar MappedWorkspace<FLOAT>::make_scalar(std::function<std::uintptr_t()> id, std::function<const FLOAT*()> data, std::function<int32_t()> n_elements, const Index& idx, const std::string& name)
@@ -307,7 +325,9 @@ namespace symx
     }
 
 	// ============================================================================
-	// Make Vector(s)
+	// Make Vector(s) - Indexed by connectivity
+	// For vectors (stride > 1), data is laid out as: [v0_x, v0_y, v0_z, v1_x, v1_y, v1_z, ...]
+	// Accessing element i means accessing data[i*stride : i*stride+stride]
 	// ============================================================================
 	template<typename FLOAT>
 	inline Vector MappedWorkspace<FLOAT>::make_vector(std::function<std::uintptr_t()> id, std::function<const FLOAT*()> data, std::function<int32_t()> n_elements, const int32_t stride, const Index& idx, const std::string& name)
@@ -809,9 +829,10 @@ namespace symx
     template <typename FLOAT>
     inline std::vector<Scalar> MappedWorkspace<FLOAT>::get_symbols(const DataMap<double> &data_map)
     {
+        	
         std::vector<Scalar> symbols;
 		for (const auto& map : this->maps) {
-			if ((const void*)map.id() == (const void*)data_map.id()) {
+			if (map.id() == data_map.id()) {  // Same container address
 				for (int i = 0; i < map.stride; ++i) {
 					symbols.push_back(this->ws.get_scalar(map.first_symbol_idx + i));
 				}
@@ -823,9 +844,10 @@ namespace symx
     template <typename FLOAT>
     inline std::vector<DataMap<const FLOAT>> MappedWorkspace<FLOAT>::get_original_maps(const DataMap<double> &data_map)
     {
+        // Find all DataMaps bound to the same data container by comparing container addresses
         std::vector<DataMap<const FLOAT>> original_maps;
 		for (const auto& map : this->maps) {
-			if ((const void*)map.id() == (const void*)data_map.id()) {
+			if (map.id() == data_map.id()) {  // Same container address
 				original_maps.push_back(map);
 			}
 		}
