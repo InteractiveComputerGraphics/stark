@@ -21,6 +21,7 @@ symx::SecondOrderCompiledPotential::SecondOrderCompiledPotential(const Potential
             // Verify size
             if (dof_map.stride != 3) {
                 std::cout << "symx error: SecondOrderCompiledPotential() expected DoF stride of 3, got " << dof_map.stride << "." << std::endl;
+                std::cout << "Potential: " << potential.get_name() << std::endl;
                 exit(-1);
             }
 
@@ -37,6 +38,7 @@ symx::SecondOrderCompiledPotential::SecondOrderCompiledPotential(const Potential
     // Exit if no dofs
     if (this->n_dofs == 0) {
         std::cout << "symx error: SecondOrderCompiledPotential() got potential with zero DoFs." << std::endl;
+        std::cout << "Potential: " << potential.get_name() << std::endl;
         exit(-1);
     }
 

@@ -48,8 +48,6 @@ void hanging_cloth()
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.init_frictional_contact = false;
-
-	settings.execution.n_threads = 1;  // DEBUG
 	stark::Simulation simulation(settings);
 
 	// Cloth
@@ -404,7 +402,7 @@ void twisting_cloth()
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
-	settings.newton.residual_tolerance = 100.0;  // Higher tolerance for faster simulation without gravity
+	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
 	stark::Simulation simulation(settings);
 
 	// Contact
@@ -416,7 +414,7 @@ void twisting_cloth()
 	
 	// Cloth
 	double s = 0.5;
-	int n = 50;
+	int n = 100;
 	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
 	material.strain.elasticity_only = true;  // Strain limiting would make the cloth too stiff and would fight with the prescribed BC, leading to unrealistic stresses
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
@@ -550,7 +548,7 @@ int main()
 //
 //	// Simple simulations: No collisions, only presets
 //	hanging_net();
-	hanging_cloth();
+//	hanging_cloth();
 //	hanging_deformable_box();
 //	attachments();
 //
@@ -560,6 +558,6 @@ int main()
 //	// Simulations with collisions
 //	deformable_and_rigid_collisions();
 //	simple_grasp(); 
-//	twisting_cloth();
+	twisting_cloth();
 //	magnetic_deformables();
 }

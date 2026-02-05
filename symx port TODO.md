@@ -1,5 +1,7 @@
 # symx port TODO
 
+* Is check sum slow?
+
 * `std::string to_string` for symx options should be in symx
 
 * symx has a cmake option to set compilation path.

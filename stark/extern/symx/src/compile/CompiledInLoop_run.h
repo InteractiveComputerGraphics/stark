@@ -91,6 +91,11 @@ namespace symx
 		// ==========================================  PREPARATION  ========================================
 		// =================================================================================================
 
+		// Exit if there are no elements in the connectivity
+		if (this->mws->conn.n_elements() == 0) {
+			return;
+		}
+
         // Validate data
         if (symx::get_check_mode_ON()) {
             this->mws->verify_data_maps();

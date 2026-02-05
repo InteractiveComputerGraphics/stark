@@ -107,6 +107,7 @@ bool Stark::run(double duration, std::function<void()> callback)
 	}
 
 	// Finalize
+	this->newton->get_log().print();
 	this->print();
 	return success;
 }

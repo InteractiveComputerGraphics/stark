@@ -418,6 +418,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
             break;
         } 
         else {
+            exit(99); // DEBUG
             this->_print(fmt::format("\n\t{}{:d}. step = {:.2e} | Invalid state", 
                 this->settings.output_prefix, it, step), Verbosity::LineSearchIteration);
             this->callbacks.run_on_intermediate_state_invalid();

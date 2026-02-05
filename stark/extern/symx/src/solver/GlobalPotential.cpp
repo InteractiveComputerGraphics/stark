@@ -112,6 +112,7 @@ void symx::GlobalPotential::get_dofs(double *u) const
     int32_t offset = 0;
     for (const DataMap<double>& dof_map : this->dof_maps) {
         const int32_t n_dofs = (int32_t)dof_map.size();
+        if (n_dofs == 0) { continue; }
         std::memcpy(u + offset, dof_map.data(), n_dofs * sizeof(double));
         offset += n_dofs;
     }
@@ -121,6 +122,7 @@ void symx::GlobalPotential::apply_dof_increment(const double *du)
     int32_t offset = 0;
     for (const DataMap<double>& dof_map : this->dof_maps) {
         const int32_t n_dofs = (int32_t)dof_map.size();
+        if (n_dofs == 0) { continue; }
         double* dof_data = dof_map.data();
         for (int32_t i = 0; i < n_dofs; i++) {
             dof_data[i] += du[offset + i];
@@ -133,6 +135,7 @@ void symx::GlobalPotential::set_dofs(const double *u)
     int32_t offset = 0;
     for (const DataMap<double>& dof_map : this->dof_maps) {
         const int32_t n_dofs = (int32_t)dof_map.size();
+        if (n_dofs == 0) { continue; }
         double* dof_data = dof_map.data();
         std::memcpy(dof_data, u + offset, n_dofs * sizeof(double));
         offset += n_dofs;

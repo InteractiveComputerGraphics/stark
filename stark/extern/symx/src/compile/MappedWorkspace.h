@@ -829,7 +829,7 @@ namespace symx
     template <typename FLOAT>
     inline std::vector<Scalar> MappedWorkspace<FLOAT>::get_symbols(const DataMap<double> &data_map)
     {
-        	
+        
         std::vector<Scalar> symbols;
 		for (const auto& map : this->maps) {
 			if (map.id() == data_map.id()) {  // Same container address
