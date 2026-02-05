@@ -535,6 +535,9 @@ void magnetic_deformables()
 int main()
 {
 	// symx::enable_load_compiled(false);
+	hanging_net();
+	//twisting_cloth();
+
 	/*
 		Here you can find a list of simple scenes to test the library.
 		Each function contains a different scene with a brief description of the simulation.
@@ -548,7 +551,7 @@ int main()
 //	rb_constraints_all();
 //
 //	// Simple simulations: No collisions, only presets
-//	hanging_net();
+//  hanging_net();
 //  hanging_cloth();
 //	hanging_deformable_box();
 //	attachments();
@@ -559,6 +562,6 @@ int main()
 //	// Simulations with collisions
 //	deformable_and_rigid_collisions();
 //	simple_grasp(); 
-	twisting_cloth();
+//  twisting_cloth();
 //	magnetic_deformables();
 }
