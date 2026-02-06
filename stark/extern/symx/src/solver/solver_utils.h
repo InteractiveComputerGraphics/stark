@@ -58,7 +58,7 @@ namespace symx
 		void add_is_intermediate_state_valid(std::function<bool()> f) { this->is_intermediate_state_valid.push_back(f); }
 		void add_on_intermediate_state_invalid(std::function<void()> f) { this->on_intermediate_state_invalid.push_back(f); }
 		void add_is_converged_state_valid(std::function<bool()> f) { this->is_converged_state_valid.push_back(f); }
-        void set_max_allowed_step(std::function<double()> f) { this->max_allowed_step.push_back(f); }
+        void add_max_allowed_step(std::function<double()> f) { this->max_allowed_step.push_back(f); }
 
 		// Run callbacks
 		void run_before_energy_evaluation() { this->_run(this->before_energy_evaluation); }
@@ -113,6 +113,7 @@ namespace symx
         double residual_tolerance = 1e-6;
         double step_tolerance = std::numeric_limits<double>::epsilon();
         double line_search_armijo_beta = 1e-4;
+        bool enable_armijo_bracktracking = true;
         Verbosity verbosity = Verbosity::LineSearchIteration;
         std::string output_prefix = "";
     };

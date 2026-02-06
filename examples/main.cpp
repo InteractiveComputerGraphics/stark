@@ -400,21 +400,24 @@ void twisting_cloth()
 	settings.output.simulation_name = "twisting_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/twisting_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
+	settings.execution.end_simulation_time = 2.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
 	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
+	// settings.execution.n_threads = 1; // DEBUG
+	// settings.simulation.max_time_step_size = 0.001;
+	settings.simulation.use_adaptive_time_step = false;
 	stark::Simulation simulation(settings);
 
 	// Contact
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(0.0005)
-		.set_min_contact_stiffness(1e6)
+		.set_default_contact_thickness(0.002)
+		.set_min_contact_stiffness(1e8)
 	);
 	
 	// Cloth
 	double s = 0.5;
-	int n = 100;
+	int n = 20;
 	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
 	material.strain.elasticity_only = true;  // Strain limiting would make the cloth too stiff and would fight with the prescribed BC, leading to unrealistic stresses
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
@@ -532,10 +535,57 @@ void magnetic_deformables()
 	);
 }
 
+
+void simple_contact_test()
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "simple_contact_test";
+	settings.output.output_directory = OUTPUT_PATH + "/simple_contact_test";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.execution.end_simulation_time = 0.5;
+	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
+	
+	// DEBUG
+	// settings.execution.n_threads = 1;
+	settings.newton.enable_armijo_bracktracking = true;
+	settings.simulation.max_time_step_size = 0.01;
+	settings.simulation.use_adaptive_time_step = false;
+	stark::Simulation simulation(settings);
+
+	// Contact
+	simulation.interactions->contact->set_global_params(
+		stark::EnergyFrictionalContact::GlobalParams()
+		.set_default_contact_thickness(0.002)
+		.set_min_contact_stiffness(1e8)
+	);
+	auto bc_params = stark::EnergyPrescribedPositions::Params();
+	
+	// Cloth
+	double s = 0.5;
+	int n = 2;
+	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
+	material.strain.elasticity_only = true;  // Strain limiting would make the cloth too stiff and would fight with the prescribed BC, leading to unrealistic stresses
+	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
+	auto left = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { -s/2.0, 0.0, 0.0 }, { 0.001, s, s }, bc_params);
+	H.contact.set_friction(H.contact, 1.0);
+
+	// Floor
+	auto [Vf, Tf, Hf] = simulation.presets->deformables->add_surface_grid("floor", { 2.0*s, 2.0*s }, { 1, 1 }, material);
+	Hf.point_set.add_displacement({ 0.1, 0.03, -0.1 });
+
+	// BC
+	auto floor_bc = simulation.deformables->prescribed_positions->add_inside_aabb(Hf.point_set, { 0.0, 0.0, 0.0 }, { 10.0, 10.0, 10.0 }, bc_params);
+
+	// Run
+	simulation.run();
+}
+
+
 int main()
 {
 	// symx::enable_load_compiled(false);
-	hanging_net();
+	//hanging_cloth();
+	simple_contact_test();
 	//twisting_cloth();
 
 	/*
@@ -547,21 +597,21 @@ int main()
 		these are just simple examples that don't require external assets to get you started.
 	*/
 
-// // Simple rigid body scenes
-//	rb_constraints_all();
-//
-//	// Simple simulations: No collisions, only presets
-//  hanging_net();
-//  hanging_cloth();
-//	hanging_deformable_box();
-//	attachments();
-//
-//	// Composite materials
-//	hanging_box_with_composite_material();
-//
-//	// Simulations with collisions
-//	deformable_and_rigid_collisions();
-//	simple_grasp(); 
-//  twisting_cloth();
-//	magnetic_deformables();
+	// // Simple rigid body scenes
+	//	rb_constraints_all();
+	//
+	//	// Simple simulations: No collisions, only presets
+	//  hanging_net();
+	//  hanging_cloth();
+	//	hanging_deformable_box();
+	//	attachments();
+	//
+	//	// Composite materials
+	//	hanging_box_with_composite_material();
+	//
+	//	// Simulations with collisions
+	//	deformable_and_rigid_collisions();
+	//	simple_grasp(); 
+	//  twisting_cloth();
+	//	magnetic_deformables();
 }

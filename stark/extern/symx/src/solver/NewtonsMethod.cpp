@@ -79,6 +79,7 @@ SolverReturn NewtonsMethod::solve()
             auto timer_eval = this->log.scope("Energy Evaluation");
             element_hessians = this->compiled->evaluate_P__dP_du__local_d2P_du2(E0, this->grad);
         }
+        this->callbacks.run_after_energy_evaluation();
 
         // Compute residual
         double residual_norm = this->callbacks.compute_residual(this->grad);
@@ -418,19 +419,29 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
             break;
         } 
         else {
-            exit(99); // DEBUG
             this->_print(fmt::format("\n\t{}{:d}. step = {:.2e} | Invalid state", 
                 this->settings.output_prefix, it, step), Verbosity::LineSearchIteration);
-            this->callbacks.run_on_intermediate_state_invalid();
             step *= shrink;
             apply_scaled_du(-step);  // Undo and apply smaller step
         }
     }
+
+    // Failed to find valid state within line search iterations
+    if (it == this->settings.max_line_search_iterations) {
+        this->callbacks.run_on_intermediate_state_invalid();
+        return SolverReturn::InvalidIntermediateConfiguration;
+    }
     
+    if (!this->settings.enable_armijo_bracktracking) {
+        return SolverReturn::Running;
+    }
+
     // Second loop: check Armijo condition (sufficient energy descent)
-    // Armijo: E(x + s*du) <= E(x) + beta * s * <du, gradE>
-    const double expected_decrease = this->settings.line_search_armijo_beta * step * du_dot_grad;
+    // Armijo: E(x + s*du) <= E(x) + beta * <du, gradE>
+    const double expected_decrease = this->settings.line_search_armijo_beta * du_dot_grad;
     const double E_threshold = E0 + expected_decrease;
+    // const double E_threshold = E0;
+    // const double suitable_backtracking_energy = E0 + 1e-4 * du_dot_grad;
     double E1 = 0.0;
     for (; it < this->settings.max_line_search_iterations; ++it) {
         this->total_line_search_iterations++;
@@ -440,11 +451,16 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         this->callbacks.run_before_energy_evaluation();
         this->compiled->evaluate_P(E1);
         this->callbacks.run_after_energy_evaluation();
+
+        // DEBUG
+        this->_print(fmt::format("\n\t{}{:d}. step = {:.2e} | E = {:.6e} | E_bt = {:.6e} | E0 = {:.6e}",
+                this->settings.output_prefix, it, step, E1, E_threshold, E0),
+                Verbosity::LineSearchIteration);
         
         // Print
         if (it > 0) {
-            this->_print(fmt::format("\n\t{}{:d}. step = {:.2e} | (E - E_threshold)/E_threshold = {:.2e}",
-                this->settings.output_prefix, it, step, (E1 - E_threshold) / E_threshold),
+            this->_print(fmt::format("\n\t{}{:d}. step = {:.2e} | E/E_bt = {:.6e} | E/E0 = {:.6e}",
+                this->settings.output_prefix, it, step, E1 / E_threshold, E1 / E0),
                 Verbosity::LineSearchIteration);
         }
         

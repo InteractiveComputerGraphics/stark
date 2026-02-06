@@ -4,6 +4,8 @@
         "timeout": true,
         "tee": true,
         "cmake": true,
-        "nproc": true
+        "nproc": true,
+        "./examples": true,
+        "touch": true
     }
 }

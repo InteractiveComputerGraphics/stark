@@ -1,5 +1,20 @@
 # symx port TODO
 
+If collision does not work, reproduce the extruding box and see if that already works.
+
+Is it because dof_increments dont work with velocity updates?
+
+In any case, go very _very_ slowly.
+    - Complex, non-collision potentials
+    - Strain limiting
+    - Analytic floor expression
+    - Make sure E0 is reproducible
+    - Check for energy discontinuities
+    ...
+    One little tiny thing at a time, circumventing collision detection.
+
+
+
 * Newton-Stark settings and callbacks are a bit wrangled.
     Conceptually is correct but it is brittle or undocumented that we are setting into stark and then copy into newton
 
