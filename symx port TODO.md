@@ -1,6 +1,7 @@
 # symx port TODO
 
-* Is check sum slow?
+* Newton-Stark settings and callbacks are a bit wrangled.
+    Conceptually is correct but it is brittle or undocumented that we are setting into stark and then copy into newton
 
 * `std::string to_string` for symx options should be in symx
 

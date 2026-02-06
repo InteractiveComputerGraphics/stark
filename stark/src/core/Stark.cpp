@@ -244,6 +244,7 @@ void Stark::_initialize()
 	context->print = [&](const std::string& msg) { this->console.print(msg, ConsoleVerbosity::Frames); };
     this->newton = symx::NewtonsMethod::create(this->global_potential, context);  // Compilation occurs here
 	this->newton->settings = this->settings.newton;
+	this->newton->callbacks = this->callbacks.newton;
 
 	// Print ndofs
 	this->console.print("\nDegrees of freedom:", ConsoleVerbosity::Frames);
