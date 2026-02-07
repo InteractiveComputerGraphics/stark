@@ -120,7 +120,7 @@ std::string Settings::as_string() const
 	out += "\n         time_step_size_success_muliplier: " + to_string(this->simulation.time_step_size_success_muliplier);
 	out += "\n         time_step_size_lower_bound: " + fmt::format("{:.1e}", this->simulation.time_step_size_lower_bound);
 
-	out += "\n     Newton's Method (symx::NewtonSettings)";
+	out += "\n     Newton's Method";
 	// SolverSettings (base class)
 	out += "\n         max_iterations: " + std::to_string(this->newton.max_iterations);
 	out += "\n         min_iterations: " + std::to_string(this->newton.min_iterations);

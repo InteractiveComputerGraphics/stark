@@ -595,14 +595,14 @@ void column_extrusion()
 	const double poisson_ratio = 0.49;
 	const double bc_stiffness = 1e10;
 
-	// const double dt = 1.0/30.0;
-	const double dt = duration*0.99999;
+	const double dt = 1.0/30.0;
+	//const double dt = duration*0.99999;
 	Eigen::Vector3d size(1.0, 1.0, 0.5);
 	const bool is_quasistatic = true;
 	
 	// Settings
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "column_extrusion";
+	settings.output.simulation_name = "column_extrusion_PPN";
 	settings.output.output_directory = OUTPUT_PATH + "/column_extrusion";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.fps = 1.0/dt;
@@ -612,8 +612,8 @@ void column_extrusion()
 	
 	settings.newton.project_to_pd_use_mirroring = true;
 	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
-	settings.newton.step_tolerance = 0.001; // Velocity!
-	settings.newton.step_cap = 0.5;  // Velocity!
+	settings.newton.step_tolerance = 0.001/dt; // Velocity!
+	settings.newton.step_cap = 0.5/dt;  // Velocity!
 	settings.newton.min_iterations = 0;
 	// settings.newton.linear_solver = symx::LinearSolver::DirectLU;
 	

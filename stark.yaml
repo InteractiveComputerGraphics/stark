@@ -14,7 +14,7 @@ vars:
   lib: "stark"
   scene: "stark"
 
-  local_mnt: "/local-hdd"
+  local_mnt: "/local-ssd"
   remote_mnt: "/local-ssd"
 
   local_lib_folder: "${vars.local_mnt}/libs/${vars.lib}"
@@ -49,7 +49,7 @@ collect:
   # dst: local path
   
   # name: "frames_back"
-  src: "build/output/"
+  src: "output/"
   dst: "${vars.local_out}/build/output/shuttle"
   include: []  # Empty = sync all files (default). Non-empty = whitelist mode.
   exclude: []
