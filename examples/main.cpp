@@ -598,11 +598,11 @@ void column_extrusion()
 	const double dt = 1.0/30.0;
 	//const double dt = duration*0.99999;
 	Eigen::Vector3d size(1.0, 1.0, 0.5);
-	const bool is_quasistatic = true;
+	const bool is_quasistatic = false;
 	
 	// Settings
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "column_extrusion_PPN";
+	settings.output.simulation_name = "column_extrusion_PN_dyn";
 	settings.output.output_directory = OUTPUT_PATH + "/column_extrusion";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.fps = 1.0/dt;
@@ -638,9 +638,10 @@ void column_extrusion()
 
 	stark::Volume::Params material = stark::Volume::Params::Soft_Rubber();
 	material.strain.elasticity_only = true;
+	material.inertia.quasistatic = is_quasistatic;
+	material.inertia.damping = 1.0;
 	material.strain.poissons_ratio = poisson_ratio;
 	material.strain.youngs_modulus = youngs_modulus;
-	material.inertia.quasistatic = is_quasistatic;
 	auto H = simulation.presets->deformables->add_volume("block", mesh.vertices, symx::as_array_vec<4>(mesh.connectivity), material);
 	
 	// BC
