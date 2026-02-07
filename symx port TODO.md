@@ -13,6 +13,7 @@ In any case, go very _very_ slowly.
     ...
     One little tiny thing at a time, circumventing collision detection.
 
+* Quasistatic should let gravity go
 
 * Unify mesh generation. Prefer mid point insertion for quads? What about quadratic quads?
 
@@ -41,4 +42,10 @@ In any case, go very _very_ slowly.
 
 * Check the whole symx use and logic for consistency and latent bugs
     We are comparing many pointers, and fetching and storing... Extensive check!
+
+
+
+# STARK Docs
+
+* Clarify that stark uses a velocity based solver, therefore tolerances, etc are in m/s and time step dependent
 

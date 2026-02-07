@@ -580,16 +580,16 @@ void simple_contact_test()
 	simulation.run();
 }
 
-void column_extrussion()
+void column_extrusion()
 {
 	/*
 		IMPORTANT: STARK solves for velocity updates, therefore, it is advisable to use duration = dt = 1.0 for quasistatics.
 		In this setting, the solve is analogous to positional dofs.
 	*/
 	// Parameters
-	const double duration = 1.0;  // CRITICAL: THIS SHOULD NOT INFLUENCE BUT IT DOES
+	const double duration = 1.0;
 	const double extrusion_factor = 5.0;
-	const int refinement_level = 20;
+	const int refinement_level = 40;
 
 	const double youngs_modulus = 1e8;
 	const double poisson_ratio = 0.49;
@@ -602,9 +602,10 @@ void column_extrussion()
 	
 	// Settings
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "column_extrussion";
-	settings.output.output_directory = OUTPUT_PATH + "/column_extrussion";
+	settings.output.simulation_name = "column_extrusion";
+	settings.output.output_directory = OUTPUT_PATH + "/column_extrusion";
 	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.fps = 1.0/dt;
 	settings.execution.end_simulation_time = duration;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
 	settings.simulation.max_time_step_size = dt;
@@ -612,8 +613,9 @@ void column_extrussion()
 	settings.newton.project_to_pd_use_mirroring = true;
 	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
 	settings.newton.step_tolerance = 0.001; // Velocity!
-	settings.newton.step_cap = 0.05;  // Velocity!
+	settings.newton.step_cap = 0.5;  // Velocity!
 	settings.newton.min_iterations = 0;
+	// settings.newton.linear_solver = symx::LinearSolver::DirectLU;
 	
 	// DEBUG
 	// settings.execution.n_threads = 1;
@@ -650,7 +652,6 @@ void column_extrussion()
 		double max_displacement = (extrusion_factor - 1) * size[2];
 		double vel = max_displacement / duration;
 		double displacement = vel * t;
-		std::cout << "Time: " << t << " / " << duration << " - Displacement: " << displacement << std::endl;
 		top.set_transformation({ 0.0, 0.0, displacement }, Eigen::Matrix3d::Identity());
 	});
 
@@ -662,7 +663,7 @@ void column_extrussion()
 int main()
 {
 	// symx::enable_load_compiled(false);
-	column_extrussion();
+	column_extrusion();
 	//hanging_cloth();
 	//simple_contact_test();
 	//twisting_cloth();
