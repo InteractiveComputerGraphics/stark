@@ -20,6 +20,7 @@ stark::EnergyLumpedInertia::EnergyLumpedInertia(stark::core::Stark& stark, const
 			Scalar volume = mws.make_scalar(this->lumped_volume, node["idx"]);
 			Scalar density = mws.make_scalar(this->density, node["group"]);
 			Scalar damping = mws.make_scalar(this->damping, node["group"]);
+			Scalar is_quasistatic = mws.make_scalar(this->is_quasistatic, node["group"]);
 			Scalar dt = mws.make_scalar(stark.dt);
 			Vector gravity = mws.make_vector(stark.gravity);
 
@@ -30,7 +31,7 @@ stark::EnergyLumpedInertia::EnergyLumpedInertia(stark::core::Stark& stark, const
 			Vector dev = x1 - xhat;
 			Vector dev2 = x1 - x0;
 			Scalar E = 0.5 * mass * (dev.dot(dev) / (dt.powN(2)) + dev2.dot(dev2) * damping / dt);
-			return E;
+			return branch(is_quasistatic, 0.0, E);
 		}
 	);
 }
@@ -41,6 +42,12 @@ stark::EnergyLumpedInertia::Handler stark::EnergyLumpedInertia::add(const PointS
 	const int group = (int)this->density.size();
 	this->density.push_back(params.density);
 	this->damping.push_back(params.damping);
+	if (params.quasistatic) {
+		this->is_quasistatic.push_back(1.0);
+	}
+	else {
+		this->is_quasistatic.push_back(0.0);
+	}
 
 	for (int i = 0; i < (int)points.size(); i++) {
 		this->lumped_volume.push_back(lumped_volume[i]);
@@ -159,6 +166,7 @@ void stark::EnergyLumpedInertia::set_params(const Handler& handler, const Params
 	const int group = handler.get_idx();
 	this->density[group] = params.density;
 	this->damping[group] = params.damping;
+	this->is_quasistatic[group] = (double)params.quasistatic;
 }
 
 double stark::EnergyLumpedInertia::get_mass(const Handler& handler) const

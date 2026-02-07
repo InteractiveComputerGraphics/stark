@@ -14,6 +14,10 @@ In any case, go very _very_ slowly.
     One little tiny thing at a time, circumventing collision detection.
 
 
+* Unify mesh generation. Prefer mid point insertion for quads? What about quadratic quads?
+
+* I think the time stepping logic with adaptivity and the script is broken
+    The quasistatic extrussion restarts in wrong ways in respect to the script
 
 * Newton-Stark settings and callbacks are a bit wrangled.
     Conceptually is correct but it is brittle or undocumented that we are setting into stark and then copy into newton

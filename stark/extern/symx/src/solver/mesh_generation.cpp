@@ -21,11 +21,25 @@ void reorder_RCM(TriangleMesh<FLOAT>& mesh)
     apply_permutation_inplace(mesh.vertices, res.old_to_new);
 }
 
+template <typename FLOAT>
+std::vector<int> symx::enumerate(const std::vector<int> &connectivity, int stride)
+{
+    const int n_elements = static_cast<int>(connectivity.size() / stride);
+    const int enumerated_stride = stride + 1;
+    std::vector<int> out;
+    out.reserve(n_elements * enumerated_stride);
+    for (int i = 0; i < n_elements; ++i) {
+        out.push_back(i);
+        out.insert(out.end(), connectivity.begin() + i * stride, connectivity.begin() + (i + 1) * stride);
+    }
+    return out;
+}
+
 
 template <typename FLOAT>
 FEMMesh<FLOAT> symx::generate_cuboid_Tet4_mesh(
-    const Eigen::Matrix<FLOAT, 3, 1>& size,
-    const std::array<int32_t, 3>& elements_per_axis) 
+    const Eigen::Matrix<FLOAT, 3, 1> &size,
+    const std::array<int32_t, 3> &elements_per_axis)
 {
     using Vector3S = Eigen::Matrix<FLOAT, 3, 1>;
     FEMMesh<FLOAT> mesh;

@@ -6,6 +6,27 @@
 
 using namespace symx;
 
+// DEBUG
+// Stable Neo-Hookean material model (Smith et al. 2018)
+Scalar stable_neohookean_elastic_energy_density(const Scalar youngs_modulus, const Scalar poissons_ratio, const Matrix& F)
+{
+    Scalar E = youngs_modulus;
+    Scalar nu = poissons_ratio;
+    Scalar mu = E / (2.0 * (1.0 + nu));
+    Scalar lambda = (E * nu) / ((1.0 + nu) * (1.0 - 2.0 * nu));
+    Scalar mu_ = 4.0 / 3.0 * mu;
+    Scalar lambda_ = lambda + 5.0 / 6.0 * mu;
+    Scalar alpha = 1.0 + mu_ / lambda_ - mu_ / (4.0 * lambda_);
+
+    Scalar detF = F.det();
+    Scalar Ic = F.frobenius_norm_sq();
+    Scalar energy_density = 0.5 * mu_ * (Ic - 3.0) + 0.5 * lambda_ * (detF - alpha).powN(2) - 0.5 * mu_ * log(Ic + 1.0);
+
+    return energy_density;
+}
+
+
+
 stark::EnergyTetStrain::EnergyTetStrain(stark::core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
 {
@@ -74,7 +95,54 @@ stark::EnergyTetStrain::EnergyTetStrain(stark::core::Stark& stark, spPointDynami
 	// 		return Energy;
 	// 	}
 	// );
-	stark.global_potential->add_potential("EnergyTetStrain_Elasticity_Only", this->conn_elasticity_only,
+
+	// stark.global_potential->add_potential("EnergyTetStrain_Elasticity_Only", this->conn_elasticity_only,
+	// 	[&](MappedWorkspace<double>& mws, Element& conn)
+	// 	{
+	// 		// Unpack connectivity
+	// 		std::vector<Index> tet = conn.slice(2, 6);
+
+	// 		// Create symbols
+	// 		std::vector<Vector> v1 = mws.make_vectors(this->dyn->v1.data, tet);
+	// 		std::vector<Vector> x0 = mws.make_vectors(this->dyn->x0.data, tet);
+	// 		std::vector<Vector> X = mws.make_vectors(this->dyn->X.data, tet);
+	// 		Scalar scale = mws.make_scalar(this->scale, conn["group"]);
+	// 		Scalar e = mws.make_scalar(this->youngs_modulus, conn["group"]);
+	// 		Scalar nu = mws.make_scalar(this->poissons_ratio, conn["group"]);
+	// 		Scalar dt = mws.make_scalar(stark.dt);
+
+	// 		// Time integration
+	// 		std::vector<Vector> x1 = time_integration(x0, v1, dt);
+
+	// 		// Scaling
+	// 		std::vector<Vector> Xs = { scale * X[0], scale * X[1], scale * X[2], scale * X[3] };
+
+	// 		// Kinematics
+	// 		Matrix DX = Matrix(collect_scalars({ Xs[1] - Xs[0], Xs[2] - Xs[0] , Xs[3] - Xs[0] }), { 3, 3 }).transpose();
+	// 		Matrix DXinv = DX.inv();
+	// 		Matrix Dx1 = Matrix(collect_scalars({ x1[1] - x1[0], x1[2] - x1[0], x1[3] - x1[0] }), { 3, 3 }).transpose();
+	// 		Matrix F1 = Dx1 * DXinv;
+	// 		Scalar tet_rest_volume = DX.det() / 6.0; // Specific for linear tet elements
+
+	// 		// [Smith et al. 2022] Stable Neo-Hookean Flesh Simulation
+	// 		// Eq. 49 from [Smith et al. 2022]
+	// 		Scalar mu = e / (2.0 * (1.0 + nu));
+	// 		Scalar lambda = (e * nu) / ((1.0 + nu) * (1.0 - 2.0 * nu)); // 3D
+	// 		Scalar mu_ = 4.0 / 3.0 * mu;
+	// 		Scalar lambda_ = lambda + 5.0 / 6.0 * mu;
+	// 		Scalar detF = F1.det();
+	// 		Scalar Ic = F1.frobenius_norm_sq();
+	// 		Scalar alpha = 1.0 + mu_ / lambda_ - mu_ / (4.0 * lambda_);
+	// 		Scalar elastic_energy_density = 0.5 * mu_ * (Ic - 3.0) + 0.5 * lambda_ * (detF - alpha).powN(2) - 0.5 * mu_ * log(Ic + 1.0);
+
+	// 		// Total
+	// 		Scalar Energy = tet_rest_volume * elastic_energy_density;
+	// 		return Energy;
+	// 	}
+	// );
+
+
+	stark.global_potential->add_potential("EnergyTetStrain_TEST", this->conn_elasticity_only,
 		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			// Unpack connectivity
@@ -84,7 +152,6 @@ stark::EnergyTetStrain::EnergyTetStrain(stark::core::Stark& stark, spPointDynami
 			std::vector<Vector> v1 = mws.make_vectors(this->dyn->v1.data, tet);
 			std::vector<Vector> x0 = mws.make_vectors(this->dyn->x0.data, tet);
 			std::vector<Vector> X = mws.make_vectors(this->dyn->X.data, tet);
-			Scalar scale = mws.make_scalar(this->scale, conn["group"]);
 			Scalar e = mws.make_scalar(this->youngs_modulus, conn["group"]);
 			Scalar nu = mws.make_scalar(this->poissons_ratio, conn["group"]);
 			Scalar dt = mws.make_scalar(stark.dt);
@@ -92,32 +159,24 @@ stark::EnergyTetStrain::EnergyTetStrain(stark::core::Stark& stark, spPointDynami
 			// Time integration
 			std::vector<Vector> x1 = time_integration(x0, v1, dt);
 
-			// Scaling
-			std::vector<Vector> Xs = { scale * X[0], scale * X[1], scale * X[2], scale * X[3] };
-
-			// Kinematics
-			Matrix DX = Matrix(collect_scalars({ Xs[1] - Xs[0], Xs[2] - Xs[0] , Xs[3] - Xs[0] }), { 3, 3 }).transpose();
-			Matrix DXinv = DX.inv();
-			Matrix Dx1 = Matrix(collect_scalars({ x1[1] - x1[0], x1[2] - x1[0], x1[3] - x1[0] }), { 3, 3 }).transpose();
-			Matrix F1 = Dx1 * DXinv;
-			Scalar tet_rest_volume = DX.det() / 6.0; // Specific for linear tet elements
-
-			// [Smith et al. 2022] Stable Neo-Hookean Flesh Simulation
-			// Eq. 49 from [Smith et al. 2022]
-			Scalar mu = e / (2.0 * (1.0 + nu));
-			Scalar lambda = (e * nu) / ((1.0 + nu) * (1.0 - 2.0 * nu)); // 3D
-			Scalar mu_ = 4.0 / 3.0 * mu;
-			Scalar lambda_ = lambda + 5.0 / 6.0 * mu;
-			Scalar detF = F1.det();
-			Scalar Ic = F1.frobenius_norm_sq();
-			Scalar alpha = 1.0 + mu_ / lambda_ - mu_ / (4.0 * lambda_);
-			Scalar elastic_energy_density = 0.5 * mu_ * (Ic - 3.0) + 0.5 * lambda_ * (detF - alpha).powN(2) - 0.5 * mu_ * log(Ic + 1.0);
-
-			// Total
-			Scalar Energy = tet_rest_volume * elastic_energy_density;
-			return Energy;
+            // Define potential
+            Scalar P = fem_integrator(FEM_Element::Tet4, mws,
+				[&](Scalar& w, Vector xi)
+				{
+					Matrix Jx = fem_jacobian(FEM_Element::Tet4, x1, xi);
+					Matrix JX = fem_jacobian(FEM_Element::Tet4, X, xi);
+					Matrix F = Jx * JX.inv();
+					return stable_neohookean_elastic_energy_density(e, nu, F) * JX.det() * w;
+				}
+            );
+            return P;
 		}
 	);
+
+
+
+
+
 }
 
 stark::EnergyTetStrain::Handler stark::EnergyTetStrain::add(const PointSetHandler& set, const std::vector<std::array<int, 4>>& tets, const Params& params)

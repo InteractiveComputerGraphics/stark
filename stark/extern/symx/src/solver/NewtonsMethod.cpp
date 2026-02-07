@@ -453,9 +453,9 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         this->callbacks.run_after_energy_evaluation();
 
         // DEBUG
-        this->_print(fmt::format("\n\t{}{:d}. step = {:.2e} | E = {:.6e} | E_bt = {:.6e} | E0 = {:.6e}",
-                this->settings.output_prefix, it, step, E1, E_threshold, E0),
-                Verbosity::LineSearchIteration);
+        // this->_print(fmt::format("\n\t{}{:d}. step = {:.2e} | E = {:.6e} | E_bt = {:.6e} | E0 = {:.6e}",
+        //         this->settings.output_prefix, it, step, E1, E_threshold, E0),
+        //         Verbosity::LineSearchIteration);
         
         // Print
         if (it > 0) {

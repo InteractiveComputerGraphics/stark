@@ -580,12 +580,91 @@ void simple_contact_test()
 	simulation.run();
 }
 
+void column_extrussion()
+{
+	/*
+		IMPORTANT: STARK solves for velocity updates, therefore, it is advisable to use duration = dt = 1.0 for quasistatics.
+		In this setting, the solve is analogous to positional dofs.
+	*/
+	// Parameters
+	const double duration = 1.0;  // CRITICAL: THIS SHOULD NOT INFLUENCE BUT IT DOES
+	const double extrusion_factor = 5.0;
+	const int refinement_level = 20;
+
+	const double youngs_modulus = 1e8;
+	const double poisson_ratio = 0.49;
+	const double bc_stiffness = 1e10;
+
+	// const double dt = 1.0/30.0;
+	const double dt = duration*0.99999;
+	Eigen::Vector3d size(1.0, 1.0, 0.5);
+	const bool is_quasistatic = true;
+	
+	// Settings
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "column_extrussion";
+	settings.output.output_directory = OUTPUT_PATH + "/column_extrussion";
+	settings.output.codegen_directory = COMPILE_PATH;
+	settings.execution.end_simulation_time = duration;
+	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
+	settings.simulation.max_time_step_size = dt;
+	
+	settings.newton.project_to_pd_use_mirroring = true;
+	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
+	settings.newton.step_tolerance = 0.001; // Velocity!
+	settings.newton.step_cap = 0.05;  // Velocity!
+	settings.newton.min_iterations = 0;
+	
+	// DEBUG
+	// settings.execution.n_threads = 1;
+	settings.simulation.init_frictional_contact = false;
+	stark::Simulation simulation(settings);
+
+	// Contact
+	// simulation.interactions->contact->set_global_params(
+	// 	stark::EnergyFrictionalContact::GlobalParams()
+	// 	.set_default_contact_thickness(0.002)
+	// 	.set_min_contact_stiffness(1e8)
+	// );
+	auto bc_params = stark::EnergyPrescribedPositions::Params();
+	bc_params.set_stiffness(bc_stiffness);
+	
+	
+	// Block
+    std::array<int32_t, 3> elements_per_axis = { refinement_level, refinement_level, (int)std::round(extrusion_factor*(int)refinement_level) };
+	auto mesh = symx::generate_cuboid_Tet4_mesh(size, elements_per_axis);
+
+	stark::Volume::Params material = stark::Volume::Params::Soft_Rubber();
+	material.strain.elasticity_only = true;
+	material.strain.poissons_ratio = poisson_ratio;
+	material.strain.youngs_modulus = youngs_modulus;
+	material.inertia.quasistatic = is_quasistatic;
+	auto H = simulation.presets->deformables->add_volume("block", mesh.vertices, symx::as_array_vec<4>(mesh.connectivity), material);
+	
+	// BC
+	auto bottom = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { 0.0, 0.0, -size[2]/2.0 }, { 10.0, 10.0, 0.001 }, bc_params);
+	auto top = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { 0.0, 0.0, size[2]/2.0 }, { 10.0, 10.0, 0.001 }, bc_params);
+
+	// Script
+	simulation.add_time_event(0, duration, [&](double t) {
+		double max_displacement = (extrusion_factor - 1) * size[2];
+		double vel = max_displacement / duration;
+		double displacement = vel * t;
+		std::cout << "Time: " << t << " / " << duration << " - Displacement: " << displacement << std::endl;
+		top.set_transformation({ 0.0, 0.0, displacement }, Eigen::Matrix3d::Identity());
+	});
+
+	// Run
+	simulation.run();
+}
+
 
 int main()
 {
 	// symx::enable_load_compiled(false);
+	column_extrussion();
 	//hanging_cloth();
-	simple_contact_test();
+	//simple_contact_test();
 	//twisting_cloth();
 
 	/*

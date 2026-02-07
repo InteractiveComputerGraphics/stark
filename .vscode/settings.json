@@ -7,5 +7,6 @@
         "nproc": true,
         "./examples": true,
         "touch": true
-    }
+    },
+    "cmake.parallelJobs": 8
 }

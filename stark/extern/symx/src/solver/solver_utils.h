@@ -138,7 +138,7 @@ namespace symx
         double cg_abs_tolerance = 1e-12;
         double cg_rel_tolerance = 1e-4;
         bool cg_stop_on_indefiniteness = true;
-        double epsilon_residual = 1e-12;            // Skip step if residual is below this (avoids CG instability)
+        double epsilon_residual = 1e-10;            // Skip step if residual is below this (avoids CG instability)
     };
 
     inline std::string in_two_columns(const std::string& str1, const std::string& str2, size_t distance)

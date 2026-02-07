@@ -26,6 +26,11 @@ namespace symx
         std::vector<std::array<int, 3>> triangles;
     };
 
+    std::vector<int> enumerate(const std::vector<int>& connectivity, int stride);
+
+    template <std::size_t STRIDE>
+    std::vector<std::array<int, STRIDE>> as_array_vec(const std::vector<int>& connectivity);
+
     template <typename FLOAT>
     FEMMesh<FLOAT> generate_cuboid_Tet4_mesh(
         const Eigen::Matrix<FLOAT, 3, 1>& size,
@@ -56,4 +61,21 @@ namespace symx
     TriangleMesh<FLOAT> generate_triangle_grid(
         const Eigen::Matrix<FLOAT, 2, 1>& size,
         const std::array<int32_t, 2>& quads_per_axis);
+
+
+	// DEFINITIONS ==========================================================================================
+    template <std::size_t STRIDE>
+    std::vector<std::array<int, STRIDE>> symx::as_array_vec(const std::vector<int> &connectivity)
+    {
+        const int n_elements = static_cast<int>(connectivity.size() / STRIDE);
+        std::vector<std::array<int, STRIDE>> out;
+        out.reserve(n_elements);
+        for (int i = 0; i < n_elements; ++i) {
+            std::array<int, STRIDE> elem;
+            std::copy(connectivity.begin() + i * STRIDE, connectivity.begin() + (i + 1) * STRIDE, elem.begin());
+            out.push_back(elem);
+        }
+        return out;
+    }
+
 }
