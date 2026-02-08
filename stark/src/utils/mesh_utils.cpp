@@ -127,6 +127,7 @@ void stark::write_VTK(const std::string& path, const std::vector<Eigen::Vector3d
 	}
 	else {
 		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.points.castInplace<float>();
 		vtk_file.set_cells_from_twice_indexable(tets, vtkio::CellType::Tetra);
 		vtk_file.write(path);
 	}
@@ -140,11 +141,13 @@ void stark::write_VTK(const std::string& path, const std::vector<Eigen::Vector3d
 	}
 	else {
 		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.points.castInplace<float>();
 		vtk_file.set_cells_from_twice_indexable(triangles, vtkio::CellType::Triangle);
 		if (generate_normals) {
 			std::vector<Eigen::Vector3d> normals;
 			compute_node_normals(normals, vertices, triangles);
 			vtk_file.set_point_data_from_twice_indexable("normals", normals, vtkio::AttributeType::Vectors);
+			vtk_file.point_data["normals"].buffer.castInplace<float>();
 		}
 		vtk_file.write(path);
 	}
@@ -158,6 +161,7 @@ void stark::write_VTK(const std::string& path, const std::vector<Eigen::Vector3d
 	}
 	else {
 		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.points.castInplace<float>();
 		vtk_file.set_cells_from_twice_indexable(edges, vtkio::CellType::Line);
 		vtk_file.write(path);
 	}
@@ -171,6 +175,7 @@ void stark::write_VTK(const std::string& path, const std::vector<Eigen::Vector3d
 	}
 	else {
 		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.points.castInplace<float>();
 		vtk_file.set_cells_as_particles(vertices.size());
 		vtk_file.write(path);
 	}
@@ -453,6 +458,42 @@ void stark::compute_node_normals(std::vector<Eigen::Vector3d>& output, const std
 	}
 }
 
+
+void stark::center(std::vector<Eigen::Vector3d>& points)
+{
+	if (points.size() == 0) {
+		return;
+	}
+	Eigen::Vector3d center = Eigen::Vector3d::Zero();
+	for (const Eigen::Vector3d& point : points) {
+		center += point;
+	}
+	center /= (double)points.size();
+	for (Eigen::Vector3d& point : points) {
+		point -= center;
+	}
+}
+
+void stark::normalize(std::vector<Eigen::Vector3d>& points, const double length)
+{
+	if (points.size() == 0) {
+		return;
+	}
+
+	Eigen::AlignedBox3d bbox;
+	for (const Eigen::Vector3d& point : points) {
+		bbox.extend(point);
+	}
+	const double max_length = bbox.diagonal().maxCoeff();
+	if (max_length == 0.0) {
+		std::cout << "Stark error: normalize: max_length is zero." << std::endl;
+		exit(-1);
+	}
+	const double scale = length / max_length;
+	for (Eigen::Vector3d& point : points) {
+		point *= scale;
+	}
+}
 
 void stark::move(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& translation)
 {

@@ -67,6 +67,8 @@ namespace stark
 	void compute_node_normals(std::vector<Eigen::Vector3d>& output, const std::vector<Eigen::Vector3d>& vertices, const std::vector<std::array<int, 3>>& triangles);
 
 	// Transformations
+	void center(std::vector<Eigen::Vector3d>& points);
+	void normalize(std::vector<Eigen::Vector3d>& points, const double length = 1.0);
 	void move(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& translation);
 	void rotate_deg(std::vector<Eigen::Vector3d>& points, const double angle, const Eigen::Vector3d& axis);
 	void rotate_deg(std::vector<Eigen::Vector3d>& points, const double angle, const Eigen::Vector3d& axis, const Eigen::Vector3d& pivot);

@@ -10,8 +10,8 @@
 namespace stark
 {
 	Mesh<3> make_sphere(const double radius, const int subdivisions = 2);
-	Mesh<3> make_box(const Eigen::Vector3d& size);
-	Mesh<3> make_box(const double size);
+	Mesh<3> make_box(const Eigen::Vector3d& size, const bool lid = true);
+	Mesh<3> make_box(const double size, const bool lid = true);
 	Mesh<3> make_cylinder(const double radius, const double full_height, const int slices = 16, const int stacks = 1);
 	Mesh<3> make_torus(const double outer_radius, const double inner_radius, const int slices = 32, const int stacks = 8);
 	Mesh<3> make_knot(const double size, const double inner_radius, const int slices = 32, const int stacks = 8);
@@ -22,4 +22,6 @@ namespace stark
 	Mesh<4> generate_tet_grid(const Eigen::Vector3d& center, const Eigen::Vector3d& dimensions, const std::array<int, 3>& n_quads_per_dim);
 	void generate_segment_line(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 2>>& out_connectivity, const Eigen::Vector3d& begin, const Eigen::Vector3d& end, const int n_segments);
 	Mesh<2> generate_segment_line(const Eigen::Vector3d& begin, const Eigen::Vector3d& end, const int n_segments);
+	void generate_cylindrical_triangle_mesh(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, double radius, double height, const std::array<int, 2>& n_quads_per_dim);
+	Mesh<3> generate_cylindrical_triangle_mesh(double radius, double height, const std::array<int, 2>& n_quads_per_dim);
 }
