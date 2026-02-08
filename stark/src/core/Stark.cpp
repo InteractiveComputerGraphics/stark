@@ -120,6 +120,13 @@ bool Stark::run_one_step()
 	bool success = false;
 	this->logger.start_timing("total");
 
+	// Check if the simulation should continue
+	if (!this->callbacks.run_should_continue_execution()) {
+		this->logger.set("success", 0);
+		this->console.print(fmt::format("Simulation interrupted by user.\n"), ConsoleVerbosity::Frames);
+		return false;
+	}
+
 	// Time step begin
 	this->console.print(fmt::format("\t dt: {:.6f} ms | ", 1000.0 * this->dt), ConsoleVerbosity::TimeSteps);
 	this->callbacks.run_before_time_step();
@@ -272,21 +279,27 @@ void Stark::_write_frame()
 
 	auto write_frame_impl = [&]()
 		{
-			this->callbacks.run_write_frame();
+			if (this->settings.output.fps != 0) {
+				this->callbacks.run_write_frame();
+			}
 			this->console.print(fmt::format("Frame: {:d}. Time: {:.3f} s.\n", this->current_frame, this->current_time), ConsoleVerbosity::Frames);
 			this->current_frame++;
-			this->logger.save_to_disk();
 		};
 
-	this->logger.start_timing("write_frame");
-	if (this->settings.output.fps < 0) {
+	this->logger.start_timing("runtime_write_frame");
+	if (this->settings.output.fps < 0) {  // Write every time step
 		write_frame_impl();
 	}
+	else if (this->current_frame == 0) {
+		write_frame_impl();
+		this->next_frame_time += 1.0 / (double)this->settings.output.fps;
+	}
 	else {
-		while (this->current_time > this->next_frame_time - std::numeric_limits<double>::epsilon()) {
+		while (this->current_time > this->next_frame_time + 100.0*std::numeric_limits<double>::epsilon()) {
 			write_frame_impl();
 			this->next_frame_time += 1.0 / (double)this->settings.output.fps;
 		}
 	}
-	this->logger.stop_timing_add("write_frame");
+	this->logger.stop_timing_add("runtime_write_frame");
+	this->logger.save_to_disk();
 }
