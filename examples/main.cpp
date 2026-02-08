@@ -47,7 +47,11 @@ void hanging_cloth()
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
+	
 	settings.simulation.init_frictional_contact = false;
+	settings.simulation.use_adaptive_time_step = false;
+	settings.output.fps = 120;
+	settings.simulation.max_time_step_size = 1.0/(double)settings.output.fps;
 	stark::Simulation simulation(settings);
 
 	// Cloth
@@ -671,8 +675,8 @@ int main()
 {
 	// symx::enable_load_compiled(false);
 	//column_extrusion();
-	//hanging_cloth();
-	hanging_deformable_box();
+	hanging_cloth();
+	//hanging_deformable_box();
 	//simple_contact_test();
 	//twisting_cloth();
 	return 0;
