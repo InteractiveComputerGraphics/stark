@@ -46,37 +46,46 @@ void hanging_cloth()
 	settings.output.simulation_name = "hanging_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 5.0;
+	settings.execution.end_simulation_time = 1.0;
 	
-	// settings.simulation.init_frictional_contact = false;
+	settings.simulation.init_frictional_contact = true; // TOOGLE
 	settings.simulation.use_adaptive_time_step = false;
 	settings.output.fps = 120;
 	settings.simulation.max_time_step_size = 1.0/(double)settings.output.fps;
+	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
 	stark::Simulation simulation(settings);
 	const double disp = 0.1;
 
 	// Contact
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(0.1)
-		.set_min_contact_stiffness(1e8)
+		.set_default_contact_thickness(0.01)
+		.set_min_contact_stiffness(1e4)
 	);
 
+	auto bc_params = stark::EnergyPrescribedPositions::Params();
+	bc_params.set_stiffness(1e8);
+
 	// Cloth
-	const int n = 1;
+	const int n = 20;
 	const double d = 1.0;
 	const double hd = d/2.0;
-	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { d, d }, { n, n }, stark::Surface::Params::Cotton_Fabric());
+	auto material = stark::Surface::Params::Cotton_Fabric();
+	material.strain.elasticity_only = true;
+	// material.strain.poissons_ratio = 0.1;
+	// material.strain.youngs_modulus = 1.0;
+	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { d, d }, { n, n }, material);
 	H.point_set.add_displacement({ 0.0, 0.0, disp });
+	H.contact.disable_collision(H.contact);
 
 	// BC
-	auto bc1 = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { hd, hd, 0.0 + disp }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params());
-	auto bc2 = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { -hd, hd, 0.0 + disp }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params());
+	auto bc1 = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { hd, hd, 0.0 + disp }, { 0.001, 0.001, 0.001 }, bc_params);
+	auto bc2 = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { -hd, hd, 0.0 + disp }, { 0.001, 0.001, 0.001 }, bc_params);
 
 	// Floor
 	auto [Vf, Tf, Hf] = simulation.presets->deformables->add_surface_grid("floor", { 10.0, 10.0 }, { 1, 1 }, stark::Surface::Params::Cotton_Fabric());
-	Hf.point_set.add_displacement({ 1.3, 2.7, 0.0 });
-	auto bc_floor = simulation.deformables->prescribed_positions->add_inside_aabb(Hf.point_set, { 0.0, 0.0, 0.0 }, { 100.0, 100.0, 100.0 }, stark::EnergyPrescribedPositions::Params());
+	Hf.point_set.add_displacement({ 1.3, 2.7, 0.5*disp });
+	auto bc_floor = simulation.deformables->prescribed_positions->add_inside_aabb(Hf.point_set, { 0.0, 0.0, 0.0 }, { 100.0, 100.0, 100.0 }, bc_params);
 
 	// Run
 	simulation.run();

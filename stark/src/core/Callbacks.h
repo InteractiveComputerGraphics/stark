@@ -23,6 +23,7 @@ namespace stark::core
 		std::vector<std::function<void()>> before_time_step;
 		std::vector<std::function<void()>> after_time_step;
 		std::vector<std::function<void()>> on_time_step_accepted;
+		std::vector<std::function<bool()>> should_continue_execution;
 		std::vector<std::function<void()>> write_frame;
 
 		/* Methods */
@@ -49,6 +50,7 @@ namespace stark::core
 		void add_after_time_step(std::function<void()> f) { this->after_time_step.push_back(f); };
 		void add_on_time_step_accepted(std::function<void()> f) { this->on_time_step_accepted.push_back(f); };
 		void add_write_frame(std::function<void()> f) { this->write_frame.push_back(f); };
+		void add_should_continue_execution(std::function<bool()> f) { this->should_continue_execution.push_back(f); };
 
 		// Run
 		void run_before_simulation() { this->_run(this->before_simulation); };
@@ -56,5 +58,6 @@ namespace stark::core
 		void run_after_time_step() { this->_run(this->after_time_step); };
 		void run_on_time_step_accepted() { this->_run(this->on_time_step_accepted); };
 		void run_write_frame() { this->_run(this->write_frame); };
+		bool run_should_continue_execution() { return this->_run_bool(this->should_continue_execution); };
 	};
 }

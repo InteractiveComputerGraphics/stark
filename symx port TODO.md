@@ -1,10 +1,8 @@
 # symx port TODO
 
 * PPN Frictional contact
-    - `add_is_converged_state_valid` is not used in Newton's Method.
-        Verify everything is used there. Compare logics with copilot.
-    - `_should_continue_execution` in Newton
-
+    !! Some vertices seems to not be included in the line search / energy eval / contact detection ...
+        They keep moving freely
 
 * Quasistatic should let gravity go
 

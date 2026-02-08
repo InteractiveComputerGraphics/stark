@@ -119,6 +119,7 @@ void symx::GlobalPotential::get_dofs(double *u) const
 }
 void symx::GlobalPotential::apply_dof_increment(const double *du)
 {
+    // WRONG: This is not accounting for multiple sets of DoFs correctly
     int32_t offset = 0;
     for (const DataMap<double>& dof_map : this->dof_maps) {
         const int32_t n_dofs = (int32_t)dof_map.size();
