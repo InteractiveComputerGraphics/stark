@@ -47,8 +47,9 @@ stark::EnergyLumpedInertia::EnergyLumpedInertia(stark::core::Stark& stark, const
 
 			//// Set energy expression
 			Vector x1 = x0 + dt * v1;
-			Scalar gap = x1[2] - floor_z; // Assuming floor at z=0
-			Scalar E = k*gap.powN(3)/3.0;
+			Scalar gap = x1[2] - floor_z;
+			Scalar penetration = -gap;
+			Scalar E = k*penetration.powN(3)/3.0;
 			return branch(gap < 0.0, E, 0.0);
 		}
 	);
