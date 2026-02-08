@@ -140,7 +140,7 @@ void visualize_line_search_failure(
 #endif
             std::system(cmd.c_str());
             // Small delay to ensure windows appear in order
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
     } else {
         std::cout << "Gnuplot scripts written to: " << dir << "/linesearch_failure_" << timestamp << "_iter*.gp\n";

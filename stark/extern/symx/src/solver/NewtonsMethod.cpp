@@ -439,9 +439,14 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
     // Backtracking line search with Armijo condition.
     // First ensures intermediate state validity, then checks energy descent.
     
-    auto apply_scaled_du = [this](double s) {
-        this->step_du = s * this->du;
-        this->global_potential->apply_dof_increment(this->step_du.data());
+    Eigen::VectorXd original_dofs(this->du.size());
+    this->global_potential->get_dofs(original_dofs.data());
+    
+    auto apply_scaled_du = [this, &original_dofs](double s) {
+        this->step_du = original_dofs + s * this->du;
+        this->global_potential->set_dofs(this->step_du.data());
+
+        // this->global_potential->apply_dof_increment(this->step_du.data());
     };
     
     constexpr double shrink = 0.5;
@@ -463,7 +468,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
             this->_print(fmt::format("\n\t{}{:d}. step = {:.2e} | Invalid state", 
                 this->settings.output_prefix, it, step), Verbosity::LineSearchIteration);
             step *= shrink;
-            apply_scaled_du(-step);  // Undo and apply smaller step
+            apply_scaled_du(step);  // Undo and apply smaller step
         }
     }
 
@@ -480,7 +485,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
     // Sample energy for logging if in logging mode
     if (this->_ls_logging_mode) {
         // Undo current step to get back to x0
-        apply_scaled_du(-step);
+        apply_scaled_du(step);
         
         // Sample energy from -0.5*du to 1.5*du using 1000 samples
         const int n_samples = 1000;
@@ -493,12 +498,12 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
             this->compiled->evaluate_P(E_sample);
             this->callbacks.run_after_energy_evaluation();
             samples[i] = E_sample;
-            apply_scaled_du(-s);  // Undo
+            // apply_scaled_du(-s);  // Undo
         }
         this->_ls_energy_samples.push_back(samples);
         
-        // Re-apply the current step
-        apply_scaled_du(step);
+        // // Re-apply the current step
+        // apply_scaled_du(step);
     }
 
     // Second loop: check Armijo condition (sufficient energy descent)
@@ -536,7 +541,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         }
         else {
             step *= shrink;
-            apply_scaled_du(-step);  // Undo and apply smaller step
+            apply_scaled_du(step);  // Undo and apply smaller step
         }
     }
 

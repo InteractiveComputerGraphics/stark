@@ -61,7 +61,7 @@ void hanging_cloth()
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
 		.set_default_contact_thickness(0.01)
-		.set_min_contact_stiffness(1e4)
+		.set_min_contact_stiffness(1e6)
 	);
 
 	auto bc_params = stark::EnergyPrescribedPositions::Params();

@@ -3,7 +3,9 @@
 * PPN Frictional contact
     !! Some vertices seems to not be included in the line search / energy eval / contact detection ...
         They keep moving freely
-    - Plot line search. Is it smooth?
+    - Try this experiment in the PPN codebase
+
+* Add labels to DoFs for nicer printing
 
 * Quasistatic should let gravity go
 
@@ -34,6 +36,8 @@
 
 * Check the whole symx use and logic for consistency and latent bugs
     We are comparing many pointers, and fetching and storing... Extensive check!
+
+* There will be a lot of dead code and old/AI comments. Massive cleanup.
 
 
 
