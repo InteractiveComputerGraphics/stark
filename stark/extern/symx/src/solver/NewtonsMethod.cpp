@@ -1,4 +1,5 @@
 #include "NewtonsMethod.h"
+#include "gnuplot.h"
 #include <fmt/format.h>
 #include <BlockedSparseMatrix/solve_pcg.h>
 #include <Eigen/SparseLU>
@@ -31,11 +32,51 @@ SolverReturn NewtonsMethod::solve()
     }
 
     const int ndofs = global_potential->get_total_n_dofs();
-    const int n_dof_blocks = ndofs / 3;
     if (ndofs <= 0) {
         std::cout << "Error: No degrees of freedom." << std::endl;
         exit(1);
     }
+
+    // Clear logging state
+    this->_ls_logging_mode = false;
+    this->_ls_energy_samples.clear();
+
+    // Save initial DOF state for potential retry with logging
+    Eigen::VectorXd initial_dofs(ndofs);
+    this->global_potential->get_dofs(initial_dofs.data());
+
+    // Run solve
+    SolverReturn result = this->_solve_impl();
+
+    // Retry with logging if line search failed and flag is set
+    if (result == SolverReturn::TooManyLineSearchIterations && 
+        this->settings.print_line_search_upon_failure && 
+        !this->_ls_logging_mode) {
+        
+        // Restore initial state
+        this->global_potential->set_dofs(initial_dofs.data());
+        
+        this->_ls_logging_mode = true;
+        this->_ls_energy_samples.clear();
+        
+        SolverReturn retry_result = this->_solve_impl();
+        
+        // If the second attempt succeeds, something is wrong (non-deterministic behavior)
+        if (retry_result == SolverReturn::Successful) {
+            std::cout << "Error: Line search debug retry succeeded unexpectedly. Non-deterministic behavior detected." << std::endl;
+            exit(1);
+        }
+        
+        return retry_result;
+    }
+
+    return result;
+}
+
+SolverReturn NewtonsMethod::_solve_impl()
+{
+    const int ndofs = global_potential->get_total_n_dofs();
+    const int n_dof_blocks = ndofs / 3;
 
     // Set up
     this->total_line_search_iterations = 0;
@@ -436,6 +477,30 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         return SolverReturn::Running;
     }
 
+    // Sample energy for logging if in logging mode
+    if (this->_ls_logging_mode) {
+        // Undo current step to get back to x0
+        apply_scaled_du(-step);
+        
+        // Sample energy from -0.5*du to 1.5*du using 1000 samples
+        const int n_samples = 1000;
+        std::vector<double> samples(n_samples);
+        for (int i = 0; i < n_samples; ++i) {
+            double s = -0.5 + 2.0 * static_cast<double>(i) / static_cast<double>(n_samples - 1);
+            apply_scaled_du(s);
+            double E_sample = 0.0;
+            this->callbacks.run_before_energy_evaluation();
+            this->compiled->evaluate_P(E_sample);
+            this->callbacks.run_after_energy_evaluation();
+            samples[i] = E_sample;
+            apply_scaled_du(-s);  // Undo
+        }
+        this->_ls_energy_samples.push_back(samples);
+        
+        // Re-apply the current step
+        apply_scaled_du(step);
+    }
+
     // Second loop: check Armijo condition (sufficient energy descent)
     // Armijo: E(x + s*du) <= E(x) + beta * <du, gradE>
     const double expected_decrease = this->settings.line_search_armijo_beta * du_dot_grad;
@@ -473,6 +538,17 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
             step *= shrink;
             apply_scaled_du(-step);  // Undo and apply smaller step
         }
+    }
+
+    // Visualize line search failure if in logging mode
+    if (this->_ls_logging_mode && !this->_ls_energy_samples.empty()) {
+        visualize_line_search_failure(
+            this->_ls_energy_samples,
+            this->context->compilation_directory,
+            E0,
+            E_threshold,
+            du_dot_grad
+        );
     }
 
     return SolverReturn::TooManyLineSearchIterations;

@@ -53,6 +53,7 @@ void hanging_cloth()
 	settings.output.fps = 120;
 	settings.simulation.max_time_step_size = 1.0/(double)settings.output.fps;
 	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
+	settings.newton.print_line_search_upon_failure = true;
 	stark::Simulation simulation(settings);
 	const double disp = 0.1;
 

@@ -96,6 +96,8 @@ set(SOURCE_FILES
 	src/solver/GlobalPotential.cpp
 	src/solver/NewtonsMethod.h
 	src/solver/NewtonsMethod.cpp
+	src/solver/gnuplot.h
+	src/solver/gnuplot.cpp
 	src/solver/solver_utils.h
 	src/solver/fem_integrators.h
 	src/solver/fem_integrators.cpp

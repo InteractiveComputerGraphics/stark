@@ -3,6 +3,7 @@
 * PPN Frictional contact
     !! Some vertices seems to not be included in the line search / energy eval / contact detection ...
         They keep moving freely
+    - Plot line search. Is it smooth?
 
 * Quasistatic should let gravity go
 

@@ -33,6 +33,10 @@ namespace symx
 		double ppn_threshold = -1.0;  // PPN: gradient threshold (-1 = not initialized)
 
         int total_line_search_iterations = 0;
+
+		// Line search failure logging
+		bool _ls_logging_mode = false;
+		std::vector<std::vector<double>> _ls_energy_samples;  // Per Newton iteration: energy samples from -0.5*du to 1.5*du
 		
     public:
         /* Fields */
@@ -53,6 +57,7 @@ namespace symx
 		void _decrease_projection(); // Search direction descends
 
 		bool _solve_linear_system(Eigen::VectorXd& du, const ElementHessians::spBSM& hess, const Eigen::VectorXd& grad);
+		SolverReturn _solve_impl();  // Internal solve implementation (called by solve())
 		SolverReturn _line_search_inplace(int& armijo_iterations, double E0, double du_dot_grad);
 		void _print_return(SolverReturn result, int newton_iterations, int line_search_iterations) const;
 		void _print(const std::string& msg, Verbosity verbosity) const;

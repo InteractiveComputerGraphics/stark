@@ -116,6 +116,7 @@ namespace symx
         bool enable_armijo_bracktracking = true;
         Verbosity verbosity = Verbosity::LineSearchIteration;
         std::string output_prefix = "";
+        bool print_line_search_upon_failure = false;
     };
 
     struct NewtonSettings : public SolverSettings
