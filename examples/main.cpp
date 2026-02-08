@@ -46,7 +46,7 @@ void hanging_cloth()
 	settings.output.simulation_name = "hanging_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 0.01;
+	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);
 
@@ -75,13 +75,19 @@ void hanging_deformable_box()
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.init_frictional_contact = false;
+	
+	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
+	settings.newton.step_tolerance = 1e-3;
 	stark::Simulation simulation(settings);
 
 	// Box
-	const int n = 10;
+	const int n = 30;
 	const double d = 0.5;
 	const double hd = d/2.0;
-	auto [V, T, H] = simulation.presets->deformables->add_volume_grid("box", { d, d, d }, {n, n, n}, stark::Volume::Params::Soft_Rubber());
+	auto material = stark::Volume::Params::Soft_Rubber();
+	material.strain.youngs_modulus = 1e5;
+	// material.strain.elasticity_only = true;
+	auto [V, T, H] = simulation.presets->deformables->add_volume_grid("box", { d, d, d }, {n, n, n}, material);
 	
 	// BC
 	auto bc1 = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { hd, hd, hd }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params().set_stiffness(1e7));
@@ -664,10 +670,12 @@ void column_extrusion()
 int main()
 {
 	// symx::enable_load_compiled(false);
-	column_extrusion();
+	//column_extrusion();
 	//hanging_cloth();
+	hanging_deformable_box();
 	//simple_contact_test();
 	//twisting_cloth();
+	return 0;
 
 	/*
 		Here you can find a list of simple scenes to test the library.

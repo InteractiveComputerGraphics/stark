@@ -174,7 +174,7 @@ SolverReturn NewtonsMethod::solve()
         if (du_max > max_step) {
             this->du *= max_step / du_max;
             du_max = max_step;
-            this->_print(fmt::format("du cap {:.1e} | ", du_max), Verbosity::StepIterations);
+            this->_print(fmt::format("ls hit {:.1e} | ", du_max), Verbosity::StepIterations);
         }
 
         // Line search

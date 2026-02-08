@@ -31,7 +31,7 @@ stark::EnergyLumpedInertia::EnergyLumpedInertia(stark::core::Stark& stark, const
 			Vector dev = x1 - xhat;
 			Vector dev2 = x1 - x0;
 			Scalar E = 0.5 * mass * (dev.dot(dev) / (dt.powN(2)) + dev2.dot(dev2) * damping / dt);
-			return branch(is_quasistatic, 0.0, E);
+			return branch(is_quasistatic > 0.5, 0.0, E);
 		}
 	);
 }

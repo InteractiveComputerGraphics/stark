@@ -69,7 +69,7 @@ namespace symx
 		bool run_is_converged_state_valid() { return this->_run_bool(this->is_converged_state_valid); }
         double run_max_allowed_step()
         {
-			double max_step = 1.0;
+			double max_step = std::numeric_limits<double>::infinity();
 			for (auto f : this->max_allowed_step) {
 				max_step = std::min(max_step, f());
 			}
