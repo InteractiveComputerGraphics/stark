@@ -1,17 +1,10 @@
 # symx port TODO
 
-If collision does not work, reproduce the extruding box and see if that already works.
+* PPN Frictional contact
+    - `add_is_converged_state_valid` is not used in Newton's Method.
+        Verify everything is used there. Compare logics with copilot.
+    - `_should_continue_execution` in Newton
 
-Is it because dof_increments dont work with velocity updates?
-
-In any case, go very _very_ slowly.
-    - Complex, non-collision potentials
-    - Strain limiting
-    - Analytic floor expression
-    - Make sure E0 is reproducible
-    - Check for energy discontinuities
-    ...
-    One little tiny thing at a time, circumventing collision detection.
 
 * Quasistatic should let gravity go
 
