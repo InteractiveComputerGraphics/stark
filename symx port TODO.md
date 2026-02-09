@@ -1,44 +1,34 @@
 # symx port TODO
 
+I generally agree with your proposal. Here are my points/corrections:
 
-HI. I am doing a very large port between codebases after a large revamping of my symx library.
-Before we continue, some notes:
-    - Feel free to compile the `examples` executable and run it for both the new and reference implementation
-    - Compile with -j8 as to not overflow my RAM
-    - You can find the reference implementation that 100% has worked for _years_ in `REFERENCE IMPLEMENTATION`
-    - Make sure to build the reference implementation without MKL `cmake .. -DCMAKE_BUILD_TYPE=Release -DSYMX_USE_MKL:STRING=OFF -DSTARK_USE_MKL:STRING=OFF`
-        The current implementation does not have that dependency.
-    - `examples` in both codebases are already running the a similar experiment.
-        Results will not necessarily be the same because the port is still WIP. But it should be similar.
+- If I remember correctly, most prints inside symx are internal and mostly errors and warnings.
+    Let's leave those alone for the time being. Focus exclusively in what concern simulation output.
+    We will deal with error, warnings and info inside symx later on.
+- I do not want to have two layers of console verbosity. stark should use symx's sink and console verbosity levels.
+    If symx is `Silent` the user sees just the time step header and the frames being written (hopefully with a decent format). This is intended. If the user does not even want to see that, they just `stark::settings.output.enable_console_output = false`, which should disable the sink.
+- I am unsure about the `NewtonOutputFormatter`. It seems a bit over-engineered. Although I understand that it's necessary. Output _can_ be messy, but if we use the Verbosity as a tab depth, maybe it's all just simple prints? Worth considering before committing to even more abstractions and boilerplate.
+- I do not have the need of backwards compatibility. We are building this brand new. 
+- stark will have to add stuff to the logger, such as time step information that symx does not have.
+- I am unsure about the final stark print. It should be a few stark global numbers, followed by the key summary numbers from NewtonsMethod.
+- No more mutex on prints.
+- We probably want to move the Logger and Console to symx's Context. Then everybody has easy access.
+- Because stark console (and logger) does not exist anymore, sending output to a file is now responsibility of symx's outputsink. Modes: PrintOnly, FileOnly, PrintAndFile.
 
-The goal of this refactor is to bring a new version of `symx` into `stark`. Tons of things have changed in symx, but ultimately it does exactly the same thing.
-Notably, `NewtonsMethod` is now part of symx, where before it was in `stark`.
+- I forgot to mention that the `.log` files will need to be easily readable in python for further processing.
+    We don't have to do any python right now, but it's a golden opportunity to make it machine-readable.
+    It should be easy for the user to take a look with an editor of course, that's why the summary should be included at the top.
+    I would be happy using existing formats (yaml?) if that would facilitate anything.
+- Consider that timing can add a lot of boiler plate to Newton's Method. Therefore, I would really appreciate ergonomics here.
 
-Your task is to consolidate logging and timing infrastructure.
-First, give a very thorough look at the current and reference implementation.
-Then, run both `examples` executable and look at the output. The new one is a mess (to fix), the ref one is nice and we can take it as a goal.
-For now do not implement anything. First, propose a new infra solution for all of this with a high level specific proposal.
-Who owns what? How access happens? How can the user override, redirect? How can it all be nullified for benchmark-type experiments? etc
-SymX will provide this infra and stark will tag along.
-Pay attention also to the final print as it is relevant.
-
-Many prints in the new implementation will need to be reformatted to stay clean and compact.
-Maybe there is also a better way to structure prints to avoid the current "stateful" chain where it prints depends on the previous and next to keep things clean.
-In this sense, maybe it would be good to have a class to handle the NewtonsMethod print structure.
-The rest really is before and after summaries anyway.
-But keep in mind that prints should happen frequently, not at the end of a whole Newton step that can take minutes in large simulations.
-
-Generally, before we actually implement the improved system, we need to consider options.
-
-Some notes:
-Previously, this was contained in `stark`, but now it should be moved into `symx`.
-SymX will provide facilities to log, time and console output with the standard verbosity options.
-Keep in mind that SymX will be an independent library to stark. Other people can use it to build other stuff. So it should be independent, and facilitate parent applications to work with it.
-Because symx does not technically know about "simulation" (it's just NewtonsMethod on any potential), we cannot flag verbosity as `Frames`, `TimeSteps`, ... Maybe we need other way/naming to indicate verbosity.
-Performance is also a concern, frequent hits to virtual functions and flushes can be very slow.
+Revise the existing proposal and give me a summary (in the chat) with the changes/counterpoints.
 
 
-So yeah, give me a proposal on what options you think suit the current codebase.
+
+
+
+- Use the current `examples` to test your implementation. When you are happy with a draft version for me to review, please generate a different file per verbosity level inside `output/` and point me to it.
+- Similarly, point me to where the `.log` lives for the final simulation for me to review.
 
 
 

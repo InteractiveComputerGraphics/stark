@@ -6,7 +6,8 @@
         "cmake": true,
         "nproc": true,
         "./examples": true,
-        "touch": true
+        "touch": true,
+        "mkdir": true
     },
     "cmake.parallelJobs": 8
 }
