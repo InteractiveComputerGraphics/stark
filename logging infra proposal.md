@@ -1,8 +1,10 @@
-# Logging & Timing Infrastructure Proposal
+# Logging & Timing Infrastructure Proposal (v3)
 
 ## Executive Summary
 
-This document proposes a unified logging, timing, and console-output infrastructure for the **symx + stark** ecosystem. SymX will own and provide the core infrastructure. Stark will consume it and extend it with simulation-specific semantics.
+This document proposes a unified logging, timing, and console-output infrastructure for the **symx + stark** ecosystem.
+Everything lives in **symx**. stark is a consumer — it sets verbosity, adds simulation-specific data to the logger, and prints a final summary.
+There is **one verbosity enum**, **one OutputSink** (with PrintOnly/FileOnly/PrintAndFile modes), and **one Logger**. Both live on `symx::Context`, so every component that touches Context has access.
 
 ---
 
@@ -39,25 +41,29 @@ The reference has **three separate systems** all living in `stark::core`:
 **Problems identified:**
 
 1. **symx prints directly to `std::cout`** — Newton's `_print()` bypasses Console entirely. Stark has no control over symx output (can't redirect, gate by stark-level verbosity, or file-log it).
-2. **`symx::Verbosity`** has only `None`, `StepIterations`, `LineSearchIteration` — works for Newton but stark can't map its richer `Frames`/`TimeSteps` levels onto it.
-3. **`symx::Log`** is timer-only. No series, no counters, no stats. The rich logging done by the reference Newton (`n_newton_iterations`, `projected_hessians_ratio`, residual trends, etc.) is **completely absent**.
+2. **`symx::Verbosity`** has only `None`, `StepIterations`, `LineSearchIteration` — too few levels.
+3. **`symx::Log`** is timer-only. No series, no counters, no stats.
 4. **`stark::core::Logger`** was simplified too much — no typed series, no statistics, no description. The final `Stark::print()` is **stubbed out** with `"TODO: Final Stark::print() implementation"`.
-5. **Console output formatting is messy**: Newton iterations blend with time-step summaries without proper indentation/newlines. The "Retrying with more projection" lines repeat without limit. No `#CG/newton` in summary. No `du_c` convergence percentage.
+5. **Console output formatting is messy**: Newton iterations blend with time-step summaries without proper indentation/newlines.
 6. **Two incompatible verbosity enums** (`symx::Verbosity` vs `stark::core::ConsoleVerbosity`) with no mapping between them.
-7. **Performance**: `Console::print` calls `std::flush` after every print. During a Newton step with many line-search iterations, this can be visibly slow on large simulations.
+7. **Performance**: `Console::print` calls `std::flush` after every print. Mutex on every print.
 8. **`settings.as_string()` has bugs**: `max_time_step_size` and `time_step_size_success_multiplier` print `"true"` instead of their numeric values.
 
 ---
 
 ## 2. Design Requirements
 
-1. **SymX is an independent library.** Its logging/output infra must not depend on stark. Other people may use symx to build non-simulation tools.
-2. **Stark extends symx.** Stark must be able to intercept, redirect, and silence all symx output.
-3. **Frequent output.** Prints must happen live during Newton iterations (not buffered until completion), since individual steps can take minutes in large simulations.
-4. **Nullifiable for benchmarks.** All output and formatting must be trivially silenced (zero `fmt::format` calls, no virtual dispatch, no string allocation) when benchmarking.
-5. **File logging.** All output should optionally go to file regardless of console verbosity.
-6. **Final summary.** A structured summary (statistics over all time steps) must be printed at the end.
-7. **Performance.** Avoid per-print virtual dispatch, mutex contention, and excessive `std::flush` calls.
+1. **One verbosity enum.** `symx::Verbosity` is used everywhere. No stark-level mapping, no second enum.
+2. **SymX is independent.** The infra must not depend on stark. Standalone symx users get sane defaults (prints to stdout).
+3. **Frequent output.** Prints happen live during Newton iterations (not buffered). Individual steps on large meshes can take minutes.
+4. **Nullifiable for benchmarks.** `Verbosity::Silent` → Newton produces no output. `enable_console_output = false` disables the sink entirely from the stark side. We accept the cost of `fmt::format` even for gated messages — the real performance concern is flushes and I/O, not string formatting.
+5. **File logging built into OutputSink.** Modes: `PrintOnly`, `FileOnly`, `PrintAndFile`. No separate Console class for file routing. File is only opened when explicitly requested (lazy — no file if nobody calls `open_file()`).
+6. **Machine-readable log files.** The `.log` file should be easily loadable in Python. YAML format. Human-readable summary at the top.
+7. **Logger and OutputSink on Context.** Everybody that touches `symx::Context` has access. No separate stark Console/Logger classes.
+8. **No mutex on prints.** Single-threaded print path. Period.
+9. **Timer ergonomics.** Timing inside Newton must be low-boilerplate (scoped RAII, ideally one-liners).
+10. **stark extends the logger.** stark adds simulation-specific series (dt, frame count, write_frame time, etc.) to the same logger that Newton uses.
+11. **Customizable indentation.** The sink has `root_tab` and `tab_size` so the parent lib (stark) can reserve tab level 0 for itself and control spacing. The sink auto-indents based on the verbosity level of the message — callers don't embed tabs manually.
 
 ---
 
@@ -66,136 +72,229 @@ The reference has **three separate systems** all living in `stark::core`:
 ### 3.1 Overview
 
 ```
-┌───────────────────────────────────────────────────────────────────┐
-│                            STARK                                  │
-│                                                                   │
-│  ┌───────────────┐   ┌───────────────┐   ┌──────────────────────┐ │
-│  │   Console     │   │    Logger     │   │   Stark::print()     │ │
-│  │ (stark-level  │   │ (stark-level  │   │   final summary      │ │
-│  │  verbosity,   │   │  series &     │   │   using Logger +     │ │
-│  │  file + cout) │   │  timing)      │   │   Newton::Log stats  │ │
-│  └──────┬────────┘   └───────────────┘   └──────────────────────┘ │
-│         │ installs as OutputSink                                  │
-│         ▼                                                         │
-│  ┌───────────────────────────────────────────────────────────────┐│
-│  │                        SYMX                                   ││
-│  │                                                               ││
-│  │  ┌────────────┐  ┌───────────────┐  ┌───────────────────────┐ ││
-│  │  │ OutputSink │  │     Log       │  │    NewtonsMethod      │ ││
-│  │  │ (callback  │  │ (timer +      │  │  + OutputFormatter    │ ││
-│  │  │  + gate)   │  │  series +     │  │  (uses Sink + Log)    │ ││
-│  │  │            │  │  stats)       │  │                       │ ││
-│  │  └────────────┘  └───────────────┘  └───────────────────────┘ ││
-│  └───────────────────────────────────────────────────────────────┘│
-└───────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│                             STARK                                  │
+│                                                                    │
+│  Stark::_initialize()       Stark::run_one_step()   Stark::print() │
+│  ┌─────────────────────┐    ┌──────────────────┐    ┌───────────┐  │
+│  │ Sets verbosity,     │    │ Appends dt, cr,  │    │ Prints    │  │
+│  │ opens log file,     │    │ runtime, frame#  │    │ stark     │  │
+│  │ disable_console     │    │ to context.logger│    │ globals + │  │
+│  │ if needed           │    │                  │    │ log stats │  │
+│  └─────────┬───────────┘    └────────┬─────────┘    └───────────┘  │
+│            │                         │                              │
+│            ▼                         ▼                              │
+│  ┌─────────────────────────────────────────────────────────────────┐│
+│  │                    symx::Context                                ││
+│  │                                                                 ││
+│  │  ┌──────────────┐    ┌──────────────┐                           ││
+│  │  │  OutputSink   │    │    Logger    │                           ││
+│  │  │  verbosity    │    │  typed series│                           ││
+│  │  │  print/file/  │    │  timers      │                           ││
+│  │  │  both modes   │    │  statistics  │                           ││
+│  │  └──────┬────────┘    └──────┬───────┘                           ││
+│  │         │                    │                                   ││
+│  │         ▼                    ▼                                   ││
+│  │  ┌──────────────────────────────────────────┐                   ││
+│  │  │           NewtonsMethod                   │                   ││
+│  │  │  uses context.sink to print               │                   ││
+│  │  │  uses context.logger for series/timers    │                   ││
+│  │  │  verbosity = indentation depth            │                   ││
+│  │  └──────────────────────────────────────────┘                   ││
+│  └─────────────────────────────────────────────────────────────────┘│
+└────────────────────────────────────────────────────────────────────┘
 ```
 
-### 3.2 `symx::OutputSink` — The print callback (in symx)
-
-Replaces `NewtonsMethod::_print(msg, verbosity)`. This is the **only** way output flows out of symx.
+### 3.2 `symx::Verbosity` — Single enum (in symx)
 
 ```cpp
 namespace symx {
-
-    // Verbosity levels for symx — domain-agnostic names
     enum class Verbosity : int {
         Silent  = 0,   // No output at all
         Summary = 1,   // Per-solve summary (1 line per solve call)
         Step    = 2,   // Per Newton iteration line
         Detail  = 3,   // Line search iterations, projection retries
     };
+}
+```
 
-    // Lightweight output sink — no virtual functions
-    // Parent application installs a callback. When no callback, output → stdout.
+stark uses this directly. If set to `Silent`, Newton produces no output. stark itself can still print time step headers and frame numbers through the ungated `sink.print(msg)` overload (no verbosity argument). That overload still respects `console_enabled_` — so `enable_console_output = false` silences everything.
+
+**From the stark user's perspective:**
+- `Verbosity::Silent` → user sees time step header + frame writes (if console output is enabled)
+- `settings.output.enable_console_output = false` → truly nothing on stdout
+- `Verbosity::Summary` → + Newton summary line per time step
+- `Verbosity::Step` → + per-iteration lines
+- `Verbosity::Detail` → + line search / projection details
+
+### 3.3 `symx::OutputSink` — Print + File output (in symx)
+
+The OutputSink replaces both `NewtonsMethod::_print()` and `stark::core::Console`. It owns file output directly.
+
+```cpp
+namespace symx {
+
+    enum class OutputMode {
+        PrintOnly,      // stdout only
+        FileOnly,       // file only
+        PrintAndFile,   // both
+    };
+
     class OutputSink {
     public:
-        using PrintFn = std::function<void(const std::string& msg, Verbosity level)>;
-
+        // --- Verbosity ---
         void set_verbosity(Verbosity v) { verbosity_ = v; }
         Verbosity get_verbosity() const { return verbosity_; }
 
-        void set_callback(PrintFn fn) { callback_ = std::move(fn); }
-        void clear_callback() { callback_ = nullptr; }
+        // --- Indentation ---
+        // root_tab: base indentation level added to every verbosity-gated print.
+        //   E.g. stark sets root_tab=1 so Newton's Summary (level 1) prints at depth 2,
+        //   leaving depth 0-1 for stark's own output.
+        // tab_size: number of spaces per tab level.
+        void set_root_tab(int level) { root_tab_ = level; }
+        void set_tab_size(int spaces) { tab_size_ = spaces; }
 
-        // Fast inline check — no formatting when silenced
-        bool should_print(Verbosity level) const { return level <= verbosity_; }
+        // --- Output mode & file ---
+        void set_mode(OutputMode m) { mode_ = m; }
+        void open_file(const std::string& path);  // File created lazily here
+        void close_file();
 
-        // Main print method
+        // --- Console enable (stark sets this to implement "no console at all") ---
+        void set_console_enabled(bool v) { console_enabled_ = v; }
+
+        // --- Core API ---
+
+        // Print with verbosity gate + auto-indent.
+        // Indentation = (root_tab + level) * tab_size spaces, prepended automatically.
+        // Caller just provides the message content — no manual tabs.
         void print(const std::string& msg, Verbosity level) const {
             if (level > verbosity_) return;
-            if (callback_) {
-                callback_(msg, level);
-            } else {
-                std::cout << msg;
-            }
+            _emit(_indent(level) + msg);
+        }
+
+        // Ungated print — no verbosity check, no auto-indent.
+        // For the parent lib's own output (time step headers, frame lines, final summary).
+        // If console is disabled, this is also silent.
+        void print(const std::string& msg) const {
+            _emit(msg);
+        }
+
+        void flush_file() {
+            if (file_.is_open()) file_.flush();
         }
 
     private:
+        void _emit(const std::string& msg) const {
+            if (console_enabled_ && mode_ != OutputMode::FileOnly) {
+                std::cout << msg;
+            }
+            if (file_.is_open() && mode_ != OutputMode::PrintOnly) {
+                file_ << msg;
+            }
+        }
+
+        std::string _indent(Verbosity level) const {
+            int depth = root_tab_ + static_cast<int>(level);
+            return std::string(depth * tab_size_, ' ');
+        }
+
         Verbosity verbosity_ = Verbosity::Step;
-        PrintFn callback_ = nullptr;
+        OutputMode mode_ = OutputMode::PrintOnly;
+        bool console_enabled_ = true;
+        int root_tab_ = 0;    // symx default: 0 (standalone). stark sets to 1.
+        int tab_size_ = 2;    // 2 spaces per level
+        mutable std::ofstream file_;
     };
 }
 ```
 
 **Key properties:**
-- **No virtual dispatch.** `std::function` with null check is one branch per call.
-- **Caller-side gating.** `should_print()` is inline — when `Silent`, the caller never even formats the string. This is the critical performance feature.
-- **Default to stdout.** If no callback is set, output goes directly to `std::cout` (for standalone symx use without stark).
-- **Parent redirects everything.** Stark installs a callback that routes through `Console::print()` which handles file + verbosity gate.
+- **No mutex.** Single-threaded print path. Done.
+- **No `std::flush` on stdout.** Line-buffered is fine.
+- **File flush is explicit.** stark calls `flush_file()` once per time step.
+- **`print(msg)`** (no verbosity) is the ungated path for the parent lib's own output (time step headers, frame lines, final summary). It respects `console_enabled_` — if the user set that to false, truly nothing prints.
+- **`print(msg, level)`** is the verbosity-gated path. The sink **auto-indents** by `(root_tab + level) * tab_size` spaces. The caller never manually inserts `\t` or spaces — just the message content.
+- **`set_console_enabled(false)`** silences stdout entirely. File output continues if configured.
+- **Customizable indentation.** stark calls `sink.set_root_tab(1)` so that symx's `Summary` (level 1) prints at indent depth 2 (= `(1+1)*2 = 4 spaces`), leaving indent depth 0–1 for stark's own headers. `tab_size` defaults to 2 spaces but is configurable.
+- **Lazy file.** No file is opened unless `open_file()` is called. Default is `PrintOnly` + `Verbosity::Step` → sane out of the box for standalone symx.
 
-### 3.3 `symx::Log` — Timer + Series + Stats (in symx)
+### 3.4 `symx::Logger` — Timer + Series + Stats (in symx)
 
-Upgrade the current timer-only `Log` to also handle series and stats. This lets Newton log iteration counts, residuals, projection ratios, etc. without depending on a parent Logger.
+Upgrade the current timer-only `Log` and absorb `stark::core::Logger`. This becomes the **single logger** used by everybody (Newton, stark, etc.) through `Context`.
 
 ```cpp
 namespace symx {
 
-    class Log {
+    class Logger {
     public:
-        // === Scoped Timer (unchanged) ===
-        struct ScopedTimer { /* same as now */ };
-        ScopedTimer scope(const std::string& label);
+        // =============================================================
+        // Scoped Timer — the ergonomic timing API
+        // =============================================================
+        // Usage: { auto t = logger.time("CG"); ... } // Accumulated automatically
+        struct ScopedTimer {
+            Logger& log;
+            std::string label;
+            double start;
+            ScopedTimer(Logger& l, const std::string& label);
+            ~ScopedTimer();
+            ScopedTimer(ScopedTimer&&);
+        };
+        [[nodiscard]] ScopedTimer time(const std::string& label);
 
-        // === Accumulated Timers ===
-        void start_timing(const std::string& label);
-        void stop_timing(const std::string& label);
-
-        // === Typed Series ===
+        // =============================================================
+        // Typed Series (per time step data, appended over the simulation)
+        // =============================================================
         void append(const std::string& label, double v);
         void append(const std::string& label, int v);
+        void append(const std::string& label, const std::string& v);
 
-        // === Single Values ===
-        void set(const std::string& label, double v);
-        void set(const std::string& label, int v);
+        // =============================================================
+        // Accumulators (for within-step aggregation, e.g., total CG iters)
+        // =============================================================
         void add(const std::string& label, double v);
         void add(const std::string& label, int v);
+        void set(const std::string& label, double v);
+        void set(const std::string& label, int v);
 
-        // === Getters ===
+        // =============================================================
+        // Getters
+        // =============================================================
         double get_double(const std::string& label) const;
         int get_int(const std::string& label) const;
         const std::vector<double>& get_double_series(const std::string& label) const;
         const std::vector<int>& get_int_series(const std::string& label) const;
 
-        // === Statistics ===
-        // Returns "TOTAL | AVG | [MIN, MAX]" string for a series
+        // =============================================================
+        // Statistics — "SUM | AVG | [MIN, MAX]"
+        // =============================================================
         std::string get_statistics(const std::string& label) const;
 
-        // === Output ===
-        void print_timing_report(const OutputSink& sink) const;
-        void print_statistics(const OutputSink& sink) const;
+        // =============================================================
+        // Timer Queries
+        // =============================================================
+        double get_timer_total(const std::string& label) const;
+        int get_timer_count(const std::string& label) const;
+        const std::vector<std::string>& get_timer_labels() const; // insertion order
 
-        // === Persistence ===
-        void save_to_disk(const std::string& path) const;
+        // =============================================================
+        // Persistence — YAML format, machine-readable
+        // =============================================================
+        // Writes the log to disk. Summary block at top, then raw series.
+        void save_to_yaml(const std::string& path) const;
 
-        // === Control ===
+        // =============================================================
+        // Control
+        // =============================================================
         void clear();
-        void set_enabled(bool enabled);  // When false, even timing calls become no-ops
+        void set_enabled(bool enabled);  // When false, timing + series become no-ops
+        bool is_enabled() const;
 
-        // === Access ===
-        const auto& get_timers() const;
+        // Description block (written into log file header)
+        void set_description(const std::string& desc);
 
     private:
         bool enabled_ = true;
+        std::string description_;
 
         // Timing
         struct Timer { double start = 0; double total = 0; int count = 0; };
@@ -205,339 +304,299 @@ namespace symx {
         // Series
         std::unordered_map<std::string, std::vector<double>> series_double_;
         std::unordered_map<std::string, std::vector<int>> series_int_;
+        std::unordered_map<std::string, std::vector<std::string>> series_string_;
 
-        // Singles
-        std::unordered_map<std::string, double> doubles_;
-        std::unordered_map<std::string, int> ints_;
+        // Accumulators (reset-per-step by the user)
+        std::unordered_map<std::string, double> acc_double_;
+        std::unordered_map<std::string, int> acc_int_;
     };
 }
 ```
 
-### 3.4 `NewtonOutputFormatter` — Structured Newton Output (in symx)
+**Timer ergonomics inside Newton:**
+```cpp
+// One-liner RAII timing — no start/stop boilerplate
+{
+    auto t = context.logger.time("CG");
+    cg_solver.solve(...);
+}  // automatically accumulated
 
-This class encapsulates **all** formatting logic for Newton's Method output. It replaces the scattered `_print(fmt::format(...))` calls inside `NewtonsMethod::_solve_impl()`.
+{
+    auto t = context.logger.time("energy_eval");
+    evaluate_energies(...);
+}
 
-**The key insight:** Newton's output has a **fixed structure** (iteration headers, indented projection sub-lines, line search sub-lines, summary). Having a formatter class eliminates the current "stateful chain" problem where formatting of each print depends on what was printed previously.
+{
+    auto t = context.logger.time("project_to_pd");
+    project_hessian_to_pd(...);
+}
+```
+
+No manual `start_timing` / `stop_timing` pairs. No risk of forgetting to stop. The `[[nodiscard]]` attribute ensures the user assigns it (otherwise the timer dies immediately).
+
+**stark adds its own series after each step:**
+```cpp
+// In Stark::run_one_step(), after Newton solve:
+context.logger.append("dt", dt);
+context.logger.append("runtime_total", step_runtime_ms);
+context.logger.append("convergence_ratio", cr);
+context.logger.append("n_frames_written", frame_written ? 1 : 0);
+```
+
+### 3.5 `symx::Context` — Owns Sink + Logger
 
 ```cpp
 namespace symx {
-
-    class NewtonOutputFormatter {
+    class Context {
     public:
-        NewtonOutputFormatter(const OutputSink& sink, const std::string& prefix = "");
+        OutputSink sink;      // Public, everyone prints through this
+        Logger logger;        // Public, everyone logs through this
 
-        // === Newton iteration ===
-        void begin_iteration(int iteration);
-        void print_residual(double residual);
-        void print_projection(double ratio_percent);
-        void print_cg_iterations(int count);
-        void print_step_size(double du_max);
-        void print_step_cap(double capped_du);
-        void print_max_step_hit(double clamped_du);
-
-        // === Projection retry (inner loop) ===
-        void begin_projection_retry();
-        void end_projection_retry();  // Prints "Retrying..." once + newline
-
-        // === Line search ===
-        void begin_line_search_iteration(int it, double step);
-        void print_invalid_state();
-        void print_armijo(double E_over_E_threshold, double E_over_E0);
-
-        // === Solve summary (printed at Summary verbosity → always visible at TimeSteps) ===
-        void print_step_summary(SolverReturn result, int newton_its, int ls_its, int cg_its);
-
-        // === Suffix hook (stark adds " | runtime: X ms | cr: Y\n") ===
-        void print_suffix(const std::string& msg, Verbosity level);
-
-    private:
-        const OutputSink& sink_;
-        std::string prefix_;
-        bool iteration_line_open_ = false;  // Tracks whether we're mid-line in an iteration
+        // ... existing fields (energies, compilation, etc.) ...
     };
 }
 ```
 
-**Usage pattern in `NewtonsMethod::_solve_impl()`:**
+That's it. No getters, no indirection. Newton already has a `Context&` — it just uses `context.sink` and `context.logger` directly. stark has the same `Context&` and does the same.
+
+### 3.6 Newton Printing — Verbosity as Indentation, Sink Does the Work
+
+Instead of a dedicated `NewtonOutputFormatter`, Newton's `_solve_impl()` uses direct `context.sink.print(msg, level)` calls. The sink automatically prepends indentation based on the verbosity level. Callers **never embed manual tabs or spaces** for indentation — they just provide the message content and the verbosity tag.
+
+**Example in `_solve_impl()`:**
 ```cpp
-SolverReturn NewtonsMethod::_solve_impl() {
-    NewtonOutputFormatter out(this->output_sink, this->settings.output_prefix);
+// Newton iteration line (Step level — sink auto-indents)
+sink.print(fmt::format("{:3d}. r = {:.2e} | ph: {:6.2f}% | #CG {:5d} | du = {:.2e}\n",
+    it, residual, 100.0 * ratio, n_cg, du_max), Verbosity::Step);
 
-    while (result == SolverReturn::Running) {
-        out.begin_iteration(newton_iteration);     // Newline + prefix + "  1. "
-        out.print_residual(residual_norm);          // "r = 4.5e-01 | "
+// Projection retry (Detail level — deeper indent)
+sink.print(fmt::format("{:2d}. p-tol: {:.1e} | ph: {:6.2f}% | #CG {:5d} | -> {}\n",
+    retry, p_tol, 100.0 * ratio, n_cg, failure_reason), Verbosity::Detail);
 
-        // Inner projection+solve loop
-        while (!solved) {
-            out.begin_projection_retry();           // (Detail level) projection sub-line
-            out.print_projection(100.0 * ratio);    // "ph:  65.49% | "
-            out.print_cg_iterations(n);             // "#CG    16 | "
-            if (!success) {
-                out.end_projection_retry();         // " -> failure reason\n"
-                increase_projection();
-                continue;
-            }
-            break;
-        }
+// Summary line after solve (Summary level)
+sink.print(fmt::format("#newton: {:2d} | #CG/newton: {:2d} | #ls/newton: {:.2f} | {}\n",
+    n_its, avg_cg, avg_ls, result_str), Verbosity::Summary);
+```
 
-        out.print_step_size(du_max);                // "du = 3.8e-01 | "
+No `should_print()` guards needed for most prints. We accept the `fmt::format` cost even for gated messages — the real performance concern is I/O and flushes, not string formatting. The sink's `print(msg, level)` returns immediately if `level > verbosity_`, so the formatted string is simply discarded. This keeps the Newton code clean.
 
-        // Line search
-        for (...) {
-            out.begin_line_search_iteration(it, step);
-            out.print_armijo(ratio1, ratio2);
-        }
-    }
-
-    out.print_step_summary(result, n_its, ls_its, cg_its);
-    // Stark appends: " | runtime: 2 ms | cr: 0.1\n"
+For **truly hot paths** where formatting cost matters (rare), a guard is still available:
+```cpp
+if (sink.get_verbosity() >= Verbosity::Detail) {
+    // expensive formatting only when Detail is active
 }
 ```
 
-The formatter knows the indentation state and handles newlines correctly, eliminating the current formatting mess.
+**Incremental line building** — two approaches under consideration:
 
-### 3.5 Stark's Console & Logger (in stark)
-
-#### Console (updated)
-
+**Option A: Local string accumulation (simple)**
 ```cpp
-namespace stark::core {
-
-    enum class ConsoleVerbosity {
-        NoOutput = 0,
-        Frames = 1,
-        TimeSteps = 2,
-        NewtonIterations = 3,
-        LineSearch = 4,          // Restored from reference
-    };
-
-    class Console {
-    public:
-        void initialize(...);
-        void print(const std::string& msg, ConsoleVerbosity verbosity);
-        // ... same interface ...
-
-        // NEW: Returns a symx::OutputSink::PrintFn that routes through this Console
-        symx::OutputSink::PrintFn make_symx_callback();
-    };
-}
+std::string line = fmt::format("{:3d}. r = {:.2e}", it, residual);
+// ... inner loop determines ph, CG, du ...
+line += fmt::format(" | ph: {:6.2f}% | #CG {:5d} | du = {:.2e}", 100*ratio, n_cg, du_max);
+line += "\n";
+sink.print(line, Verbosity::Step);
 ```
 
-**Verbosity mapping** (done once in `Stark::_initialize()`):
-```
-symx::Verbosity::Silent  →  (nothing prints)
-symx::Verbosity::Summary →  ConsoleVerbosity::TimeSteps
-symx::Verbosity::Step    →  ConsoleVerbosity::NewtonIterations
-symx::Verbosity::Detail  →  ConsoleVerbosity::LineSearch
-```
-
+**Option B: `append` + `flush_line` on the sink**
 ```cpp
-void Stark::_initialize() {
-    // ...
-    auto callback = [this](const std::string& msg, symx::Verbosity level) {
-        ConsoleVerbosity cv;
-        switch (level) {
-            case symx::Verbosity::Summary: cv = ConsoleVerbosity::TimeSteps; break;
-            case symx::Verbosity::Step:    cv = ConsoleVerbosity::NewtonIterations; break;
-            case symx::Verbosity::Detail:  cv = ConsoleVerbosity::LineSearch; break;
-            default: return;
-        }
-        this->console.print(msg, cv);
-    };
-    this->newton->output_sink.set_callback(callback);
-
-    // Map stark verbosity → symx verbosity
-    switch (this->settings.output.console_verbosity) {
-        case ConsoleVerbosity::NoOutput:
-        case ConsoleVerbosity::Frames:
-            this->newton->output_sink.set_verbosity(symx::Verbosity::Silent); break;
-        case ConsoleVerbosity::TimeSteps:
-            this->newton->output_sink.set_verbosity(symx::Verbosity::Summary); break;
-        case ConsoleVerbosity::NewtonIterations:
-            this->newton->output_sink.set_verbosity(symx::Verbosity::Step); break;
-        case ConsoleVerbosity::LineSearch:
-            this->newton->output_sink.set_verbosity(symx::Verbosity::Detail); break;
-    }
-}
+sink.append(fmt::format("{:3d}. r = {:.2e}", it, residual), Verbosity::Step);
+// ... inner loop ...
+sink.append(fmt::format(" | ph: {:6.2f}% | #CG {:5d} | du = {:.2e}", 100*ratio, n_cg, du_max), Verbosity::Step);
+sink.flush_line(Verbosity::Step);  // prints accumulated line with auto-indent + "\n"
 ```
 
-This is the **only place** the mapping occurs. All of symx's output goes through the sink, and the Console handles the file+stdout routing.
+Option B gives the iconic `"AAAA | BBBB | CCCC\n"` pattern without the caller managing a local string, and lets the sink handle the `" | "` separators if we want. Option A is simpler and has no new API surface.
 
-#### Logger (upgraded back to reference quality)
+**Decision deferred to implementation.** The target output format is correct and is the goal. We will determine the best ergonomics once we see the actual Newton code being refactored. Both options are compatible with the architecture.
 
-Restore `stark::core::Logger` to match the reference implementation:
-- **Typed series** (`vector<double>`, `vector<int>`, `vector<string>`)
-- **`get_statistics()`** computing `sum | avg | [min, max]`
-- **`description`** field for embedding settings in log files
-- **Configurable float formats** (`file_float_format`, `stats_float_format`)
-- **Accumulated-per-time-step** pattern (`append(label, value, idx)`)
+### 3.7 Machine-Readable Log Files (YAML)
 
-Newton's `symx::Log` handles internal timing (energy eval, CG, assembly, etc.). After each time step, `Stark::run_one_step()` **pulls** aggregated data from `newton->log` and pushes it into the stark `Logger`:
+The `.log` file written by `Logger::save_to_yaml()` is valid YAML. Summary at the top for human readability, raw series below for Python processing.
 
-```cpp
-// After successful Newton solve
-const auto& newton_log = this->newton->get_log();
-this->logger.append("n_newton_iterations", newton_iteration);
-this->logger.append("n_line_search_iterations", ls_iterations);
-// ... Pull timing aggregates from newton_log for the stats table
+**Example output (`twisting_cloth.yaml`):**
+```yaml
+# Simulation Log — twisting_cloth
+# Generated: 2026-02-09 14:30:00
+
+description: |
+  twisting_cloth | n=10 | Progressive projection | step_tolerance=0.001
+
+summary:
+  simulation_time: 1.033
+  n_frames: 31
+  n_time_steps: 31
+  ndofs: 363
+
+  # label:                  SUM         AVG         MIN         MAX
+  dt:                      [1.033333,   0.033333,   0.033333,   0.033333]
+  n_newton_iterations:     [137,        4.419355,   1,          20]
+  projected_hessians_ratio:[4.817014,   0.035419,   0.000000,   0.956661]
+
+  runtime:
+    total:                 [0.079398,   0.002561,   0.000698,   0.013471]
+    CG:                    [0.017144,   0.000126,   0.000017,   0.001147]
+    energy_eval:           [0.010394,   0.000076,   0.000059,   0.000275]
+    project_to_pd:         [0.001591,   0.000033,   0.000004,   0.000176]
+    hessian_assembly:      [0.011691,   0.000086,   0.000056,   0.000345]
+
+series:
+  dt:                      [0.033333, 0.033333, 0.033333, ...]
+  n_newton_iterations:     [4, 3, 5, 7, 4, ...]
+  projected_hessians_ratio:[0.0, 0.0, 0.012, 0.956, ...]
+  runtime_total:           [0.013, 0.002, 0.003, ...]
+  runtime_CG:              [0.001, 0.000, 0.001, ...]
+  # ... all series
 ```
 
-#### `Stark::print()` (restored)
+**Python loading:**
+```python
+import yaml
 
-Restore the full final summary from the reference, pulling statistics from both `Logger` and `Newton::Log`:
+with open("twisting_cloth.yaml") as f:
+    log = yaml.safe_load(f)
 
-```cpp
-void Stark::print() {
-    console.print("\nInfo\n", ConsoleVerbosity::Frames);
-    console.print(fmt::format("\t Simulation name: {}\n", settings.output.simulation_name), ...);
-    console.print(fmt::format("\t Simulation time: {:.3f} s\n", current_time), ...);
-    console.print(fmt::format("\t ndofs: {:d}\n", ndofs), ...);
-    console.print(fmt::format("\t Frames: {:d}\n", current_frame), ...);
-    console.print(fmt::format("\t Time steps: {:d}\n", n_time_steps), ...);
-    print_stats("dt:\t\t\t\t", "dt");
-    print_stats("n_newton_iterations:\t\t", "n_newton_iterations");
-    print_stats("projected_hessians_ratio:\t", "projected_hessians_ratio");
+# Quick stats
+print(log["summary"]["n_time_steps"])  # 31
+print(log["summary"]["dt"])            # [1.033, 0.033, 0.033, 0.033]
 
-    console.print("\nRuntime\n", ConsoleVerbosity::Frames);
-    print_stats("total:\t\t\t\t", "runtime_total");
-    print_stats("Energy Evaluation:\t\t", "runtime_energy_eval");
-    print_stats("CG:\t\t\t\t", "runtime_cg");
-    print_stats("Project to PD:\t\t\t", "runtime_project_pd");
-    // ...
-}
+# Full series for plotting
+import matplotlib.pyplot as plt
+plt.plot(log["series"]["n_newton_iterations"])
+plt.ylabel("Newton iterations per step")
+plt.show()
 ```
+
+**Considerations:**
+- YAML is human-readable with an editor and machine-readable with one `yaml.safe_load()` call.
+- The summary block at the top gives a quick overview without scrolling through 10,000 data points.
+- Series arrays can be long but YAML handles them fine. For very large simulations, we could also offer flow style `[...]` for compactness.
+- `description` is a free-form string where stark dumps its settings.
 
 ---
 
-## 4. Verbosity Levels — Complete Mapping
+## 4. Verbosity Levels
 
-### symx levels (domain-agnostic)
+Single enum. Everything uses `symx::Verbosity`.
 
-| Level | What prints | Use case |
-|-------|------------|----------|
-| `Silent` | Nothing | Benchmarks, embedded in optimization loops |
-| `Summary` | 1 line per `solve()`: `"#newton: 3 \| #ls/newton: 0.33 \| converged"` | Quick monitoring |
-| `Step` | Per Newton iteration: `"  1. r = 4.5e-01 \| ph: 0.0% \| #CG 5 \| du = 3.8e-01"` | Normal development |
-| `Detail` | + projection retries, line search steps, Armijo values | Debugging convergence |
+| Level | Newton output | stark output (if console enabled) | Use case |
+|-------|-------------|------------------------------|----------|
+| `Silent` | Nothing | Time step header, frame writes | Production monitoring |
+| `Summary` | 1 summary line per `solve()` | + Newton summary appended to time step line | Quick dev feedback |
+| `Step` | + Per Newton iteration lines | (same) | Normal development |
+| `Detail` | + Line search, projection retries | (same) | Debugging convergence |
 
-### stark levels (simulation-aware)
-
-| Level | What prints | Maps to symx |
-|-------|------------|--------------|
-| `NoOutput` | Nothing at all | `Silent` |
-| `Frames` | Frame numbers, init info, settings, **final summary** | `Silent` (Newton is silent) |
-| `TimeSteps` | + Per time step: `"dt: 33.33 ms \| #newton: 3 \| runtime: 2ms \| cr: 0.1"` | `Summary` |
-| `NewtonIterations` | + Newton iteration details | `Step` |
-| `LineSearch` | + Line search + projection retry details | `Detail` |
+To suppress **all** console output (including stark's own time step headers):
+```cpp
+settings.output.enable_console_output = false;
+// This calls context.sink.set_console_enabled(false)
+```
 
 ---
 
 ## 5. Performance Considerations
 
-### 5.1 Avoid formatting when silenced
+### 5.1 Formatting cost is acceptable
 
-The `OutputSink::should_print()` check is inline and costs one integer comparison. Newton code should guard expensive formatting:
+We accept the cost of `fmt::format` even when the message will be discarded by the verbosity gate. The sink's `print(msg, level)` is a cheap integer comparison that returns immediately when gated. The real performance concern is **I/O**: flushes, newlines hitting the terminal, and file writes. String formatting on the stack is fast and keeps the calling code clean.
 
+For the rare case of truly expensive formatting (e.g., dumping a matrix), a manual guard is available:
 ```cpp
-if (sink.should_print(Verbosity::Step)) {
-    sink.print(fmt::format("  {:3d}. r = {:.2e} | ", it, residual), Verbosity::Step);
+if (context.sink.get_verbosity() >= Verbosity::Detail) {
+    // expensive formatting only when needed
 }
 ```
 
-When `Silent`, `fmt::format` is never called. This is the most important optimization.
+### 5.2 No flush, no mutex
 
-### 5.2 Remove `std::flush` from every print
+- **No `std::flush`** on stdout. Line-buffered (`\n`-triggered) is sufficient.
+- **No mutex.** The print path is single-threaded. OpenMP parallelism is inside CG/assembly where nobody prints.
+- **File flush** is explicit: `context.sink.flush_file()` once per time step.
 
-Current `Console::print` calls `std::flush` after every write. This is expensive and pointless for line-buffered console output.
+### 5.3 Timer overhead
 
-**Change to:**
-- **Console**: `std::cout << msg;` (no flush). Rely on `\n`-triggered flush or periodic explicit flush.
-- **File**: Buffer in `std::stringstream`, flush once per time step (in `_write_frame()` or end of `run_one_step()`).
+`omp_get_wtime()` is ~20 ns. Negligible. For extreme benchmark paranoia: `context.logger.set_enabled(false)` skips everything including timing.
 
-### 5.3 Avoid `std::function` overhead for silenced sinks
+### 5.4 String building
 
-When `Verbosity::Silent`, `OutputSink::print()` returns at the integer comparison before touching `std::function`. Cost: one int compare per call.
-
-### 5.4 Mutex scope
-
-`Console` takes a `std::mutex` lock on every `print()`. This is needed when multiple threads might print (rare — usually only the main thread prints). Consider:
-- Skip the lock for console-only output (stdout is OS-serialized).
-- Only lock for file writes.
-- Or: accept the lock cost (it's uncontended and fast).
-
-### 5.5 Log timer overhead
-
-`omp_get_wtime()` is cheap (~20 ns). The timer overhead is negligible for per-Newton-iteration timing. For the paranoid benchmark case, `Log::set_enabled(false)` skips all timing calls.
+When a line must be built incrementally (e.g., step line where CG count isn't known upfront), either build a local `std::string` and print once, or use `append` + `flush_line` (see §3.6). Either way: **one actual I/O operation per line**. No repeated stdout writes for partial lines.
 
 ---
 
 ## 6. Nullification for Benchmarks
 
 ```cpp
-// Option A: Settings (recommended)
-settings.output.console_verbosity = ConsoleVerbosity::NoOutput;
-settings.output.console_output_to = ConsoleOutputTo::NoOutput;
-// → Newton's OutputSink automatically set to Silent
-// → No fmt::format calls, no file writes, no stdout writes
+// Silent Newton, but stark still prints time step headers
+context.sink.set_verbosity(symx::Verbosity::Silent);
 
-// Option B: Programmatic (standalone symx)
-newton->output_sink.set_verbosity(symx::Verbosity::Silent);
-// symx::Log still collects timers—cheap. Read them after the fact.
-// If even that is too much:
-newton->log.set_enabled(false);  // Skips omp_get_wtime() calls
+// No console output at all (file logging continues if configured)
+settings.output.enable_console_output = false;
+// → context.sink.set_console_enabled(false)
+
+// No file logging
+context.sink.set_mode(OutputMode::PrintOnly);
+// (or just don't call open_file())
+
+// Skip even timer overhead
+context.logger.set_enabled(false);
 ```
 
 ---
 
 ## 7. Target Output Format
 
-### Per time step at `TimeSteps` verbosity:
+### `Silent` verbosity (stark console enabled):
 ```
-	 dt: 33.333333 ms | #newton: 4  | #CG/newton: 12 | #ls/newton: 0.00 | converged | runtime: 2 ms | cr: 0.1
-```
-
-### Per time step at `NewtonIterations` verbosity:
-```
-	 dt: 33.333333 ms | 
-		   1. r = 1.26e+01 | ph:   0.00% | #CG     1 | du = 3.8e-01 | 
-		   2. r = 5.18e-03 | ph:   0.00% | #CG    16 | du = 2.4e-01 | 
-		   3. r = 2.20e-04 | ph:   0.00% | #CG    15 | du = 1.1e-02 | 
-		   4. r = 9.55e-07 | ph:   0.00% | #CG    16 | du = 2.6e-05 | 
-		#newton: 4  | #CG/newton: 12 | #ls/newton: 0.00 | converged | runtime: 2 ms | cr: 0.1
+  dt: 33.33 ms | runtime: 2 ms | cr: 0.1
+  dt: 33.33 ms | runtime: 3 ms | cr: 0.2
+  Writing frame 1...
+  dt: 33.33 ms | runtime: 2 ms | cr: 0.1
 ```
 
-### Per time step at `LineSearch` verbosity:
+### `Summary` verbosity:
 ```
-	 dt: 33.333333 ms | 
-		   1. r = 5.45e-03 | 
-			 0. p-tol:         | ph:   0.00% | #CG     8 |  -> Linear system failure
-			 1. p-tol: 2.7e-03 | ph:  38.52% | #CG     9 |  -> Linear system failure
-			 2. p-tol: 1.4e-03 | ph:  65.81% | #CG    16 |
-			    ph:  65.81% | #CG    16 | du = 2.7e-01 | 
-		   2. r = 3.43e-04 | ...
-		#newton: 7  | #CG/newton: 15 | #ls/newton: 0.10 | converged | runtime: 3 ms | cr: 0.1
+  dt: 33.33 ms | #newton: 4 | #CG/newton: 12 | #ls/newton: 0.00 | converged | runtime: 2 ms | cr: 0.1
 ```
 
-### Final summary (always at `Frames` level):
+### `Step` verbosity:
 ```
-Info
-	 Simulation name: twisting_cloth
-	 Simulation time: 1.033 s
-	 ndofs: 363
-	 Frames: 31
-	 Time steps: 31
-	 dt:				1.033333	| 0.033333	| [0.033333, 0.033333]
-	 n_newton_iterations:		137	| 4.419355	| [1, 20]
-	 projected_hessians_ratio:	4.817014	| 0.035419	| [0.000000, 0.956661]
+  dt: 33.33 ms |
+    1. r = 1.26e+01 | ph:   0.00% | #CG     1 | du = 3.8e-01
+    2. r = 5.18e-03 | ph:   0.00% | #CG    16 | du = 2.4e-01
+    3. r = 2.20e-04 | ph:   0.00% | #CG    15 | du = 1.1e-02
+    4. r = 9.55e-07 | ph:   0.00% | #CG    16 | du = 2.6e-05
+  #newton: 4 | #CG/newton: 12 | #ls/newton: 0.00 | converged | runtime: 2 ms | cr: 0.1
+```
 
-Runtime
-	 total:				0.079398	| 0.002561	| [0.000698, 0.013471]
-	 CG:				0.017144	| 0.000126	| [0.000017, 0.001147]
-	 Energy Evaluation:		0.010394	| 0.000076	| [0.000059, 0.000275]
-	 Project to PD:			0.001591	| 0.000033	| [0.000004, 0.000176]
-	 Hessian Assembly:		0.011691	| 0.000086	| [0.000056, 0.000345]
-	 before_energy_evaluation:	0.018020	| 0.000074	| [0.000063, 0.000204]
-	 write_frame:			0.001477	| 0.000046	| [0.000000, 0.000099]
+### `Detail` verbosity:
+```
+  dt: 33.33 ms |
+    1. r = 5.45e-03 |
+      0. p-tol:         | ph:   0.00% | #CG     8 | -> Linear system failure
+      1. p-tol: 2.7e-03 | ph:  38.52% | #CG     9 | -> Linear system failure
+      2. p-tol: 1.4e-03 | ph:  65.81% | #CG    16 |
+      ph:  65.81% | #CG    16 | du = 2.7e-01
+    2. r = 3.43e-04 | ...
+  #newton: 7 | #CG/newton: 15 | #ls/newton: 0.10 | converged | runtime: 3 ms | cr: 0.1
+```
+
+### Final summary (stark prints this, always — unless console is disabled):
+```
+─── Simulation Summary ───
+  Name:            twisting_cloth
+  Simulation time: 1.033 s
+  ndofs:           363
+  Frames:          31
+  Time steps:      31
+
+  Newton iterations:    137 total | 4.4 avg | [1, 20]
+  Projected Hessian:    0.04 avg  | [0.00, 0.96]
+
+  Runtime (s):          0.079 total | 0.003 avg | [0.001, 0.013]
+    CG:                 0.017 total | 22% of runtime
+    Energy eval:        0.010 total | 13%
+    Hessian assembly:   0.012 total | 15%
+    Project to PD:      0.002 total |  2%
 ```
 
 ---
@@ -546,67 +605,61 @@ Runtime
 
 ### Phase 1: symx infrastructure
 1. Rename/expand `symx::Verbosity` to the 4-level enum (`Silent`, `Summary`, `Step`, `Detail`).
-2. Add `symx::OutputSink` class in `symx/src/solver/OutputSink.h`.
-3. Upgrade `symx::Log` to include typed series, single values, `get_statistics()`, `set_enabled()`.
-4. Create `symx::NewtonOutputFormatter` in `symx/src/solver/NewtonOutputFormatter.h`.
-5. Add `OutputSink output_sink;` as public field on `NewtonsMethod`.
-6. Refactor `NewtonsMethod::_solve_impl()` to use `OutputSink` + `Log` + `NewtonOutputFormatter`.
-7. Remove `NewtonsMethod::_print()`.
-8. Migrate compilation-stage prints from `Context::print` to `OutputSink` at `Summary` level.
+2. Create `symx::OutputSink` in `symx/src/solver/OutputSink.h` with `PrintOnly`/`FileOnly`/`PrintAndFile` modes.
+3. Upgrade `symx::Log` → `symx::Logger`: typed series, accumulators, `ScopedTimer time()`, `get_statistics()`, `save_to_yaml()`.
+4. Add `OutputSink sink;` and `Logger logger;` as public fields on `symx::Context`.
+5. Refactor `NewtonsMethod::_solve_impl()`: replace `_print()` with direct `context.sink.print()` calls using verbosity-as-indentation convention.
+6. Replace `NewtonsMethod::_print()` entirely.
+7. Add scoped timers inside Newton at key points (CG, energy eval, assembly, projection).
+8. **Leave internal symx error/warning/info prints as-is for now.** Focus on simulation output only.
 
 ### Phase 2: stark integration
-1. Restore `ConsoleVerbosity::LineSearch` in the stark enum.
-2. Add `Console::make_symx_callback()` for routing.
-3. In `Stark::_initialize()`, install the callback and map verbosity levels.
-4. Upgrade `stark::core::Logger` back to reference quality (typed series, stats, description).
-5. In `Stark::run_one_step()`, after Newton solve, pull aggregated data from `newton->log` into `Logger`.
-6. Restore `Stark::print()` with the full summary table.
-7. Remove `std::flush` from `Console::print()` (use line-buffered output).
+1. Remove `stark::core::Console` class entirely.
+2. Remove `stark::core::Logger` class entirely.
+3. stark uses `context.sink` for all its own output (time step headers, frame writes, final summary).
+4. stark uses `context.logger` for all its own series (dt, runtime, convergence ratio, etc.).
+5. `Stark::_initialize()` configures `context.sink` (verbosity, mode, file path, console enable).
+6. `Stark::run_one_step()` appends time-step-level data to `context.logger` after Newton solve.
+7. Implement `Stark::print()` — a few stark global numbers + key Newton stats from `context.logger`.
+8. `Stark::finalize()` calls `context.logger.save_to_yaml(path)`.
 
 ### Phase 3: Cleanup
-1. Remove `symx::Context::print` callback (replaced by `OutputSink`).
-2. Fix `Settings::as_string()` numeric formatting bugs.
-3. Remove all debug `std::cout` scattered through the codebase.
-4. Ensure Newton logs match reference: `n_newton_iterations`, `n_line_search_iterations`, `projected_hessians_ratio`, `residual_max`, `max_du`, etc.
+1. Fix `Settings::as_string()` numeric formatting bugs.
+2. Remove `symx::Context::print` callback (replaced by `OutputSink`).
+3. Remove all stray `std::cout` debug prints.
+4. Verify `.yaml` log files load cleanly in Python with `yaml.safe_load()`.
 
 ---
 
 ## 9. Ownership Summary
 
-| Component | Owner | File Location |
-|-----------|-------|---------------|
-| `OutputSink` | symx | `symx/src/solver/OutputSink.h` |
+| Component | Owner | Location |
+|-----------|-------|----------|
 | `Verbosity` enum (4-level) | symx | `symx/src/solver/solver_utils.h` |
-| `Log` (timer + series + stats) | symx | `symx/src/solver/Log.h` |
-| `NewtonOutputFormatter` | symx | `symx/src/solver/NewtonOutputFormatter.h` |
-| `NewtonsMethod.output_sink` | symx | `symx/src/solver/NewtonsMethod.h` (public field) |
-| `Console` (file + stdout routing) | stark | `stark/src/core/Console.h` |
-| `ConsoleVerbosity` (5-level enum) | stark | `stark/src/core/Console.h` |
-| `Logger` (per-simulation accumulation) | stark | `stark/src/core/Logger.h` |
-| Verbosity mapping (symx↔stark) | stark | `Stark::_initialize()` |
+| `OutputSink` (print + file) | symx | `symx/src/solver/OutputSink.h` |
+| `Logger` (timer + series + stats + yaml) | symx | `symx/src/solver/Logger.h` |
+| `Context.sink` | symx | `symx/src/solver/Context.h` (public field) |
+| `Context.logger` | symx | `symx/src/solver/Context.h` (public field) |
+| Newton print calls | symx | `NewtonsMethod.cpp` (direct `context.sink.print()`) |
+| Newton timing | symx | `NewtonsMethod.cpp` (scoped `context.logger.time()`) |
+| Sink configuration | stark | `Stark::_initialize()` |
+| Simulation-level series | stark | `Stark::run_one_step()` |
 | Final summary | stark | `Stark::print()` |
+| Log file save | stark | `Stark::finalize()` → `context.logger.save_to_yaml()` |
+
+`stark::core::Console` — **deleted**
+`stark::core::Logger` — **deleted**
 
 ---
 
-## 10. Open Questions / Decisions
+## 10. Decisions / Notes
 
-1. **Should `symx::Log` be shared or per-solve?**
-   Currently it's a field on `NewtonsMethod` and accumulates across `solve()` calls. For stark (one Newton per lifetime) this is fine. Standalone symx users might want to reset between solve calls. **Proposal: keep accumulated, provide `clear()`.** Users call it when they want.
+1. **Internal symx prints (errors, warnings, info):** Left as-is for now. They are mostly `std::cerr` or `Context::print` for compilation status. We will deal with them in a separate pass.
 
-2. **Should compilation output migrate from `Context::print` to `OutputSink`?**
-   Yes. The compilation messages ("EnergyLumpedInertia.........queued") should go through `OutputSink` at `Summary` level. `Context::print` becomes redundant and can be removed. The `OutputSink` can be stored on `Context` or passed as a parameter to compilation.
+3. **Logger is shared.** Newton appends its series (n_iterations, residuals, etc.) and stark appends its own (dt, runtime, frames). They coexist in the same `context.logger`. No pull/push between separate loggers.
 
-3. **Should `OutputSink` support multiple sinks?** (e.g., console + external listener)
-   **No, for now.** Keep it simple: one callback. Stark's Console already handles both file + console. If a user wants to add their own listener on top, they can wrap the callback.
+4. **`save_to_yaml()`:** Summary statistics at the top (human-readable), raw series at the bottom (machine-readable). Python loads with `yaml.safe_load()`. Description block includes simulation settings for provenance.
 
-4. **Thread safety of `OutputSink`?**
-   Newton is single-threaded at the print level (parallelism is within CG/assembly, which don't print). No mutex needed inside the sink. If a parent app forwards to a thread-unsafe target, they handle locking in their callback.
+5. **No backwards compatibility constraints.** This is a clean build. Old stark::Console/Logger are deleted, not wrapped.
 
-5. **`fmt` dependency?**
-   symx already uses fmt. The formatter will use `fmt::format` internally. This is fine.
-
-6. **What about DOF labels in the summary?**
-   The reference prints DOF labels from `global_energy.dof_labels`. The new `GlobalPotential` doesn't have labels yet. This is a separate TODO (mentioned in symx port TODO.md) and orthogonal to the logging infra. The formatter just prints what it gets.
-
-7. **Newton log timer labels: should they match the reference?**
-   Not necessarily — the internal structure changed. But the **final summary** should show the same meaningful categories: total, energy eval, CG, assembly, projection, write_frame. Some reference labels (like `runtime_CG_success` vs `runtime_CG_fail`) can be simplified.
+6. **`enable_console_output = false`** maps to `context.sink.set_console_enabled(false)`. File output continues if configured. This is the "truly silent" mode.

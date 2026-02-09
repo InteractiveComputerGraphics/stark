@@ -2,26 +2,19 @@
 
 I generally agree with your proposal. Here are my points/corrections:
 
-- If I remember correctly, most prints inside symx are internal and mostly errors and warnings.
-    Let's leave those alone for the time being. Focus exclusively in what concern simulation output.
-    We will deal with error, warnings and info inside symx later on.
-- I do not want to have two layers of console verbosity. stark should use symx's sink and console verbosity levels.
-    If symx is `Silent` the user sees just the time step header and the frames being written (hopefully with a decent format). This is intended. If the user does not even want to see that, they just `stark::settings.output.enable_console_output = false`, which should disable the sink.
-- I am unsure about the `NewtonOutputFormatter`. It seems a bit over-engineered. Although I understand that it's necessary. Output _can_ be messy, but if we use the Verbosity as a tab depth, maybe it's all just simple prints? Worth considering before committing to even more abstractions and boilerplate.
-- I do not have the need of backwards compatibility. We are building this brand new. 
-- stark will have to add stuff to the logger, such as time step information that symx does not have.
-- I am unsure about the final stark print. It should be a few stark global numbers, followed by the key summary numbers from NewtonsMethod.
-- No more mutex on prints.
-- We probably want to move the Logger and Console to symx's Context. Then everybody has easy access.
-- Because stark console (and logger) does not exist anymore, sending output to a file is now responsibility of symx's outputsink. Modes: PrintOnly, FileOnly, PrintAndFile.
+- print tabs should be customizable so the upper lib (stark) can accommodate.
+    E.g. root_tab = 1 (so stark has the 0th); and tab_size = 2 (two spaces)
+- We don't need to explicitly indicate tabs in out messages, symx will do that based on the verbosity the message comes with
+- I think we can pay the price of fmt always even if the message will not be printed. Otherwise the code is going to be hell. I was more worried about hitting flushes and newlines like crazy.
+- `print_raw()` -> `print()` (without verbosity; just print)
+- OutputSink requires that the file exists only if needed. Not always.
+- I agree we should accummulate the msg per line and print it at once.
+    maybe we use two modes: `print` and `append`+`flush_line`.
+    Append can do the iconic "AAAA | BBBB | CCCC" and flush indicates actual print
 
-- I forgot to mention that the `.log` files will need to be easily readable in python for further processing.
-    We don't have to do any python right now, but it's a golden opportunity to make it machine-readable.
-    It should be easy for the user to take a look with an editor of course, that's why the summary should be included at the top.
-    I would be happy using existing formats (yaml?) if that would facilitate anything.
-- Consider that timing can add a lot of boiler plate to Newton's Method. Therefore, I would really appreciate ergonomics here.
+    This might be a bad idea. Leave the proposal flexible in this regard because we will have to see once we are actually implementing this.
+    Your example output is definitely the goal, so that's correct. I am just wondering about the ergonomics to get there.
 
-Revise the existing proposal and give me a summary (in the chat) with the changes/counterpoints.
 
 
 
@@ -33,7 +26,7 @@ Revise the existing proposal and give me a summary (in the chat) with the change
 
 
 
-
+- I am unsure about the compilation print. I feel that should always be tab 0.
 
 * Line search: Decide for apply_increments or global
 
