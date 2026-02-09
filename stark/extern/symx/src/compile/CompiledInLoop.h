@@ -65,6 +65,7 @@ namespace symx
 		// Coloring
 		std::vector<std::vector<int>> color_bins;
 		std::vector<int32_t> coloring_use_indices;
+		bool use_coloring = false;
 		
 		// Misc
 		std::string name = "";
@@ -108,6 +109,12 @@ namespace symx
 		bool was_cached() const;
 		// Info get_info() const;
 		
+		/*
+		* @param conn_indices: indices in the connectivity array to use for coloring. E.g. tet4 conn = { enum, v0, v1, v2, v4 } -> conn_indices = {1,2,3,4}
+		* Warning: This is a dangerous stateful option.
+		* If coloring is enabled, the evaluation will happen on the colors.
+		* If the connectivity changes, but update_coloring is not called, the coloring will be stale and the evaluation will be incorrect.
+		*/
 		void enable_coloring(const std::vector<int>& conn_indices);
 		void disable_coloring();
 		void update_coloring();
@@ -180,12 +187,14 @@ namespace symx
     template <typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
     inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::enable_coloring(const std::vector<int> &conn_indices)
     {
+		this->use_coloring = true;
 		this->coloring_use_indices = conn_indices;
 		this->update_coloring();
     }
     template <typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
     inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::disable_coloring()
     {
+		this->use_coloring = false;
 		this->color_bins.clear();
     }
     template <typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>

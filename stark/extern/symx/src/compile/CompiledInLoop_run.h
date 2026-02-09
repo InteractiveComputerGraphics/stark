@@ -190,11 +190,13 @@ namespace symx
 			this->block_fetches.push_back(block);
         }
 
-		// Coloring initialization
-		if (this->color_bins.size() == 0) { // No coloring
-			this->color_bins.push_back(std::vector<int>());
-			this->color_bins[0].resize(n_elements);
-			std::iota(this->color_bins[0].begin(), this->color_bins[0].end(), 0);
+		// No coloring - all elements in one color bin
+		if (!this->use_coloring) {
+			this->color_bins.resize(1);
+			if ((int32_t)this->color_bins[0].size() != n_elements) {
+				this->color_bins[0].resize(n_elements);
+				std::iota(this->color_bins[0].begin(), this->color_bins[0].end(), 0);
+			}
 		}
 		const int n_colors = (int)this->color_bins.size();
 

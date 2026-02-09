@@ -3,7 +3,16 @@
 * PPN Frictional contact
     !! Some vertices seems to not be included in the line search / energy eval / contact detection ...
         They keep moving freely
-    - Try this experiment in the PPN codebase
+    - I have never checked evalaute_E
+        conditionals, resetting thread buffers...
+        But this does not explain negative curvatures and _some_ jumps
+    - I need to manually inspect what the proximity detection is producing
+    - color bins
+
+    Generally the problem is that I have not tested a few things in symx:
+        - Dynamic connectivities
+        - Empty declared
+
 
 * Add labels to DoFs for nicer printing
 

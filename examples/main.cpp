@@ -68,7 +68,7 @@ void hanging_cloth()
 	bc_params.set_stiffness(1e8);
 
 	// Cloth
-	const int n = 1;
+	const int n = 20;
 	const double d = 1.0;
 	const double hd = d/2.0;
 	auto material = stark::Surface::Params::Cotton_Fabric();
