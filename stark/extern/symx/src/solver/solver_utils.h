@@ -5,6 +5,8 @@
 
 #include <Eigen/Dense>
 
+#include "OutputSink.h"
+
 namespace symx
 {
     enum class SolverReturn
@@ -97,13 +99,6 @@ namespace symx
     // Backward compatibility alias
     using ProjectToPD = ProjectionToPD;
 
-    enum class Verbosity
-    {
-        None = 0,
-        StepIterations = 1,
-        LineSearchIteration = 2,
-    };
-
     struct SolverSettings
     {
         int max_iterations = 100;
@@ -114,7 +109,7 @@ namespace symx
         double step_tolerance = std::numeric_limits<double>::epsilon();
         double line_search_armijo_beta = 1e-4;
         bool enable_armijo_bracktracking = true;
-        Verbosity verbosity = Verbosity::LineSearchIteration;
+        symx::Verbosity verbosity = symx::Verbosity::Step;
         std::string output_prefix = "";
         bool print_line_search_upon_failure = false;
     };

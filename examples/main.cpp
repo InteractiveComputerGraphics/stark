@@ -702,12 +702,59 @@ void column_extrusion()
 
 int main()
 {
-	// symx::enable_load_compiled(false);
-	//column_extrusion();
-	//hanging_cloth();
-	//hanging_deformable_box();
-	//simple_contact_test();
-	twisting_cloth();
+	// --- Per-verbosity output demo ---
+	// Run a short twisting_cloth at each verbosity level, 
+	// writing output to output/verbosity_demo/
+	{
+		using CV = stark::ConsoleVerbosity;
+		struct VerbLevel { CV cv; std::string name; };
+		std::vector<VerbLevel> levels = {
+			{ CV::NoOutput,         "silent"  },
+			{ CV::Frames,           "summary" },
+			{ CV::TimeSteps,        "step"    },
+			{ CV::NewtonIterations, "detail"  },
+		};
+
+		for (auto& lvl : levels) {
+			stark::Settings s = stark::Settings();
+			s.output.simulation_name = "verbosity_" + lvl.name;
+			s.output.output_directory = OUTPUT_PATH + "/verbosity_demo";
+			s.output.codegen_directory = COMPILE_PATH;
+			s.output.console_verbosity = lvl.cv;
+			s.output.console_output_to = stark::ConsoleOutputTo::FileOnly;	// file only — don't spam terminal
+			s.output.enable_output = false;  // skip VTK writes
+			s.execution.end_simulation_time = 0.2;  // short run
+			s.simulation.init_frictional_contact = false;
+			s.simulation.gravity = { 0.0, 0.0, 0.0 };
+			s.simulation.use_adaptive_time_step = false;
+			s.newton.projection_mode = symx::ProjectionToPD::Progressive;
+			s.newton.step_tolerance = 0.001;
+			s.simulation.max_time_step_size = 1.0/30.0;
+
+			stark::Simulation simulation(s);
+
+			double sz = 0.5;
+			int n = 10;
+			auto material = stark::Surface::Params::Cotton_Fabric();
+			material.strain.elasticity_only = true;
+			auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { sz, sz }, { n, n }, material);
+			H.point_set.add_rotation(90.0, Eigen::Vector3d::UnitX());
+
+			auto bc_params = stark::EnergyPrescribedPositions::Params();
+			auto left = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { -sz/2.0, 0.0, 0.0 }, { 0.001, sz, sz }, bc_params);
+			auto right = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { sz/2.0, 0.0, 0.0 }, { 0.001, sz, sz }, bc_params);
+
+			double angular_velocity = 90.0;
+			simulation.add_time_event(0, 5.0, [&](double t) { left.set_transformation(Eigen::Vector3d::Zero(), angular_velocity * t, Eigen::Vector3d::UnitX()); });
+			simulation.add_time_event(0, 5.0, [&](double t) { right.set_transformation(Eigen::Vector3d::Zero(), -angular_velocity * t, Eigen::Vector3d::UnitX()); });
+
+			std::cout << "Running verbosity level: " << lvl.name << " ..." << std::flush;
+			simulation.run();
+			std::cout << " done.\n";
+		}
+		std::cout << "\nSink log files written to: " << OUTPUT_PATH << "/verbosity_demo/\n";
+	}
+
 	return 0;
 
 	/*

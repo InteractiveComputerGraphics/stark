@@ -37,6 +37,7 @@ namespace stark::core
 
 	private:
 		/* Fields */
+		symx::spContext context;
 		symx::spNewtonsMethod newton;
 		bool is_init = false;
 		double next_frame_time = -std::numeric_limits<double>::epsilon();

@@ -596,7 +596,7 @@ void NewtonsMethod::_print_return(SolverReturn result, int newton_iterations, in
 
 void NewtonsMethod::_print(const std::string& msg, Verbosity verbosity) const
 {
-    if (this->settings.verbosity >= verbosity) {
-        std::cout << msg;
-    }
+    // Gate against the sink's single verbosity setting (not settings.verbosity)
+    if (verbosity > this->context->sink.get_verbosity()) return;
+    this->context->sink.print(msg);
 }

@@ -53,8 +53,38 @@ Stark::Stark(const Settings& settings)
 	this->console.initialize(settings.output.output_directory + "/console" + ending, settings.output.console_verbosity, settings.output.console_output_to);
 	this->logger.set_path(settings.output.output_directory + "/logger" + ending);
 
+	// Create context and configure OutputSink
+	this->context = symx::Context::create();
+	this->context->compilation_directory = this->settings.output.codegen_directory;
+	this->context->n_threads = this->settings.execution.n_threads;
+	{
+		using CV = ConsoleVerbosity;
+		using V  = symx::Verbosity;
+		switch (this->settings.output.console_verbosity) {
+			case CV::NoOutput:          this->context->sink.set_verbosity(V::Silent);  break;
+			case CV::Frames:            this->context->sink.set_verbosity(V::Summary); break;
+			case CV::TimeSteps:         this->context->sink.set_verbosity(V::Step);    break;
+			case CV::NewtonIterations:  this->context->sink.set_verbosity(V::Detail);  break;
+		}
+		using CO = ConsoleOutputTo;
+		using OM = symx::OutputMode;
+		switch (this->settings.output.console_output_to) {
+			case CO::ConsoleOnly:    this->context->sink.set_mode(OM::PrintOnly);    break;
+			case CO::FileOnly:       this->context->sink.set_mode(OM::FileOnly);     break;
+			case CO::FileAndConsole: this->context->sink.set_mode(OM::PrintAndFile); break;
+			case CO::NoOutput:
+				this->context->sink.set_mode(OM::PrintOnly);
+				this->context->sink.set_console_enabled(false);
+				break;
+		}
+		const std::string log_path = this->settings.output.output_directory + "/sink" + ending;
+		this->context->sink.open_file(log_path);
+	}
+	// SymX compilation output goes through the sink (gated at Summary, no auto-indent)
+	this->context->print = [this](const std::string& msg) { this->context->sink.print(msg, symx::Verbosity::Summary, false); };
+
 	// Print settings
-	this->console.print(this->settings.as_string(), ConsoleVerbosity::TimeSteps);
+	this->context->sink.print(this->settings.as_string(), symx::Verbosity::Step);
 }
 bool Stark::run(double duration, std::function<void()> callback)
 {
@@ -64,7 +94,7 @@ bool Stark::run(double duration, std::function<void()> callback)
 	auto check_simulation_time = [&]()
 	{
 		if (this->current_time > this->settings.execution.end_simulation_time) {
-			this->console.print(fmt::format("Simulation time exceeded. Exiting simulation.\n"), ConsoleVerbosity::Frames);
+			this->context->sink.print(fmt::format("Simulation time exceeded. Exiting simulation.\n"), symx::Verbosity::Summary);
 			return false;
 		}
 		return true;
@@ -72,7 +102,7 @@ bool Stark::run(double duration, std::function<void()> callback)
 	auto check_duration = [&]()
 	{
 		if ((this->current_time - begin_time) > duration) {
-			this->console.print(fmt::format("Duration time exceeded. Exiting simulation.\n"), ConsoleVerbosity::Frames);
+			this->context->sink.print(fmt::format("Duration time exceeded. Exiting simulation.\n"), symx::Verbosity::Summary);
 			return false;
 		}
 		return true;
@@ -80,7 +110,7 @@ bool Stark::run(double duration, std::function<void()> callback)
 	auto check_frame = [&]()
 	{
 		if (this->current_frame > this->settings.execution.end_frame) {
-			this->console.print(fmt::format("Frame count exceeded. Exiting simulation.\n"), ConsoleVerbosity::Frames);
+			this->context->sink.print(fmt::format("Frame count exceeded. Exiting simulation.\n"), symx::Verbosity::Summary);
 			return false;
 		}
 		return true;
@@ -88,7 +118,7 @@ bool Stark::run(double duration, std::function<void()> callback)
 	auto check_execution_time = [&](double t0)
 	{
 		if ((omp_get_wtime() - t0) > this->settings.execution.allowed_execution_time) {
-			this->console.print(fmt::format("Execution time exceeded. Exiting simulation.\n"), ConsoleVerbosity::Frames);
+			this->context->sink.print(fmt::format("Execution time exceeded. Exiting simulation.\n"), symx::Verbosity::Summary);
 			return false;
 		}
 		return true;
@@ -123,12 +153,12 @@ bool Stark::run_one_step()
 	// Check if the simulation should continue
 	if (!this->callbacks.run_should_continue_execution()) {
 		this->logger.set("success", 0);
-		this->console.print(fmt::format("Simulation interrupted by user.\n"), ConsoleVerbosity::Frames);
+		this->context->sink.print(fmt::format("Simulation interrupted by user.\n"), symx::Verbosity::Summary);
 		return false;
 	}
 
 	// Time step begin
-	this->console.print(fmt::format("\t dt: {:.6f} ms | ", 1000.0 * this->dt), ConsoleVerbosity::TimeSteps);
+	this->context->sink.print(fmt::format("\t dt: {:.6f} ms | ", 1000.0 * this->dt), symx::Verbosity::Step);
 	this->callbacks.run_before_time_step();
 
 	// Use Newton's Method to solve the time step update
@@ -149,7 +179,7 @@ bool Stark::run_one_step()
 		// Output
 		const double runtime = omp_get_wtime() - t0;
 		const double cr = runtime / this->dt;
-		this->console.print(fmt::format(" | runtime: {:.0f} ms | cr: {:.1f}\n", 1000.0 * runtime, cr), ConsoleVerbosity::TimeSteps);
+		this->context->sink.print(fmt::format(" | runtime: {:.0f} ms | cr: {:.1f}\n", 1000.0 * runtime, cr), symx::Verbosity::Step);
 		this->logger.append_to_series("cr", cr);
 		this->logger.append_to_series("dt", this->dt);
 		this->logger.append_to_series("time", this->current_time);
@@ -167,7 +197,7 @@ bool Stark::run_one_step()
 	else {
 		// Output
 		const double runtime = omp_get_wtime() - t0;
-		this->console.print("\n", ConsoleVerbosity::TimeSteps);
+		this->context->sink.print("\n", symx::Verbosity::Step);
 		this->logger.add("failed_steps", runtime);
 
 		// The failure was due to loose stiffnesses
@@ -179,13 +209,13 @@ bool Stark::run_one_step()
 		// The failure was due to the time step being too tough. Adapt the time step size and run the time step again.
 		else {
 			if (!this->settings.simulation.use_adaptive_time_step) {
-				this->console.print("settings.simulation.adaptive_time_step is set to false. Exiting simulation.\n", ConsoleVerbosity::Frames);
+				this->context->sink.print("settings.simulation.adaptive_time_step is set to false. Exiting simulation.\n", symx::Verbosity::Summary);
 				return false;
 			}
 
 			this->dt /= 2.0;
 			if (this->dt < this->settings.simulation.time_step_size_lower_bound) {
-				this->console.print(fmt::format("Adaptive time step size out of bounds ({:.e}). Exiting simulation.\n", this->settings.simulation.time_step_size_lower_bound), ConsoleVerbosity::Frames);
+				this->context->sink.print(fmt::format("Adaptive time step size out of bounds ({:.e}). Exiting simulation.\n", this->settings.simulation.time_step_size_lower_bound), symx::Verbosity::Summary);
 				return false;
 			}
 		}
@@ -240,26 +270,22 @@ void Stark::_initialize()
 	this->is_init = true;
 
 	if (this->global_potential->get_total_n_dofs() == 0) {
-		this->console.print("Stark::_initialize() error: No degrees of freedom. Exiting simulation.", ConsoleVerbosity::Frames);
+		this->context->sink.print("Stark::_initialize() error: No degrees of freedom. Exiting simulation.", symx::Verbosity::Summary);
 		exit(-1);
 	}
 
-    // Newton Solver
-    symx::spContext context = symx::Context::create();
-    context->compilation_directory = this->settings.output.codegen_directory;
-	context->n_threads = this->settings.execution.n_threads;
-	context->print = [&](const std::string& msg) { this->console.print(msg, ConsoleVerbosity::Frames); };
-    this->newton = symx::NewtonsMethod::create(this->global_potential, context);  // Compilation occurs here
+    // Newton Solver (context already created in constructor)
+    this->newton = symx::NewtonsMethod::create(this->global_potential, this->context);  // Compilation occurs here
 	this->newton->settings = this->settings.newton;
 	this->newton->callbacks = this->callbacks.newton;
 
 	// Print ndofs
-	this->console.print("\nDegrees of freedom:", ConsoleVerbosity::Frames);
+	this->context->sink.print("\nDegrees of freedom:", symx::Verbosity::Summary);
 	for (int set_i = 0; set_i < this->global_potential->get_n_dof_sets(); set_i++) {
-		this->console.print(fmt::format("\n\t Set {}: {:d}", set_i, this->global_potential->get_n_dofs(set_i)), ConsoleVerbosity::Frames);
+		this->context->sink.print(fmt::format("\n\t Set {}: {:d}", set_i, this->global_potential->get_n_dofs(set_i)), symx::Verbosity::Summary);
 	}
-	this->console.print(fmt::format("\n\t Total: {:d}", this->global_potential->get_total_n_dofs()), ConsoleVerbosity::Frames);
-	this->console.print("\n\n", ConsoleVerbosity::Frames);
+	this->context->sink.print(fmt::format("\n\t Total: {:d}", this->global_potential->get_total_n_dofs()), symx::Verbosity::Summary);
+	this->context->sink.print("\n\n", symx::Verbosity::Summary);
 
 	// Write frame zero
 	this->_write_frame();
@@ -269,7 +295,7 @@ void Stark::_initialize()
 
 	// Check that the initial state is valid
 	if (!this->callbacks.newton.run_is_initial_state_valid()) {
-		this->console.print("Initial state is not valid. Exiting simulation.", ConsoleVerbosity::Frames);
+		this->context->sink.print("Initial state is not valid. Exiting simulation.", symx::Verbosity::Summary);
 		exit(-1);
 	}
 }
@@ -282,7 +308,7 @@ void Stark::_write_frame()
 			if (this->settings.output.fps != 0) {
 				this->callbacks.run_write_frame();
 			}
-			this->console.print(fmt::format("Frame: {:d}. Time: {:.3f} s.\n", this->current_frame, this->current_time), ConsoleVerbosity::Frames);
+			this->context->sink.print(fmt::format("Frame: {:d}. Time: {:.3f} s.\n", this->current_frame, this->current_time), symx::Verbosity::Summary);
 			this->current_frame++;
 		};
 

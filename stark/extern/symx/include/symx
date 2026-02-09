@@ -10,6 +10,7 @@
 #include "../src/compile/Compiled.h"
 #include "../src/compile/CompiledInLoop.h"
 
+#include "../src/solver/OutputSink.h"
 #include "../src/solver/NewtonsMethod.h"
 #include "../src/solver/solver_utils.h"
 #include "../src/solver/fem_integrators.h"

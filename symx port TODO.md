@@ -1,30 +1,31 @@
 # symx port TODO
 
-I generally agree with your proposal. Here are my points/corrections:
+Here's a summary of what's done and what's left.
 
-- print tabs should be customizable so the upper lib (stark) can accommodate.
-    E.g. root_tab = 1 (so stark has the 0th); and tab_size = 2 (two spaces)
-- We don't need to explicitly indicate tabs in out messages, symx will do that based on the verbosity the message comes with
-- I think we can pay the price of fmt always even if the message will not be printed. Otherwise the code is going to be hell. I was more worried about hitting flushes and newlines like crazy.
-- `print_raw()` -> `print()` (without verbosity; just print)
-- OutputSink requires that the file exists only if needed. Not always.
-- I agree we should accummulate the msg per line and print it at once.
-    maybe we use two modes: `print` and `append`+`flush_line`.
-    Append can do the iconic "AAAA | BBBB | CCCC" and flush indicates actual print
+Completed (compiles & runs)
+OutputSink — OutputSink.h: single class with verbosity gating, auto-indent, file+console routing, lazy file open
+Verbosity enum — solver_utils.h:11: 4-level {Silent, Summary, Step, Detail} with backward compat aliases
+Context wiring — Context.h: OutputSink sink is a public field on symx::Context
+Newton prints — NewtonsMethod.cpp:597: _print() now gates against sink.get_verbosity() and emits through sink.print()
+Stark prints — Stark.cpp: all console.print() calls replaced with context->sink.print(). Context+sink created in constructor (before _initialize).
+Per-verbosity demo — main.cpp:703: runs 4 verbosity levels, writes .log files to output/verbosity_demo/
+Log files location
+Output lives in verbosity_demo relative to the build dir (i.e. verbosity_demo):
 
-    This might be a bad idea. Leave the proposal flexible in this regard because we will have to see once we are actually implementing this.
-    Your example output is definitely the goal, so that's correct. I am just wondering about the ergonomics to get there.
-
-
-
-
-
-
-- Use the current `examples` to test your implementation. When you are happy with a draft version for me to review, please generate a different file per verbosity level inside `output/` and point me to it.
-- Similarly, point me to where the `.log` lives for the final simulation for me to review.
+sink_verbosity_silent__*.txt — 0 bytes
+sink_verbosity_summary__*.txt — 41 lines (SymX + frames)
+sink_verbosity_step__*.txt — 125 lines (+ settings + Newton + dt/runtime)
+sink_verbosity_detail__*.txt — 125 lines (+ line search detail, same here since no LS triggered)
+Remaining (not yet started)
+7: Refactor Newton fragment-prints into proper line-based calls with auto-indent
+8: Upgrade Log → Logger (typed series, stats, YAML output)
+10: Delete Console and old Logger classes from stark
 
 
 
+
+
+- Remove alisases and backward compat stuff littered around by copilot
 
 - I am unsure about the compilation print. I feel that should always be tab 0.
 

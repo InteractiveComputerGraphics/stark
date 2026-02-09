@@ -3,6 +3,8 @@
 #include <string>
 #include <memory>
 
+#include "solver_utils.h"
+#include "OutputSink.h"
 
 namespace symx
 {
@@ -13,6 +15,8 @@ namespace symx
         std::function<void(const std::string&)> print = nullptr;
         std::string compilation_directory = "";
         bool is_silent = false;
+
+        OutputSink sink;  // Public: everyone prints through this
 
         Context();
         static std::shared_ptr<Context> create();

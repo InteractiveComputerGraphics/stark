@@ -7,7 +7,9 @@
         "nproc": true,
         "./examples": true,
         "touch": true,
-        "mkdir": true
+        "mkdir": true,
+        "/local-ssd/libs/stark/build/examples/examples": true,
+        "diff": true
     },
     "cmake.parallelJobs": 8
 }
