@@ -92,7 +92,7 @@ Settings::Settings()
 
 	// Override symx defaults for simulation
 	this->newton.residual_tolerance = 1e-6;
-	this->newton.step_tolerance = 1e-4;
+	this->newton.step_tolerance = 1e-3;
 	this->newton.projection_mode = symx::ProjectionToPD::Progressive;
 }
 

@@ -510,8 +510,6 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
     // Armijo: E(x + s*du) <= E(x) + beta * <du, gradE>
     const double expected_decrease = this->settings.line_search_armijo_beta * du_dot_grad;
     const double E_threshold = E0 + expected_decrease;
-    // const double E_threshold = E0;
-    // const double suitable_backtracking_energy = E0 + 1e-4 * du_dot_grad;
     double E1 = 0.0;
     for (; it < this->settings.max_line_search_iterations; ++it) {
         this->total_line_search_iterations++;
@@ -522,11 +520,6 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         this->compiled->evaluate_P(E1);
         this->callbacks.run_after_energy_evaluation();
 
-        // DEBUG
-        // this->_print(fmt::format("\n\t{}{:d}. step = {:.2e} | E = {:.6e} | E_bt = {:.6e} | E0 = {:.6e}",
-        //         this->settings.output_prefix, it, step, E1, E_threshold, E0),
-        //         Verbosity::LineSearchIteration);
-        
         // Print
         if (it > 0) {
             this->_print(fmt::format("\n\t{}{:d}. step = {:.2e} | E/E_bt = {:.6e} | E/E0 = {:.6e}",

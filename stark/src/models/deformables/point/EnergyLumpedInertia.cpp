@@ -34,26 +34,6 @@ stark::EnergyLumpedInertia::EnergyLumpedInertia(stark::core::Stark& stark, const
 			return branch(is_quasistatic > 0.5, 0.0, E);
 		}
 	);
-
-	// DEBUG
-	stark.global_potential->add_potential("EnergyPointFloorContact", this->conn,
-		[&](MappedWorkspace<double>& mws, Element& node)
-		{
-			//// Create symbols
-			Vector v1 = mws.make_vector(this->dyn->v1.data, node["glob"]);
-			Vector x0 = mws.make_vector(this->dyn->x0.data, node["glob"]);
-			Scalar dt = mws.make_scalar(stark.dt);
-			Scalar floor_z = mws.make_zero();
-			Scalar k = 1e8*mws.make_one();
-
-			//// Set energy expression
-			Vector x1 = x0 + dt * v1;
-			Scalar gap = x1[2] - floor_z;
-			Scalar penetration = -gap;
-			Scalar E = k*penetration.powN(3)/3.0;
-			return branch(gap < 0.0, E, 0.0);
-		}
-	);
 }
 
 stark::EnergyLumpedInertia::Handler stark::EnergyLumpedInertia::add(const PointSetHandler& set, const std::vector<int>& points, const std::vector<double>& lumped_volume, const Params& params)

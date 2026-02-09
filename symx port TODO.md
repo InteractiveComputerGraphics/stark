@@ -1,17 +1,56 @@
 # symx port TODO
 
-* PPN Frictional contact
-    !! Some vertices seems to not be included in the line search / energy eval / contact detection ...
-        They keep moving freely
-    - I have never checked evalaute_E
-        conditionals, resetting thread buffers...
-        But this does not explain negative curvatures and _some_ jumps
-    - I need to manually inspect what the proximity detection is producing
-    - color bins
 
-    Generally the problem is that I have not tested a few things in symx:
-        - Dynamic connectivities
-        - Empty declared
+HI. I am doing a very large port between codebases after a large revamping of my symx library.
+Before we continue, some notes:
+    - Feel free to compile the `examples` executable and run it for both the new and reference implementation
+    - Compile with -j8 as to not overflow my RAM
+    - You can find the reference implementation that 100% has worked for _years_ in `REFERENCE IMPLEMENTATION`
+    - Make sure to build the reference implementation without MKL `cmake .. -DCMAKE_BUILD_TYPE=Release -DSYMX_USE_MKL:STRING=OFF -DSTARK_USE_MKL:STRING=OFF`
+        The current implementation does not have that dependency.
+    - `examples` in both codebases are already running the a similar experiment.
+        Results will not necessarily be the same because the port is still WIP. But it should be similar.
+
+The goal of this refactor is to bring a new version of `symx` into `stark`. Tons of things have changed in symx, but ultimately it does exactly the same thing.
+Notably, `NewtonsMethod` is now part of symx, where before it was in `stark`.
+
+Your task is to consolidate logging and timing infrastructure.
+First, give a very thorough look at the current and reference implementation.
+Then, run both `examples` executable and look at the output. The new one is a mess (to fix), the ref one is nice and we can take it as a goal.
+For now do not implement anything. First, propose a new infra solution for all of this with a high level specific proposal.
+Who owns what? How access happens? How can the user override, redirect? How can it all be nullified for benchmark-type experiments? etc
+SymX will provide this infra and stark will tag along.
+Pay attention also to the final print as it is relevant.
+
+Many prints in the new implementation will need to be reformatted to stay clean and compact.
+Maybe there is also a better way to structure prints to avoid the current "stateful" chain where it prints depends on the previous and next to keep things clean.
+In this sense, maybe it would be good to have a class to handle the NewtonsMethod print structure.
+The rest really is before and after summaries anyway.
+But keep in mind that prints should happen frequently, not at the end of a whole Newton step that can take minutes in large simulations.
+
+Generally, before we actually implement the improved system, we need to consider options.
+
+Some notes:
+Previously, this was contained in `stark`, but now it should be moved into `symx`.
+SymX will provide facilities to log, time and console output with the standard verbosity options.
+Keep in mind that SymX will be an independent library to stark. Other people can use it to build other stuff. So it should be independent, and facilitate parent applications to work with it.
+Because symx does not technically know about "simulation" (it's just NewtonsMethod on any potential), we cannot flag verbosity as `Frames`, `TimeSteps`, ... Maybe we need other way/naming to indicate verbosity.
+Performance is also a concern, frequent hits to virtual functions and flushes can be very slow.
+
+
+So yeah, give me a proposal on what options you think suit the current codebase.
+
+
+
+
+
+
+* Line search: Decide for apply_increments or global
+
+* TONS of debug commented out stuff everywhere
+    Specially collision
+
+* stark should write vtk to .tmp and then rename when finished to avoid crashing 3rd party viz
 
 
 * Add labels to DoFs for nicer printing

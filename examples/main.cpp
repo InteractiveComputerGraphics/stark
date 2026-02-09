@@ -50,9 +50,8 @@ void hanging_cloth()
 	
 	settings.simulation.init_frictional_contact = true; // TOOGLE
 	settings.simulation.use_adaptive_time_step = false;
-	settings.output.fps = -1;
 	settings.simulation.max_time_step_size = 0.001;
-	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
+	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
 	settings.newton.print_line_search_upon_failure = true;
 	stark::Simulation simulation(settings);
 	const double disp = 0.1;
@@ -434,26 +433,32 @@ void twisting_cloth()
 	settings.output.simulation_name = "twisting_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/twisting_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 2.0;
+	settings.execution.end_simulation_time = 1.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
-	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
 	// settings.execution.n_threads = 1; // DEBUG
 	// settings.simulation.max_time_step_size = 0.001;
+	// settings.simulation.init_frictional_contact = false;
+	
+	
 	settings.simulation.use_adaptive_time_step = false;
+	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
+	settings.newton.step_tolerance = 0.001;
+	settings.simulation.max_time_step_size = 1.0/30.0;
+
 	stark::Simulation simulation(settings);
 
 	// Contact
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(0.002)
+		.set_default_contact_thickness(0.001)
 		.set_min_contact_stiffness(1e8)
 	);
 	
 	// Cloth
 	double s = 0.5;
-	int n = 20;
+	int n = 10;
 	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
-	material.strain.elasticity_only = true;  // Strain limiting would make the cloth too stiff and would fight with the prescribed BC, leading to unrealistic stresses
+	material.strain.elasticity_only = true;
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
 	H.point_set.add_rotation(90.0, Eigen::Vector3d::UnitX());
 	H.contact.set_friction(H.contact, 1.0);
@@ -699,10 +704,10 @@ int main()
 {
 	// symx::enable_load_compiled(false);
 	//column_extrusion();
-	hanging_cloth();
+	//hanging_cloth();
 	//hanging_deformable_box();
 	//simple_contact_test();
-	//twisting_cloth();
+	twisting_cloth();
 	return 0;
 
 	/*

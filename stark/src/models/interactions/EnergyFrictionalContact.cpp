@@ -863,39 +863,39 @@ void EnergyFrictionalContact::_energies_contact_deformables(core::Stark& stark)
 	);
 
 
-	// // Edge - Edge
-	// //// Point - Point
-	// stark.global_potential->add_potential(this->_get_contact_label("d_d", "ee_pp"), this->contacts_deformables.edge_edge.point_point,
-	// 	[&](MappedWorkspace<double>& mws, Element& conn)
-	// 	{
-	// 		auto [ea, ea_rest, p] = this->_get_d_edge_point(mws, stark, { conn["ea0"], conn["ea1"], conn["p"] });
-	// 		auto [eb, eb_rest, q] = this->_get_d_edge_point(mws, stark, { conn["eb0"], conn["eb1"], conn["q"] });
-	// 		Scalar d = distance_point_point(p[0], q[0]);
-	// 		return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
-	// 	}
-	// );
+	// Edge - Edge
+	//// Point - Point
+	stark.global_potential->add_potential(this->_get_contact_label("d_d", "ee_pp"), this->contacts_deformables.edge_edge.point_point,
+		[&](MappedWorkspace<double>& mws, Element& conn)
+		{
+			auto [ea, ea_rest, p] = this->_get_d_edge_point(mws, stark, { conn["ea0"], conn["ea1"], conn["p"] });
+			auto [eb, eb_rest, q] = this->_get_d_edge_point(mws, stark, { conn["eb0"], conn["eb1"], conn["q"] });
+			Scalar d = distance_point_point(p[0], q[0]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+		}
+	);
 
-	// //// Point - Edge
-	// stark.global_potential->add_potential(this->_get_contact_label("d_d", "ee_pe"), this->contacts_deformables.edge_edge.point_edge,
-	// 	[&](MappedWorkspace<double>& mws, Element& conn)
-	// 	{
-	// 		auto [ea, ea_rest, p] = this->_get_d_edge_point(mws, stark, { conn["ea0"], conn["ea1"], conn["p"] });
-	// 		auto [eb, eb_rest] = this->_get_d_edge(mws, stark, { conn["eb0"], conn["eb1"] });
-	// 		Scalar d = distance_point_line(p[0], eb[0], eb[1]);
-	// 		return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
-	// 	}
-	// );
+	//// Point - Edge
+	stark.global_potential->add_potential(this->_get_contact_label("d_d", "ee_pe"), this->contacts_deformables.edge_edge.point_edge,
+		[&](MappedWorkspace<double>& mws, Element& conn)
+		{
+			auto [ea, ea_rest, p] = this->_get_d_edge_point(mws, stark, { conn["ea0"], conn["ea1"], conn["p"] });
+			auto [eb, eb_rest] = this->_get_d_edge(mws, stark, { conn["eb0"], conn["eb1"] });
+			Scalar d = distance_point_line(p[0], eb[0], eb[1]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+		}
+	);
 
-	// //// Edge - Edge
-	// stark.global_potential->add_potential(this->_get_contact_label("d_d", "ee_ee"), this->contacts_deformables.edge_edge.edge_edge,
-	// 	[&](MappedWorkspace<double>& mws, Element& conn)
-	// 	{
-	// 		auto [ea, ea_rest] = this->_get_d_edge(mws, stark, { conn["ea0"], conn["ea1"] });
-	// 		auto [eb, eb_rest] = this->_get_d_edge(mws, stark, { conn["eb0"], conn["eb1"] });
-	// 		Scalar d = distance_line_line(ea[0], ea[1], eb[0], eb[1]);
-	// 		return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
-	// 	}
-	// );
+	//// Edge - Edge
+	stark.global_potential->add_potential(this->_get_contact_label("d_d", "ee_ee"), this->contacts_deformables.edge_edge.edge_edge,
+		[&](MappedWorkspace<double>& mws, Element& conn)
+		{
+			auto [ea, ea_rest] = this->_get_d_edge(mws, stark, { conn["ea0"], conn["ea1"] });
+			auto [eb, eb_rest] = this->_get_d_edge(mws, stark, { conn["eb0"], conn["eb1"] });
+			Scalar d = distance_line_line(ea[0], ea[1], eb[0], eb[1]);
+			return this->_edge_edge_mollified_barrier_potential(mws, stark, d, ea, eb, ea_rest, eb_rest, conn["group_a"], conn["group_b"]);
+		}
+	);
 }
 void EnergyFrictionalContact::_energies_contact_rb(core::Stark& stark)
 {
