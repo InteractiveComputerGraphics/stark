@@ -61,7 +61,7 @@ void visualize_line_search_failure(
     std::string dir = output_dir.empty() ? "." : output_dir;
 
     // CSV filename
-    std::string csv_filename = dir + "/linesearch_failure_" + timestamp + ".csv";
+    std::string csv_filename = dir + "/_linesearch_failure_" + timestamp + ".csv";
 
     // Write CSV file
     std::ofstream csv_file(csv_filename);
@@ -111,7 +111,7 @@ void visualize_line_search_failure(
     std::vector<std::string> script_files;
     // for (size_t iter = 0; iter < energy_samples.size(); ++iter) {
     for (int iter = (int)energy_samples.size() - 1; iter >= 0; iter--) {
-        std::string iter_script = dir + "/linesearch_failure_" + timestamp + "_iter" + std::to_string(iter) + ".gp";
+        std::string iter_script = dir + "/_linesearch_failure_" + std::to_string(iter) + ".gp";
         script_files.push_back(iter_script);
         
         std::ofstream gp_file(iter_script);
