@@ -97,13 +97,14 @@ namespace symx
         }
 
         void print_with_new_line(const std::string& msg, Verbosity level, bool indent = true) const {
-            this->print_new_line(level, indent);
-            this->print(msg, level);
+            if (level > verbosity_) return;
+            const std::string new_line = indent ? "\n" + _indent(level) : "\n";
+            this->print(new_line + msg, level);
         }
 
         void print_with_new_line(const std::string& msg, int indent = 0) const {
-            this->print_new_line(indent);
-            this->print(msg);
+            const std::string new_line = "\n" + _indent(indent);
+            this->print(new_line + msg);
         }
 
         void flush_file() {
@@ -131,7 +132,7 @@ namespace symx
             return std::string(level * tab_size_, ' ');
         }
         std::string _indent(Verbosity level) const {
-            int depth = root_tab_ + static_cast<int>(level);
+            int depth = std::max(0, root_tab_ + static_cast<int>(level) - 1);
             return _indent(depth);
         }
 
@@ -139,7 +140,7 @@ namespace symx
         OutputTo output_to_ = OutputTo::PrintOnly;
         bool enabled_ = true;
         int root_tab_ = 0;
-        int tab_size_ = 2;
+        int tab_size_ = 4;
         mutable std::ofstream file_;
     };
     using spOutputSink = std::shared_ptr<OutputSink>;

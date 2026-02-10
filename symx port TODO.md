@@ -22,6 +22,8 @@ Remaining (not yet started)
 10: Delete Console and old Logger classes from stark
 
 
+- Remove bottom print from Newton
+
 - `enable_prints`, `enable_frame_writes`
 
 - Consistent `stark`, `Stark` or `STARK`

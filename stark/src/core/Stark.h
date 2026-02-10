@@ -28,6 +28,7 @@ namespace stark::core
 		// Parameters
 		double current_time = 0.0;
 		int current_frame = 0;
+		int current_time_step = 0;
 		double dt = -1.0;
 		Eigen::Vector3d gravity = { 0.0, 0.0, -9.81 };
 

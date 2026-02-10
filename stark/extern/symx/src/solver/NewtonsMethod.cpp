@@ -113,7 +113,7 @@ SolverReturn NewtonsMethod::_solve_impl()
         }
 
         // Print iteration header
-        this->output->print_with_new_line(fmt::format("{}{:3d}. ", this->settings.output_prefix, newton_iteration), Verbosity::Step);
+        this->output->print_with_new_line(fmt::format("{:d}. ", newton_iteration), Verbosity::Step);
 
         // Evaluate energy, gradient, and Hessian
         this->callbacks.run_before_energy_evaluation();
@@ -125,7 +125,7 @@ SolverReturn NewtonsMethod::_solve_impl()
 
         // Compute residual
         double residual_norm = this->callbacks.compute_residual(this->grad);
-        this->output->print(fmt::format("r0 = {:.2e} | ", residual_norm), Verbosity::Step);
+        this->output->print(fmt::format("r0: {:.2e} | ", residual_norm), Verbosity::Step);
 
         // Residual too small for numerical stability?
         if (residual_norm < this->settings.epsilon_residual) {
@@ -144,6 +144,9 @@ SolverReturn NewtonsMethod::_solve_impl()
         const int initial_cp_iterations = this->stats.cg_iterations;
         bool linear_system_solve_success = false;
         while (!linear_system_solve_success) {
+
+            // Inner indentation
+            this->output->print_new_line(Verbosity::Full);
 
             // Project element Hessians and assemble global Hessian
             bool all_projected = this->_project_and_assemble(element_hessians, hess, ndofs);
@@ -186,7 +189,7 @@ SolverReturn NewtonsMethod::_solve_impl()
             
             // Failed: request more projection and retry
             this->_increase_projection();
-            this->output->print("Retrying with more projection. \n\t\t     ", Verbosity::Full);
+            this->output->print("Retrying with more projection.", Verbosity::Full);
             
         } // End of linear system solve loop
         
@@ -195,15 +198,18 @@ SolverReturn NewtonsMethod::_solve_impl()
         }
         
         // Solve successful
-        this->output->print(fmt::format("ph: {:4.1f}% | #CG: {:4d} | ", 
-            element_hessians->projection_ratio() * 100.0, this->stats.cg_iterations - initial_cp_iterations), Verbosity::Step);
+        if (this->output->get_verbosity() != Verbosity::Full) {
+            this->output->print(fmt::format("ph: {:4.1f}% | #CG: {:4d} | ", 
+                element_hessians->projection_ratio() * 100.0, this->stats.cg_iterations - initial_cp_iterations), Verbosity::Step);
+        }
+
         this->_decrease_projection();
         this->stats.n_hessians += element_hessians->size();
         this->stats.n_projected_hessians += element_hessians->n_projected();
 
         // Convergence: Step tolerance
         double du_max = this->du.cwiseAbs().maxCoeff();
-        this->output->print(fmt::format("du = {:.1e} | ", du_max), Verbosity::Step);
+        this->output->print(fmt::format("du: {:.1e} | ", du_max), Verbosity::Step);
         if (newton_iteration >= this->settings.min_iterations && du_max < this->settings.step_tolerance) {
             result = SolverReturn::Successful;
             break;
@@ -337,7 +343,7 @@ bool NewtonsMethod::_project_and_assemble(spElementHessians element_hessians, El
                 exit(1);
         }
 
-        this->output->print(fmt::format("ph = {:5.1f}% | ", 100.0 * projection_ratio), Verbosity::Full);
+        this->output->print(fmt::format("ph: {:4.1f}% | ", 100.0 * projection_ratio), Verbosity::Full);
     }
 
     // Assemble or update global Hessian
@@ -478,8 +484,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
             break;
         } 
         else {
-            this->output->print(fmt::format("\n\t{}{:d}. step = {:.2e} | Invalid state", 
-                this->settings.output_prefix, it, step), Verbosity::Full);
+            this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | Invalid state", it, step), Verbosity::Full);
             step *= shrink;
             apply_scaled_du(step);  // Undo and apply smaller step
             this->stats.ls_hit_iterations++;
@@ -487,10 +492,9 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         }
     }
 
-    if (step < 1.0 - 1e-12) {
+    if (this->output->get_verbosity() != Verbosity::Full && ls_hit_iterations > 0) {
         this->output->print(fmt::format("ls hit {:2d} | ", ls_hit_iterations), Verbosity::Step);
     }
-
 
     // Failed to find valid state within line search iterations
     if (it == this->settings.max_line_search_iterations) {
@@ -540,27 +544,24 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         this->compiled->evaluate_P(E1);
         this->callbacks.run_after_energy_evaluation();
         
-        // Print
-        if (it > 0) {
-            this->output->print(fmt::format("\n\t{}{:d}. step = {:.2e} | E/E_bt = {:.6e} | E/E0 = {:.6e}",
-                this->settings.output_prefix, it, step, E1 / E_threshold, E1 / E0),
-                Verbosity::Full);
-        }
-            
+        this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | E: {:.2e} | E_bt: {:.2e} | E/E_bt: {:.2e} | ", it, step, E1, E_threshold, E1 / E_threshold), Verbosity::Full);
+        
         // Check Armijo condition
         if (E1 < E_threshold) {
             success = true;
             break;
-            
         }
         else {
             step *= shrink;
             apply_scaled_du(step);  // Undo and apply smaller step
             this->stats.ls_bt_iterations++;
+            this->output->print("Backtrack", Verbosity::Full);
         }
     }
 
-    this->output->print(fmt::format("ls bt {:2d} | ", armijo_iterations), Verbosity::Step);
+    if (this->output->get_verbosity() != Verbosity::Full) {
+        this->output->print(fmt::format("ls bt {:2d} | ", armijo_iterations), Verbosity::Step);
+    }
 
     if (success) {
         return SolverReturn::Running;
@@ -582,7 +583,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
 
 void NewtonsMethod::_print_return(SolverReturn result, int newton_iterations, int ls_iterations) const
 {
-    this->output->print(fmt::format("\n{}#newton: {:d} ", this->settings.output_prefix, newton_iterations), Verbosity::Step);
+    this->output->print(fmt::format("\n#newton: {:d} ", newton_iterations), Verbosity::Step);
 
     if (newton_iterations > 0) {
         this->output->print(fmt::format(" | #ls/newton: {:.2f}", (double)(ls_iterations) / (double)newton_iterations), Verbosity::Step);

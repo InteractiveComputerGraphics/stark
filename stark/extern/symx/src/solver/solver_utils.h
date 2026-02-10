@@ -131,7 +131,6 @@ namespace symx
         double line_search_armijo_beta = 1e-4;
         bool enable_armijo_bracktracking = true;
         symx::Verbosity verbosity = symx::Verbosity::Step;
-        std::string output_prefix = "";
         bool print_line_search_upon_failure = false;
     };
 

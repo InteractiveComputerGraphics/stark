@@ -142,7 +142,7 @@ bool Stark::run_one_step()
 
 	// Time step begin
 	if (this->output->get_verbosity() != Verbosity::Silent) {
-		this->output->print_with_new_line(fmt::format("dt: {:5.2f} ms | ", 1000.0 * this->dt), Verbosity::Summary);
+		this->output->print_with_new_line(fmt::format("{}. dt: {:5.2f} ms | ", this->current_time_step, 1000.0 * this->dt), Verbosity::Summary);
 	}
 	this->callbacks.run_before_time_step();
 
@@ -157,6 +157,7 @@ bool Stark::run_one_step()
 		this->callbacks.run_on_time_step_accepted(); // Sets solution. x0 = x1. Exits minimization.
 		this->callbacks.run_after_time_step();  // Can use the converged state x1, v1.
 		this->current_time += this->dt;
+		this->current_time_step++;
 
 		// Adaptive time step size
 		this->dt = std::min(this->settings.simulation.max_time_step_size, this->dt * this->settings.simulation.time_step_size_success_multiplier);
@@ -167,7 +168,7 @@ bool Stark::run_one_step()
 		const double cr = runtime / this->dt;
 		auto stats = this->newton->get_last_solve_stats();
 		if (this->output->get_verbosity() == Verbosity::Silent) {
-			this->output->print_with_new_line(fmt::format("dt: {:5.2f} ms | ", 1000.0 * this->dt), Verbosity::Summary);
+			this->output->print_with_new_line(fmt::format("{}. dt: {:5.2f} ms | ", this->current_time_step, 1000.0 * this->dt), Verbosity::Summary);
 		}
 		else {
 			this->output->print_new_line();
