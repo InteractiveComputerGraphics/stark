@@ -18,8 +18,10 @@ namespace symx
 		{
 			int newton_iterations = 0;
 			int cg_iterations = 0;
-			int max_step_iterations = 0;
-			int line_search_iterations = 0;
+			int ls_cap_iterations = 0;
+			int ls_max_iterations = 0;
+			int ls_hit_iterations = 0;
+			int ls_bt_iterations = 0;
 			uint64_t n_hessians = 0;
 			uint64_t n_projected_hessians = 0;
 			double projected_hessians_ratio = 0.0;

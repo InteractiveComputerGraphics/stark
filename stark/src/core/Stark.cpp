@@ -169,9 +169,18 @@ bool Stark::run_one_step()
 		if (this->output->get_verbosity() == Verbosity::Silent) {
 			this->output->print_with_new_line(fmt::format("dt: {:5.2f} ms | ", 1000.0 * this->dt), Verbosity::Summary);
 		}
+		else {
+			this->output->print_new_line();
+			this->output->print("             "); // So the summary lines up
+		}
 		this->output->print(fmt::format(
-			"#newton: {:2d} | ph: {:4.1f}% | #CG/newton: {:4d} | ls hit: {:2d} | ls bt: {:2d} | runtime: {:6.1f} ms | cr: {:6.1f}", 
-			stats.newton_iterations, 100.0 * stats.projected_hessians_ratio, stats.cg_iterations / stats.newton_iterations, stats.max_step_iterations, stats.line_search_iterations, 1000.0 * runtime, cr), Verbosity::Summary);
+			"#newton: {:2d} | ph: {:4.1f}% | #CG/newton: {:4d} | ls (cap|max|hit|bt): {:2d}|{:2d}|{:2d}|{:2d}| runtime: {:6.1f} ms | cr: {:6.1f}", 
+			stats.newton_iterations, 
+			100.0 * stats.projected_hessians_ratio, 
+			stats.cg_iterations / stats.newton_iterations, 
+			stats.ls_cap_iterations, stats.ls_max_iterations, stats.ls_hit_iterations, stats.ls_bt_iterations, 
+			1000.0 * runtime, cr), 
+			Verbosity::Summary);
 
 		// Log
 		this->logger.append_to_series("cr", cr);

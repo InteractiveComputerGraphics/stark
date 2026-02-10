@@ -438,7 +438,7 @@ void twisting_cloth()
 	// settings.execution.n_threads = 1; // DEBUG
 	// settings.simulation.max_time_step_size = 0.001;
 	// settings.simulation.init_frictional_contact = false;
-	settings.output.verbosity = symx::Verbosity::Summary;
+	settings.output.verbosity = symx::Verbosity::Step;
 	
 	
 	settings.simulation.use_adaptive_time_step = false;

@@ -22,13 +22,6 @@ Remaining (not yet started)
 10: Delete Console and old Logger classes from stark
 
 
-- Provide custom indent prints.
-    This way we can work with stark no problem. Easy.
-    The only problem is what Silent means?
-    Outside of Newton, there's no need for `Summary`. it's just forced prints. The user can disable all.
-
-- Pad prints to they align
-
 - `enable_prints`, `enable_frame_writes`
 
 - Consistent `stark`, `Stark` or `STARK`
