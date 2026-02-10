@@ -433,17 +433,19 @@ void twisting_cloth()
 	settings.output.simulation_name = "twisting_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/twisting_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 1.0;
+	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
 	// settings.execution.n_threads = 1; // DEBUG
 	// settings.simulation.max_time_step_size = 0.001;
 	// settings.simulation.init_frictional_contact = false;
+	settings.output.verbosity = symx::Verbosity::Summary;
 	
 	
 	settings.simulation.use_adaptive_time_step = false;
 	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
 	settings.newton.step_tolerance = 0.001;
-	settings.simulation.max_time_step_size = 1.0/30.0;
+	// settings.simulation.max_time_step_size = 1.0/30.0;
+	settings.simulation.max_time_step_size = 1.0/120.0;
 
 	stark::Simulation simulation(settings);
 
@@ -456,7 +458,7 @@ void twisting_cloth()
 	
 	// Cloth
 	double s = 0.5;
-	int n = 10;
+	int n = 50;
 	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
 	material.strain.elasticity_only = true;
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
@@ -469,7 +471,7 @@ void twisting_cloth()
 	auto right = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { s/2.0, 0.0, 0.0 }, { 0.001, s, s }, bc_params);
 
 	// Script
-	double duration = 5.0;
+	double duration = settings.execution.end_simulation_time;
 	double angular_velocity = 90.0;  // [deg / s]
 	simulation.add_time_event(0, duration, [&](double t) { left.set_transformation(Eigen::Vector3d::Zero(), angular_velocity * t, Eigen::Vector3d::UnitX()); });
 	simulation.add_time_event(0, duration, [&](double t) { right.set_transformation(Eigen::Vector3d::Zero(), -angular_velocity * t, Eigen::Vector3d::UnitX()); });
@@ -757,7 +759,8 @@ void console_demo()
 
 int main()
 {
-	console_demo();
+	// console_demo();
+	twisting_cloth();
 	return 0;
 
 	/*

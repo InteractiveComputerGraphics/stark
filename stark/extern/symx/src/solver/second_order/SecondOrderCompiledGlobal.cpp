@@ -24,7 +24,7 @@ SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential global_po
     // Initialize compiled potentials
     const int n_potentials = (int)potentials.size();
     this->compiled_potentials.resize(n_potentials);
-    context->output->print_with_new_line("Second Order Potentials:", Verbosity::Summary, /* indent = */ false);
+    context->output->print_with_new_line("Second Order Potentials:");
 
     // Parallel init
     DeferredParallelTasks tasks;
@@ -51,11 +51,11 @@ SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential global_po
     }
     
     //// Run compilation tasks
-    context->output->print_with_new_line("Compiling... ", Verbosity::Summary, /* indent = */ false);
+    context->output->print_with_new_line("Compiling... ");
     tasks.run(context->n_threads);
     context->output->print("done.", Verbosity::Summary);
     const double t1 = omp_get_wtime();
-    context->output->print_with_new_line("Total time: " + std::to_string(t1 - t0) + " s", Verbosity::Summary, /* indent = */ false);
+    context->output->print_with_new_line("Total time: " + std::to_string(t1 - t0) + " s");
 }
 
 void SecondOrderCompiledGlobal::evaluate_P(double &out_P)

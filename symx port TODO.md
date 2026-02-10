@@ -27,12 +27,16 @@ Remaining (not yet started)
     The only problem is what Silent means?
     Outside of Newton, there's no need for `Summary`. it's just forced prints. The user can disable all.
 
+- Pad prints to they align
+
 - `enable_prints`, `enable_frame_writes`
 
 - Consistent `stark`, `Stark` or `STARK`
 
 - debug line search logic inside line search
     Remove _solve_impl
+
+- ToFile print should contain all information
 
 - We need to rethink the split between console output and frame output.
     These are independently needed.

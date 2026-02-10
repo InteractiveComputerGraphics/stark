@@ -87,6 +87,10 @@ namespace symx
             _emit(msg);
         }
 
+        void print_new_line(int indent = 0) const {
+            _emit(indent ? "\n" + _indent(indent) : "\n");
+        }
+
         void print_new_line(Verbosity level, bool indent = true) const {
             if (level > verbosity_) return;
             _emit(indent ? "\n" + _indent(level) : "\n");
@@ -95,6 +99,11 @@ namespace symx
         void print_with_new_line(const std::string& msg, Verbosity level, bool indent = true) const {
             this->print_new_line(level, indent);
             this->print(msg, level);
+        }
+
+        void print_with_new_line(const std::string& msg, int indent = 0) const {
+            this->print_new_line(indent);
+            this->print(msg);
         }
 
         void flush_file() {
@@ -118,9 +127,12 @@ namespace symx
             }
         }
 
+        std::string _indent(int level) const {
+            return std::string(level * tab_size_, ' ');
+        }
         std::string _indent(Verbosity level) const {
             int depth = root_tab_ + static_cast<int>(level);
-            return std::string(depth * tab_size_, ' ');
+            return _indent(depth);
         }
 
         Verbosity verbosity_ = Verbosity::Step;
