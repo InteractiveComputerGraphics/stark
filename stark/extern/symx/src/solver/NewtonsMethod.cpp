@@ -113,7 +113,7 @@ SolverReturn NewtonsMethod::_solve_impl()
         }
 
         // Print iteration header
-        this->output->print_with_new_line(fmt::format("{:d}. ", newton_iteration), Verbosity::Step);
+        this->output->print_with_new_line(fmt::format("{:2d}. ", newton_iteration), Verbosity::Step);
 
         // Evaluate energy, gradient, and Hessian
         this->callbacks.run_before_energy_evaluation();

@@ -167,10 +167,7 @@ bool Stark::run_one_step()
 		const double runtime = omp_get_wtime() - t0;
 		const double cr = runtime / this->dt;
 		auto stats = this->newton->get_last_solve_stats();
-		if (this->output->get_verbosity() == Verbosity::Silent) {
-			this->output->print_with_new_line(fmt::format("{}. dt: {:5.2f} ms | ", this->current_time_step, 1000.0 * this->dt), Verbosity::Summary);
-		}
-		else {
+		if (this->output->get_verbosity() != Verbosity::Summary) {
 			this->output->print_new_line();
 			this->output->print("             "); // So the summary lines up
 		}
