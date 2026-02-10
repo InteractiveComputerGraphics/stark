@@ -5,8 +5,6 @@
 
 #include "Settings.h"
 #include "Callbacks.h"
-#include "Console.h"
-#include "Logger.h"
 #include "EventDrivenScript.h"
 
 namespace stark::core
@@ -21,8 +19,6 @@ namespace stark::core
 		symx::spOutputSink output;
 
 		Callbacks callbacks;
-		Console console;
-		Logger logger;
 		EventDrivenScript script;
 
 		// Parameters

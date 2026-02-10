@@ -5,7 +5,6 @@
 #include "GlobalPotential.h"
 #include "second_order/SecondOrderCompiledGlobal.h"
 #include "solver_utils.h"
-#include "Log.h"
 #include <BlockedSparseMatrix/solve_pcg.h>
 
 namespace symx
@@ -59,14 +58,11 @@ namespace symx
         /* Fields */
 		SolverCallbacks callbacks;
 		NewtonSettings settings;
-        Log log;
-		
 
         /* Methods */
         NewtonsMethod(spGlobalPotential global_potential, spContext context);
 		static std::shared_ptr<NewtonsMethod> create(spGlobalPotential global_potential, spContext context);
         SolverReturn solve();
-        const Log& get_log() const { return this->log; }
 		const SolveStats& get_last_solve_stats() const { return this->stats; }
 
     private:
@@ -78,7 +74,6 @@ namespace symx
 		bool _solve_linear_system(Eigen::VectorXd& du, const ElementHessians::spBSM& hess, const Eigen::VectorXd& grad);
 		SolverReturn _solve_impl();  // Internal solve implementation (called by solve())
 		SolverReturn _line_search_inplace(int& armijo_iterations, double E0, double du_dot_grad);
-		void _print_return(SolverReturn result, int newton_iterations, int line_search_iterations) const;
 	};
 	using spNewtonsMethod = std::shared_ptr<NewtonsMethod>;
 }

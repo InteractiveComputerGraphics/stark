@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "OutputSink.h"
+#include "Logger.h"
 
 namespace symx
 {
@@ -11,9 +12,9 @@ namespace symx
     {
     public:
         int32_t n_threads = -1;
-        // std::function<void(const std::string&)> print = nullptr;
         std::string compilation_directory = "";
         spOutputSink output;
+        Logger logger;
 
         Context();
         static std::shared_ptr<Context> create();

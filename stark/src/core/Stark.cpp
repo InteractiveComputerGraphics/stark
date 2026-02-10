@@ -49,15 +49,14 @@ Stark::Stark(const Settings& settings)
 		exit(-1);
 	}
 
-	// Initialize Consoles and Loggers
+	// Initialize Logger path
 	const std::string ending = "_" + settings.output.simulation_name + "__" + settings.output.time_stamp + ".txt";
-	// this->console.initialize(settings.output.output_directory + "/console" + ending, settings.output.console_verbosity, settings.output.console_output_to);
-	this->logger.set_path(settings.output.output_directory + "/logger" + ending);
 
 	// Create SymX context and configure OutputSink
 	this->context = Context::create();
 	this->context->compilation_directory = this->settings.output.codegen_directory;
 	this->context->n_threads = this->settings.execution.n_threads;
+	this->context->logger.set_path(settings.output.output_directory + "/logger" + ending);
 
 	this->output = this->context->output;
 	this->output->set_enabled(this->settings.output.enable_output);
@@ -131,11 +130,11 @@ bool Stark::run_one_step()
 		this->_initialize();
 	}
 	bool success = false;
-	this->logger.start_timing("total");
+	this->context->logger.start_timing("total");
 
 	// Check if the simulation should continue
 	if (!this->callbacks.run_should_continue_execution()) {
-		this->logger.set("success", 0);
+		this->context->logger.set("success", 0);
 		this->output->print_with_new_line("Simulation interrupted by user.");
 		return false;
 	}
@@ -181,13 +180,24 @@ bool Stark::run_one_step()
 			Verbosity::Summary);
 
 		// Log
-		this->logger.append_to_series("cr", cr);
-		this->logger.append_to_series("dt", this->dt);
-		this->logger.append_to_series("time", this->current_time);
-		this->logger.append_to_series("frame", this->current_frame);
-		this->logger.add_to_counter("time_steps", 1);
-		this->logger.set("avg dt", this->current_time / (double)this->logger.get_int("time_steps"));
-		this->logger.set("cr", this->logger.get_double("total") / this->current_time);
+		auto& logger = this->context->logger;
+		logger.append("cr", cr);
+		logger.append("dt", this->dt);
+		logger.append("time", this->current_time);
+		logger.append("frame", this->current_frame);
+		logger.add("time_steps", 1);
+		logger.set("avg dt", this->current_time / (double)logger.get_int("time_steps"));
+		logger.set("cr", logger.get_timer_total("total") / this->current_time);
+
+		// Solve stats accumulation
+		logger.add("newton_iterations", stats.newton_iterations);
+		logger.add("cg_iterations", stats.cg_iterations);
+		logger.add("n_hessians", (double)stats.n_hessians);
+		logger.add("n_projected_hessians", (double)stats.n_projected_hessians);
+		logger.add("ls_backtracks", stats.ls_bt_iterations);
+		logger.add("ls_cap", stats.ls_cap_iterations);
+		logger.add("ls_max", stats.ls_max_iterations);
+		logger.add("ls_hit", stats.ls_hit_iterations);
 
 		// Frames
 		this->_write_frame();
@@ -201,7 +211,7 @@ bool Stark::run_one_step()
 		// Output
 		const double runtime = omp_get_wtime() - t0;
 		this->output->print("\n", Verbosity::Step);
-		this->logger.add("failed_steps", runtime);
+		this->context->logger.add("failed_steps", runtime);
 
 		// The failure was due to loose stiffnesses
 		if (newton == SolverReturn::InvalidConvergedState || newton == SolverReturn::InvalidIntermediateConfiguration) {
@@ -227,7 +237,7 @@ bool Stark::run_one_step()
 		success = true;
 	}
 
-	this->logger.stop_timing_add("total");
+	this->context->logger.stop_timing("total");
 	return success;
 }
 std::string Stark::get_frame_path(std::string name) const
@@ -238,37 +248,84 @@ void stark::core::Stark::print()
 {
 	this->context->output->print_new_line(Verbosity::Summary);
 	this->context->output->print_with_new_line("================================== Summary ===============================");
-	this->newton->get_log().print();
-	std::cout << "TODO: Final Stark::print() implementation" << std::endl;
 
-	// // Info
-	// this->console.print("\nInfo\n", ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t # time_steps: {:d}\n", this->logger.get_int("time_steps")), ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t # newton/time_steps: {:.1f}\n", (double)this->logger.get_int("newton_iterations") / (double)this->logger.get_int("time_steps")), ConsoleVerbosity::Frames);
-	// if (this->settings.newton.linear_system_solver == LinearSystemSolver::CG) {
-	// 	this->console.print(fmt::format("\t # CG_iterations/newton: {:.1f}\n", (double)this->logger.get_int("CG_iterations") / (double)this->logger.get_int("newton_iterations")), ConsoleVerbosity::Frames);
-	// }
-	// this->console.print(fmt::format("\t # line_search/newton: {:.1f}\n", (double)this->logger.get_int("line_search_iterations") / (double)this->logger.get_int("newton_iterations")), ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t avg dt: {:.6f} ms\n", 1000.0 * this->logger.get_double("avg dt")), ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t cr: {:.1f}\n", this->logger.get_double("cr")), ConsoleVerbosity::Frames);
+	auto& logger = this->context->logger;
+	auto* out = this->context->output.get();
+	const int time_steps = std::max(logger.get_int("time_steps"), 1);
 
-	// // Runtime
-	// this->console.print("Runtime\n", ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t total: {:.3f} s\n", this->logger.get_double("total")), ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t evaluate_E_grad_hess: {:.3f} s\n", this->logger.get_double("evaluate_E_grad_hess")), ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t evaluate_E_grad: {:.3f} s\n", this->logger.get_double("evaluate_E_grad")), ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t evaluate_E: {:.3f} s\n", this->logger.get_double("evaluate_E")), ConsoleVerbosity::Frames);
-	// if (this->settings.newton.linear_system_solver == LinearSystemSolver::CG) {
-	// 	this->console.print(fmt::format("\t CG: {:.3f} s\n", this->logger.get_double("CG")), ConsoleVerbosity::Frames);
-	// }
-	// else if (this->settings.newton.linear_system_solver == LinearSystemSolver::DirectLU) {
-	// 	this->console.print(fmt::format("\t directLU: {:.3f} s\n", this->logger.get_double("directLU")), ConsoleVerbosity::Frames);
-	// }
-	// this->console.print(fmt::format("\t before_energy_evaluation: {:.3f} s\n", this->logger.get_double("before_energy_evaluation")), ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t after_energy_evaluation: {:.3f} s\n", this->logger.get_double("after_energy_evaluation")), ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t is_intermediate_state_valid: {:.3f} s\n", this->logger.get_double("is_intermediate_state_valid")), ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t failed steps: {:.3f} s\n", this->logger.get_double("failed_steps")), ConsoleVerbosity::Frames);
-	// this->console.print(fmt::format("\t write_frame: {:.3f} s\n", this->logger.get_double("write_frame")), ConsoleVerbosity::Frames);
+	// ── Info ──
+	out->print_with_new_line("Info");
+	out->print_with_new_line(fmt::format("  Name:              {}", this->settings.output.simulation_name));
+	out->print_with_new_line(fmt::format("  Simulation time:   {:.3f} s", this->current_time));
+	out->print_with_new_line(fmt::format("  ndofs:             {}", this->global_potential->get_total_n_dofs()));
+	out->print_with_new_line(fmt::format("  Frames:            {}", this->current_frame));
+	out->print_with_new_line(fmt::format("  Time steps:        {}", logger.get_int("time_steps")));
+	out->print_with_new_line(fmt::format("  avg dt:            {:.3f} ms", 1000.0 * this->current_time / time_steps));
+
+	// ── Solve ──
+	const int total_newton      = logger.get_int("newton_iterations");
+	const int total_cg           = logger.get_int("cg_iterations");
+	const double avg_newton      = (double)total_newton / time_steps;
+	const double avg_cg_newton   = total_newton > 0 ? (double)total_cg / total_newton : 0.0;
+
+	const int ls_bt  = logger.get_int("ls_backtracks");
+	const int ls_cap = logger.get_int("ls_cap");
+	const int ls_max = logger.get_int("ls_max");
+	const double avg_ls_newton   = total_newton > 0 ? (double)ls_bt / total_newton : 0.0;
+
+	const double n_hess     = logger.get_double("n_hessians");
+	const double n_proj     = logger.get_double("n_projected_hessians");
+	const double proj_ratio = n_hess > 0 ? 100.0 * n_proj / n_hess : 0.0;
+
+	const double cr = logger.get_double("cr");
+
+	out->print_with_new_line("");
+	out->print_with_new_line("Solve");
+	out->print_with_new_line(fmt::format("  Newton iterations: {:d} total, {:.1f} avg/step", total_newton, avg_newton));
+	out->print_with_new_line(fmt::format("  CG iterations:     {:d} total, {:.1f} avg/newton", total_cg, avg_cg_newton));
+	out->print_with_new_line(fmt::format("  Line search:       {:d} backtracks, {:.2f} avg/newton  (cap: {:d}, max: {:d})", ls_bt, avg_ls_newton, ls_cap, ls_max));
+	out->print_with_new_line(fmt::format("  Projected hessians:{:5.1f}%", proj_ratio));
+	out->print_with_new_line(fmt::format("  Comp. ratio (cr):  {:.2f}", cr));
+
+	// ── Runtime ──
+	const double total_time = logger.get_timer_total("total");
+
+	struct TimerRow { const char* label; const char* display; };
+	const TimerRow rows[] = {
+		{"Linear System Solve","Linear System Solve"},
+		{"Energy Evaluation",  "Energy Evaluation"},
+		{"Hessian Assembly",   "Hessian Assembly"},
+		{"Project to PD",      "Project to PD"},
+		{"Line Search",        "Line Search"},
+		{"runtime_write_frame","Write Frame"},
+	};
+
+	double accounted = 0.0;
+	out->print_with_new_line("");
+	out->print_with_new_line(fmt::format("  {:<22} {:>10}  {:>6}", "Runtime", "Time (s)", "%"));
+	out->print_with_new_line(fmt::format("  {}", std::string(42, '-')));
+
+	for (const auto& row : rows) {
+		const double t = logger.get_timer_total(row.label);
+		accounted += t;
+		const double pct = total_time > 0 ? 100.0 * t / total_time : 0.0;
+		out->print_with_new_line(fmt::format("  {:<22} {:>10.6f}  {:>5.1f}%", row.display, t, pct));
+	}
+
+	// Misc = total - accounted (overhead from callbacks, Newton inner loop, etc.)
+	const double misc = total_time - accounted;
+	const double misc_pct = total_time > 0 ? 100.0 * misc / total_time : 0.0;
+	out->print_with_new_line(fmt::format("  {:<22} {:>10.6f}  {:>5.1f}%", "Misc", misc, misc_pct));
+
+	out->print_with_new_line(fmt::format("  {}", std::string(42, '-')));
+	out->print_with_new_line(fmt::format("  {:<22} {:>10.6f}  {:>5.1f}%", "Total", total_time, 100.0));
+
+	// Failed steps
+	if (logger.get_double("failed_steps") > 0.0) {
+		out->print_with_new_line(fmt::format("\n  Failed step time:  {:.3f} s", logger.get_double("failed_steps")));
+	}
+
+	out->print_new_line();
 }
 
 void Stark::_initialize()
@@ -322,7 +379,7 @@ void Stark::_write_frame()
 			this->current_frame++;
 		};
 
-	this->logger.start_timing("runtime_write_frame");
+	this->context->logger.start_timing("runtime_write_frame");
 	if (this->settings.output.fps < 0) {  // Write every time step
 		write_frame_impl();
 	}
@@ -336,6 +393,6 @@ void Stark::_write_frame()
 			this->next_frame_time += 1.0 / (double)this->settings.output.fps;
 		}
 	}
-	this->logger.stop_timing_add("runtime_write_frame");
-	this->logger.save_to_disk();
+	this->context->logger.stop_timing("runtime_write_frame");
+	this->context->logger.save_to_disk();
 }

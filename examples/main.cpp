@@ -458,7 +458,7 @@ void twisting_cloth()
 	
 	// Cloth
 	double s = 0.5;
-	int n = 100;
+	int n = 50;
 	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
 	material.strain.elasticity_only = true;
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
@@ -759,8 +759,8 @@ void console_demo()
 
 int main()
 {
-	console_demo();
-	//twisting_cloth();
+	//console_demo();
+	twisting_cloth();
 	return 0;
 
 	/*

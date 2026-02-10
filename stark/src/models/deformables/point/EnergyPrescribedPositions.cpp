@@ -149,7 +149,7 @@ bool stark::EnergyPrescribedPositions::_is_converged_state_valid(stark::core::St
 	}
 
 	if (!is_valid) {
-		stark.console.add_error_msg("Deformable prescribed position constraints are not within tolerance. Stiffness hardened.");
+		stark.output->print("Deformable prescribed position constraints are not within tolerance. Stiffness hardened.\n", symx::Verbosity::Summary);
 	}
 
 	return is_valid;

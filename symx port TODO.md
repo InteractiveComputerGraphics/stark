@@ -22,6 +22,9 @@ Remaining (not yet started)
 10: Delete Console and old Logger classes from stark
 
 
+- enable_output vs set_enabled vs Verbosity::Silent — document the distinction
+Three ways to suppress output:
+
 - Remove bottom print from Newton
 
 - `enable_prints`, `enable_frame_writes`
@@ -91,6 +94,8 @@ Remaining (not yet started)
     We are comparing many pointers, and fetching and storing... Extensive check!
 
 * There will be a lot of dead code and old/AI comments. Massive cleanup.
+
+* Run all the simulations from PPN to certify it runs as expected
 
 
 

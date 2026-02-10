@@ -36,11 +36,7 @@ add_subdirectory(extern/TriangleMeshCollisionDetection)
 # Source files
 set(CORE_FILES
 	src/core/Callbacks.h
-	src/core/Console.cpp
-	src/core/Console.h
 	src/core/include_ui.h
-	src/core/Logger.cpp
-	src/core/Logger.h
 	src/core/Settings.cpp
 	src/core/Settings.h
 	src/core/EventDrivenScript.cpp

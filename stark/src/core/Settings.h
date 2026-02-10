@@ -5,8 +5,6 @@
 #include <Eigen/Dense>
 #include <symx>
 
-#include "Console.h"
-
 namespace stark::core
 {
 	struct Settings

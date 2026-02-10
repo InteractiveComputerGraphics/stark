@@ -3,5 +3,6 @@
 *.pyd
 build/
 output/
+codegen/
 profile/
 REFERENCE\ IMPLEMENTATION/

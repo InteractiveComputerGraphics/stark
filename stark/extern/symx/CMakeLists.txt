@@ -90,6 +90,8 @@ set(SOURCE_FILES
 	src/solver/DeferredParallelTasks.h
 	src/solver/Context.h
 	src/solver/Context.cpp
+	src/solver/Logger.h
+	src/solver/Logger.cpp
 	src/solver/Potential.h
 	src/solver/Potential.cpp
 	src/solver/GlobalPotential.h

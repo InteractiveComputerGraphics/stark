@@ -247,7 +247,7 @@ bool stark::EnergyRigidBodyConstraints::_is_converged_state_valid(core::Stark& s
 	*/
 	const bool valid = this->_adjust_constraints_stiffness_and_log(stark, 1.0, this->stiffness_hard_multiplier, /* are_positions_set = */ false);
 	if (!valid) {
-		stark.console.add_error_msg("Rigid body constraints are not within tolerance. Hardening bending_stiffness.");
+		stark.output->print("Rigid body constraints are not within tolerance. Hardening bending_stiffness.\n", symx::Verbosity::Summary);
 	}
 	return valid;
 }

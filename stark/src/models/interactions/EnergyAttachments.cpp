@@ -522,7 +522,7 @@ bool stark::EnergyAttachments::_is_converged_state_valid(core::Stark& stark)
 	}
 
 	if (!is_valid) {
-		stark.console.add_error_msg("Attachment constraints are not within tolerance. Stiffness hardened.");
+		stark.output->print("Attachment constraints are not within tolerance. Stiffness hardened.\n", symx::Verbosity::Summary);
 	}
 
 	return is_valid;
