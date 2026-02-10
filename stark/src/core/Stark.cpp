@@ -67,7 +67,8 @@ Stark::Stark(const Settings& settings)
 	this->output->set_root_tab(1);
 
 	// Print settings
-	this->context->output->print(this->settings.as_string() + "\n\n");
+	this->context->output->print_with_new_line("================================== Settings ==============================", Verbosity::Summary, /* indent = */ false);
+	this->context->output->print(this->settings.as_string());
 }
 bool Stark::run(double duration, std::function<void()> callback)
 {
@@ -77,7 +78,7 @@ bool Stark::run(double duration, std::function<void()> callback)
 	auto check_simulation_time = [&]()
 	{
 		if (this->current_time > this->settings.execution.end_simulation_time) {
-			this->output->print(fmt::format("Simulation time exceeded. Exiting simulation.\n"), Verbosity::Summary);
+			this->output->print_with_new_line("Simulation time exceeded. Exiting simulation.", Verbosity::Summary, /* indent = */ false);
 			return false;
 		}
 		return true;
@@ -85,7 +86,7 @@ bool Stark::run(double duration, std::function<void()> callback)
 	auto check_duration = [&]()
 	{
 		if ((this->current_time - begin_time) > duration) {
-			this->output->print(fmt::format("Duration time exceeded. Exiting simulation.\n"), Verbosity::Summary);
+			this->output->print_with_new_line("Duration time exceeded. Exiting simulation.", Verbosity::Summary, /* indent = */ false);
 			return false;
 		}
 		return true;
@@ -93,7 +94,7 @@ bool Stark::run(double duration, std::function<void()> callback)
 	auto check_frame = [&]()
 	{
 		if (this->current_frame > this->settings.execution.end_frame) {
-			this->output->print(fmt::format("Frame count exceeded. Exiting simulation.\n"), Verbosity::Summary);
+			this->output->print_with_new_line("Frame count exceeded. Exiting simulation.", Verbosity::Summary, /* indent = */ false);
 			return false;
 		}
 		return true;
@@ -101,7 +102,7 @@ bool Stark::run(double duration, std::function<void()> callback)
 	auto check_execution_time = [&](double t0)
 	{
 		if ((omp_get_wtime() - t0) > this->settings.execution.allowed_execution_time) {
-			this->output->print(fmt::format("Execution time exceeded. Exiting simulation.\n"), Verbosity::Summary);
+			this->output->print_with_new_line("Execution time exceeded. Exiting simulation.", Verbosity::Summary, /* indent = */ false);
 			return false;
 		}
 		return true;
@@ -120,7 +121,6 @@ bool Stark::run(double duration, std::function<void()> callback)
 	}
 
 	// Finalize
-	this->newton->get_log().print();
 	this->print();
 	return success;
 }
@@ -136,12 +136,12 @@ bool Stark::run_one_step()
 	// Check if the simulation should continue
 	if (!this->callbacks.run_should_continue_execution()) {
 		this->logger.set("success", 0);
-		this->output->print(fmt::format("Simulation interrupted by user.\n"), Verbosity::Summary);
+		this->output->print_with_new_line("Simulation interrupted by user.", Verbosity::Summary, /* indent = */ false);
 		return false;
 	}
 
 	// Time step begin
-	this->output->print(fmt::format("\t dt: {:.6f} ms | ", 1000.0 * this->dt), Verbosity::Step);
+	this->output->print_with_new_line(fmt::format("dt: {:.3f} ms", 1000.0 * this->dt), Verbosity::Summary);
 	this->callbacks.run_before_time_step();
 
 	// Use Newton's Method to solve the time step update
@@ -157,12 +157,12 @@ bool Stark::run_one_step()
 		this->current_time += this->dt;
 
 		// Adaptive time step size
-		this->dt = std::min(this->settings.simulation.max_time_step_size, this->dt * this->settings.simulation.time_step_size_success_muliplier);
+		this->dt = std::min(this->settings.simulation.max_time_step_size, this->dt * this->settings.simulation.time_step_size_success_multiplier);
 
 		// Output
 		const double runtime = omp_get_wtime() - t0;
 		const double cr = runtime / this->dt;
-		this->output->print(fmt::format(" | runtime: {:.0f} ms | cr: {:.1f}\n", 1000.0 * runtime, cr), Verbosity::Step);
+		this->output->print(fmt::format(" | runtime: {:.0f} ms | cr: {:.1f}", 1000.0 * runtime, cr), Verbosity::Summary);
 		this->logger.append_to_series("cr", cr);
 		this->logger.append_to_series("dt", this->dt);
 		this->logger.append_to_series("time", this->current_time);
@@ -216,6 +216,9 @@ std::string Stark::get_frame_path(std::string name) const
 }
 void stark::core::Stark::print()
 {
+	this->context->output->print_new_line(Verbosity::Summary);
+	this->context->output->print_with_new_line("================================== Summary ===============================", Verbosity::Summary, /* indent = */ false);
+	this->newton->get_log().print();
 	std::cout << "TODO: Final Stark::print() implementation" << std::endl;
 
 	// // Info
@@ -258,17 +261,21 @@ void Stark::_initialize()
 	}
 
     // Newton Solver (context already created in constructor)
+	context->output->print_with_new_line("==================================== SymX ================================", Verbosity::Summary, /* indent = */ false);
     this->newton = NewtonsMethod::create(this->global_potential, this->context);  // Compilation occurs here
 	this->newton->settings = this->settings.newton;
 	this->newton->callbacks = this->callbacks.newton;
 
 	// Print ndofs
-	this->output->print("\nDegrees of freedom:", Verbosity::Summary);
+	this->output->print_with_new_line("Degrees of freedom:", Verbosity::Summary, /* indent = */ false);
 	for (int set_i = 0; set_i < this->global_potential->get_n_dof_sets(); set_i++) {
-		this->output->print(fmt::format("\n\t Set {}: {:d}", set_i, this->global_potential->get_n_dofs(set_i)), Verbosity::Summary);
+		this->output->print_with_new_line(fmt::format("Set {}: {:d}", set_i, this->global_potential->get_n_dofs(set_i)), Verbosity::Summary);
 	}
-	this->output->print(fmt::format("\n\t Total: {:d}", this->global_potential->get_total_n_dofs()), Verbosity::Summary);
-	this->output->print("\n\n", Verbosity::Summary);
+	this->output->print_with_new_line(fmt::format("Total: {:d}", this->global_potential->get_total_n_dofs()), Verbosity::Summary);
+
+	// Stark banner
+	this->output->print_new_line(Verbosity::Summary);
+	context->output->print_with_new_line("==================================== STARK ===============================", Verbosity::Summary, /* indent = */ false);
 
 	// Write frame zero
 	this->_write_frame();
@@ -291,7 +298,7 @@ void Stark::_write_frame()
 			if (this->settings.output.fps != 0) {
 				this->callbacks.run_write_frame();
 			}
-			this->output->print(fmt::format("Frame: {:d}. Time: {:.3f} s.\n", this->current_frame, this->current_time), Verbosity::Summary);
+			this->output->print_with_new_line(fmt::format("[Frame: {:d}] Time: {:.3f} s", this->current_frame, this->current_time), Verbosity::Summary, /* indent = */ false);
 			this->current_frame++;
 		};
 

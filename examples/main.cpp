@@ -698,29 +698,29 @@ void column_extrusion()
 	// Run
 	simulation.run();
 }
-
-
-int main()
+void console_demo()
 {
 	// --- Per-verbosity output demo ---
 	// Run a short twisting_cloth at each verbosity level, 
 	// writing output to output/verbosity_demo/
 	{
 		std::vector<symx::Verbosity> levels = {
-			symx::Verbosity::Silent,
+			// symx::Verbosity::Silent,
 			symx::Verbosity::Summary,
-			symx::Verbosity::Step,
-			symx::Verbosity::Full,
+			// symx::Verbosity::Step,
+			// symx::Verbosity::Full,
 		 };
 
 		for (auto& lvl : levels) {
+			std::cout << "Running verbosity level: " << to_string(lvl) << " ..." << std::flush;
+
 			stark::Settings s = stark::Settings();
 			s.output.simulation_name = "verbosity_" + to_string(lvl);
 			s.output.output_directory = OUTPUT_PATH + "/verbosity_demo";
 			s.output.codegen_directory = COMPILE_PATH;
 			s.output.verbosity = lvl;
 			s.output.output_to = symx::OutputTo::PrintAndFile;
-			s.output.enable_output = false;  // skip VTK writes
+			s.output.enable_output = true;
 			s.execution.end_simulation_time = 0.2;  // short run
 			s.simulation.init_frictional_contact = false;
 			s.simulation.gravity = { 0.0, 0.0, 0.0 };
@@ -746,13 +746,18 @@ int main()
 			simulation.add_time_event(0, 5.0, [&](double t) { left.set_transformation(Eigen::Vector3d::Zero(), angular_velocity * t, Eigen::Vector3d::UnitX()); });
 			simulation.add_time_event(0, 5.0, [&](double t) { right.set_transformation(Eigen::Vector3d::Zero(), -angular_velocity * t, Eigen::Vector3d::UnitX()); });
 
-			std::cout << "Running verbosity level: " << to_string(lvl) << " ..." << std::flush;
+			
 			simulation.run();
 			std::cout << " done.\n";
 		}
 		std::cout << "\nSink log files written to: " << OUTPUT_PATH << "/verbosity_demo/\n";
 	}
+}
 
+
+int main()
+{
+	console_demo();
 	return 0;
 
 	/*

@@ -75,7 +75,7 @@ std::string Settings::as_string() const
 	out += "\n         init_frictional_contact: " + to_string(this->simulation.init_frictional_contact);
 	out += "\n         max_time_step_size: " + to_string(this->simulation.max_time_step_size);
 	out += "\n         use_adaptive_time_step: " + to_string(this->simulation.use_adaptive_time_step);
-	out += "\n         time_step_size_success_muliplier: " + to_string(this->simulation.time_step_size_success_muliplier);
+	out += "\n         time_step_size_success_multiplier: " + to_string(this->simulation.time_step_size_success_multiplier);
 	out += "\n         time_step_size_lower_bound: " + fmt::format("{:.1e}", this->simulation.time_step_size_lower_bound);
 
 	out += "\n     Newton's Method";
@@ -106,6 +106,6 @@ std::string Settings::as_string() const
 	out += "\n         end_simulation_time: " + fmt::format("{:.1e}", this->execution.end_simulation_time);
 	out += "\n         end_frame: " + fmt::format("{:d}", this->execution.end_frame);
 	out += "\n         n_threads: " + fmt::format("{:d}", this->execution.n_threads);
-	out += "\n\n";
+	out += "\n";
 	return out;
 }

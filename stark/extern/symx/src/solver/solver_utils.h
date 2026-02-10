@@ -158,15 +158,18 @@ namespace symx
         double epsilon_residual = 1e-10;            // Skip step if residual is below this (avoids CG instability)
     };
 
-    inline std::string in_two_columns(const std::string& str1, const std::string& str2, size_t distance)
+    inline std::string in_two_columns(const std::string& str1, const std::string& str2, size_t width)
     {
         std::string result = str1;
 
-        if (result.length() < distance) {
-            result.append(distance - result.length(), '.');
+        if (str1.length() + str2.length() >= width) {
+            result.append(".." + str2);
         }
         else {
-            result.replace(distance, result.length() - distance, result.length() - distance, '.');
+            size_t n_dots = width - str1.length() - str2.length();
+            for (size_t i = 0; i < n_dots; i++) {
+                result.append(".");
+            }
         }
 
         return result + str2;

@@ -77,15 +77,24 @@ namespace symx
         // --- Core API ---
 
         // Print with verbosity gate.
-        // If indent=true (default), indentation = (root_tab + level) * tab_size spaces, prepended automatically.
-        void print(const std::string& msg, Verbosity level, bool indent = true) const {
+        void print(const std::string& msg, Verbosity level) const {
             if (level > verbosity_) return;
-            _emit(indent ? _indent(level) + msg : msg);
+            _emit(msg);
         }
 
         // Ungated print — no verbosity check, no auto-indent.
         void print(const std::string& msg) const {
             _emit(msg);
+        }
+
+        void print_new_line(Verbosity level, bool indent = true) const {
+            if (level > verbosity_) return;
+            _emit(indent ? "\n" + _indent(level) : "\n");
+        }
+
+        void print_with_new_line(const std::string& msg, Verbosity level, bool indent = true) const {
+            this->print_new_line(level, indent);
+            this->print(msg, level);
         }
 
         void flush_file() {

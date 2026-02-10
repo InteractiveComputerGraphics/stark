@@ -24,9 +24,7 @@ SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential global_po
     // Initialize compiled potentials
     const int n_potentials = (int)potentials.size();
     this->compiled_potentials.resize(n_potentials);
-    context->output->print("\n==== SymX ====\n", Verbosity::Summary);
-    context->output->print("Second Order Potentials\n", Verbosity::Summary);
-    context->output->print("Load or queue for compilation:\n", Verbosity::Summary);
+    context->output->print_with_new_line("Second Order Potentials:", Verbosity::Summary, /* indent = */ false);
 
     // Parallel init
     DeferredParallelTasks tasks;
@@ -44,20 +42,20 @@ SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential global_po
 		#pragma omp critical
 		{
             if (compiled_potentials[i]->was_cached()) {
-                context->output->print("\t " + in_two_columns(potentials[i]->get_name(), "loaded.\n", 60), Verbosity::Summary);
+                context->output->print_with_new_line(in_two_columns(potentials[i]->get_name(), "loaded", 70), Verbosity::Summary);
 			}
 			else {
-                context->output->print("\t " + in_two_columns(potentials[i]->get_name(), "queued.\n", 60), Verbosity::Summary);
+                context->output->print_with_new_line(in_two_columns(potentials[i]->get_name(), "queued for compilation", 70), Verbosity::Summary);
 			}
 		}
     }
     
     //// Run compilation tasks
-    context->output->print("Compiling... ", Verbosity::Summary);
+    context->output->print_with_new_line("Compiling... ", Verbosity::Summary, /* indent = */ false);
     tasks.run(context->n_threads);
-    context->output->print("done.\n", Verbosity::Summary);
+    context->output->print("done.", Verbosity::Summary);
     const double t1 = omp_get_wtime();
-    context->output->print("Total time: " + std::to_string(t1 - t0) + " s\n", Verbosity::Summary);
+    context->output->print_with_new_line("Total time: " + std::to_string(t1 - t0) + " s", Verbosity::Summary, /* indent = */ false);
 }
 
 void SecondOrderCompiledGlobal::evaluate_P(double &out_P)
