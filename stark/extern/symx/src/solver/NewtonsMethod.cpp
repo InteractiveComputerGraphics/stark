@@ -12,6 +12,7 @@ using namespace symx;
 symx::NewtonsMethod::NewtonsMethod(spGlobalPotential global_potential, spContext context)
     : global_potential(global_potential), context(context)
 {
+    this->output = context->output;
     this->compiled = std::make_shared<SecondOrderCompiledGlobal>(global_potential, context);
 }
 
@@ -112,7 +113,7 @@ SolverReturn NewtonsMethod::_solve_impl()
         }
 
         // Print iteration header
-        this->_print(fmt::format("\n{}{:3d}. ", this->settings.output_prefix, newton_iteration), Verbosity::StepIterations);
+        this->output->print(fmt::format("\n{}{:3d}. ", this->settings.output_prefix, newton_iteration), Verbosity::Step);
 
         // Evaluate energy, gradient, and Hessian
         this->callbacks.run_before_energy_evaluation();
@@ -124,7 +125,7 @@ SolverReturn NewtonsMethod::_solve_impl()
 
         // Compute residual
         double residual_norm = this->callbacks.compute_residual(this->grad);
-        this->_print(fmt::format("r0 = {:.2e} | ", residual_norm), Verbosity::StepIterations);
+        this->output->print(fmt::format("r0 = {:.2e} | ", residual_norm), Verbosity::Step);
 
         // Residual too small for numerical stability?
         if (residual_norm < this->settings.epsilon_residual) {
@@ -156,7 +157,7 @@ SolverReturn NewtonsMethod::_solve_impl()
             if (!linear_system_solve_success) {
                 bool can_project_more = (this->settings.projection_mode != ProjectionToPD::Newton) && !all_projected;
                 if (!can_project_more) {
-                    this->_print("Linear system failed. ", Verbosity::StepIterations);
+                    this->output->print("Linear system failed. ", Verbosity::Step);
                     result = SolverReturn::LinearSystemFailure;
                     break;
                 }
@@ -170,7 +171,7 @@ SolverReturn NewtonsMethod::_solve_impl()
                 if (!descends) {
                     bool can_project_more = (this->settings.projection_mode != ProjectionToPD::Newton) && !all_projected;
                     if (!can_project_more) {
-                        this->_print("Does not descend. ", Verbosity::StepIterations);
+                        this->output->print("Does not descend. ", Verbosity::Step);
                         result = SolverReturn::LineSearchDoesNotDescend;
                         break;
                     }
@@ -184,7 +185,7 @@ SolverReturn NewtonsMethod::_solve_impl()
 
             // Failed: request more projection and retry
             this->_increase_projection();
-            this->_print("Retrying with more projection. \n\t\t     ", Verbosity::StepIterations);
+            this->output->print("Retrying with more projection. \n\t\t     ", Verbosity::Step);
 
         } // End of linear system solve loop
 
@@ -197,7 +198,7 @@ SolverReturn NewtonsMethod::_solve_impl()
 
         // Convergence: Step tolerance
         double du_max = this->du.cwiseAbs().maxCoeff();
-        this->_print(fmt::format("du = {:.1e} | ", du_max), Verbosity::StepIterations);
+        this->output->print(fmt::format("du = {:.1e} | ", du_max), Verbosity::Step);
         if (newton_iteration >= this->settings.min_iterations && du_max < this->settings.step_tolerance) {
             result = SolverReturn::Successful;
             break;
@@ -207,7 +208,7 @@ SolverReturn NewtonsMethod::_solve_impl()
         if (du_max > this->settings.step_cap) {
             this->du *= this->settings.step_cap / du_max;
             du_max = this->settings.step_cap;
-            this->_print(fmt::format("du cap {:.1e} | ", du_max), Verbosity::StepIterations);
+            this->output->print(fmt::format("du cap {:.1e} | ", du_max), Verbosity::Step);
         }
 
         // Max allowed step (e.g. CCD)
@@ -215,7 +216,7 @@ SolverReturn NewtonsMethod::_solve_impl()
         if (du_max > max_step) {
             this->du *= max_step / du_max;
             du_max = max_step;
-            this->_print(fmt::format("ls hit {:.1e} | ", du_max), Verbosity::StepIterations);
+            this->output->print(fmt::format("ls hit {:.1e} | ", du_max), Verbosity::Step);
         }
 
         // Line search
@@ -325,7 +326,7 @@ bool NewtonsMethod::_project_and_assemble(spElementHessians element_hessians, El
                 exit(1);
         }
 
-        this->_print(fmt::format("ph = {:5.1f}% | ", 100.0 * projection_ratio), Verbosity::StepIterations);
+        this->output->print(fmt::format("ph = {:5.1f}% | ", 100.0 * projection_ratio), Verbosity::Step);
     }
 
     // Assemble or update global Hessian
@@ -425,7 +426,7 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
             this->pcg_context
         );
 
-        this->_print(fmt::format("#CG {:5d} | ", pcg_info.n_iterations), Verbosity::StepIterations);
+        this->output->print(fmt::format("#CG {:5d} | ", pcg_info.n_iterations), Verbosity::Step);
         return pcg_info.converged;
     } 
     else {
@@ -465,8 +466,8 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
             break;
         } 
         else {
-            this->_print(fmt::format("\n\t{}{:d}. step = {:.2e} | Invalid state", 
-                this->settings.output_prefix, it, step), Verbosity::LineSearchIteration);
+            this->output->print(fmt::format("\n\t{}{:d}. step = {:.2e} | Invalid state", 
+                this->settings.output_prefix, it, step), Verbosity::Full);
             step *= shrink;
             apply_scaled_du(step);  // Undo and apply smaller step
         }
@@ -522,9 +523,9 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
 
         // Print
         if (it > 0) {
-            this->_print(fmt::format("\n\t{}{:d}. step = {:.2e} | E/E_bt = {:.6e} | E/E0 = {:.6e}",
+            this->output->print(fmt::format("\n\t{}{:d}. step = {:.2e} | E/E_bt = {:.6e} | E/E0 = {:.6e}",
                 this->settings.output_prefix, it, step, E1 / E_threshold, E1 / E0),
-                Verbosity::LineSearchIteration);
+                Verbosity::Full);
         }
         
         // Check Armijo condition
@@ -554,49 +555,42 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
 
 void NewtonsMethod::_print_return(SolverReturn result, int newton_iterations, int ls_iterations) const
 {
-    this->_print(fmt::format("\n{}#newton: {:d} ", this->settings.output_prefix, newton_iterations), Verbosity::StepIterations);
+    this->output->print(fmt::format("\n{}#newton: {:d} ", this->settings.output_prefix, newton_iterations), Verbosity::Step);
 
     if (newton_iterations > 0) {
-        this->_print(fmt::format(" | #ls/newton: {:.2f}", (double)(ls_iterations) / (double)newton_iterations), Verbosity::StepIterations);
+        this->output->print(fmt::format(" | #ls/newton: {:.2f}", (double)(ls_iterations) / (double)newton_iterations), Verbosity::Step);
     } else {
-        this->_print(" | #ls/newton: N/A", Verbosity::StepIterations);
+        this->output->print(" | #ls/newton: N/A", Verbosity::Step);
     }
     
     if (result == SolverReturn::Successful) {
-        this->_print(" | converged", Verbosity::StepIterations);
+        this->output->print(" | converged", Verbosity::Step);
     } else {
-        this->_print(" | not converged", Verbosity::StepIterations);
+        this->output->print(" | not converged", Verbosity::Step);
     }
 
     switch (result) {
         case SolverReturn::TooManyNewtonIterations:
-            this->_print(fmt::format("\n\t\t -> Max Newton iterations reached ({:d}). ", this->settings.max_iterations), Verbosity::StepIterations);
+            this->output->print(fmt::format("\n\t\t -> Max Newton iterations reached ({:d}). ", this->settings.max_iterations), Verbosity::Step);
             break;
         case SolverReturn::TooManyLineSearchIterations:
-            this->_print(fmt::format("\n\t\t -> Max line search iterations reached ({:d}). ", this->settings.max_line_search_iterations), Verbosity::StepIterations);
+            this->output->print(fmt::format("\n\t\t -> Max line search iterations reached ({:d}). ", this->settings.max_line_search_iterations), Verbosity::Step);
             break;
         case SolverReturn::LinearSystemFailure:
-            this->_print("\n\t\t -> Linear system could not find a solution. ", Verbosity::StepIterations);
+            this->output->print("\n\t\t -> Linear system could not find a solution. ", Verbosity::Step);
             break;
         case SolverReturn::InvalidIntermediateConfiguration:
-            this->_print("\n\t\t -> Invalid intermediate configuration could not be avoided. ", Verbosity::StepIterations);
+            this->output->print("\n\t\t -> Invalid intermediate configuration could not be avoided. ", Verbosity::Step);
             break;
         case SolverReturn::LineSearchDoesNotDescend:
-            this->_print("\n\t\t -> Line search direction does not descend. ", Verbosity::StepIterations);
+            this->output->print("\n\t\t -> Line search direction does not descend. ", Verbosity::Step);
             break;
         case SolverReturn::InvalidConvergedState:
-            this->_print("\n\t\t -> Converged state is invalid. ", Verbosity::StepIterations);
+            this->output->print("\n\t\t -> Converged state is invalid. ", Verbosity::Step);
             break;
         case SolverReturn::Successful:
         case SolverReturn::Running:
             break;  // No error message needed
     }
-    this->_print("\n", Verbosity::StepIterations);
-}
-
-void NewtonsMethod::_print(const std::string& msg, Verbosity verbosity) const
-{
-    // Gate against the sink's single verbosity setting (not settings.verbosity)
-    if (verbosity > this->context->sink.get_verbosity()) return;
-    this->context->sink.print(msg);
+    this->output->print("\n", Verbosity::Step);
 }

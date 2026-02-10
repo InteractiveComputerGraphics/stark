@@ -87,6 +87,17 @@ namespace symx
         DirectLU,
         BDPCG,  // Block Diagonal Preconditioned Conjugate Gradient
     };
+    inline std::string to_string(symx::LinearSolver v)
+    {
+        switch (v)
+        {
+        case symx::LinearSolver::BDPCG: return "BDPCG"; break;
+        case symx::LinearSolver::DirectLU: return "DirectLU"; break;
+        default:
+            std::cout << "symx::LinearSolver " << (int)v << " does not have a name. Exiting." << std::endl;
+            exit(-1);
+        }
+    }
 
     enum class ProjectionToPD
     {
@@ -95,9 +106,19 @@ namespace symx
         ProjectOnDemand,  // Project only when linear system fails or search direction does not descend
         Progressive,      // PPN: Progressively project based on gradient magnitude threshold
     };
-
-    // Backward compatibility alias
-    using ProjectToPD = ProjectionToPD;
+    inline std::string to_string(symx::ProjectionToPD v)
+    {
+        switch (v)
+        {
+        case symx::ProjectionToPD::Newton: return "Newton"; break;
+        case symx::ProjectionToPD::ProjectedNewton: return "ProjectedNewton"; break;
+        case symx::ProjectionToPD::ProjectOnDemand: return "ProjectOnDemand"; break;
+        case symx::ProjectionToPD::Progressive: return "Progressive"; break;
+        default:
+            std::cout << "symx::ProjectionToPD " << (int)v << " does not have a name. Exiting." << std::endl;
+            exit(-1);
+        }
+    }
 
     struct SolverSettings
     {

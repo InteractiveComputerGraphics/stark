@@ -33,7 +33,6 @@ stark::Settings test_settings(std::string name)
 	settings.output.simulation_name = name;
 	settings.output.output_directory = OUTPUT_PATH + "/test_output";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.output.console_verbosity = stark::ConsoleVerbosity::NoOutput;
 	settings.output.enable_output = false;
 	settings.execution.end_simulation_time = 3.0;
 	settings.simulation.gravity = {0, 0, 0};

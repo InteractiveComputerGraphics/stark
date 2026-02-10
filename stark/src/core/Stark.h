@@ -17,6 +17,9 @@ namespace stark::core
 		/* Fields */
 		const Settings settings;
 		symx::spGlobalPotential global_potential;
+		symx::spContext context;
+		symx::spOutputSink output;
+
 		Callbacks callbacks;
 		Console console;
 		Logger logger;
@@ -37,7 +40,7 @@ namespace stark::core
 
 	private:
 		/* Fields */
-		symx::spContext context;
+		
 		symx::spNewtonsMethod newton;
 		bool is_init = false;
 		double next_frame_time = -std::numeric_limits<double>::epsilon();

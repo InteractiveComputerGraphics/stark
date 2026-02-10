@@ -10,20 +10,38 @@ namespace symx
         Silent = 0,
         Summary = 1,
         Step = 2,
-        Detail = 3,
-
-        // Backward compatibility aliases
-        None = Silent,
-        StepIterations = Step,
-        LineSearchIteration = Detail,
+        Full = 3,
     };
-
-    enum class OutputMode
+    inline std::string to_string(Verbosity v)
     {
-        PrintOnly,      // stdout only
-        FileOnly,       // file only
-        PrintAndFile,   // both
+        switch (v) {
+            case Verbosity::Silent:  return "Silent";
+            case Verbosity::Summary: return "Summary";
+            case Verbosity::Step:    return "Step";
+            case Verbosity::Full:  return "Full";
+            default:           
+                std::cout << "symx::Verbosity " << (int)v << " does not have a name. Exiting." << std::endl;
+                exit(-1);
+        }
+    }
+
+    enum class OutputTo
+    {
+        PrintOnly,
+        FileOnly,
+        PrintAndFile,
     };
+    inline std::string to_string(OutputTo m)
+    {
+        switch (m) {
+            case OutputTo::PrintOnly:     return "PrintOnly";
+            case OutputTo::FileOnly:      return "FileOnly";
+            case OutputTo::PrintAndFile:  return "PrintAndFile";
+            default:
+                std::cout << "symx::OutputTo " << (int)m << " does not have a name. Exiting." << std::endl;
+                exit(-1);
+        }
+    }
 
     class OutputSink
     {
@@ -39,8 +57,8 @@ namespace symx
         int get_tab_size() const { return tab_size_; }
 
         // --- Output mode & file ---
-        void set_mode(OutputMode m) { mode_ = m; }
-        OutputMode get_mode() const { return mode_; }
+        void set_output_to(OutputTo m) { output_to_ = m; }
+        OutputTo get_output_to() const { return output_to_; }
 
         void open_file(const std::string& path) {
             file_.open(path);
@@ -53,8 +71,8 @@ namespace symx
         bool is_file_open() const { return file_.is_open(); }
 
         // --- Console enable ---
-        void set_console_enabled(bool v) { console_enabled_ = v; }
-        bool is_console_enabled() const { return console_enabled_; }
+        void set_enabled(bool v) { enabled_ = v; }
+        bool is_enabled() const { return enabled_; }
 
         // --- Core API ---
 
@@ -76,11 +94,18 @@ namespace symx
 
     private:
         void _emit(const std::string& msg) const {
-            if (console_enabled_ && mode_ != OutputMode::FileOnly) {
+            if (!enabled_) return;
+            if (output_to_ != OutputTo::FileOnly) {
                 std::cout << msg;
             }
-            if (file_.is_open() && mode_ != OutputMode::PrintOnly) {
-                file_ << msg;
+            if (output_to_ != OutputTo::PrintOnly) {
+                if (file_.is_open()) {
+                    file_ << msg;
+                }
+                else {
+                    std::cout << "OutputSink error: File output mode enabled but file is not open. Use OutputSink::open_file() before directing to file." << std::endl;
+                    exit(-1);
+                }
             }
         }
 
@@ -90,10 +115,11 @@ namespace symx
         }
 
         Verbosity verbosity_ = Verbosity::Step;
-        OutputMode mode_ = OutputMode::PrintOnly;
-        bool console_enabled_ = true;
+        OutputTo output_to_ = OutputTo::PrintOnly;
+        bool enabled_ = true;
         int root_tab_ = 0;
         int tab_size_ = 2;
         mutable std::ofstream file_;
     };
+    using spOutputSink = std::shared_ptr<OutputSink>;
 }

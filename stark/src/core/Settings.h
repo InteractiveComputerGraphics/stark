@@ -18,8 +18,8 @@ namespace stark::core
 			std::string codegen_directory = "";
 			std::string time_stamp = "SET_TO_CREATION_TIME_BY_DEFAULT";
 			int fps = 30;
-			ConsoleVerbosity console_verbosity = ConsoleVerbosity::TimeSteps;
-			ConsoleOutputTo console_output_to = ConsoleOutputTo::FileAndConsole;
+			symx::Verbosity verbosity = symx::Verbosity::Step;
+			symx::OutputTo output_to = symx::OutputTo::PrintAndFile;
 			bool enable_output = true;
 		};
 		struct Simulation

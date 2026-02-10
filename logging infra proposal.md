@@ -113,7 +113,7 @@ namespace symx {
         Silent  = 0,   // No output at all
         Summary = 1,   // Per-solve summary (1 line per solve call)
         Step    = 2,   // Per Newton iteration line
-        Detail  = 3,   // Line search iterations, projection retries
+        Full  = 3,   // Line search iterations, projection retries
     };
 }
 ```
@@ -125,7 +125,7 @@ stark uses this directly. If set to `Silent`, Newton produces no output. stark i
 - `settings.output.enable_console_output = false` → truly nothing on stdout
 - `Verbosity::Summary` → + Newton summary line per time step
 - `Verbosity::Step` → + per-iteration lines
-- `Verbosity::Detail` → + line search / projection details
+- `Verbosity::Full` → + line search / projection details
 
 ### 3.3 `symx::OutputSink` — Print + File output (in symx)
 
@@ -369,9 +369,9 @@ Instead of a dedicated `NewtonOutputFormatter`, Newton's `_solve_impl()` uses di
 sink.print(fmt::format("{:3d}. r = {:.2e} | ph: {:6.2f}% | #CG {:5d} | du = {:.2e}\n",
     it, residual, 100.0 * ratio, n_cg, du_max), Verbosity::Step);
 
-// Projection retry (Detail level — deeper indent)
+// Projection retry (Full level — deeper indent)
 sink.print(fmt::format("{:2d}. p-tol: {:.1e} | ph: {:6.2f}% | #CG {:5d} | -> {}\n",
-    retry, p_tol, 100.0 * ratio, n_cg, failure_reason), Verbosity::Detail);
+    retry, p_tol, 100.0 * ratio, n_cg, failure_reason), Verbosity::Full);
 
 // Summary line after solve (Summary level)
 sink.print(fmt::format("#newton: {:2d} | #CG/newton: {:2d} | #ls/newton: {:.2f} | {}\n",
@@ -382,8 +382,8 @@ No `should_print()` guards needed for most prints. We accept the `fmt::format` c
 
 For **truly hot paths** where formatting cost matters (rare), a guard is still available:
 ```cpp
-if (sink.get_verbosity() >= Verbosity::Detail) {
-    // expensive formatting only when Detail is active
+if (sink.get_verbosity() >= Verbosity::Full) {
+    // expensive formatting only when Full is active
 }
 ```
 
@@ -484,7 +484,7 @@ Single enum. Everything uses `symx::Verbosity`.
 | `Silent` | Nothing | Time step header, frame writes | Production monitoring |
 | `Summary` | 1 summary line per `solve()` | + Newton summary appended to time step line | Quick dev feedback |
 | `Step` | + Per Newton iteration lines | (same) | Normal development |
-| `Detail` | + Line search, projection retries | (same) | Debugging convergence |
+| `Full` | + Line search, projection retries | (same) | Debugging convergence |
 
 To suppress **all** console output (including stark's own time step headers):
 ```cpp
@@ -502,7 +502,7 @@ We accept the cost of `fmt::format` even when the message will be discarded by t
 
 For the rare case of truly expensive formatting (e.g., dumping a matrix), a manual guard is available:
 ```cpp
-if (context.sink.get_verbosity() >= Verbosity::Detail) {
+if (context.sink.get_verbosity() >= Verbosity::Full) {
     // expensive formatting only when needed
 }
 ```
@@ -568,7 +568,7 @@ context.logger.set_enabled(false);
   #newton: 4 | #CG/newton: 12 | #ls/newton: 0.00 | converged | runtime: 2 ms | cr: 0.1
 ```
 
-### `Detail` verbosity:
+### `Full` verbosity:
 ```
   dt: 33.33 ms |
     1. r = 5.45e-03 |
@@ -604,7 +604,7 @@ context.logger.set_enabled(false);
 ## 8. Migration Plan
 
 ### Phase 1: symx infrastructure
-1. Rename/expand `symx::Verbosity` to the 4-level enum (`Silent`, `Summary`, `Step`, `Detail`).
+1. Rename/expand `symx::Verbosity` to the 4-level enum (`Silent`, `Summary`, `Step`, `Full`).
 2. Create `symx::OutputSink` in `symx/src/solver/OutputSink.h` with `PrintOnly`/`FileOnly`/`PrintAndFile` modes.
 3. Upgrade `symx::Log` → `symx::Logger`: typed series, accumulators, `ScopedTimer time()`, `get_statistics()`, `save_to_yaml()`.
 4. Add `OutputSink sink;` and `Logger logger;` as public fields on `symx::Context`.

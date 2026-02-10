@@ -5,7 +5,7 @@
 
 using namespace symx;
 
-symx::SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential global_potential, spContext context)
+SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential global_potential, spContext context)
     : global_potential(global_potential), context(context)
 {
     // Get
@@ -24,9 +24,9 @@ symx::SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential glo
     // Initialize compiled potentials
     const int n_potentials = (int)potentials.size();
     this->compiled_potentials.resize(n_potentials);
-    context->print("\n==== SymX ====\n");
-    context->print("Second Order Potentials\n");
-    context->print("Load or queue for compilation:\n");
+    context->output->print("\n==== SymX ====\n", Verbosity::Summary);
+    context->output->print("Second Order Potentials\n", Verbosity::Summary);
+    context->output->print("Load or queue for compilation:\n", Verbosity::Summary);
 
     // Parallel init
     DeferredParallelTasks tasks;
@@ -44,23 +44,23 @@ symx::SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential glo
 		#pragma omp critical
 		{
             if (compiled_potentials[i]->was_cached()) {
-                context->print("\t " + in_two_columns(potentials[i]->get_name(), "loaded.\n", 60));
+                context->output->print("\t " + in_two_columns(potentials[i]->get_name(), "loaded.\n", 60), Verbosity::Summary);
 			}
 			else {
-                context->print("\t " + in_two_columns(potentials[i]->get_name(), "queued.\n", 60));
+                context->output->print("\t " + in_two_columns(potentials[i]->get_name(), "queued.\n", 60), Verbosity::Summary);
 			}
 		}
     }
     
     //// Run compilation tasks
-    context->print("Compiling... ");
+    context->output->print("Compiling... ", Verbosity::Summary);
     tasks.run(context->n_threads);
-    context->print("done.\n");
+    context->output->print("done.\n", Verbosity::Summary);
     const double t1 = omp_get_wtime();
-    context->print("Total time: " + std::to_string(t1 - t0) + " s\n");
+    context->output->print("Total time: " + std::to_string(t1 - t0) + " s\n", Verbosity::Summary);
 }
 
-void symx::SecondOrderCompiledGlobal::evaluate_P(double &out_P)
+void SecondOrderCompiledGlobal::evaluate_P(double &out_P)
 {
     // Assembly options
     const bool hess = false;
@@ -81,7 +81,7 @@ void symx::SecondOrderCompiledGlobal::evaluate_P(double &out_P)
     out_P = this->assembly.E.get_solution();
 }
 
-void symx::SecondOrderCompiledGlobal::evaluate_P__dP_du(double& out_P, Eigen::VectorXd& out_dP_du)
+void SecondOrderCompiledGlobal::evaluate_P__dP_du(double& out_P, Eigen::VectorXd& out_dP_du)
 {
     // Assembly options
     const bool hess = false;
@@ -103,7 +103,7 @@ void symx::SecondOrderCompiledGlobal::evaluate_P__dP_du(double& out_P, Eigen::Ve
     out_dP_du = this->assembly.grad.get_solution();
 }
 
-spElementHessians symx::SecondOrderCompiledGlobal::evaluate_P__dP_du__local_d2P_du2(double& out_P, Eigen::VectorXd& out_dP_du)
+spElementHessians SecondOrderCompiledGlobal::evaluate_P__dP_du__local_d2P_du2(double& out_P, Eigen::VectorXd& out_dP_du)
 {
     // Assembly options
     const bool hess = true;
@@ -126,7 +126,7 @@ spElementHessians symx::SecondOrderCompiledGlobal::evaluate_P__dP_du__local_d2P_
     return this->assembly.element_hessians;
 }
 
-double symx::SecondOrderCompiledGlobal::test_derivatives_with_FD(const double h)
+double SecondOrderCompiledGlobal::test_derivatives_with_FD(const double h)
 {
 	// Get the current dofs
 	const int ndofs = this->global_potential->get_total_n_dofs();

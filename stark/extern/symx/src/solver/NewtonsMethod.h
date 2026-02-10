@@ -17,6 +17,7 @@ namespace symx
 		std::shared_ptr<SecondOrderCompiledGlobal> compiled = nullptr;
 		spGlobalPotential global_potential = nullptr;
 		spContext context = nullptr;
+		spOutputSink output = nullptr;
 		
 		// Reusable work vectors
 		Eigen::VectorXd du;
@@ -60,7 +61,6 @@ namespace symx
 		SolverReturn _solve_impl();  // Internal solve implementation (called by solve())
 		SolverReturn _line_search_inplace(int& armijo_iterations, double E0, double du_dot_grad);
 		void _print_return(SolverReturn result, int newton_iterations, int line_search_iterations) const;
-		void _print(const std::string& msg, Verbosity verbosity) const;
 	};
 	using spNewtonsMethod = std::shared_ptr<NewtonsMethod>;
 }

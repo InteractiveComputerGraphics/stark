@@ -28,48 +28,6 @@ std::string time_stamp()
 	oss << std::put_time(&localTime, "%Y-%m-%d__%H-%M-%S");
 	return oss.str();
 }
-std::string to_string(ConsoleVerbosity v)
-{
-	switch (v)
-	{
-	case ConsoleVerbosity::NoOutput: return "NoOutput"; break;
-	case ConsoleVerbosity::Frames: return "Frames"; break;
-	case ConsoleVerbosity::TimeSteps: return "TimeSteps"; break;
-	case ConsoleVerbosity::NewtonIterations: return "NewtonIterations"; break;
-	default: return ""; break;
-	}
-}
-std::string to_string(ConsoleOutputTo v)
-{
-	switch (v)
-	{
-	case ConsoleOutputTo::ConsoleOnly: return "ConsoleOnly"; break;
-	case ConsoleOutputTo::FileOnly: return "FileOnly"; break;
-	case ConsoleOutputTo::FileAndConsole: return "FileAndConsole"; break;
-	case ConsoleOutputTo::NoOutput: return "NoOutput"; break;
-	default: return ""; break;
-	}
-}
-std::string to_string(symx::LinearSolver v)
-{
-	switch (v)
-	{
-	case symx::LinearSolver::BDPCG: return "BDPCG"; break;
-	case symx::LinearSolver::DirectLU: return "DirectLU"; break;
-	default: return ""; break;
-	}
-}
-std::string to_string(symx::ProjectionToPD v)
-{
-	switch (v)
-	{
-	case symx::ProjectionToPD::Newton: return "Newton"; break;
-	case symx::ProjectionToPD::ProjectedNewton: return "ProjectedNewton"; break;
-	case symx::ProjectionToPD::ProjectOnDemand: return "ProjectOnDemand"; break;
-	case symx::ProjectionToPD::Progressive: return "Progressive"; break;
-	default: return ""; break;
-	}
-}
 std::string to_string(const bool v)
 {
 	if (v) {
@@ -108,8 +66,8 @@ std::string Settings::as_string() const
 	out += "\n         codegen_directory: " + fmt::format("\"{}\"", this->output.codegen_directory);
 	out += "\n         time_stamp: " + fmt::format("\"{}\"", this->output.time_stamp);
 	out += "\n         fps: " + std::to_string(this->output.fps);
-	out += "\n         console_verbosity: " + to_string(this->output.console_verbosity);
-	out += "\n         console_output_to: " + to_string(this->output.console_output_to);
+	out += "\n         verbosity: " + to_string(this->output.verbosity);
+	out += "\n         console_output_to: " + to_string(this->output.output_to);
 	out += "\n         enable_output: " + to_string(this->output.enable_output);
 
 	out += "\n     Simulation";

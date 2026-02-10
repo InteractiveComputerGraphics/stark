@@ -4,7 +4,7 @@ Here's a summary of what's done and what's left.
 
 Completed (compiles & runs)
 OutputSink — OutputSink.h: single class with verbosity gating, auto-indent, file+console routing, lazy file open
-Verbosity enum — solver_utils.h:11: 4-level {Silent, Summary, Step, Detail} with backward compat aliases
+Verbosity enum — solver_utils.h:11: 4-level {Silent, Summary, Step, Full} with backward compat aliases
 Context wiring — Context.h: OutputSink sink is a public field on symx::Context
 Newton prints — NewtonsMethod.cpp:597: _print() now gates against sink.get_verbosity() and emits through sink.print()
 Stark prints — Stark.cpp: all console.print() calls replaced with context->sink.print(). Context+sink created in constructor (before _initialize).
@@ -22,8 +22,18 @@ Remaining (not yet started)
 10: Delete Console and old Logger classes from stark
 
 
+- We need to rethink the split between console output and frame output.
+    These are independently needed.
 
+- Why `symx::Verbosity` when this is for now exclusively for Newton?
+    Maybe other solvers will follow?
 
+- `Silent` is really bad for API.
+    It means "print time steps"
+
+- Do we need the scheme for `NewtonsMethod::_print_return` ?
+
+- consistent get_name, get_label, to_string
 
 - Remove alisases and backward compat stuff littered around by copilot
 
