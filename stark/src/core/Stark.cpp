@@ -176,7 +176,7 @@ bool Stark::run_one_step()
 			stats.newton_iterations, 
 			100.0 * stats.projected_hessians_ratio, 
 			stats.cg_iterations / stats.newton_iterations, 
-			stats.ls_cap_iterations, stats.ls_max_iterations, stats.ls_hit_iterations, stats.ls_bt_iterations, 
+			stats.ls_cap_iterations, std::max(stats.ls_max_iterations, 1), stats.ls_hit_iterations, stats.ls_bt_iterations, 
 			1000.0 * runtime, cr), 
 			Verbosity::Summary);
 

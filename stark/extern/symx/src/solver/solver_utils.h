@@ -130,7 +130,6 @@ namespace symx
         double step_tolerance = std::numeric_limits<double>::epsilon();
         double line_search_armijo_beta = 1e-4;
         bool enable_armijo_bracktracking = true;
-        symx::Verbosity verbosity = symx::Verbosity::Step;
         bool print_line_search_upon_failure = false;
     };
 

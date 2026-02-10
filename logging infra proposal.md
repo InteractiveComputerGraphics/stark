@@ -1,53 +1,40 @@
-# Logging & Timing Infrastructure Proposal (v3)
+# Logging & Timing Infrastructure — Architecture Document (v4)
 
 ## Executive Summary
 
-This document proposes a unified logging, timing, and console-output infrastructure for the **symx + stark** ecosystem.
-Everything lives in **symx**. stark is a consumer — it sets verbosity, adds simulation-specific data to the logger, and prints a final summary.
-There is **one verbosity enum**, **one OutputSink** (with PrintOnly/FileOnly/PrintAndFile modes), and **one Logger**. Both live on `symx::Context`, so every component that touches Context has access.
+This document describes the implemented logging and console-output infrastructure for the **symx + stark** ecosystem.
+Everything lives in **symx**. stark is a consumer — it sets verbosity, opens the file, and prints per-time-step summaries.
+There is **one verbosity enum** and **one shared `OutputSink`** (with PrintOnly/FileOnly/PrintAndFile modes) on `symx::Context`. Newton and Stark both hold a `shared_ptr` to the same sink.
+
+**Status:** OutputSink, Verbosity enum, Newton/Stark print routing — all **implemented and working**. Logger upgrade and `Stark::print()` summary — **TODO**.
 
 ---
 
-## 1. Current State Analysis
+## 1. What Changed From the Old State
 
-### 1.1 Reference Implementation (working, clean output)
-
-The reference has **three separate systems** all living in `stark::core`:
+### 1.1 Old State (before this work)
 
 | Class | Purpose | Lives in |
 |-------|---------|----------|
-| `Console` | Verbosity-gated output to stdout + file | stark |
-| `Logger` | Key/value + typed series accumulator, timing, stats, save-to-disk | stark |
-| `NewtonsMethod` | Receives Console + Logger as raw pointers, calls them directly | stark |
-
-**Key design decisions in the reference:**
-- `ConsoleVerbosity` has simulation-specific levels: `NoOutput`, `Frames`, `TimeSteps`, `NewtonIterations`, `LineSearch`.
-- `Console::print(msg, verbosity)` checks `msg.verbosity <= this->verbosity` → print.
-- `Logger` accumulates typed series with `get_statistics()` computing `sum | avg | [min, max]`.
-- Newton receives `Console*` and `Logger*` and calls them deeply from within the solve loop.
-- The **final summary** (`Stark::print()`) uses `Logger::get_statistics()` to print a structured table.
-- Console writes **everything** to file (regardless of verbosity) and gates **console** output.
-- Newton output is cleanly structured: indented per-iteration lines, projection sub-lines at the LineSearch verbosity, and a compact summary line at the TimeSteps level.
-
-### 1.2 New Implementation (messy output, incomplete)
-
-| Class | Purpose | Lives in |
-|-------|---------|----------|
+| `symx::Verbosity` | 3-level enum (`None`, `StepIterations`, `LineSearchIteration`) | symx |
 | `symx::Log` | Timer-only (insertion-ordered, `omp_get_wtime()`) | symx |
-| `symx::NewtonsMethod::_print()` | Direct `std::cout` gated on `symx::Verbosity` | symx |
-| `stark::core::Console` | Same as ref but **missing `LineSearch`** verbosity level | stark |
+| `symx::NewtonsMethod::_print()` | Direct `std::cout`, gated on old `symx::Verbosity` | symx |
+| `stark::core::Console` | Mutex-guarded, verbosity-gated output to stdout + file | stark |
 | `stark::core::Logger` | Simplified: no stats, no typed series, string-only series | stark |
 
-**Problems identified:**
+**Problems:** symx printed to `std::cout` directly (stark couldn't gate or redirect it), two incompatible verbosity enums, Console had per-print mutex + flush, Logger was too simple for a final summary.
 
-1. **symx prints directly to `std::cout`** — Newton's `_print()` bypasses Console entirely. Stark has no control over symx output (can't redirect, gate by stark-level verbosity, or file-log it).
-2. **`symx::Verbosity`** has only `None`, `StepIterations`, `LineSearchIteration` — too few levels.
-3. **`symx::Log`** is timer-only. No series, no counters, no stats.
-4. **`stark::core::Logger`** was simplified too much — no typed series, no statistics, no description. The final `Stark::print()` is **stubbed out** with `"TODO: Final Stark::print() implementation"`.
-5. **Console output formatting is messy**: Newton iterations blend with time-step summaries without proper indentation/newlines.
-6. **Two incompatible verbosity enums** (`symx::Verbosity` vs `stark::core::ConsoleVerbosity`) with no mapping between them.
-7. **Performance**: `Console::print` calls `std::flush` after every print. Mutex on every print.
-8. **`settings.as_string()` has bugs**: `max_time_step_size` and `time_step_size_success_multiplier` print `"true"` instead of their numeric values.
+### 1.2 New State (implemented)
+
+| Component | Purpose | Lives in |
+|-----------|---------|----------|
+| `symx::Verbosity` | 4-level enum (`Silent`, `Summary`, `Step`, `Full`) | `OutputSink.h` |
+| `symx::OutputTo` | 3-mode enum (`PrintOnly`, `FileOnly`, `PrintAndFile`) | `OutputSink.h` |
+| `symx::OutputSink` | Verbosity-gated print + file output, shared via `spOutputSink` | `OutputSink.h` |
+| `symx::Log` | Timer-only (unchanged, still `omp_get_wtime()` RAII scopes) | `Log.h` |
+| `symx::NewtonsMethod` | All prints go through `this->output` (shared sink) | `NewtonsMethod.cpp` |
+| `stark::core::Logger` | String-only series + timing (unchanged, still used for series data) | `Logger.h` |
+| `stark::core::Console` | **Dead code** — still included but no longer called | `Console.h` |
 
 ---
 
@@ -56,14 +43,12 @@ The reference has **three separate systems** all living in `stark::core`:
 1. **One verbosity enum.** `symx::Verbosity` is used everywhere. No stark-level mapping, no second enum.
 2. **SymX is independent.** The infra must not depend on stark. Standalone symx users get sane defaults (prints to stdout).
 3. **Frequent output.** Prints happen live during Newton iterations (not buffered). Individual steps on large meshes can take minutes.
-4. **Nullifiable for benchmarks.** `Verbosity::Silent` → Newton produces no output. `enable_console_output = false` disables the sink entirely from the stark side. We accept the cost of `fmt::format` even for gated messages — the real performance concern is flushes and I/O, not string formatting.
-5. **File logging built into OutputSink.** Modes: `PrintOnly`, `FileOnly`, `PrintAndFile`. No separate Console class for file routing. File is only opened when explicitly requested (lazy — no file if nobody calls `open_file()`).
-6. **Machine-readable log files.** The `.log` file should be easily loadable in Python. YAML format. Human-readable summary at the top.
-7. **Logger and OutputSink on Context.** Everybody that touches `symx::Context` has access. No separate stark Console/Logger classes.
-8. **No mutex on prints.** Single-threaded print path. Period.
-9. **Timer ergonomics.** Timing inside Newton must be low-boilerplate (scoped RAII, ideally one-liners).
-10. **stark extends the logger.** stark adds simulation-specific series (dt, frame count, write_frame time, etc.) to the same logger that Newton uses.
-11. **Customizable indentation.** The sink has `root_tab` and `tab_size` so the parent lib (stark) can reserve tab level 0 for itself and control spacing. The sink auto-indents based on the verbosity level of the message — callers don't embed tabs manually.
+4. **Nullifiable for benchmarks.** `Verbosity::Silent` → Newton produces no output. `set_enabled(false)` disables the sink entirely. We accept the cost of `fmt::format` even for gated messages.
+5. **File logging built into OutputSink.** Modes: `PrintOnly`, `FileOnly`, `PrintAndFile`. No separate Console class for file routing. File opened explicitly via `open_file()`.
+6. **OutputSink on Context as shared_ptr.** Everybody that touches `symx::Context` has access. Newton copies the `shared_ptr` in its constructor — same object, single source of truth.
+7. **No mutex on prints.** Single-threaded print path. OpenMP parallel sections use `#pragma omp critical` when they need to print.
+8. **Timer ergonomics.** Scoped RAII timers via `Log::scope()` — one-liners.
+9. **Customizable indentation.** The sink has `root_tab` and `tab_size`. stark sets `root_tab=1` so Newton's output is indented one level deeper than stark's headers. Auto-indent via `_indent(Verbosity)` uses `max(0, root_tab + level - 1)`.
 
 ---
 
