@@ -167,7 +167,7 @@ bool Stark::run_one_step()
 		const double runtime = omp_get_wtime() - t0;
 		const double cr = runtime / this->dt;
 		auto stats = this->newton->get_last_solve_stats();
-		if (this->output->get_verbosity() != Verbosity::Summary) {
+		if (this->output->get_verbosity() != Verbosity::Summary && this->output->get_verbosity() != Verbosity::Silent) {
 			this->output->print_new_line();
 			this->output->print("             "); // So the summary lines up
 		}

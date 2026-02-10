@@ -707,10 +707,10 @@ void console_demo()
 	// writing output to output/verbosity_demo/
 	{
 		std::vector<symx::Verbosity> levels = {
-			// symx::Verbosity::Silent,
+			symx::Verbosity::Silent,
 			symx::Verbosity::Summary,
-			// symx::Verbosity::Step,
-			// symx::Verbosity::Full,
+			symx::Verbosity::Step,
+			symx::Verbosity::Full,
 		 };
 
 		for (auto& lvl : levels) {
@@ -759,8 +759,8 @@ void console_demo()
 
 int main()
 {
-	// console_demo();
-	twisting_cloth();
+	console_demo();
+	//twisting_cloth();
 	return 0;
 
 	/*
