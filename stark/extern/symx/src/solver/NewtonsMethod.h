@@ -12,6 +12,19 @@ namespace symx
 {
 	class NewtonsMethod
 	{
+	public:
+		/* Definitions */
+		struct SolveStats
+		{
+			int newton_iterations = 0;
+			int cg_iterations = 0;
+			int max_step_iterations = 0;
+			int line_search_iterations = 0;
+			uint64_t n_hessians = 0;
+			uint64_t n_projected_hessians = 0;
+			double projected_hessians_ratio = 0.0;
+		};
+
     private:
 		/* Fields */
 		std::shared_ptr<SecondOrderCompiledGlobal> compiled = nullptr;
@@ -33,8 +46,9 @@ namespace symx
 		int pdn_countdown = 0;        // ProjectOnDemand: remaining forced-projection iterations
 		double ppn_threshold = -1.0;  // PPN: gradient threshold (-1 = not initialized)
 
-        int total_line_search_iterations = 0;
-
+		// Stats
+        SolveStats stats;
+		
 		// Line search failure logging
 		bool _ls_logging_mode = false;
 		std::vector<std::vector<double>> _ls_energy_samples;  // Per Newton iteration: energy samples from -0.5*du to 1.5*du
@@ -44,12 +58,14 @@ namespace symx
 		SolverCallbacks callbacks;
 		NewtonSettings settings;
         Log log;
+		
 
         /* Methods */
         NewtonsMethod(spGlobalPotential global_potential, spContext context);
 		static std::shared_ptr<NewtonsMethod> create(spGlobalPotential global_potential, spContext context);
         SolverReturn solve();
         const Log& get_log() const { return this->log; }
+		const SolveStats& get_last_solve_stats() const { return this->stats; }
 
     private:
 		// Returns true if all elements are projected (can't project more)

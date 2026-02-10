@@ -31,6 +31,9 @@ Remaining (not yet started)
 
 - Consistent `stark`, `Stark` or `STARK`
 
+- debug line search logic inside line search
+    Remove _solve_impl
+
 - We need to rethink the split between console output and frame output.
     These are independently needed.
 

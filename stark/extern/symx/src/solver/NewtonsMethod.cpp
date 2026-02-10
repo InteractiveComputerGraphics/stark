@@ -80,7 +80,7 @@ SolverReturn NewtonsMethod::_solve_impl()
     const int n_dof_blocks = ndofs / 3;
 
     // Set up
-    this->total_line_search_iterations = 0;
+    this->stats = SolveStats(); // Reset stats
     du.resize(ndofs);
     step_du.resize(ndofs);
     rhs.resize(ndofs);
@@ -180,6 +180,8 @@ SolverReturn NewtonsMethod::_solve_impl()
 
             // Success: linear system solved and direction descends
             if (linear_system_solve_success && descends) {
+                this->stats.n_hessians += element_hessians->size();
+                this->stats.n_projected_hessians += element_hessians->n_projected();
                 break;
             }
 
@@ -209,6 +211,7 @@ SolverReturn NewtonsMethod::_solve_impl()
             this->du *= this->settings.step_cap / du_max;
             du_max = this->settings.step_cap;
             this->output->print(fmt::format("du cap {:.1e} | ", du_max), Verbosity::Step);
+            this->stats.max_step_iterations++;
         }
 
         // Max allowed step (e.g. CCD)
@@ -217,6 +220,7 @@ SolverReturn NewtonsMethod::_solve_impl()
             this->du *= max_step / du_max;
             du_max = max_step;
             this->output->print(fmt::format("ls hit {:.1e} | ", du_max), Verbosity::Step);
+            this->stats.max_step_iterations++;
         }
 
         // Line search
@@ -239,7 +243,11 @@ SolverReturn NewtonsMethod::_solve_impl()
     }
 
     // End
-    this->_print_return(result, newton_iteration, this->total_line_search_iterations);
+    this->stats.newton_iterations = newton_iteration + 1;
+    if (this->stats.n_hessians > 0) {
+        this->stats.projected_hessians_ratio = (double)this->stats.n_projected_hessians / (double)this->stats.n_hessians;
+    }
+    // this->_print_return(result, newton_iteration, this->total_line_search_iterations);
     return result;
 }
 
@@ -427,6 +435,7 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
         );
 
         this->output->print(fmt::format("#CG {:5d} | ", pcg_info.n_iterations), Verbosity::Step);
+        this->stats.cg_iterations += pcg_info.n_iterations;
         return pcg_info.converged;
     } 
     else {
@@ -460,7 +469,6 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
     
     // First loop: find a valid intermediate state
     for (; it < this->settings.max_line_search_iterations; ++it) {
-        this->total_line_search_iterations++;
         
         if (this->callbacks.run_is_intermediate_state_valid()) {
             break;
@@ -470,6 +478,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
                 this->settings.output_prefix, it, step), Verbosity::Full);
             step *= shrink;
             apply_scaled_du(step);  // Undo and apply smaller step
+            this->stats.max_step_iterations++;
         }
     }
 
@@ -513,29 +522,28 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
     const double E_threshold = E0 + expected_decrease;
     double E1 = 0.0;
     for (; it < this->settings.max_line_search_iterations; ++it) {
-        this->total_line_search_iterations++;
         armijo_iterations++;
         
         // Evaluate energy
         this->callbacks.run_before_energy_evaluation();
         this->compiled->evaluate_P(E1);
         this->callbacks.run_after_energy_evaluation();
-
+        
         // Print
         if (it > 0) {
             this->output->print(fmt::format("\n\t{}{:d}. step = {:.2e} | E/E_bt = {:.6e} | E/E0 = {:.6e}",
                 this->settings.output_prefix, it, step, E1 / E_threshold, E1 / E0),
                 Verbosity::Full);
         }
-        
+            
         // Check Armijo condition
         if (E1 < E_threshold) {
-            this->total_line_search_iterations--;  // Don't count successful iteration
             return SolverReturn::Running;
         }
         else {
             step *= shrink;
             apply_scaled_du(step);  // Undo and apply smaller step
+            this->stats.line_search_iterations++;
         }
     }
 

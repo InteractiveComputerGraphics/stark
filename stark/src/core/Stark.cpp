@@ -141,7 +141,7 @@ bool Stark::run_one_step()
 	}
 
 	// Time step begin
-	this->output->print_with_new_line(fmt::format("dt: {:.3f} ms", 1000.0 * this->dt), Verbosity::Summary);
+	this->output->print_with_new_line(fmt::format("dt: {:.3f} ms | ", 1000.0 * this->dt), Verbosity::Summary);
 	this->callbacks.run_before_time_step();
 
 	// Use Newton's Method to solve the time step update
@@ -160,9 +160,15 @@ bool Stark::run_one_step()
 		this->dt = std::min(this->settings.simulation.max_time_step_size, this->dt * this->settings.simulation.time_step_size_success_multiplier);
 
 		// Output
+		//// Print
 		const double runtime = omp_get_wtime() - t0;
 		const double cr = runtime / this->dt;
-		this->output->print(fmt::format(" | runtime: {:.0f} ms | cr: {:.1f}", 1000.0 * runtime, cr), Verbosity::Summary);
+		auto stats = this->newton->get_last_solve_stats();
+		this->output->print(fmt::format(
+			"#newton: {:d} | ph: {:.1f}% | #CG/newton: {:d} | ls hit: {:d} | ls bt: {:d} | runtime: {:.0f} ms | cr: {:.1f}", 
+			stats.newton_iterations, 100.0 * stats.projected_hessians_ratio, stats.cg_iterations / stats.newton_iterations, stats.max_step_iterations, stats.line_search_iterations, 1000.0 * runtime, cr), Verbosity::Summary);
+
+		// Log
 		this->logger.append_to_series("cr", cr);
 		this->logger.append_to_series("dt", this->dt);
 		this->logger.append_to_series("time", this->current_time);
@@ -170,6 +176,8 @@ bool Stark::run_one_step()
 		this->logger.add_to_counter("time_steps", 1);
 		this->logger.set("avg dt", this->current_time / (double)this->logger.get_int("time_steps"));
 		this->logger.set("cr", this->logger.get_double("total") / this->current_time);
+
+		// Frames
 		this->_write_frame();
 
 		// Return
