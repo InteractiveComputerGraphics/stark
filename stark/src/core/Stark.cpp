@@ -4,6 +4,7 @@
 #include <system_error>
 #include <filesystem>
 
+#include <algorithm>
 #include <Eigen/Dense>
 #include <symx>
 #include <fmt/format.h>
@@ -56,7 +57,7 @@ Stark::Stark(const Settings& settings)
 	this->context = Context::create();
 	this->context->compilation_directory = this->settings.output.codegen_directory;
 	this->context->n_threads = this->settings.execution.n_threads;
-	this->context->logger.set_path(settings.output.output_directory + "/logger" + ending);
+	this->context->logger.set_path(settings.output.output_directory + "/logger_" + settings.output.simulation_name + "__" + settings.output.time_stamp + ".yaml");
 
 	this->output = this->context->output;
 	this->output->set_enabled(this->settings.output.enable_output);
@@ -143,7 +144,7 @@ bool Stark::run_one_step()
 	if (this->output->get_verbosity() != Verbosity::Silent) {
 		this->output->print_with_new_line(fmt::format("{}. dt: {:5.2f} ms | ", this->current_time_step, 1000.0 * this->dt), Verbosity::Summary);
 	}
-	this->callbacks.run_before_time_step();
+	{ auto _t = this->context->logger.time("Before Time Step"); this->callbacks.run_before_time_step(); }
 
 	// Use Newton's Method to solve the time step update
 	const double t0 = omp_get_wtime();
@@ -153,8 +154,8 @@ bool Stark::run_one_step()
 	if (newton == SolverReturn::Successful) {
 
 		// After successful time step
-		this->callbacks.run_on_time_step_accepted(); // Sets solution. x0 = x1. Exits minimization.
-		this->callbacks.run_after_time_step();  // Can use the converged state x1, v1.
+		{ auto _t = this->context->logger.time("On Step Accepted"); this->callbacks.run_on_time_step_accepted(); }
+		{ auto _t = this->context->logger.time("After Time Step"); this->callbacks.run_after_time_step(); }
 		this->current_time += this->dt;
 		this->current_time_step++;
 
@@ -198,6 +199,16 @@ bool Stark::run_one_step()
 		logger.add("ls_cap", stats.ls_cap_iterations);
 		logger.add("ls_max", stats.ls_max_iterations);
 		logger.add("ls_hit", stats.ls_hit_iterations);
+
+		// Per-step series
+		logger.append("n_newton_iterations", stats.newton_iterations);
+		logger.append("n_cg_iterations", stats.cg_iterations);
+		logger.append("projected_hessians_ratio", stats.projected_hessians_ratio);
+		logger.append("ls_bt_iterations", stats.ls_bt_iterations);
+		logger.append("ls_cap_iterations", stats.ls_cap_iterations);
+		logger.append("ls_hit_iterations", stats.ls_hit_iterations);
+		logger.append("ls_max_iterations", stats.ls_max_iterations);
+		logger.append("runtime_step", runtime);
 
 		// Frames
 		this->_write_frame();
@@ -271,6 +282,7 @@ void stark::core::Stark::print()
 	const int ls_bt  = logger.get_int("ls_backtracks");
 	const int ls_cap = logger.get_int("ls_cap");
 	const int ls_max = logger.get_int("ls_max");
+	const int ls_hit = logger.get_int("ls_hit");
 	const double avg_ls_newton   = total_newton > 0 ? (double)ls_bt / total_newton : 0.0;
 
 	const double n_hess     = logger.get_double("n_hessians");
@@ -283,42 +295,33 @@ void stark::core::Stark::print()
 	out->print_with_new_line("Solve");
 	out->print_with_new_line(fmt::format("  Newton iterations: {:d} total, {:.1f} avg/step", total_newton, avg_newton));
 	out->print_with_new_line(fmt::format("  CG iterations:     {:d} total, {:.1f} avg/newton", total_cg, avg_cg_newton));
-	out->print_with_new_line(fmt::format("  Line search:       {:d} backtracks, {:.2f} avg/newton  (cap: {:d}, max: {:d})", ls_bt, avg_ls_newton, ls_cap, ls_max));
-	out->print_with_new_line(fmt::format("  Projected hessians:{:5.1f}%", proj_ratio));
+	out->print_with_new_line(fmt::format("  Line search:       {:d} backtracks, {:.2f} avg/newton  (cap: {:d}, max: {:d}, hit: {:d})", ls_bt, avg_ls_newton, ls_cap, ls_max, ls_hit));
+	out->print_with_new_line(fmt::format("  Projected hessians: {:5.1f}%", proj_ratio));
 	out->print_with_new_line(fmt::format("  Comp. ratio (cr):  {:.2f}", cr));
 
-	// ── Runtime ──
+	// ── Runtime — sorted by decreasing time ──
 	const double total_time = logger.get_timer_total("total");
 
-	struct TimerRow { const char* label; const char* display; };
-	const TimerRow rows[] = {
-		{"Linear System Solve","Linear System Solve"},
-		{"Energy Evaluation",  "Energy Evaluation"},
-		{"Hessian Assembly",   "Hessian Assembly"},
-		{"Project to PD",      "Project to PD"},
-		{"Line Search",        "Line Search"},
-		{"runtime_write_frame","Write Frame"},
-	};
+	struct TimerEntry { std::string label; double time; };
+	std::vector<TimerEntry> timer_entries;
+	for (const auto& label : logger.get_timer_labels()) {
+		if (label == "total") continue;
+		timer_entries.push_back({label, logger.get_timer_total(label)});
+	}
+	std::sort(timer_entries.begin(), timer_entries.end(),
+		[](const TimerEntry& a, const TimerEntry& b) { return a.time > b.time; });
 
-	double accounted = 0.0;
 	out->print_with_new_line("");
-	out->print_with_new_line(fmt::format("  {:<22} {:>10}  {:>6}", "Runtime", "Time (s)", "%"));
-	out->print_with_new_line(fmt::format("  {}", std::string(42, '-')));
+	out->print_with_new_line(fmt::format("  {:<24} {:>10}  {:>6}", "Runtime", "Time (s)", "%"));
+	out->print_with_new_line(fmt::format("  {}", std::string(44, '-')));
 
-	for (const auto& row : rows) {
-		const double t = logger.get_timer_total(row.label);
-		accounted += t;
-		const double pct = total_time > 0 ? 100.0 * t / total_time : 0.0;
-		out->print_with_new_line(fmt::format("  {:<22} {:>10.6f}  {:>5.1f}%", row.display, t, pct));
+	for (const auto& entry : timer_entries) {
+		const double pct = total_time > 0 ? 100.0 * entry.time / total_time : 0.0;
+		out->print_with_new_line(fmt::format("  {:<24} {:>10.6f}  {:>5.1f}%", entry.label, entry.time, pct));
 	}
 
-	// Misc = total - accounted (overhead from callbacks, Newton inner loop, etc.)
-	const double misc = total_time - accounted;
-	const double misc_pct = total_time > 0 ? 100.0 * misc / total_time : 0.0;
-	out->print_with_new_line(fmt::format("  {:<22} {:>10.6f}  {:>5.1f}%", "Misc", misc, misc_pct));
-
-	out->print_with_new_line(fmt::format("  {}", std::string(42, '-')));
-	out->print_with_new_line(fmt::format("  {:<22} {:>10.6f}  {:>5.1f}%", "Total", total_time, 100.0));
+	out->print_with_new_line(fmt::format("  {}", std::string(44, '-')));
+	out->print_with_new_line(fmt::format("  {:<24} {:>10.6f}  {:>5.1f}%", "Total", total_time, 100.0));
 
 	// Failed steps
 	if (logger.get_double("failed_steps") > 0.0) {
@@ -326,6 +329,9 @@ void stark::core::Stark::print()
 	}
 
 	out->print_new_line();
+
+	// Save final YAML log
+	logger.save_to_disk();
 }
 
 void Stark::_initialize()
@@ -379,7 +385,7 @@ void Stark::_write_frame()
 			this->current_frame++;
 		};
 
-	this->context->logger.start_timing("runtime_write_frame");
+	this->context->logger.start_timing("Write Frame");
 	if (this->settings.output.fps < 0) {  // Write every time step
 		write_frame_impl();
 	}
@@ -393,6 +399,6 @@ void Stark::_write_frame()
 			this->next_frame_time += 1.0 / (double)this->settings.output.fps;
 		}
 	}
-	this->context->logger.stop_timing("runtime_write_frame");
+	this->context->logger.stop_timing("Write Frame");
 	this->context->logger.save_to_disk();
 }

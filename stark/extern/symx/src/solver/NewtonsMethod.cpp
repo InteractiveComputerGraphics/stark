@@ -97,7 +97,9 @@ SolverReturn NewtonsMethod::_solve_impl()
     this->ppn_active_dof_blocks_for_projection.assign(n_dof_blocks, static_cast<uint8_t>(false));
 
     // Check initial state validity
-    if (!this->callbacks.run_is_initial_state_valid()) {
+    bool initial_valid = true;
+    { auto _t = this->context->logger.time("Is Initial Valid"); initial_valid = this->callbacks.run_is_initial_state_valid(); }
+    if (!initial_valid) {
         result = SolverReturn::InvalidIntermediateConfiguration;
     }
 
@@ -116,12 +118,12 @@ SolverReturn NewtonsMethod::_solve_impl()
         this->output->print_with_new_line(fmt::format("{:2d}. ", newton_iteration), Verbosity::Step);
 
         // Evaluate energy, gradient, and Hessian
-        this->callbacks.run_before_energy_evaluation();
+        { auto _t = this->context->logger.time("Before Energy Eval"); this->callbacks.run_before_energy_evaluation(); }
         {
             auto timer_eval = this->context->logger.time("Energy Evaluation");
             element_hessians = this->compiled->evaluate_P__dP_du__local_d2P_du2(E0, this->grad);
         }
-        this->callbacks.run_after_energy_evaluation();
+        { auto _t = this->context->logger.time("After Energy Eval"); this->callbacks.run_after_energy_evaluation(); }
 
         // Compute residual
         double residual_norm = this->callbacks.compute_residual(this->grad);
@@ -224,7 +226,8 @@ SolverReturn NewtonsMethod::_solve_impl()
         }
 
         // Max allowed step (e.g. CCD)
-        double max_step = this->callbacks.run_max_allowed_step();
+        double max_step = 0.0;
+        { auto _t = this->context->logger.time("Max Allowed Step"); max_step = this->callbacks.run_max_allowed_step(); }
         if (du_max > max_step) {
             this->du *= max_step / du_max;
             du_max = max_step;
@@ -247,8 +250,12 @@ SolverReturn NewtonsMethod::_solve_impl()
     }
 
     // Check if converged state is valid
-    if (result == SolverReturn::Successful && !this->callbacks.run_is_converged_state_valid()) {
-        result = SolverReturn::InvalidConvergedState;
+    if (result == SolverReturn::Successful) {
+        bool converged_valid = true;
+        { auto _t = this->context->logger.time("Is Converged Valid"); converged_valid = this->callbacks.run_is_converged_state_valid(); }
+        if (!converged_valid) {
+            result = SolverReturn::InvalidConvergedState;
+        }
     }
 
     // End
@@ -478,8 +485,9 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
     // First loop: find a valid intermediate state
     int ls_hit_iterations = 0;
     for (; it < this->settings.max_line_search_iterations; ++it) {
-        
-        if (this->callbacks.run_is_intermediate_state_valid()) {
+        bool valid = false;
+        { auto _t = this->context->logger.time("Is Intermediate Valid"); valid = this->callbacks.run_is_intermediate_state_valid(); }
+        if (valid) {
             break;
         } 
         else {
@@ -517,9 +525,9 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
             double s = -0.5 + 2.0 * static_cast<double>(i) / static_cast<double>(n_samples - 1);
             apply_scaled_du(s);
             double E_sample = 0.0;
-            this->callbacks.run_before_energy_evaluation();
+            { auto _t = this->context->logger.time("Before Energy Eval"); this->callbacks.run_before_energy_evaluation(); }
             this->compiled->evaluate_P(E_sample);
-            this->callbacks.run_after_energy_evaluation();
+            { auto _t = this->context->logger.time("After Energy Eval"); this->callbacks.run_after_energy_evaluation(); }
             samples[i] = E_sample;
             // apply_scaled_du(-s);  // Undo
         }
@@ -539,9 +547,9 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         armijo_iterations++;
         
         // Evaluate energy
-        this->callbacks.run_before_energy_evaluation();
+        { auto _t = this->context->logger.time("Before Energy Eval"); this->callbacks.run_before_energy_evaluation(); }
         this->compiled->evaluate_P(E1);
-        this->callbacks.run_after_energy_evaluation();
+        { auto _t = this->context->logger.time("After Energy Eval"); this->callbacks.run_after_energy_evaluation(); }
         
         this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | E: {:.2e} | E_bt: {:.2e} | E/E_bt: {:.2e} | ", it, step, E1, E_threshold, E1 / E_threshold), Verbosity::Full);
         

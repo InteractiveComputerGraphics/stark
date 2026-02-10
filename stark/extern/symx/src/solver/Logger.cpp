@@ -259,66 +259,107 @@ void Logger::save_to_disk(const std::string& path) const
         exit(-1);
     }
 
-    // Timers
+    // Helper: sort keys from an unordered_map
+    auto sorted_keys = [](const auto& map) {
+        std::vector<std::string> keys;
+        keys.reserve(map.size());
+        for (const auto& [k, v] : map) keys.push_back(k);
+        std::sort(keys.begin(), keys.end());
+        return keys;
+    };
+
+    out << "# Simulation Log (YAML)\n\n";
+
+    // ── Accumulators ──
+    if (!acc_double_.empty() || !acc_int_.empty()) {
+        out << "accumulators:\n";
+        for (const auto& k : sorted_keys(acc_double_)) {
+            out << fmt::format("  \"{}\": {:.6e}\n", k, acc_double_.at(k));
+        }
+        for (const auto& k : sorted_keys(acc_int_)) {
+            out << fmt::format("  \"{}\": {}\n", k, acc_int_.at(k));
+        }
+        out << "\n";
+    }
+
+    // ── Timers ──
     if (!timer_insertion_order_.empty()) {
-        out << "[Timers]\n";
+        out << "timers:\n";
         for (const auto& label : timer_insertion_order_) {
-            const auto& t = timers_.at(label);
-            if (t.count > 0) {
-                double avg = t.total / t.count;
-                out << fmt::format("  {}: total={:.6f} s | count={} | avg={:.6f} s | min={:.6f} s | max={:.6f} s\n",
-                    label, t.total, t.count, avg, t.min, t.max);
+            auto it = timers_.find(label);
+            if (it == timers_.end() || it->second.count == 0) continue;
+            const auto& t = it->second;
+            double avg = t.total / t.count;
+            out << fmt::format("  \"{}\":\n", label);
+            out << fmt::format("    total: {:.6f}\n", t.total);
+            out << fmt::format("    count: {}\n", t.count);
+            out << fmt::format("    avg: {:.6f}\n", avg);
+            out << fmt::format("    min: {:.6f}\n", t.min);
+            out << fmt::format("    max: {:.6f}\n", t.max);
+        }
+        out << "\n";
+    }
+
+    // ── Statistics (series summaries) ──
+    bool has_series = !series_double_.empty() || !series_int_.empty();
+    if (has_series) {
+        out << "statistics:\n";
+
+        for (const auto& k : sorted_keys(series_double_)) {
+            const auto& data = series_double_.at(k);
+            if (data.empty()) continue;
+            double sum = 0.0, mn = data[0], mx = data[0];
+            for (double v : data) { sum += v; mn = std::min(mn, v); mx = std::max(mx, v); }
+            double avg = sum / data.size();
+            out << fmt::format("  \"{}\": {{total: {:.6e}, avg: {:.6e}, min: {:.6e}, max: {:.6e}, count: {}}}\n",
+                k, sum, avg, mn, mx, data.size());
+        }
+
+        for (const auto& k : sorted_keys(series_int_)) {
+            const auto& data = series_int_.at(k);
+            if (data.empty()) continue;
+            long long sum = 0; int mn = data[0], mx = data[0];
+            for (int v : data) { sum += v; mn = std::min(mn, v); mx = std::max(mx, v); }
+            double avg = (double)sum / data.size();
+            out << fmt::format("  \"{}\": {{total: {}, avg: {:.6f}, min: {}, max: {}, count: {}}}\n",
+                k, sum, avg, mn, mx, data.size());
+        }
+        out << "\n";
+    }
+
+    // ── Raw Series ──
+    if (has_series || !series_string_.empty()) {
+        out << "series:\n";
+
+        for (const auto& k : sorted_keys(series_double_)) {
+            const auto& data = series_double_.at(k);
+            out << "  \"" << k << "\": [";
+            for (size_t i = 0; i < data.size(); i++) {
+                if (i > 0) out << ", ";
+                out << fmt::format("{:.6e}", data[i]);
             }
+            out << "]\n";
         }
-        out << "\n";
-    }
 
-    // Accumulators (doubles)
-    if (!acc_double_.empty()) {
-        out << "[Doubles]\n";
-        for (const auto& [label, val] : acc_double_) {
-            out << fmt::format("  {}: {}\n", label, val);
+        for (const auto& k : sorted_keys(series_int_)) {
+            const auto& data = series_int_.at(k);
+            out << "  \"" << k << "\": [";
+            for (size_t i = 0; i < data.size(); i++) {
+                if (i > 0) out << ", ";
+                out << data[i];
+            }
+            out << "]\n";
         }
-        out << "\n";
-    }
 
-    // Accumulators (ints)
-    if (!acc_int_.empty()) {
-        out << "[Ints]\n";
-        for (const auto& [label, val] : acc_int_) {
-            out << fmt::format("  {}: {}\n", label, val);
+        for (const auto& k : sorted_keys(series_string_)) {
+            const auto& data = series_string_.at(k);
+            out << "  \"" << k << "\": [";
+            for (size_t i = 0; i < data.size(); i++) {
+                if (i > 0) out << ", ";
+                out << "\"" << data[i] << "\"";
+            }
+            out << "]\n";
         }
-        out << "\n";
-    }
-
-    // Double series
-    for (const auto& [label, data] : series_double_) {
-        out << label << ": ";
-        for (size_t i = 0; i < data.size(); i++) {
-            if (i > 0) out << ", ";
-            out << data[i];
-        }
-        out << "\n";
-    }
-
-    // Int series
-    for (const auto& [label, data] : series_int_) {
-        out << label << ": ";
-        for (size_t i = 0; i < data.size(); i++) {
-            if (i > 0) out << ", ";
-            out << data[i];
-        }
-        out << "\n";
-    }
-
-    // String series
-    for (const auto& [label, data] : series_string_) {
-        out << label << ": ";
-        for (size_t i = 0; i < data.size(); i++) {
-            if (i > 0) out << ", ";
-            out << data[i];
-        }
-        out << "\n";
     }
 
     out.close();
