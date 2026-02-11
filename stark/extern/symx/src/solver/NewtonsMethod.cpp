@@ -431,6 +431,10 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
     
     // Block Diagonal Preconditioner Conjugate Gradient
     else if (this->settings.linear_solver == LinearSolver::BDPCG) {
+        // Forcing sequence
+        const double grad_norm = rhs.norm();
+        const double forcing_cg_tol = std::min(1e-2 /* TODO: find a better cap.*/, grad_norm * std::min(0.5, std::sqrt(grad_norm)));
+
         // Prepare preconditioning
         hess->set_preconditioner(bsm::Preconditioner::BlockDiagonal);
         hess->prepare_preconditioning(this->context->n_threads);
@@ -445,7 +449,8 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
             du.data(),
             this->rhs.data(),
             ndofs,
-            this->settings.cg_abs_tolerance,
+            // this->settings.cg_abs_tolerance,  // DEBUG
+            forcing_cg_tol,  // DEBUG
             this->settings.cg_rel_tolerance,
             this->settings.cg_max_iterations,
             this->context->n_threads,

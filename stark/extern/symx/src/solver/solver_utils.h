@@ -162,7 +162,7 @@ namespace symx
     {
         // Projection to PD settings
         ProjectionToPD projection_mode = ProjectionToPD::ProjectedNewton;  // Safe default
-        double projection_eps = 1e-8;               // Minimum eigenvalue after projection
+        double projection_eps = 1e-10;               // Minimum eigenvalue after projection
         bool project_to_pd_use_mirroring = false;   // Use mirroring instead of clamping for negative eigenvalues
         
         // ProjectOnDemand settings

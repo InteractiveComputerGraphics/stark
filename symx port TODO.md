@@ -1,13 +1,28 @@
 # symx port TODO
 
+- Comparison to PPN ref
+    - Dont compare CG iterations with Progressive because we are counting failures differently.
+    - forcing sequence was a difference. But it is a tradeoff.
+    - New CG seems slower on same iterations
+
+- zero CG iterations print. Cant be
+
+- Exits without notice
+
+- error stark::barycentric_edge_edge(): parallel edge found.
+
+- Summary: [total | avg | [min, max]] for key metrics (newton, ls, cg its)
+
 - runtime summary
     Add dots
     Move to symx
 
+- Settings print with scientific notation
+
+- Refactor all related to line search in Newton's Method
+
 - log counters might be wrong. Summary is wrong
     hit -> inv(valid)
-
-- Option to disable logging
 
 - enable_output vs set_enabled vs Verbosity::Silent — document the distinction
     Three ways to suppress output:
@@ -17,16 +32,7 @@
         - console print and file
         - log
 
-- misc takes huge runtime and idk what it is
-    I need to know
-
-- Verify copilot all logic is correct. I had may latent bugs such as not passoing optional variables.
-
 - Enable friction!
-
-- Remove bottom print from Newton
-
-- `enable_prints`, `enable_frame_writes`
 
 - Consistent `stark`, `Stark` or `STARK`
 
@@ -37,22 +43,7 @@
 
 - ToFile print should contain all information
 
-- We need to rethink the split between console output and frame output.
-    These are independently needed.
-
-- Why `symx::Verbosity` when this is for now exclusively for Newton?
-    Maybe other solvers will follow?
-
-- `Silent` is really bad for API.
-    It means "print time steps"
-
-- Do we need the scheme for `NewtonsMethod::_print_return` ?
-
 - consistent get_name, get_label, to_string
-
-- Remove alisases and backward compat stuff littered around by copilot
-
-- I am unsure about the compilation print. I feel that should always be tab 0.
 
 * Line search: Decide for apply_increments or global
 
@@ -60,7 +51,6 @@
     Specially collision
 
 * stark should write vtk to .tmp and then rename when finished to avoid crashing 3rd party viz
-
 
 * Add labels to DoFs for nicer printing
 
@@ -70,9 +60,6 @@
 
 * I think the time stepping logic with adaptivity and the script is broken
     The quasistatic extrussion restarts in wrong ways in respect to the script
-
-* Newton-Stark settings and callbacks are a bit wrangled.
-    Conceptually is correct but it is brittle or undocumented that we are setting into stark and then copy into newton
 
 * `std::string to_string` for symx options should be in symx
 

@@ -29,13 +29,13 @@ EnergyFrictionalContact::EnergyFrictionalContact(core::Stark& stark, const spPoi
 
 	// Contact declarations // DEBUG
 	this->_energies_contact_deformables(stark);
-	// this->_energies_contact_rb(stark);
-	// this->_energies_contact_rb_deformables(stark);
+	this->_energies_contact_rb(stark);
+	this->_energies_contact_rb_deformables(stark);
 
-	// // Friction declarations
-	// this->_energies_friction_deformables(stark);
-	// this->_energies_friction_rb(stark);
-	// this->_energies_friction_rb_deformables(stark);
+	// Friction declarations
+	this->_energies_friction_deformables(stark);
+	this->_energies_friction_rb(stark);
+	this->_energies_friction_rb_deformables(stark);
 }
 EnergyFrictionalContact::GlobalParams EnergyFrictionalContact::get_global_params() const
 {
@@ -1225,7 +1225,6 @@ void EnergyFrictionalContact::_energies_friction_rb_deformables(core::Stark& sta
 Scalar EnergyFrictionalContact::_barrier_potential(const Scalar& d, const Scalar& dhat, const Scalar& k)
 {
 	if (this->ipc_barrier_type == IPCBarrierType::Cubic) {
-		// return branch(d < dhat, k * (dhat - d).powN(3) / 3.0, 0.0);  // DEBUG
 		return k * (dhat - d).powN(3) / 3.0;
 	}
 	else if (this->ipc_barrier_type == IPCBarrierType::Log) {
