@@ -104,13 +104,14 @@ void hanging_deformable_box()
 	settings.simulation.init_frictional_contact = false;
 
 	// settings.output.enable_output = false;
+	// settings.output.verbosity = symx::Verbosity::Full;
 	
 	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
 	settings.newton.step_tolerance = 1e-3;
 	stark::Simulation simulation(settings);
 
 	// Box
-	const int n = 50;
+	const int n = 30;
 	const double d = 0.5;
 	const double hd = d/2.0;
 	auto material = stark::Volume::Params::Soft_Rubber();
@@ -460,7 +461,7 @@ void twisting_cloth()
 	
 	// Cloth
 	double s = 0.5;
-	int n = 100;
+	int n = 20;
 	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
 	material.strain.elasticity_only = true;
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);

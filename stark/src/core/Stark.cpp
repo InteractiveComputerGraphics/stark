@@ -188,38 +188,16 @@ bool Stark::run_one_step()
 			stats.newton_iterations, 
 			100.0 * stats.projected_hessians_ratio, 
 			stats.cg_iterations / stats.newton_iterations, 
-			stats.ls_cap_iterations, std::max(stats.ls_max_iterations, 1), stats.ls_hit_iterations, stats.ls_bt_iterations, 
+			stats.ls_cap_iterations, stats.ls_max_iterations, stats.ls_hit_iterations, stats.ls_bt_iterations, 
 			1000.0 * runtime, cr), 
 			Verbosity::Summary);
 
 		// Log
-		logger->append("cr", cr);
 		logger->append("dt", this->dt);
 		logger->append("time", this->current_time);
 		logger->append("frame", this->current_frame);
 		logger->add("time_steps", 1);
-		logger->set("avg dt", this->current_time / (double)logger->get_int("time_steps"));
-		logger->set("cr", logger->get_timer_total("total") / this->current_time);
-
-		// Solve stats accumulation
-		logger->add("newton_iterations", stats.newton_iterations);
-		logger->add("cg_iterations", stats.cg_iterations);
-		logger->add("n_hessians", (double)stats.n_hessians);
-		logger->add("n_projected_hessians", (double)stats.n_projected_hessians);
-		logger->add("ls_backtracks", stats.ls_bt_iterations);
-		logger->add("ls_cap", stats.ls_cap_iterations);
-		logger->add("ls_max", stats.ls_max_iterations);
-		logger->add("ls_hit", stats.ls_hit_iterations);
-
-		// Per-step series
-		logger->append("n_newton_iterations", stats.newton_iterations);
-		logger->append("n_cg_iterations", stats.cg_iterations);
-		logger->append("projected_hessians_ratio", stats.projected_hessians_ratio);
-		logger->append("ls_bt_iterations", stats.ls_bt_iterations);
-		logger->append("ls_cap_iterations", stats.ls_cap_iterations);
-		logger->append("ls_hit_iterations", stats.ls_hit_iterations);
-		logger->append("ls_max_iterations", stats.ls_max_iterations);
-		logger->append("runtime_step", runtime);
+		logger->set("avg dt", this->current_time / this->current_time_step);
 
 		// Frames
 		this->_write_frame();
@@ -237,7 +215,7 @@ bool Stark::run_one_step()
 
 		// The failure was due to loose stiffnesses
 		if (newton == SolverReturn::InvalidConvergedState || newton == SolverReturn::InvalidIntermediateConfiguration) {
-			// Tighter stiffess should be already when measured during Newton's solve.
+			// Tighter stiffness should be already when measured during Newton's solve.
 			// Do nothing, just run the time step again.
 		}
 
@@ -276,12 +254,12 @@ void stark::core::Stark::print()
 
 	// ── Info ──
 	out->print_with_new_line("Info");
-	out->print_with_new_line(fmt::format("  Name:              {}", this->settings.output.simulation_name));
-	out->print_with_new_line(fmt::format("  Simulation time:   {:.3f} s", this->current_time));
-	out->print_with_new_line(fmt::format("  ndofs:             {}", this->global_potential->get_total_n_dofs()));
-	out->print_with_new_line(fmt::format("  Frames:            {}", this->current_frame));
-	out->print_with_new_line(fmt::format("  Time steps:        {}", logger->get_int("time_steps")));
-	out->print_with_new_line(fmt::format("  avg dt:            {:.3f} ms", 1000.0 * this->current_time / time_steps));
+	out->print_with_new_line(fmt::format("  Name:               {}", this->settings.output.simulation_name));
+	out->print_with_new_line(fmt::format("  Simulation time:    {:.3f} s", this->current_time));
+	out->print_with_new_line(fmt::format("  ndofs:              {}", this->global_potential->get_total_n_dofs()));
+	out->print_with_new_line(fmt::format("  Frames:             {}", this->current_frame));
+	out->print_with_new_line(fmt::format("  Time steps:         {}", logger->get_int("time_steps")));
+	out->print_with_new_line(fmt::format("  avg dt:             {:.3f} ms", 1000.0 * this->current_time / time_steps));
 
 	// ── Solve ──
 	const int total_newton       = logger->get_int("newton_iterations");
@@ -289,25 +267,27 @@ void stark::core::Stark::print()
 	const double avg_newton      = (double)total_newton / time_steps;
 	const double avg_cg_newton   = total_newton > 0 ? (double)total_cg / total_newton : 0.0;
 
-	const int ls_bt  = logger->get_int("ls_backtracks");
 	const int ls_cap = logger->get_int("ls_cap");
 	const int ls_max = logger->get_int("ls_max");
 	const int ls_hit = logger->get_int("ls_hit");
+	const int ls_bt  = logger->get_int("ls_bt");
 	const double avg_ls_newton   = total_newton > 0 ? (double)ls_bt / total_newton : 0.0;
 
 	const double n_hess     = logger->get_double("n_hessians");
 	const double n_proj     = logger->get_double("n_projected_hessians");
 	const double proj_ratio = n_hess > 0 ? 100.0 * n_proj / n_hess : 0.0;
 
-	const double cr = logger->get_double("cr");
+	const double cr = logger->get_timer_total("total")/this->current_time;
 
+	auto ratio = [](int count, int total) { return total > 0 ? (double)count / (double)total : 0.0; };
 	out->print_with_new_line("");
 	out->print_with_new_line("Solve");
-	out->print_with_new_line(fmt::format("  Newton iterations: {:d} total, {:.1f} avg/step", total_newton, avg_newton));
-	out->print_with_new_line(fmt::format("  CG iterations:     {:d} total, {:.1f} avg/newton", total_cg, avg_cg_newton));
-	out->print_with_new_line(fmt::format("  Line search:       {:d} backtracks, {:.2f} avg/newton  (cap: {:d}, max: {:d}, hit: {:d})", ls_bt, avg_ls_newton, ls_cap, ls_max, ls_hit));
-	out->print_with_new_line(fmt::format("  Projected hessians: {:5.1f}%", proj_ratio));
-	out->print_with_new_line(fmt::format("  Comp. ratio (cr):  {:.2f}", cr));
+	out->print_with_new_line(fmt::format("  Newton iterations:  {:d} ({:.1f} avg/step)", total_newton, avg_newton));
+	out->print_with_new_line(fmt::format("  CG iterations:      {:d} ({:.1f} avg/newton)", total_cg, avg_cg_newton));
+	out->print_with_new_line(fmt::format("  Line search:        [{:d}|{:d}|{:d}|{:d}] ([{:.1f}|{:.1f}|{:.1f}|{:.1f}] avg/newton) [cap|max|hit|bt] ", 
+		ls_cap, ls_max, ls_hit, ls_bt,  ratio(ls_cap, total_newton),  ratio(ls_max, total_newton),  ratio(ls_hit, total_newton),  ratio(ls_bt, total_newton)));
+	out->print_with_new_line(fmt::format("  Projected hessians: {:.1f}%", proj_ratio));
+	out->print_with_new_line(fmt::format("  Comp. ratio (cr):   {:.2f}", cr));
 
 	// ── Runtime — sorted by decreasing time ──
 	const double total_time = logger->get_timer_total("total");
@@ -319,6 +299,7 @@ void stark::core::Stark::print()
 		if (label == "total") continue;
 		double time = logger->get_timer_total(label);
 		acc += time;
+		if (time/total_time < 0.001) continue;  // Skip timers that are less than 0.1% of total time
 		timer_entries.push_back({label, time});
 	}
 	timer_entries.push_back({"misc", total_time - acc});
@@ -336,12 +317,6 @@ void stark::core::Stark::print()
 
 	out->print_with_new_line(fmt::format("  {}", std::string(60, '-')));
 	out->print_with_new_line(fmt::format("  {:<40} {:>10.6f}  {:>5.1f}%", "Total", total_time, 100.0));
-
-	// Failed steps
-	if (logger->get_double("failed_steps") > 0.0) {
-		out->print_with_new_line(fmt::format("\n  Failed step time:  {:.3f} s", logger->get_double("failed_steps")));
-	}
-
 	out->print_new_line();
 
 	// Save final YAML log

@@ -20,9 +20,6 @@
 - misc takes huge runtime and idk what it is
     I need to know
 
-- `ls (cap|max|hit|bt):  0| 1| 0| 0|`
-    Why do I get 1 max ls on the hanging box?
-
 - Verify copilot all logic is correct. I had may latent bugs such as not passoing optional variables.
 
 - Enable friction!
@@ -32,6 +29,8 @@
 - `enable_prints`, `enable_frame_writes`
 
 - Consistent `stark`, `Stark` or `STARK`
+
+- Comments and docs are _very_ inconsistent in style
 
 - debug line search logic inside line search
     Remove _solve_impl

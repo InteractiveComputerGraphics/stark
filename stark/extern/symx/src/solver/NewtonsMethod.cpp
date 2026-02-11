@@ -250,11 +250,22 @@ SolverReturn NewtonsMethod::_solve_impl()
         }
     }
 
-    // End
+    // Log
     this->stats.newton_iterations = newton_iteration + 1;
     if (this->stats.n_hessians > 0) {
         this->stats.projected_hessians_ratio = (double)this->stats.n_projected_hessians / (double)this->stats.n_hessians;
     }
+
+    // Solve stats accumulation
+    logger->add_and_append("newton_iterations", stats.newton_iterations);
+    logger->add_and_append("cg_iterations", stats.cg_iterations);
+    logger->add_and_append("n_hessians", (double)stats.n_hessians);
+    logger->add_and_append("n_projected_hessians", (double)stats.n_projected_hessians);
+    logger->add_and_append("ls_bt", stats.ls_bt_iterations);
+    logger->add_and_append("ls_cap", stats.ls_cap_iterations);
+    logger->add_and_append("ls_max", stats.ls_max_iterations);
+    logger->add_and_append("ls_hit", stats.ls_hit_iterations);
+
     return result;
 }
 

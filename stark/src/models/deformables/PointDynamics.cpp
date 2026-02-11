@@ -65,7 +65,10 @@ void stark::PointDynamics::_on_time_step_accepted(stark::core::Stark& stark)
 {
 	// Set final positions with solved velocities
 	const double dt = stark.dt;
-	for (int i = 0; i < this->size(); i++) {
+
+	const int n = this->size();
+	#pragma omp parallel for schedule(static) num_threads(stark.settings.execution.n_threads) if(n > 10000)
+	for (int i = 0; i < n; i++) {
 		this->x1[i] = time_integration(this->x0[i], this->v1[i], dt);
 	}
 

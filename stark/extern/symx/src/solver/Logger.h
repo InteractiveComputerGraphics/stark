@@ -48,6 +48,12 @@ namespace symx
         void add(const std::string& label, int v);
 
         // =============================================================
+        // Add and Append
+        // =============================================================
+        void add_and_append(const std::string& label, double v);
+        void add_and_append(const std::string& label, int v);
+
+        // =============================================================
         // Getters
         // =============================================================
         double get_double(const std::string& label) const;
