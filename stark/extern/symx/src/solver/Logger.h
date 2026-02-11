@@ -89,11 +89,8 @@ namespace symx
         // Control
         // =============================================================
         void clear();
-        void set_enabled(bool enabled);
-        bool is_enabled() const;
 
     private:
-        bool enabled_ = true;
 
         // Timing
         struct Timer {

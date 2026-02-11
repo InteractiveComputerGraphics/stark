@@ -44,7 +44,6 @@ Stark::Stark(const Settings& settings)
 	}
 
 	// Initialize SymX context
-	const std::string ending = "_" + settings.output.simulation_name + "__" + settings.output.time_stamp + ".txt";
 	const std::string filename = settings.output.output_directory + "/" + settings.output.simulation_name + "__" + settings.output.time_stamp;
 
 	// Create SymX context and configure OutputSink
@@ -250,6 +249,15 @@ void stark::core::Stark::print()
 
 	auto& logger = this->context->logger;
 	auto* out = this->context->output.get();
+
+	// Guard: if no successful time steps, skip detailed stats
+	if (this->current_time_step == 0) {
+		out->print_with_new_line("  No completed time steps.");
+		out->print_new_line();
+		logger->save_to_disk();
+		return;
+	}
+
 	const int time_steps = std::max(logger->get_int("time_steps"), 1);
 
 	// ── Info ──

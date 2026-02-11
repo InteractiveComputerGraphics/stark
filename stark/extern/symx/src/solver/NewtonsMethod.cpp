@@ -99,8 +99,7 @@ SolverReturn NewtonsMethod::_solve_impl()
     this->ppn_active_dof_blocks_for_projection.assign(n_dof_blocks, static_cast<uint8_t>(false));
 
     // Check initial state validity
-    bool initial_valid = true;
-    this->callbacks->run_is_initial_state_valid();
+    bool initial_valid = this->callbacks->run_is_initial_state_valid();
     if (!initial_valid) {
         result = SolverReturn::InvalidIntermediateConfiguration;
     }

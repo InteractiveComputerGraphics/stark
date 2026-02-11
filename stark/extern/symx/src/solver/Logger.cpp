@@ -48,14 +48,12 @@ Logger::ScopedTimer Logger::time(const std::string& label)
 // =============================================================
 void Logger::start_timing(const std::string& label)
 {
-    if (!enabled_) return;
     auto& timer = _get_or_create_timer(label);
     timer.start = omp_get_wtime();
 }
 
 void Logger::stop_timing(const std::string& label)
 {
-    if (!enabled_) return;
     auto it = timers_.find(label);
     if (it == timers_.end()) {
         std::cout << "symx::Logger::stop_timing error: Label '" << label << "' not found." << std::endl;
@@ -70,19 +68,16 @@ void Logger::stop_timing(const std::string& label)
 // =============================================================
 void Logger::append(const std::string& label, double v)
 {
-    if (!enabled_) return;
     series_double_[label].push_back(v);
 }
 
 void Logger::append(const std::string& label, int v)
 {
-    if (!enabled_) return;
     series_int_[label].push_back(v);
 }
 
 void Logger::append(const std::string& label, const std::string& v)
 {
-    if (!enabled_) return;
     series_string_[label].push_back(v);
 }
 
@@ -91,38 +86,32 @@ void Logger::append(const std::string& label, const std::string& v)
 // =============================================================
 void Logger::set(const std::string& label, double v)
 {
-    if (!enabled_) return;
     acc_double_[label] = v;
 }
 
 void Logger::set(const std::string& label, int v)
 {
-    if (!enabled_) return;
     acc_int_[label] = v;
 }
 
 void Logger::add(const std::string& label, double v)
 {
-    if (!enabled_) return;
     acc_double_[label] += v;
 }
 
 void Logger::add(const std::string& label, int v)
 {
-    if (!enabled_) return;
     acc_int_[label] += v;
 }
 
 void Logger::add_and_append(const std::string &label, double v)
 {
-    if (!enabled_) return;
     add(label, v);
     append(label, v);
 }
 
 void Logger::add_and_append(const std::string &label, int v)
 {
-    if (!enabled_) return;
     add(label, v);
     append(label, v);
 }
@@ -173,7 +162,7 @@ const std::vector<int>& Logger::get_int_series(const std::string& label) const
 const std::vector<std::string>& Logger::get_string_series(const std::string& label) const
 {
     auto it = series_string_.find(label);
-    if (it == series_string_.find(label)) {
+    if (it == series_string_.end()) {
         std::cout << "symx::Logger::get_string_series warning: Label '" << label << "' not found." << std::endl;
         exit(-1);
     }
@@ -440,16 +429,6 @@ void Logger::clear()
     series_string_.clear();
     acc_double_.clear();
     acc_int_.clear();
-}
-
-void Logger::set_enabled(bool enabled)
-{
-    enabled_ = enabled;
-}
-
-bool Logger::is_enabled() const
-{
-    return enabled_;
 }
 
 // =============================================================
