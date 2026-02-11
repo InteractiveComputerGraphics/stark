@@ -9,7 +9,7 @@ stark::EnergyPrescribedPositions::EnergyPrescribedPositions(core::Stark& stark, 
 	: dyn(dyn)
 {
 	// Callbacks
-	stark.callbacks.newton.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
+	stark.callbacks->newton->add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
 
 	// Declare the energy
 	stark.global_potential->add_potential("EnergyPrescribedPositions", this->conn,
@@ -149,7 +149,7 @@ bool stark::EnergyPrescribedPositions::_is_converged_state_valid(stark::core::St
 	}
 
 	if (!is_valid) {
-		stark.output->print("Deformable prescribed position constraints are not within tolerance. Stiffness hardened.\n", symx::Verbosity::Summary);
+		stark.context->output->print("Deformable prescribed position constraints are not within tolerance. Stiffness hardened.\n", symx::Verbosity::Summary);
 	}
 
 	return is_valid;

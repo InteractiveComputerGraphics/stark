@@ -7,7 +7,7 @@ using namespace symx;
 stark::EnergyRigidBodyInertia::EnergyRigidBodyInertia(core::Stark& stark, spRigidBodyDynamics rb)
 	: rb(rb)
 {
-	stark.callbacks.add_before_time_step([&]() { this->_before_time_step(stark); });
+	stark.callbacks->add_before_time_step([&]() { this->_before_time_step(stark); });
 
 	// Linear inertia
 	stark.global_potential->add_potential("EnergyRigidBodyInertia_Linear", this->conn,

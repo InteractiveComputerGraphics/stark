@@ -1,29 +1,18 @@
 # symx port TODO
 
-Here's a summary of what's done and what's left.
+- runtime summary
+    Add dots
+    Move to symx
 
-Completed (compiles & runs)
-OutputSink — OutputSink.h: single class with verbosity gating, auto-indent, file+console routing, lazy file open
-Verbosity enum — solver_utils.h:11: 4-level {Silent, Summary, Step, Full} with backward compat aliases
-Context wiring — Context.h: OutputSink sink is a public field on symx::Context
-Newton prints — NewtonsMethod.cpp:597: _print() now gates against sink.get_verbosity() and emits through sink.print()
-Stark prints — Stark.cpp: all console.print() calls replaced with context->sink.print(). Context+sink created in constructor (before _initialize).
-Per-verbosity demo — main.cpp:703: runs 4 verbosity levels, writes .log files to output/verbosity_demo/
-Log files location
-Output lives in verbosity_demo relative to the build dir (i.e. verbosity_demo):
+- log counters might be wrong. Summary is wrong
+    hit -> inv(valid)
 
-sink_verbosity_silent__*.txt — 0 bytes
-sink_verbosity_summary__*.txt — 41 lines (SymX + frames)
-sink_verbosity_step__*.txt — 125 lines (+ settings + Newton + dt/runtime)
-sink_verbosity_detail__*.txt — 125 lines (+ line search detail, same here since no LS triggered)
-Remaining (not yet started)
-7: Refactor Newton fragment-prints into proper line-based calls with auto-indent
-8: Upgrade Log → Logger (typed series, stats, YAML output)
-10: Delete Console and old Logger classes from stark
-
+- Option to disable logging
 
 - enable_output vs set_enabled vs Verbosity::Silent — document the distinction
 Three ways to suppress output:
+
+- Enable friction!
 
 - Remove bottom print from Newton
 

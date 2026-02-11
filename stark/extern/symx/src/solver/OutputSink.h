@@ -7,17 +7,17 @@ namespace symx
 {
     enum class Verbosity
     {
-        Silent = 0,
+        Minimal = 0,
         Summary = 1,
-        Step = 2,
+        Medium = 2,
         Full = 3,
     };
     inline std::string to_string(Verbosity v)
     {
         switch (v) {
-            case Verbosity::Silent:  return "Silent";
+            case Verbosity::Minimal:  return "Minimal";
             case Verbosity::Summary: return "Summary";
-            case Verbosity::Step:    return "Step";
+            case Verbosity::Medium:    return "Medium";
             case Verbosity::Full:  return "Full";
             default:           
                 std::cout << "symx::Verbosity " << (int)v << " does not have a name. Exiting." << std::endl;
@@ -62,6 +62,10 @@ namespace symx
 
         void open_file(const std::string& path) {
             file_.open(path);
+            if (!file_.is_open()) {
+                std::cout << "symx::OutputSink error: Failed to open file at path: " << path << std::endl;
+                exit(-1);
+            }
         }
         void close_file() {
             if (file_.is_open()) {
@@ -122,7 +126,7 @@ namespace symx
                     file_ << msg;
                 }
                 else {
-                    std::cout << "OutputSink error: File output mode enabled but file is not open. Use OutputSink::open_file() before directing to file." << std::endl;
+                    std::cout << "symx::OutputSink error: File output mode enabled but file is not open. Use OutputSink::open_file() before directing to file." << std::endl;
                     exit(-1);
                 }
             }
@@ -136,7 +140,7 @@ namespace symx
             return _indent(depth);
         }
 
-        Verbosity verbosity_ = Verbosity::Step;
+        Verbosity verbosity_ = Verbosity::Medium;
         OutputTo output_to_ = OutputTo::PrintOnly;
         bool enabled_ = true;
         int root_tab_ = 0;

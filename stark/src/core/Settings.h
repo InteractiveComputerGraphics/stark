@@ -16,7 +16,7 @@ namespace stark::core
 			std::string codegen_directory = "";
 			std::string time_stamp = "SET_TO_CREATION_TIME_BY_DEFAULT";
 			int fps = 30;
-			symx::Verbosity verbosity = symx::Verbosity::Step;
+			symx::Verbosity verbosity = symx::Verbosity::Medium;
 			symx::OutputTo output_to = symx::OutputTo::PrintAndFile;
 			bool enable_output = true;
 		};

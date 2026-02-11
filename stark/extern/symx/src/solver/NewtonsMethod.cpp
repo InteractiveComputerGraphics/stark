@@ -9,23 +9,25 @@
 
 using namespace symx;
 
-symx::NewtonsMethod::NewtonsMethod(spGlobalPotential global_potential, spContext context)
-    : global_potential(global_potential), context(context)
+symx::NewtonsMethod::NewtonsMethod(spGlobalPotential global_potential, spContext context, spSolverCallbacks callbacks)
+    : global_potential(global_potential), context(context), callbacks(callbacks)
 {
     this->output = context->output;
+    this->logger = context->logger;
+    if (callbacks == nullptr) {
+        this->callbacks = std::make_shared<SolverCallbacks>(context);
+    }
     this->compiled = std::make_shared<SecondOrderCompiledGlobal>(global_potential, context);
 }
 
-spNewtonsMethod symx::NewtonsMethod::create(spGlobalPotential global_potential, spContext context)
+spNewtonsMethod symx::NewtonsMethod::create(spGlobalPotential global_potential, spContext context, spSolverCallbacks callbacks)
 {
-    return std::make_shared<NewtonsMethod>(global_potential, context);
+    return std::make_shared<NewtonsMethod>(global_potential, context, callbacks);
 }
 
 // Force rebuild
 SolverReturn NewtonsMethod::solve()
 {
-    auto timer_total = context->logger.time("Total Solve Time");
-
     // Check
     if (!global_potential) {
         std::cout << "Error: GlobalPotential not set." << std::endl;
@@ -98,7 +100,7 @@ SolverReturn NewtonsMethod::_solve_impl()
 
     // Check initial state validity
     bool initial_valid = true;
-    { auto _t = this->context->logger.time("Is Initial Valid"); initial_valid = this->callbacks.run_is_initial_state_valid(); }
+    this->callbacks->run_is_initial_state_valid();
     if (!initial_valid) {
         result = SolverReturn::InvalidIntermediateConfiguration;
     }
@@ -115,19 +117,16 @@ SolverReturn NewtonsMethod::_solve_impl()
         }
 
         // Print iteration header
-        this->output->print_with_new_line(fmt::format("{:2d}. ", newton_iteration), Verbosity::Step);
+        this->output->print_with_new_line(fmt::format("{:2d}. ", newton_iteration), Verbosity::Medium);
 
         // Evaluate energy, gradient, and Hessian
-        { auto _t = this->context->logger.time("Before Energy Eval"); this->callbacks.run_before_energy_evaluation(); }
-        {
-            auto timer_eval = this->context->logger.time("Energy Evaluation");
-            element_hessians = this->compiled->evaluate_P__dP_du__local_d2P_du2(E0, this->grad);
-        }
-        { auto _t = this->context->logger.time("After Energy Eval"); this->callbacks.run_after_energy_evaluation(); }
+        this->callbacks->run_before_energy_evaluation();
+        element_hessians = this->compiled->evaluate_P__dP_du__local_d2P_du2(E0, this->grad, this->logger);
+        this->callbacks->run_after_energy_evaluation();
 
         // Compute residual
-        double residual_norm = this->callbacks.compute_residual(this->grad);
-        this->output->print(fmt::format("r0: {:.2e} | ", residual_norm), Verbosity::Step);
+        double residual_norm = this->callbacks->compute_residual(this->grad);
+        this->output->print(fmt::format("r0: {:.2e} | ", residual_norm), Verbosity::Medium);
 
         // Residual too small for numerical stability?
         if (residual_norm < this->settings.epsilon_residual) {
@@ -154,10 +153,7 @@ SolverReturn NewtonsMethod::_solve_impl()
             bool all_projected = this->_project_and_assemble(element_hessians, hess, ndofs);
 
             // Solve linear system
-            {
-                auto timer_ls = this->context->logger.time("Linear System Solve");
-                linear_system_solve_success = this->_solve_linear_system(this->du, hess, this->grad);
-            }
+            linear_system_solve_success = this->_solve_linear_system(this->du, hess, this->grad);
 
             // Handle linear system failure
             if (!linear_system_solve_success) {
@@ -202,7 +198,7 @@ SolverReturn NewtonsMethod::_solve_impl()
         // Solve successful
         if (this->output->get_verbosity() != Verbosity::Full) {
             this->output->print(fmt::format("ph: {:4.1f}% | #CG: {:4d} | ", 
-                element_hessians->projection_ratio() * 100.0, this->stats.cg_iterations - initial_cp_iterations), Verbosity::Step);
+                element_hessians->projection_ratio() * 100.0, this->stats.cg_iterations - initial_cp_iterations), Verbosity::Medium);
         }
 
         this->_decrease_projection();
@@ -211,7 +207,7 @@ SolverReturn NewtonsMethod::_solve_impl()
 
         // Convergence: Step tolerance
         double du_max = this->du.cwiseAbs().maxCoeff();
-        this->output->print(fmt::format("du: {:.1e} | ", du_max), Verbosity::Step);
+        this->output->print(fmt::format("du: {:.1e} | ", du_max), Verbosity::Medium);
         if (newton_iteration >= this->settings.min_iterations && du_max < this->settings.step_tolerance) {
             result = SolverReturn::Successful;
             break;
@@ -221,28 +217,24 @@ SolverReturn NewtonsMethod::_solve_impl()
         if (du_max > this->settings.step_cap) {
             this->du *= this->settings.step_cap / du_max;
             du_max = this->settings.step_cap;
-            this->output->print(fmt::format("du cap {:.1e} | ", du_max), Verbosity::Step);
+            this->output->print(fmt::format("du cap {:.1e} | ", du_max), Verbosity::Medium);
             this->stats.ls_cap_iterations++;
         }
 
         // Max allowed step (e.g. CCD)
-        double max_step = 0.0;
-        { auto _t = this->context->logger.time("Max Allowed Step"); max_step = this->callbacks.run_max_allowed_step(); }
+        double max_step = this->callbacks->run_max_allowed_step();
         if (du_max > max_step) {
             this->du *= max_step / du_max;
             du_max = max_step;
-            this->output->print(fmt::format("ls max {:.1e} | ", du_max), Verbosity::Step);
+            this->output->print(fmt::format("ls max {:.1e} | ", du_max), Verbosity::Medium);
             this->stats.ls_max_iterations++;
         }
 
         // Line search
-        {
-            auto timer_linesearch = this->context->logger.time("Line Search");
-            int armijo_iterations = 0;
-            result = this->_line_search_inplace(armijo_iterations, E0, du_dot_grad);
-            if (armijo_iterations > 0) {
-                this->_increase_projection();
-            }
+        int armijo_iterations = 0;
+        result = this->_line_search_inplace(armijo_iterations, E0, du_dot_grad);
+        if (armijo_iterations > 0) {
+            this->_increase_projection();
         }
         if (result != SolverReturn::Running) {
             break;
@@ -252,7 +244,7 @@ SolverReturn NewtonsMethod::_solve_impl()
     // Check if converged state is valid
     if (result == SolverReturn::Successful) {
         bool converged_valid = true;
-        { auto _t = this->context->logger.time("Is Converged Valid"); converged_valid = this->callbacks.run_is_converged_state_valid(); }
+        converged_valid = this->callbacks->run_is_converged_state_valid();
         if (!converged_valid) {
             result = SolverReturn::InvalidConvergedState;
         }
@@ -280,13 +272,13 @@ bool NewtonsMethod::_project_and_assemble(spElementHessians element_hessians, El
 
     // PPN requires global Hessian assembled first (uses incremental updates)
     if (this->settings.projection_mode == ProjectionToPD::Progressive && hess == nullptr) {
-        auto timer_assembly = this->context->logger.time("Hessian Assembly");
+        auto timer_assembly = this->logger->time("assembly");
         hess = element_hessians->assemble_global(this->context->n_threads, ndofs);
     }
 
     // Project element Hessians to PD
     {
-        auto timer_eval = this->context->logger.time("Project to PD");
+        auto timer_eval = this->logger->time("project_to_PD");
 
         switch (this->settings.projection_mode) {
             case ProjectionToPD::Newton:
@@ -354,7 +346,7 @@ bool NewtonsMethod::_project_and_assemble(spElementHessians element_hessians, El
 
     // Assemble or update global Hessian
     {
-        auto timer_assembly = this->context->logger.time("Hessian Assembly");
+        auto timer_assembly = this->logger->time("assembly");
         if (hess == nullptr) {
             hess = element_hessians->assemble_global(this->context->n_threads, ndofs);
         } 
@@ -402,6 +394,8 @@ void NewtonsMethod::_decrease_projection()
 
 bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessians::spBSM& hess, const Eigen::VectorXd& grad)
 {
+    auto timer_ls = this->logger->time("linear_system_solve");
+
     this->rhs = -grad;
     const int ndofs = (int)grad.size();
 
@@ -485,9 +479,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
     // First loop: find a valid intermediate state
     int ls_hit_iterations = 0;
     for (; it < this->settings.max_line_search_iterations; ++it) {
-        bool valid = false;
-        { auto _t = this->context->logger.time("Is Intermediate Valid"); valid = this->callbacks.run_is_intermediate_state_valid(); }
-        if (valid) {
+        if (this->callbacks->run_is_intermediate_state_valid()) {
             break;
         } 
         else {
@@ -500,12 +492,12 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
     }
 
     if (this->output->get_verbosity() != Verbosity::Full && ls_hit_iterations > 0) {
-        this->output->print(fmt::format("ls hit {:2d} | ", ls_hit_iterations), Verbosity::Step);
+        this->output->print(fmt::format("ls hit {:2d} | ", ls_hit_iterations), Verbosity::Medium);
     }
 
     // Failed to find valid state within line search iterations
     if (it == this->settings.max_line_search_iterations) {
-        this->callbacks.run_on_intermediate_state_invalid();
+        this->callbacks->run_on_intermediate_state_invalid();
         return SolverReturn::InvalidIntermediateConfiguration;
     }
     
@@ -525,9 +517,9 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
             double s = -0.5 + 2.0 * static_cast<double>(i) / static_cast<double>(n_samples - 1);
             apply_scaled_du(s);
             double E_sample = 0.0;
-            { auto _t = this->context->logger.time("Before Energy Eval"); this->callbacks.run_before_energy_evaluation(); }
+            this->callbacks->run_before_energy_evaluation();
             this->compiled->evaluate_P(E_sample);
-            { auto _t = this->context->logger.time("After Energy Eval"); this->callbacks.run_after_energy_evaluation(); }
+            this->callbacks->run_after_energy_evaluation();
             samples[i] = E_sample;
             // apply_scaled_du(-s);  // Undo
         }
@@ -547,9 +539,9 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         armijo_iterations++;
         
         // Evaluate energy
-        { auto _t = this->context->logger.time("Before Energy Eval"); this->callbacks.run_before_energy_evaluation(); }
+        this->callbacks->run_before_energy_evaluation();
         this->compiled->evaluate_P(E1);
-        { auto _t = this->context->logger.time("After Energy Eval"); this->callbacks.run_after_energy_evaluation(); }
+        this->callbacks->run_after_energy_evaluation();
         
         this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | E: {:.2e} | E_bt: {:.2e} | E/E_bt: {:.2e} | ", it, step, E1, E_threshold, E1 / E_threshold), Verbosity::Full);
         
@@ -567,7 +559,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
     }
 
     if (this->output->get_verbosity() != Verbosity::Full) {
-        this->output->print(fmt::format("ls bt {:2d} | ", armijo_iterations), Verbosity::Step);
+        this->output->print(fmt::format("ls bt {:2d} | ", armijo_iterations), Verbosity::Medium);
     }
 
     if (success) {

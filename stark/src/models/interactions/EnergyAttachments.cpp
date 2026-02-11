@@ -11,7 +11,7 @@ stark::EnergyAttachments::EnergyAttachments(core::Stark& stark, const spPointDyn
 	: dyn(dyn), rb(rb)
 {
 	// Callbacks
-	stark.callbacks.newton.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
+	stark.callbacks->newton->add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
 
 	// Declare the energies
 	stark.global_potential->add_potential("EnergyAttachments_d_d_p_p", this->conn_d_d_p_p,
@@ -522,7 +522,7 @@ bool stark::EnergyAttachments::_is_converged_state_valid(core::Stark& stark)
 	}
 
 	if (!is_valid) {
-		stark.output->print("Attachment constraints are not within tolerance. Stiffness hardened.\n", symx::Verbosity::Summary);
+		stark.context->output->print("Attachment constraints are not within tolerance. Stiffness hardened.\n", symx::Verbosity::Summary);
 	}
 
 	return is_valid;

@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #include <limits>
+#include <memory>
 
 namespace symx
 {
@@ -27,19 +28,19 @@ namespace symx
         };
         [[nodiscard]] ScopedTimer time(const std::string& label);
 
-        // Manual start/stop timing (e.g. for Stark's "total" timer around a block)
+        // Manual start/stop timing
         void start_timing(const std::string& label);
         void stop_timing(const std::string& label);
 
         // =============================================================
-        // Typed Series (per time step data, appended over the simulation)
+        // Typed Series
         // =============================================================
         void append(const std::string& label, double v);
         void append(const std::string& label, int v);
         void append(const std::string& label, const std::string& v);
 
         // =============================================================
-        // Accumulators (within-step aggregation, persist across steps)
+        // Accumulators
         // =============================================================
         void set(const std::string& label, double v);
         void set(const std::string& label, int v);
@@ -66,7 +67,7 @@ namespace symx
         const std::vector<std::string>& get_timer_labels() const;
 
         // =============================================================
-        // Statistics — "TOTAL | AVG | [MIN, MAX]" for double series
+        // Statistics — "TOTAL | AVG | [MIN, MAX]" for double and int series
         // =============================================================
         std::string get_statistics(const std::string& label) const;
 
@@ -120,4 +121,5 @@ namespace symx
         Timer& _get_or_create_timer(const std::string& label);
         void _record_elapsed(const std::string& label, double elapsed);
     };
+    using spLogger = std::shared_ptr<Logger>;
 }

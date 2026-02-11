@@ -14,7 +14,7 @@ namespace symx
         int32_t n_threads = -1;
         std::string compilation_directory = "";
         spOutputSink output;
-        Logger logger;
+        spLogger logger;
 
         Context();
         static std::shared_ptr<Context> create();

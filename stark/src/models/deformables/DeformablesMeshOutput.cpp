@@ -6,7 +6,7 @@
 stark::DeformablesMeshOutput::DeformablesMeshOutput(stark::core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
 {
-	stark.callbacks.add_write_frame([&]() { this->_write_frame(stark); });
+	stark.callbacks->add_write_frame([&]() { this->_write_frame(stark); });
 }
 void stark::DeformablesMeshOutput::add_point_set(const std::string& label, const PointSetHandler& set)
 {

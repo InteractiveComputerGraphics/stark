@@ -438,7 +438,7 @@ void twisting_cloth()
 	// settings.execution.n_threads = 1; // DEBUG
 	// settings.simulation.max_time_step_size = 0.001;
 	// settings.simulation.init_frictional_contact = false;
-	settings.output.verbosity = symx::Verbosity::Step;
+	settings.output.verbosity = symx::Verbosity::Summary;
 	
 	
 	settings.simulation.use_adaptive_time_step = false;
@@ -458,7 +458,7 @@ void twisting_cloth()
 	
 	// Cloth
 	double s = 0.5;
-	int n = 50;
+	int n = 100;
 	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
 	material.strain.elasticity_only = true;
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
@@ -707,9 +707,9 @@ void console_demo()
 	// writing output to output/verbosity_demo/
 	{
 		std::vector<symx::Verbosity> levels = {
-			symx::Verbosity::Silent,
+			symx::Verbosity::Minimal,
 			symx::Verbosity::Summary,
-			symx::Verbosity::Step,
+			symx::Verbosity::Medium,
 			symx::Verbosity::Full,
 		 };
 

@@ -5,7 +5,7 @@
 
 #include <Eigen/Dense>
 
-#include "OutputSink.h"
+#include "Context.h"
 
 namespace symx
 {
@@ -34,6 +34,8 @@ namespace symx
 		std::vector<std::function<bool()>> is_converged_state_valid;
         std::vector<std::function<double()>> max_allowed_step;
         std::function<double(Eigen::VectorXd&)> residual = default_residual;
+        spContext context = nullptr;
+
 
 		/* Methods */
 		void _run(std::vector<std::function<void()>>& fs)
@@ -53,6 +55,9 @@ namespace symx
 
 	public:
 		/* Methods */
+        SolverCallbacks(spContext context) : context(context) {}
+        static std::shared_ptr<SolverCallbacks> create(spContext context) { return std::make_shared<SolverCallbacks>(context); }
+
 		// Add callbacks
 		void add_before_energy_evaluation(std::function<void()> f) { this->before_energy_evaluation.push_back(f); }
 		void add_after_energy_evaluation(std::function<void()> f) { this->after_energy_evaluation.push_back(f); }
@@ -63,14 +68,33 @@ namespace symx
         void add_max_allowed_step(std::function<double()> f) { this->max_allowed_step.push_back(f); }
 
 		// Run callbacks
-		void run_before_energy_evaluation() { this->_run(this->before_energy_evaluation); }
-		void run_after_energy_evaluation() { this->_run(this->after_energy_evaluation); }
-		bool run_is_initial_state_valid() { return this->_run_bool(this->is_initial_state_valid); }
-		bool run_is_intermediate_state_valid() { return this->_run_bool(this->is_intermediate_state_valid); }
-		void run_on_intermediate_state_invalid() { this->_run(this->on_intermediate_state_invalid); }
-		bool run_is_converged_state_valid() { return this->_run_bool(this->is_converged_state_valid); }
+		void run_before_energy_evaluation() { 
+            auto _t = this->context->logger->time("before_energy_evaluation");
+            this->_run(this->before_energy_evaluation); 
+        }
+		void run_after_energy_evaluation() {
+            auto _t = this->context->logger->time("after_energy_evaluation");
+            this->_run(this->after_energy_evaluation); 
+        }
+		bool run_is_initial_state_valid() { 
+            auto _t = this->context->logger->time("is_initial_state_valid");
+            return this->_run_bool(this->is_initial_state_valid); 
+        }
+		bool run_is_intermediate_state_valid() { 
+            auto _t = this->context->logger->time("is_intermediate_state_valid");
+            return this->_run_bool(this->is_intermediate_state_valid); 
+        }
+		void run_on_intermediate_state_invalid() { 
+            auto _t = this->context->logger->time("on_intermediate_state_invalid");
+            this->_run(this->on_intermediate_state_invalid); 
+        }
+		bool run_is_converged_state_valid() { 
+            auto _t = this->context->logger->time("is_converged_state_valid");
+            return this->_run_bool(this->is_converged_state_valid); 
+        }
         double run_max_allowed_step()
         {
+            auto _t = this->context->logger->time("max_allowed_step");
 			double max_step = std::numeric_limits<double>::infinity();
 			for (auto f : this->max_allowed_step) {
 				max_step = std::min(max_step, f());
@@ -81,6 +105,7 @@ namespace symx
 		// Residual computation
 		double compute_residual(Eigen::VectorXd& r) { return this->residual(r); }
 	};
+    using spSolverCallbacks = std::shared_ptr<SolverCallbacks>;
 
     enum class LinearSolver
     {

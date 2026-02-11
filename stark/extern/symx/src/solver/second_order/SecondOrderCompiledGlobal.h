@@ -4,6 +4,8 @@
 #include "../Context.h"
 #include "Assembly.h"
 
+#include "../Logger.h"
+
 namespace symx
 {
     // Compiles and evaluates a GlobalPotential for Newton-based optimization.
@@ -22,9 +24,9 @@ namespace symx
         SecondOrderCompiledGlobal(spGlobalPotential global_potential, spContext context);
         
         // Evaluation
-        void evaluate_P(double& out_P);
-        void evaluate_P__dP_du(double& out_P, Eigen::VectorXd& out_dP_du);
-        spElementHessians evaluate_P__dP_du__local_d2P_du2(double& out_P, Eigen::VectorXd& out_dP_du);
+        void evaluate_P(double& out_P, spLogger logger = nullptr);
+        void evaluate_P__dP_du(double& out_P, Eigen::VectorXd& out_dP_du, spLogger logger = nullptr);
+        spElementHessians evaluate_P__dP_du__local_d2P_du2(double& out_P, Eigen::VectorXd& out_dP_du, spLogger logger = nullptr);
 
         double test_derivatives_with_FD(const double h);
     };

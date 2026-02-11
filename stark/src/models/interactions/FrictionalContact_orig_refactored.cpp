@@ -18,12 +18,12 @@ EnergyFrictionalContact::EnergyFrictionalContact(core::Stark& stark, const spPoi
 	this->is_initialized = true;
 
 	// Callbacks
-	stark.callbacks.add_before_time_step([&]() { this->_before_time_step__update_friction_contacts(stark); });
-	stark.callbacks.newton.add_before_energy_evaluation([&]() { this->_before_energy_evaluation__update_contacts(stark); });
-	stark.callbacks.newton.add_is_intermediate_state_valid([&]() { return this->_is_intermediate_state_valid(stark, /*is_initial_check=*/false); });
-	stark.callbacks.newton.add_is_initial_state_valid([&]() { return this->_is_intermediate_state_valid(stark, /*is_initial_check=*/true); });
-	stark.callbacks.newton.add_on_intermediate_state_invalid([&]() { this->_on_intermediate_state_invalid(stark); });
-	stark.callbacks.add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
+	stark.callbacks->add_before_time_step([&]() { this->_before_time_step__update_friction_contacts(stark); });
+	stark.callbacks->newton->add_before_energy_evaluation([&]() { this->_before_energy_evaluation__update_contacts(stark); });
+	stark.callbacks->newton->add_is_intermediate_state_valid([&]() { return this->_is_intermediate_state_valid(stark, /*is_initial_check=*/false); });
+	stark.callbacks->newton->add_is_initial_state_valid([&]() { return this->_is_intermediate_state_valid(stark, /*is_initial_check=*/true); });
+	stark.callbacks->newton->add_on_intermediate_state_invalid([&]() { this->_on_intermediate_state_invalid(stark); });
+	stark.callbacks->add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
 
 	// Contact declarations // DEBUG
 	this->_energies_contact_deformables(stark);
@@ -241,7 +241,7 @@ void EnergyFrictionalContact::_update_vertices(core::Stark& stark, const double 
 			}
 		}
 		else {
-			stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+			stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 			exit(-1);
 		}
 	}
@@ -397,7 +397,7 @@ void EnergyFrictionalContact::_before_energy_evaluation__update_contacts(core::S
 				this->contacts_rb_deformables.point_triangle.rb_d_point_point.push_back({ B.group, A.group, B.idx_in_ps, B.verts[0], A.verts[0] });
 			}
 			else {
-				stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+				stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 				exit(-1);
 			}
 		}
@@ -421,7 +421,7 @@ void EnergyFrictionalContact::_before_energy_evaluation__update_contacts(core::S
 				this->contacts_rb_deformables.point_triangle.rb_d_edge_point.push_back({ B.group, A.group, B.idx_in_ps, B.verts[0], B.verts[1], A.verts[0] });
 			}
 			else {
-				stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+				stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 				exit(-1);
 			}
 		}
@@ -445,7 +445,7 @@ void EnergyFrictionalContact::_before_energy_evaluation__update_contacts(core::S
 				this->contacts_rb_deformables.point_triangle.rb_d_triangle_point.push_back({ B.group, A.group, B.idx_in_ps, B.verts[0], B.verts[1], B.verts[2], A.verts[0] });
 			}
 			else {
-				stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+				stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 				exit(-1);
 			}
 		}
@@ -472,7 +472,7 @@ void EnergyFrictionalContact::_before_energy_evaluation__update_contacts(core::S
 				this->contacts_rb_deformables.edge_edge.rb_d_point_point.push_back({ B.group, A.group, B.idx_in_ps, B.edge[0], B.edge[1], B.verts[0], A.edge[0], A.edge[1], A.verts[0] });
 			}
 			else {
-				stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+				stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 				exit(-1);
 			}
 		}
@@ -496,7 +496,7 @@ void EnergyFrictionalContact::_before_energy_evaluation__update_contacts(core::S
 				this->contacts_rb_deformables.edge_edge.rb_d_edge_point.push_back({ B.group, A.group, B.idx_in_ps, B.edge[0], B.edge[1], A.edge[0], A.edge[1], A.verts[0] });
 			}
 			else {
-				stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+				stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 				exit(-1);
 			}
 		}
@@ -520,7 +520,7 @@ void EnergyFrictionalContact::_before_energy_evaluation__update_contacts(core::S
 				this->contacts_rb_deformables.edge_edge.rb_d_edge_edge.push_back({ B.group, A.group, B.idx_in_ps, B.edge[0], B.edge[1], A.edge[0], A.edge[1] });
 			}
 			else {
-				stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+				stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 				exit(-1);
 			}
 		}
@@ -611,7 +611,7 @@ void EnergyFrictionalContact::_before_time_step__update_friction_contacts(core::
 				point_point(this->friction_rb_deformables.point_point.contact, mu, pair.distance, A, B);
 			}
 			else {
-				stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+				stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 				exit(-1);
 			}
 		}
@@ -641,7 +641,7 @@ void EnergyFrictionalContact::_before_time_step__update_friction_contacts(core::
 				point_edge(this->friction_rb_deformables.edge_point.data, mu, pair.distance, A, B);
 			}
 			else {
-				stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+				stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 				exit(-1);
 			}
 		}
@@ -671,7 +671,7 @@ void EnergyFrictionalContact::_before_time_step__update_friction_contacts(core::
 				point_triangle(this->friction_rb_deformables.triangle_point.data, mu, pair.distance, A, B);
 			}
 			else {
-				stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+				stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 				exit(-1);
 			}
 		}
@@ -703,7 +703,7 @@ void EnergyFrictionalContact::_before_time_step__update_friction_contacts(core::
 				point_point(this->friction_rb_deformables.point_point.contact, mu, pair.distance, A, B);
 			}
 			else {
-				stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+				stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 				exit(-1);
 			}
 		}
@@ -733,7 +733,7 @@ void EnergyFrictionalContact::_before_time_step__update_friction_contacts(core::
 				point_edge(this->friction_rb_deformables.edge_point.data, mu, pair.distance, A, B);
 			}
 			else {
-				stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+				stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 				exit(-1);
 			}
 		}
@@ -763,7 +763,7 @@ void EnergyFrictionalContact::_before_time_step__update_friction_contacts(core::
 				edge_edge(this->friction_rb_deformables.edge_edge.data, mu, pair.distance, A, B);
 			}
 			else {
-				stark.output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
+				stark.context->output->print("stark error: Unknown physical system found in EnergyFrictionalContact.\n", symx::Verbosity::Summary);
 				exit(-1);
 			}
 		}
@@ -787,9 +787,9 @@ bool EnergyFrictionalContact::_is_intermediate_state_valid(core::Stark& stark, b
 		}
 		
 		// Print pairs found in collision
-		stark.output->print("Stark error: Initial collision detected between the following contact object pairs:\n", symx::Verbosity::Summary);
+		stark.context->output->print("Stark error: Initial collision detected between the following contact object pairs:\n", symx::Verbosity::Summary);
 		for (const auto& pair : colliding_objects) {
-			stark.output->print(fmt::format("\t- {} and {}\n", pair[0], pair[1]), symx::Verbosity::Summary);
+			stark.context->output->print(fmt::format("\t- {} and {}\n", pair[0], pair[1]), symx::Verbosity::Summary);
 		}
 	}
 
@@ -800,7 +800,7 @@ void stark::EnergyFrictionalContact::_on_intermediate_state_invalid(core::Stark&
 	const double old_stiffness = this->contact_stiffness;
 	this->contact_stiffness *= 2.0;
 	const double new_stiffness = this->contact_stiffness;
-	stark.output->print(fmt::format("Penetration couldn't be avoided. Contact stiffness hardened from {:.1e} to {:.1e}.\n", old_stiffness, new_stiffness), symx::Verbosity::Summary);
+	stark.context->output->print(fmt::format("Penetration couldn't be avoided. Contact stiffness hardened from {:.1e} to {:.1e}.\n", old_stiffness, new_stiffness), symx::Verbosity::Summary);
 }
 void stark::EnergyFrictionalContact::_on_time_step_accepted(core::Stark& stark)
 {

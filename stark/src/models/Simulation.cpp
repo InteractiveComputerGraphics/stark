@@ -28,7 +28,7 @@ void stark::Simulation::set_gravity(const Eigen::Vector3d& gravity)
 
 symx::Logger& stark::Simulation::get_logger()
 {
-	return this->stark.context->logger;
+	return *this->stark.context->logger;
 }
 
 const stark::core::Settings& stark::Simulation::get_settings() const

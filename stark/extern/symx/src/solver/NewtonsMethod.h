@@ -32,6 +32,7 @@ namespace symx
 		spGlobalPotential global_potential = nullptr;
 		spContext context = nullptr;
 		spOutputSink output = nullptr;
+		spLogger logger = nullptr;
 		
 		// Reusable work vectors
 		Eigen::VectorXd du;
@@ -56,12 +57,12 @@ namespace symx
 		
     public:
         /* Fields */
-		SolverCallbacks callbacks;
+		spSolverCallbacks callbacks;
 		NewtonSettings settings;
 
         /* Methods */
-        NewtonsMethod(spGlobalPotential global_potential, spContext context);
-		static std::shared_ptr<NewtonsMethod> create(spGlobalPotential global_potential, spContext context);
+        NewtonsMethod(spGlobalPotential global_potential, spContext context, spSolverCallbacks callbacks = nullptr);
+		static std::shared_ptr<NewtonsMethod> create(spGlobalPotential global_potential, spContext context, spSolverCallbacks callbacks = nullptr);
         SolverReturn solve();
 		const SolveStats& get_last_solve_stats() const { return this->stats; }
 

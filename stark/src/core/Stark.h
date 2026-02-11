@@ -16,9 +16,7 @@ namespace stark::core
 		const Settings settings;
 		symx::spGlobalPotential global_potential;
 		symx::spContext context;
-		symx::spOutputSink output;
-
-		Callbacks callbacks;
+		spCallbacks callbacks;
 		EventDrivenScript script;
 
 		// Parameters
@@ -37,7 +35,6 @@ namespace stark::core
 
 	private:
 		/* Fields */
-		
 		symx::spNewtonsMethod newton;
 		bool is_init = false;
 		double next_frame_time = -std::numeric_limits<double>::epsilon();

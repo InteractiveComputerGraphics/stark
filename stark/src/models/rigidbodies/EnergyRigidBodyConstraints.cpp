@@ -10,8 +10,8 @@ stark::EnergyRigidBodyConstraints::EnergyRigidBodyConstraints(stark::core::Stark
 	: rb(rb)
 {
 	// Callbacks
-	stark.callbacks.newton.add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
-	stark.callbacks.add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
+	stark.callbacks->newton->add_is_converged_state_valid([&]() { return this->_is_converged_state_valid(stark); });
+	stark.callbacks->add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
 
 	// Constraint containers initialization
 	this->global_points = std::make_shared<RigidBodyConstraints::GlobalPoints>();
@@ -247,7 +247,7 @@ bool stark::EnergyRigidBodyConstraints::_is_converged_state_valid(core::Stark& s
 	*/
 	const bool valid = this->_adjust_constraints_stiffness_and_log(stark, 1.0, this->stiffness_hard_multiplier, /* are_positions_set = */ false);
 	if (!valid) {
-		stark.output->print("Rigid body constraints are not within tolerance. Hardening bending_stiffness.\n", symx::Verbosity::Summary);
+		stark.context->output->print("Rigid body constraints are not within tolerance. Hardening bending_stiffness.\n", symx::Verbosity::Summary);
 	}
 	return valid;
 }
