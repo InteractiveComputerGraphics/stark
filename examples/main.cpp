@@ -102,13 +102,15 @@ void hanging_deformable_box()
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.init_frictional_contact = false;
+
+	// settings.output.enable_output = false;
 	
 	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
 	settings.newton.step_tolerance = 1e-3;
 	stark::Simulation simulation(settings);
 
 	// Box
-	const int n = 30;
+	const int n = 50;
 	const double d = 0.5;
 	const double hd = d/2.0;
 	auto material = stark::Volume::Params::Soft_Rubber();
@@ -760,7 +762,8 @@ void console_demo()
 int main()
 {
 	//console_demo();
-	twisting_cloth();
+	//twisting_cloth();
+	hanging_deformable_box();
 	return 0;
 
 	/*

@@ -10,7 +10,20 @@
 - Option to disable logging
 
 - enable_output vs set_enabled vs Verbosity::Silent — document the distinction
-Three ways to suppress output:
+    Three ways to suppress output:
+
+    Individually control:  
+        - VTK
+        - console print and file
+        - log
+
+- misc takes huge runtime and idk what it is
+    I need to know
+
+- `ls (cap|max|hit|bt):  0| 1| 0| 0|`
+    Why do I get 1 max ls on the hanging box?
+
+- Verify copilot all logic is correct. I had may latent bugs such as not passoing optional variables.
 
 - Enable friction!
 

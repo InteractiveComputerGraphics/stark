@@ -121,7 +121,7 @@ SolverReturn NewtonsMethod::_solve_impl()
 
         // Evaluate energy, gradient, and Hessian
         this->callbacks->run_before_energy_evaluation();
-        element_hessians = this->compiled->evaluate_P__dP_du__local_d2P_du2(E0, this->grad, this->logger);
+        element_hessians = this->compiled->evaluate_P__dP_du__local_d2P_du2(E0, this->grad);
         this->callbacks->run_after_energy_evaluation();
 
         // Compute residual

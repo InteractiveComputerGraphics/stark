@@ -58,9 +58,9 @@ SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential global_po
     context->output->print_with_new_line("Total time: " + std::to_string(t1 - t0) + " s");
 }
 
-void SecondOrderCompiledGlobal::evaluate_P(double &out_P, spLogger logger)
+void SecondOrderCompiledGlobal::evaluate_P(double &out_P)
 {
-    if (logger) { auto t_ = logger->time("evaluate_P"); }
+    auto t_ = this->context->logger->time("evaluate_P");
 
     // Assembly options
     const bool hess = false;
@@ -81,9 +81,9 @@ void SecondOrderCompiledGlobal::evaluate_P(double &out_P, spLogger logger)
     out_P = this->assembly.E.get_solution();
 }
 
-void SecondOrderCompiledGlobal::evaluate_P__dP_du(double& out_P, Eigen::VectorXd& out_dP_du, spLogger logger)
+void SecondOrderCompiledGlobal::evaluate_P__dP_du(double& out_P, Eigen::VectorXd& out_dP_du)
 {
-    if (logger) { auto t_ = logger->time("evaluate_P_grad"); }
+    auto t_ = this->context->logger->time("evaluate_P_grad");
 
     // Assembly options
     const bool hess = false;
@@ -105,9 +105,9 @@ void SecondOrderCompiledGlobal::evaluate_P__dP_du(double& out_P, Eigen::VectorXd
     out_dP_du = this->assembly.grad.get_solution();
 }
 
-spElementHessians SecondOrderCompiledGlobal::evaluate_P__dP_du__local_d2P_du2(double& out_P, Eigen::VectorXd& out_dP_du, spLogger logger)
+spElementHessians SecondOrderCompiledGlobal::evaluate_P__dP_du__local_d2P_du2(double& out_P, Eigen::VectorXd& out_dP_du)
 {
-    if (logger) { auto t_ = logger->time("evaluate_P_grad_hess"); }
+    auto t_ = this->context->logger->time("evaluate_P_grad_hess");
 
     // Assembly options
     const bool hess = true;
