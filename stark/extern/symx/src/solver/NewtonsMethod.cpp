@@ -25,68 +25,28 @@ spNewtonsMethod symx::NewtonsMethod::create(spGlobalPotential global_potential, 
     return std::make_shared<NewtonsMethod>(global_potential, context, callbacks);
 }
 
-// Force rebuild
 SolverReturn NewtonsMethod::solve()
-{
-    // Check
-    if (!global_potential) {
-        std::cout << "Error: GlobalPotential not set." << std::endl;
-        exit(1);
-    }
-
-    const int ndofs = global_potential->get_total_n_dofs();
-    if (ndofs <= 0) {
-        std::cout << "Error: No degrees of freedom." << std::endl;
-        exit(1);
-    }
-
-    // Clear logging state
-    this->_ls_logging_mode = false;
-    this->_ls_energy_samples.clear();
-
-    // Save initial DOF state for potential retry with logging
-    Eigen::VectorXd initial_dofs(ndofs);
-    this->global_potential->get_dofs(initial_dofs.data());
-
-    // Run solve
-    SolverReturn result = this->_solve_impl();
-
-    // Retry with logging if line search failed and flag is set
-    if (result == SolverReturn::TooManyLineSearchIterations && 
-        this->settings.print_line_search_upon_failure && 
-        !this->_ls_logging_mode) {
-        
-        // Restore initial state
-        this->global_potential->set_dofs(initial_dofs.data());
-        
-        this->_ls_logging_mode = true;
-        this->_ls_energy_samples.clear();
-        
-        SolverReturn retry_result = this->_solve_impl();
-        
-        // If the second attempt succeeds, something is wrong (non-deterministic behavior)
-        if (retry_result == SolverReturn::Successful) {
-            std::cout << "Error: Line search debug retry succeeded unexpectedly. Non-deterministic behavior detected." << std::endl;
-            exit(1);
-        }
-        
-        return retry_result;
-    }
-
-    return result;
-}
-
-SolverReturn NewtonsMethod::_solve_impl()
 {
     const int ndofs = global_potential->get_total_n_dofs();
     const int n_dof_blocks = ndofs / 3;
 
+    // Check
+    if (!global_potential) {
+        std::cout << "symx error NewtonsMethod::solve(): GlobalPotential not set." << std::endl;
+        exit(1);
+    }
+
+    if (ndofs <= 0) {
+        std::cout << "symx error NewtonsMethod::solve(): No degrees of freedom." << std::endl;
+        exit(1);
+    }
+
     // Set up
     this->stats = SolveStats(); // Reset stats
-    du.resize(ndofs);
-    step_du.resize(ndofs);
-    rhs.resize(ndofs);
-    grad.resize(ndofs);
+    this->du.resize(ndofs);
+    this->step_du.resize(ndofs);
+    this->rhs.resize(ndofs);
+    this->grad.resize(ndofs);
     double E0 = 0.0;
     double du_dot_grad = 0.0;
     spElementHessians element_hessians = nullptr;
@@ -97,6 +57,12 @@ SolverReturn NewtonsMethod::_solve_impl()
     this->pdn_countdown = 0;     // ProjectOnDemand: iterations remaining with full projection
     this->ppn_threshold = -1.0;  // Progressive: gradient threshold (-1 = not yet determined)
     this->ppn_active_dof_blocks_for_projection.assign(n_dof_blocks, static_cast<uint8_t>(false));
+
+    // Prepare for line search plot if needed
+    if (this->settings.print_line_search_upon_failure && !this->_ls_logging_mode) {
+        this->initial_dofs.resize(ndofs);
+        this->global_potential->get_dofs(this->initial_dofs.data());
+    }
 
     // Check initial state validity
     bool initial_valid = this->callbacks->run_is_initial_state_valid();
@@ -191,6 +157,7 @@ SolverReturn NewtonsMethod::_solve_impl()
         } // End of linear system solve loop
         
         if (result != SolverReturn::Running) {
+            this->output->print_with_new_line("Newton failure: Could not solve the linear system or find a descend direction.", Verbosity::Summary);
             break;
         }
         
@@ -214,6 +181,9 @@ SolverReturn NewtonsMethod::_solve_impl()
 
         // Line search
         result = this->_line_search_inplace(E0, du_dot_grad, du_max);
+        if (result == SolverReturn::TooManyLineSearchIterations) {
+            this->output->print_with_new_line("Newton failure: Too many line search iterations.", Verbosity::Summary);
+        }
 
         // Exit Newton's loop
         if (result != SolverReturn::Running) {
@@ -594,7 +564,24 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     }
 
     // Failure mode: Visualize line search failure if in logging mode
-    if (this->_ls_logging_mode && !this->_ls_energy_samples.empty()) {
+    if (this->settings.print_line_search_upon_failure) {
+
+        // The whole Newton search needs to be recorded
+        if (!this->_ls_logging_mode) {
+            this->_ls_logging_mode = true;
+
+            // Restore initial state and run
+            this->global_potential->set_dofs(this->initial_dofs.data());
+            SolverReturn retry_result = this->solve();
+        
+            // If the second attempt succeeds, something is wrong (non-deterministic behavior)
+            if (retry_result == SolverReturn::Successful) {
+                std::cout << "Error: Line search debug retry succeeded unexpectedly. Non-deterministic behavior detected." << std::endl;
+                exit(1);
+            }
+        }
+
+        // Generate logs and plots
         visualize_line_search_failure(
             this->_ls_energy_samples,
             this->context->compilation_directory,
@@ -602,6 +589,10 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
             E_threshold,
             du_dot_grad
         );
+
+        // Exit
+        std::cout << "Exiting stark..." << std::endl;
+        exit(-1);
     }
 
     return SolverReturn::TooManyLineSearchIterations;

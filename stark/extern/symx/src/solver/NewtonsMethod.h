@@ -39,6 +39,7 @@ namespace symx
 		Eigen::VectorXd step_du;
 		Eigen::VectorXd rhs;
 		Eigen::VectorXd grad;
+		Eigen::VectorXd initial_dofs;
 
 		// PCG solver context (reusable buffers)
 		bsm::PCGContext pcg_context;
@@ -73,7 +74,7 @@ namespace symx
 		void _decrease_projection(); // Search direction descends
 
 		bool _solve_linear_system(Eigen::VectorXd& du, const ElementHessians::spBSM& hess, const Eigen::VectorXd& grad);
-		SolverReturn _solve_impl();  // Internal solve implementation (called by solve())
+		// SolverReturn _solve_impl();  // Internal solve implementation (called by solve())
 		SolverReturn _line_search_inplace(double E0, double du_dot_grad, double du_max);
 	};
 	using spNewtonsMethod = std::shared_ptr<NewtonsMethod>;

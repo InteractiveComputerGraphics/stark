@@ -802,7 +802,7 @@ void stark::EnergyFrictionalContact::_on_intermediate_state_invalid(core::Stark&
 	const double old_stiffness = this->contact_stiffness;
 	this->contact_stiffness *= 2.0;
 	const double new_stiffness = this->contact_stiffness;
-	stark.context->output->print(fmt::format("Penetration couldn't be avoided. Contact stiffness hardened from {:.1e} to {:.1e}.\n", old_stiffness, new_stiffness), symx::Verbosity::Summary);
+	stark.context->output->print_with_new_line(fmt::format("Penetration couldn't be avoided. Contact stiffness hardened from {:.1e} to {:.1e}.\n", old_stiffness, new_stiffness), symx::Verbosity::Summary);
 }
 void stark::EnergyFrictionalContact::_on_time_step_accepted(core::Stark& stark)
 {
@@ -814,7 +814,7 @@ bool stark::EnergyFrictionalContact::_should_continue_execution(core::Stark& sta
 	if (!this->global_params.collisions_enabled) { return true; }
 	if (this->contact_stiffness > this->global_params.max_contact_stiffness) {
 		stark.context->logger->set("success", 0);
-		stark.context->output->print(fmt::format("Contact stiffness exceeded maximum value of {:.1e}. ", this->global_params.max_contact_stiffness), symx::Verbosity::Summary);
+		stark.context->output->print_with_new_line(fmt::format("Contact stiffness exceeded maximum value of {:.1e}. ", this->global_params.max_contact_stiffness), symx::Verbosity::Summary);
 		return false;
 	}
 	else {

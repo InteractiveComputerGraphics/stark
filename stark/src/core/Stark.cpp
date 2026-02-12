@@ -221,13 +221,13 @@ bool Stark::run_one_step()
 		// The failure was due to the time step being too tough. Adapt the time step size and run the time step again.
 		else {
 			if (!this->settings.simulation.use_adaptive_time_step) {
-				output->print("settings.simulation.adaptive_time_step is set to false. Exiting simulation.\n", Verbosity::Summary);
+				output->print_with_new_line("settings.simulation.adaptive_time_step is set to false. Exiting simulation.\n", Verbosity::Summary);
 				return false;
 			}
 
 			this->dt /= 2.0;
 			if (this->dt < this->settings.simulation.time_step_size_lower_bound) {
-				output->print(fmt::format("Adaptive time step size out of bounds ({:.e}). Exiting simulation.\n", this->settings.simulation.time_step_size_lower_bound), Verbosity::Summary);
+				output->print_with_new_line(fmt::format("Adaptive time step size out of bounds ({:.e}). Exiting simulation.\n", this->settings.simulation.time_step_size_lower_bound), Verbosity::Summary);
 				return false;
 			}
 		}

@@ -7,23 +7,14 @@
 
 - zero CG iterations print. Cant be
 
-- Exits without notice upon some fails
-
 - Summary: [total | avg | [min, max]] for key metrics (newton, ls, cg its)
 
 - runtime summary move to symx with arg `double total_time`
 
 - Settings print with scientific notation
 
-- Refactor all related to line search in Newton's Method
-
-- Refactor retrying for line plot
-
 * Revamp and cleanup Stark.run_one_step()
     Take inspiration from the new Newton's Method
-
-- debug line search logic inside line search
-    Remove _solve_impl
 
 - enable_output individually control:  
         - VTK
