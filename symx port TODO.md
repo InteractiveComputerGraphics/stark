@@ -26,12 +26,11 @@
 
 * TONS of debug commented out stuff everywhere
 
-
-* Add labels to DoFs for nicer printing
-
 * Logger and Console use internally in symx
 
+
 * Quasistatic should let gravity go
+    rigid bodies
 
 * Verify logic for adaptive stiffness and time step size upon failures
 
@@ -76,6 +75,8 @@
 * There will be a lot of dead code and old/AI comments. Massive cleanup.
 
 * Run all the simulations from PPN to certify it runs as expected
+
+* Revise that rigid body inertia is correct. It is formulated as velocity.
 
 
 

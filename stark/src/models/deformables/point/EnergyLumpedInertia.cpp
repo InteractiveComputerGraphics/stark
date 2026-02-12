@@ -1,5 +1,6 @@
 #include "EnergyLumpedInertia.h"
 
+#include "../../time_integration.h"
 #include "../../../utils/include.h"
 
 using namespace symx;
@@ -24,14 +25,26 @@ stark::EnergyLumpedInertia::EnergyLumpedInertia(stark::core::Stark& stark, const
 			Scalar dt = mws.make_scalar(stark.dt);
 			Vector gravity = mws.make_vector(stark.gravity);
 
-			//// Set energy expression
+			//// Energy expression
+			// Inertia and external forces
+			//
+			// E_inertia = 0.5*m*( ||x1 - x0 - dt*v0||^2 / dt^2  +  ||x1 - x0||^2 * d / dt )
+			// E_ext     = -( m*(a + g) + f ).T * x1
+
 			Scalar mass = volume * density;
-			Vector x1 = x0 + dt * v1;
-			Vector xhat = x0 + dt * v0 + dt * dt * (a + gravity + f/mass);
+			Vector x1 = time_integration(x0, v1, dt);
+
+			// Inertial energy (zero for quasistatic)
+			Vector xhat = x0 + dt * v0;  // free-flight prediction (no external forces)
 			Vector dev = x1 - xhat;
 			Vector dev2 = x1 - x0;
-			Scalar E = 0.5 * mass * (dev.dot(dev) / (dt.powN(2)) + dev2.dot(dev2) * damping / dt);
-			return branch(is_quasistatic > 0.5, 0.0, E);
+			Scalar E_inertia = 0.5 * mass * (dev.dot(dev) / (dt.powN(2)) + dev2.dot(dev2) * damping / dt);
+
+			// External force potential (always applied, including quasistatic)
+			Vector f_ext = mass * (a + gravity) + f;  // total external force
+			Scalar E_ext = -f_ext.dot(x1);
+
+			return E_ext + branch(is_quasistatic > 0.5, 0.0, E_inertia);
 		}
 	);
 }

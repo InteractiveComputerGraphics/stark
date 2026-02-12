@@ -88,5 +88,8 @@ namespace stark
 
 		double get_angular_damping() const;
 		RigidBodyHandler& set_angular_damping(double damping);
+
+		bool get_is_quasistatic() const;
+		RigidBodyHandler& set_quasistatic(bool is_quasistatic);
 	};
 }

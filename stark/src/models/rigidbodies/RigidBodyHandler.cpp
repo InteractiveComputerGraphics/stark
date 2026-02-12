@@ -268,3 +268,14 @@ stark::RigidBodyHandler& stark::RigidBodyHandler::set_angular_damping(double dam
 	this->inertia->angular_damping[this->idx] = damping;
 	return (*this);
 }
+
+bool stark::RigidBodyHandler::get_is_quasistatic() const
+{
+	return this->inertia->is_quasistatic[this->idx] > 0.5;
+}
+
+stark::RigidBodyHandler &stark::RigidBodyHandler::set_quasistatic(bool is_quasistatic)
+{
+	this->inertia->is_quasistatic[this->idx] = (is_quasistatic) ? 1.0 : 0.0; 
+	return (*this);
+}

@@ -36,7 +36,7 @@ double stark::RigidBodies::get_default_constraint_angle_tolerance() const
 stark::RigidBodyHandler stark::RigidBodies::add(const double mass, const Eigen::Matrix3d& inertia_local)
 {
 	const int rb_idx = this->rb->add();
-	this->inertia->add(rb_idx, mass, inertia_local, 0.0, 0.0);
+	this->inertia->add(rb_idx, mass, inertia_local);
 	return RigidBodyHandler(this->rb.get(), this->inertia.get(), rb_idx);
 }
 
