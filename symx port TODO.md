@@ -6,12 +6,6 @@
     - New CG seems slower on same iterations
 
 
-- Summary: [total | avg | [min, max]] for key metrics (newton, ls, cg its)
-
-- runtime summary move to symx with arg `double total_time`
-
-- Settings print with scientific notation
-
 * Revamp and cleanup Stark.run_one_step()
     Take inspiration from the new Newton's Method
 
@@ -30,12 +24,8 @@
 
 * `std::string to_string` for symx options should be in symx
 
-* Line search: Decide for apply_increments or global
-
 * TONS of debug commented out stuff everywhere
-    Specially collision
 
-* stark should write vtk to .tmp and then rename when finished to avoid crashing 3rd party viz
 
 * Add labels to DoFs for nicer printing
 
@@ -48,8 +38,14 @@
 
 * Try direct solve
 
+* Revise numerics
+    - line search implementation
+    - forcing sequence
+    - all tolerances
+
 
 * Decide for forcing sequence or not
+    If so, remove cg_abs_tolerance from settings
 
 * Add `step` to the armijo condition.
 

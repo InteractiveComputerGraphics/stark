@@ -36,7 +36,8 @@ namespace symx
 		
 		// Reusable work vectors
 		Eigen::VectorXd du;
-		Eigen::VectorXd step_du;
+		Eigen::VectorXd dofs_ls;
+		Eigen::VectorXd dofs_before_ls;
 		Eigen::VectorXd rhs;
 		Eigen::VectorXd grad;
 		Eigen::VectorXd initial_dofs;

@@ -44,7 +44,7 @@ SolverReturn NewtonsMethod::solve()
     // Set up
     this->stats = SolveStats(); // Reset stats
     this->du.resize(ndofs);
-    this->step_du.resize(ndofs);
+    this->dofs_ls.resize(ndofs);
     this->rhs.resize(ndofs);
     this->grad.resize(ndofs);
     double E0 = 0.0;
@@ -387,7 +387,7 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
     else if (this->settings.linear_solver == LinearSolver::BDPCG) {
         // Forcing sequence
         const double grad_norm = rhs.norm();
-        const double forcing_cg_tol = std::min(1e-2 /* TODO: find a better cap.*/, grad_norm * std::min(0.5, std::sqrt(grad_norm)));
+        const double forcing_cg_tol = std::min(1e-2, grad_norm * std::min(0.5, std::sqrt(grad_norm)));
 
         // Prepare preconditioning
         hess->set_preconditioner(bsm::Preconditioner::BlockDiagonal);
@@ -434,14 +434,12 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     */
 
     // Define apply step function
-    Eigen::VectorXd original_dofs(this->du.size());
-    this->global_potential->get_dofs(original_dofs.data());
+    this->dofs_before_ls.resize(this->du.size());
+    this->global_potential->get_dofs(this->dofs_before_ls.data());
     
-    auto apply_scaled_du = [this, &original_dofs](double s) {
-        this->step_du = original_dofs + s * this->du;
-        this->global_potential->set_dofs(this->step_du.data());
-
-        // this->global_potential->apply_dof_increment(this->step_du.data());
+    auto apply_scaled_du = [this](double s) {
+        this->dofs_ls = this->dofs_before_ls + s * this->du;
+        this->global_potential->set_dofs(this->dofs_ls.data());
     };
     
     /* ============================== Limit the step ============================== */
@@ -528,12 +526,8 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
             this->compiled->evaluate_P(E_sample);
             this->callbacks->run_after_energy_evaluation();
             samples[i] = E_sample;
-            // apply_scaled_du(-s);  // Undo
         }
         this->_ls_energy_samples.push_back(samples);
-        
-        // // Re-apply the current step
-        // apply_scaled_du(step);
     }
 
     // Sufficient descend loop

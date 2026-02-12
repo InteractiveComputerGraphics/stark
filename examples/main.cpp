@@ -437,7 +437,7 @@ void twisting_cloth()
 
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "twisting_cloth";
-	settings.output.output_directory = OUTPUT_PATH + "/twisting_cloth_no_SL";
+	settings.output.output_directory = OUTPUT_PATH + "/twisting_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 2.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
