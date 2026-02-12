@@ -1,39 +1,65 @@
 # symx port TODO
 
-- Comparison to PPN ref
+## Comparison to PPN ref
     - Dont compare CG iterations with Progressive because we are counting failures differently.
     - forcing sequence was a difference. But it is a tradeoff.
     - New CG seems slower on same iterations
 
 
+## High Priority
+- `SolverReturn` is too specific of Newton. It should be general.
+    Even if it contains things unused by other solvers (e.g. linear system failure)
+
+- Generally refer to line search more specifically
+    armijo
+    backtracking
+    invalid state
+
+    _everywhere_, also in `SolverReturn`
+
+
+* Callbacks
+    + on_armijo_backtrack_fail
+    - after_evaluation
+
+* Is there a way to uniformize the Callback structs?
+    For expansion between symx and stark
+    but also for utils and timings
+
 * Revamp and cleanup Stark.run_one_step()
     Take inspiration from the new Newton's Method
 
-- enable_output individually control:  
+- enable_output individually control:
         - VTK
         - console print and file
         - log
 
-- Consistent `stark`, `Stark` or `STARK`
+        Verbosity::Disabled
 
 - ToFile print should contain all information
+
+* `std::string to_string` for symx options should be in symx
+
+* Verify logic for adaptive stiffness and time step size upon failures
+    - Invalid needs its max iterations, independent from armijo
+
+* Add `step` to the armijo condition.
+
+* I think the time stepping logic with adaptivity and the script is broken
+    The quasistatic extrussion restarts in wrong ways in respect to the script
+
+
+## Low Priority
+
+- Consistent `stark`, `Stark` or `STARK`
 
 - Comments and docs are _very_ inconsistent in style
 
 - consistent get_name, get_label, to_string
 
-* `std::string to_string` for symx options should be in symx
-
 * TONS of debug commented out stuff everywhere
 
 * Logger and Console use internally in symx
-
-
-
-
-
-* Verify logic for adaptive stiffness and time step size upon failures
-    - Invalid needs its max iterations, independent from armijo
 
 * Try failing all possible ways
     TooManyIterations, LinearSystemFail...
@@ -45,11 +71,8 @@
     - forcing sequence
     - all tolerances
 
-
 * Decide for forcing sequence or not
     If so, remove cg_abs_tolerance from settings
-
-* Add `step` to the armijo condition.
 
 * Unify mesh generation. Prefer mid point insertion for quads? What about quadratic quads?
 
@@ -57,15 +80,10 @@
     I think we ship symx with minimal tooling for ease of ramping up
     And preserve the heavy stuff in Stark. This is what stark is.
 
-
-* I think the time stepping logic with adaptivity and the script is broken
-    The quasistatic extrussion restarts in wrong ways in respect to the script
-
 * symx has a cmake option to set compilation path.
     How do we handle it being in stark.settings?
 
     There are other legacy symx options inside stark.settings that I have to port over.
-
 
 * Make sure all details from the ppn branch are ported
     We are building from ~github version

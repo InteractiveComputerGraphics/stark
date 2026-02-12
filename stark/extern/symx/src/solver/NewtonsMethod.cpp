@@ -468,7 +468,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
         logger->add_and_append("ls_max", 0);
     }
     
-    /* ============================== Backtracking ============================== */
+    /* ================================ Backtracking =============================== */
     constexpr double shrink = 0.5;
     double step = 1.0;
     
@@ -502,7 +502,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     }
     
     
-    /* ------------------------------------ Armijo ----------------------------------- */
+    /* ----------------------------------- Armijo ---------------------------------- */
     if (!this->settings.enable_armijo_bracktracking) {
         return SolverReturn::Running;
     }
@@ -542,7 +542,8 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
         this->callbacks->run_after_energy_evaluation();
         
         // Print
-        this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | E: {:.2e} | E_bt: {:.2e} | E/E_bt: {:.2e} | ", armijo_iterations, step, E1, E_threshold, E1 / E_threshold), Verbosity::Full);
+        this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | E: {:.2e} | E_bt: {:.2e} | E/E_bt: {:.2e} | ", 
+            armijo_iterations, step, E1, E_threshold, E1 / E_threshold), Verbosity::Full);
         
         // Check Armijo condition
         if (E1 < E_threshold) {
