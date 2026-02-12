@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <stdexcept>
 #include <iostream>
+#include <filesystem>
 
 #include "endianness.h"
 #include "ByteBuffer.h"
@@ -276,14 +277,13 @@ namespace vtkio
 		// Input checking
 		this->check();
 
-		//// TODO: Check that path is correct and has correct extension. Create folders is necessary.
-		//// NOTE: The iteration number is responsibility of the user or another method wrapper
-		const std::string dst = path;
+		// Write to a temporary file and rename atomically to avoid readers seeing partial files
+		const std::string tmp = path + ".tmp";
 
 		// Open the file
-		std::ofstream outfile(dst, std::ios::binary);
+		std::ofstream outfile(tmp, std::ios::binary);
 		if (!outfile) {
-			std::cout << "vtkio error: " << "Cannot open the file " + dst << std::endl; exit(-1);
+			std::cout << "vtkio error: " << "Cannot open the file " + tmp << std::endl; exit(-1);
 		}
 
 		// Header
@@ -369,13 +369,17 @@ namespace vtkio
 
 		saveVTKData("POINT_DATA", this->get_number_of_points(), this->point_data);
 		saveVTKData("CELL_DATA", this->get_number_of_cells(), this->cell_data);
+		outfile.close();
+		std::filesystem::rename(tmp, path);
 	}
 	inline void VTKFile::write_empty(const std::string path)
 	{
+		const std::string tmp = path + ".tmp";
+
 		// Open the file
-		std::ofstream outfile(path, std::ios::binary);
+		std::ofstream outfile(tmp, std::ios::binary);
 		if (!outfile) {
-			std::cout << "Cannot open a file " << path << " to save a VTK mesh." << std::endl;
+			std::cout << "Cannot open a file " << tmp << " to save a VTK mesh." << std::endl;
 			exit(-1);
 		}
 
@@ -389,6 +393,7 @@ namespace vtkio
 		outfile << "CELL_TYPES 0\n";
 
 		outfile.close();
+		std::filesystem::rename(tmp, path);
 	};
 	inline void VTKFile::read(const std::string path, const bool swap_to_local_endianness)
 	{
