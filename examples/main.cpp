@@ -448,7 +448,7 @@ void twisting_cloth()
 	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
 	settings.newton.step_tolerance = 0.001;
 	settings.simulation.max_time_step_size = 1.0/30.0;
-	// settings.output.verbosity = symx::Verbosity::Full;
+	settings.output.verbosity = symx::Verbosity::Full;
 
 
 	stark::Simulation simulation(settings);
@@ -457,7 +457,7 @@ void twisting_cloth()
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
 		.set_default_contact_thickness(0.00025)
-		.set_min_contact_stiffness(1e8)
+		.set_min_contact_stiffness(1e4)
 	);
 	
 	// Cloth

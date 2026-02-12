@@ -51,6 +51,7 @@ Settings::Settings()
 	// Override symx defaults for simulation
 	this->newton.residual_tolerance = 1e-6;
 	this->newton.step_tolerance = 1e-3;
+	this->newton.max_backtracking_invalid_state_iterations = 8; // increase IPC stiffness if penetrations at ~0.004 step length
 	this->newton.projection_mode = symx::ProjectionToPD::Progressive;
 }
 
@@ -82,7 +83,8 @@ std::string Settings::as_string() const
 	// SolverSettings (base class)
 	out += "\n         max_iterations: " + std::to_string(this->newton.max_iterations);
 	out += "\n         min_iterations: " + std::to_string(this->newton.min_iterations);
-	out += "\n         max_line_search_iterations: " + std::to_string(this->newton.max_line_search_iterations);
+	out += "\n         max_backtracking_invalid_state_iterations: " + std::to_string(this->newton.max_backtracking_invalid_state_iterations);
+	out += "\n         max_backtracking_armijo_iterations: " + std::to_string(this->newton.max_backtracking_armijo_iterations);
 	out += "\n         step_cap: " + fmt::format("{:.1e}", this->newton.step_cap);
 	out += "\n         residual_tolerance: " + fmt::format("{:.1e}", this->newton.residual_tolerance);
 	out += "\n         step_tolerance: " + fmt::format("{:.1e}", this->newton.step_tolerance);

@@ -29,10 +29,11 @@
 * Logger and Console use internally in symx
 
 
-* Quasistatic should let gravity go
-    rigid bodies
+
+
 
 * Verify logic for adaptive stiffness and time step size upon failures
+    - Invalid needs its max iterations, independent from armijo
 
 * Try failing all possible ways
     TooManyIterations, LinearSystemFail...

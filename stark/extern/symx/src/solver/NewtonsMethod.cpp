@@ -471,34 +471,32 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     /* ============================== Backtracking ============================== */
     constexpr double shrink = 0.5;
     double step = 1.0;
-    int it = 0;
     
     // Apply full step forward
     apply_scaled_du(step);
     
     /* ------------------------------------ Inv ----------------------------------- */
-    int ls_inv_iterations = 0;
-    for (; it < this->settings.max_line_search_iterations; ++it) {
+    int ls_inv_it = 0; 
+    for ( ; ls_inv_it < this->settings.max_backtracking_invalid_state_iterations; ++ls_inv_it) {
         if (this->callbacks->run_is_intermediate_state_valid()) {
             break;
         } 
         else {
-            this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | Invalid state", it, step), Verbosity::Full);
+            this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | Invalid state", ls_inv_it, step), Verbosity::Full);
             step *= shrink;
             apply_scaled_du(step);
             this->stats.ls_inv_iterations++;
-            ls_inv_iterations++;
         }
     }
-    logger->add_and_append("ls_inv", ls_inv_iterations);
+    logger->add_and_append("ls_inv", ls_inv_it);
     
     // Print
-    if (this->output->get_verbosity() != Verbosity::Full && ls_inv_iterations > 0) {
-        this->output->print(fmt::format("ls inv {:2d} | ", ls_inv_iterations), Verbosity::Medium);
+    if (this->output->get_verbosity() != Verbosity::Full && ls_inv_it > 0) {
+        this->output->print(fmt::format("ls inv {:2d} | ", ls_inv_it), Verbosity::Medium);
     }
     
     // Exit: Failed to find valid state within line search iterations
-    if (it == this->settings.max_line_search_iterations) {
+    if (ls_inv_it == this->settings.max_backtracking_invalid_state_iterations) {
         this->callbacks->run_on_intermediate_state_invalid();
         return SolverReturn::InvalidIntermediateConfiguration;
     }
@@ -536,7 +534,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     double E1 = 0.0;
     bool success = false;
     int armijo_iterations = 0;
-    for (; it < this->settings.max_line_search_iterations; ++it) {
+    for (; armijo_iterations < this->settings.max_backtracking_armijo_iterations; ++armijo_iterations) {
         
         // Evaluate energy
         this->callbacks->run_before_energy_evaluation();
@@ -544,7 +542,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
         this->callbacks->run_after_energy_evaluation();
         
         // Print
-        this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | E: {:.2e} | E_bt: {:.2e} | E/E_bt: {:.2e} | ", it, step, E1, E_threshold, E1 / E_threshold), Verbosity::Full);
+        this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | E: {:.2e} | E_bt: {:.2e} | E/E_bt: {:.2e} | ", armijo_iterations, step, E1, E_threshold, E1 / E_threshold), Verbosity::Full);
         
         // Check Armijo condition
         if (E1 < E_threshold) {
@@ -555,14 +553,13 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
             step *= shrink;
             apply_scaled_du(step);
             this->stats.ls_bt_iterations++;
-            armijo_iterations++;
             this->output->print("Backtrack", Verbosity::Full);
         }
     }
 
     // Print
     logger->add_and_append("ls_bt", armijo_iterations);
-    if (this->output->get_verbosity() != Verbosity::Full) {
+    if (this->output->get_verbosity() != Verbosity::Full && armijo_iterations > 0) {
         this->output->print(fmt::format("ls bt {:2d} | ", armijo_iterations), Verbosity::Medium);
     }
 

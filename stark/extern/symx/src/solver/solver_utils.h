@@ -149,7 +149,8 @@ namespace symx
     {
         int max_iterations = 100;
         int min_iterations = 1;
-        int max_line_search_iterations = 20;
+        int max_backtracking_invalid_state_iterations = 8;
+        int max_backtracking_armijo_iterations = 20;
         double step_cap = std::numeric_limits<double>::infinity();
         double residual_tolerance = 1e-6;
         double step_tolerance = std::numeric_limits<double>::epsilon();
