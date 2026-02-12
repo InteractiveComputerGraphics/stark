@@ -16,6 +16,7 @@ namespace symx
         std::vector<std::unique_ptr<Potential>> potentials;
         std::vector<DataMap<double>> dof_maps; // non-const because we may want to modify dofs (newton solve). No connectivity, stride or idx needed here.
         std::vector<int32_t> dof_offsets;  // Cumulative offsets for flattening all DOFs into one array
+        std::vector<std::string> dof_labels;
 
     public:
         /* Methods */
@@ -63,6 +64,7 @@ namespace symx
         // Misc
         const std::vector<std::unique_ptr<Potential>>& get_potentials() const;
         const std::vector<DataMap<double>>& get_dof_maps() const;
+        std::string get_dof_label(int set_i) const;
         int32_t get_n_potentials() const;
     };
 

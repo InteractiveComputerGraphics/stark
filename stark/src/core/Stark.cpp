@@ -291,13 +291,6 @@ void Stark::_initialize()
     this->newton = NewtonsMethod::create(this->global_potential, this->context, this->callbacks->newton);  // Compilation occurs here
 	this->newton->settings = this->settings.newton;
 
-	// Print ndofs
-	this->context->output->print_with_new_line("\nDegrees of freedom:");
-	for (int set_i = 0; set_i < this->global_potential->get_n_dof_sets(); set_i++) {
-		this->context->output->print_with_new_line(fmt::format("Set {}: {:d}", set_i, this->global_potential->get_n_dofs(set_i)), Verbosity::Summary);
-	}
-	this->context->output->print_with_new_line(fmt::format("Total: {:d}", this->global_potential->get_total_n_dofs()), Verbosity::Summary);
-
 	// Stark banner
 	this->context->output->print_new_line(Verbosity::Summary);
 	this->context->output->print_with_new_line("==================================== STARK ===============================");

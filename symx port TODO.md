@@ -29,6 +29,8 @@
 
 * Add labels to DoFs for nicer printing
 
+* Logger and Console use internally in symx
+
 * Quasistatic should let gravity go
 
 * Verify logic for adaptive stiffness and time step size upon failures

@@ -61,6 +61,7 @@ void symx::GlobalPotential::add_dof(std::function<std::uintptr_t()> id, std::fun
     // DOF maps store flat arrays: stride=1, no connectivity, no symbol binding (first_symbol_idx=-1)
     // flat_size returns total number of doubles, treated as n_elements with stride=1
     this->dof_maps.emplace_back(id, data, flat_size, /*stride=*/ 1, /*connectivity_index=*/-1, /*first_symbol_idx=*/-1);
+    this->dof_labels.push_back(name);
 }
 void symx::GlobalPotential::add_dof(EigenMatrixRM<double> &arr, const std::string &name)
 {
@@ -151,6 +152,15 @@ const std::vector<std::unique_ptr<Potential>> &symx::GlobalPotential::get_potent
 const std::vector<DataMap<double>> &symx::GlobalPotential::get_dof_maps() const
 {
     return this->dof_maps;
+}
+
+std::string symx::GlobalPotential::get_dof_label(int set_i) const
+{
+    if (set_i >= this->get_n_dof_sets()) {
+        std::cout << "symx error GlobalPotential::get_dof_label(): set " << set_i << " out of bounds." << std::endl;
+        exit(-1);
+    }
+    return this->dof_labels[set_i];
 }
 
 int32_t symx::GlobalPotential::get_n_potentials() const

@@ -11,6 +11,7 @@ SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential global_po
     // Get
     const std::vector<DataMap<double>>& dofs_maps = global_potential->get_dof_maps();
     const std::vector<std::unique_ptr<Potential>>& potentials = global_potential->get_potentials();
+
     // Verify inputs
     if (dofs_maps.size() == 0) {
         std::cout << "symx error: SecondOrderCompiledGlobal() got GlobalPotential with zero DoF maps." << std::endl;
@@ -56,6 +57,15 @@ SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential global_po
     context->output->print("done.", Verbosity::Summary);
     const double t1 = omp_get_wtime();
     context->output->print_with_new_line("Total time: " + std::to_string(t1 - t0) + " s");
+
+	// Print ndofs
+	this->context->output->print_with_new_line("\nDegrees of freedom:");
+	for (int set_i = 0; set_i < this->global_potential->get_n_dof_sets(); set_i++) {
+        const std::string label = this->global_potential->get_dof_label(set_i);
+        std::string msg = fmt::format("{}: {:d}", (label == "") ? "Set " + std::to_string(set_i) : label, this->global_potential->get_n_dofs(set_i));
+		this->context->output->print_with_new_line(msg, Verbosity::Summary);
+	}
+	this->context->output->print_with_new_line(fmt::format("Total: {:d}", this->global_potential->get_total_n_dofs()), Verbosity::Summary);
 }
 
 void SecondOrderCompiledGlobal::evaluate_P(double &out_P)

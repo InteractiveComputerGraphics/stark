@@ -8,8 +8,8 @@ using namespace symx;
 
 stark::RigidBodyDynamics::RigidBodyDynamics(stark::core::Stark& stark)
 {
-	stark.global_potential->add_dof(this->v1);
-	stark.global_potential->add_dof(this->w1);
+	stark.global_potential->add_dof(this->v1, "rigid.v1");
+	stark.global_potential->add_dof(this->w1, "rigid.w1");
 	stark.callbacks->add_before_time_step([&]() { this->_before_time_step(stark); });
 	stark.callbacks->add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
 }
