@@ -167,9 +167,19 @@ SolverReturn NewtonsMethod::solve()
                 element_hessians->projection_ratio() * 100.0, this->stats.cg_iterations - initial_cp_iterations), Verbosity::Medium);
         }
 
+        //// Increase projection
         this->_decrease_projection();
-        this->stats.n_hessians += element_hessians->size();
-        this->stats.n_projected_hessians += element_hessians->n_projected();
+
+        //// Log
+        const double n_hessians = (double)element_hessians->size();
+        const double n_projected_hessians = (double)element_hessians->n_projected();
+        const double projected_hessians_ratio = n_projected_hessians/n_hessians;
+        logger->add_and_append("n_hessians", n_hessians);
+        logger->add_and_append("n_projected_hessians", n_projected_hessians);
+        logger->add_and_append("projected_hessians_ratio", projected_hessians_ratio);
+        this->stats.n_hessians += n_hessians;
+        this->stats.n_projected_hessians += n_projected_hessians;
+        logger->add_and_append("cg_iterations", this->last_cg_iterations);
 
         // Convergence: Step tolerance
         double du_max = this->du.cwiseAbs().maxCoeff();
@@ -208,13 +218,6 @@ SolverReturn NewtonsMethod::solve()
 
     // Solve stats accumulation
     logger->add_and_append("newton_iterations", stats.newton_iterations);
-    logger->add_and_append("cg_iterations", stats.cg_iterations);
-    logger->add_and_append("n_hessians", (double)stats.n_hessians);
-    logger->add_and_append("n_projected_hessians", (double)stats.n_projected_hessians);
-    logger->add_and_append("ls_bt", stats.ls_bt_iterations);
-    logger->add_and_append("ls_cap", stats.ls_cap_iterations);
-    logger->add_and_append("ls_max", stats.ls_max_iterations);
-    logger->add_and_append("ls_inv", stats.ls_inv_iterations);
 
     return result;
 }
@@ -411,6 +414,7 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
 
         this->output->print(fmt::format("#CG {:5d} | ", pcg_info.n_iterations), Verbosity::Full);
         this->stats.cg_iterations += pcg_info.n_iterations;
+        this->last_cg_iterations = pcg_info.n_iterations;
         return pcg_info.converged;
     } 
     else {
@@ -447,6 +451,10 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
         du_max = this->settings.step_cap;
         this->output->print(fmt::format("du cap {:.1e} | ", du_max), Verbosity::Medium);
         this->stats.ls_cap_iterations++;
+        logger->add_and_append("ls_cap", 1);
+    } 
+    else {
+        logger->add_and_append("ls_cap", 0);
     }
     
     /* ------------------------------------ Max ----------------------------------- */
@@ -456,6 +464,10 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
         du_max = max_step;
         this->output->print(fmt::format("ls max {:.1e} | ", du_max), Verbosity::Medium);
         this->stats.ls_max_iterations++;
+        logger->add_and_append("ls_max", 1);
+    }
+    else {
+        logger->add_and_append("ls_max", 0);
     }
     
     /* ============================== Backtracking ============================== */
@@ -480,6 +492,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
             ls_inv_iterations++;
         }
     }
+    logger->add_and_append("ls_inv", ls_inv_iterations);
     
     // Print
     if (this->output->get_verbosity() != Verbosity::Full && ls_inv_iterations > 0) {
@@ -554,6 +567,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     }
 
     // Print
+    logger->add_and_append("ls_bt", armijo_iterations);
     if (this->output->get_verbosity() != Verbosity::Full) {
         this->output->print(fmt::format("ls bt {:2d} | ", armijo_iterations), Verbosity::Medium);
     }
@@ -596,4 +610,74 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     }
 
     return SolverReturn::TooManyLineSearchIterations;
+}
+
+void NewtonsMethod::print_summary(double total_time) const
+{
+	auto* out = this->output.get();
+
+	// ── Solve table ──
+	//const double n_hess = logger->get_double("n_hessians");
+	//const double n_proj = logger->get_double("n_projected_hessians");
+	//const double proj_ratio = n_hess > 0 ? 100.0 * n_proj / n_hess : 0.0;
+
+	out->print_with_new_line("");
+	out->print_with_new_line(fmt::format("  {:<24} {:>10} {:>8} {:>8} {:>8}", "Solve", "Total", "Avg", "Min", "Max"));
+	out->print_with_new_line(fmt::format("  {}", std::string(62, '-')));
+	{
+		std::vector<std::pair<std::string, std::string>> rows = {
+			{"Newton iterations", "newton_iterations"},
+			{"CG iterations", "cg_iterations"},
+			{"Line search cap", "ls_cap"},
+			{"Line search max", "ls_max"},
+			{"Line search inv", "ls_inv"},
+			{"Line search bt", "ls_bt"},
+		};
+		for (const auto& [label, key] : rows) {
+			auto s = logger->get_stats(key);
+			out->print_with_new_line(fmt::format("  {:<24} {:>10} {:>8.1f} {:>8} {:>8}",
+				label, (long long)s.total, s.avg, (int)s.min, (int)s.max));
+		}
+	}
+    auto s = logger->get_stats("projected_hessians_ratio");
+	out->print_with_new_line(fmt::format("  {:<24} {:>10} {:>8.1f}% {:>7.1f}% {:>7.1f}%", "Projected hessians", "", 100.0*s.avg, 100.0*s.min, 100.0*s.max));
+
+	// Compute total_time if not provided
+	if (total_time <= 0.0) {
+		total_time = 0.0;
+		for (const auto& label : logger->get_timer_labels()) {
+			total_time += logger->get_timer_total(label);
+		}
+	}
+	out->print_with_new_line(fmt::format("  {}", std::string(62, '-')));
+
+	// ── Runtime table — sorted by decreasing time ──
+	struct TimerEntry { std::string label; double time; };
+	std::vector<TimerEntry> timer_entries;
+	double acc = 0.0;
+	for (const auto& label : logger->get_timer_labels()) {
+		if (label == "total") continue;
+		double time = logger->get_timer_total(label);
+		acc += time;
+		if (total_time > 0.0 && time / total_time < 0.001) continue;
+		timer_entries.push_back({label, time});
+	}
+	const double total_logged = logger->get_timer_total("total");
+	const double misc = (total_logged > 0.0 ? total_logged : total_time) - acc;
+	timer_entries.push_back({"misc", misc});
+	std::sort(timer_entries.begin(), timer_entries.end(),
+		[](const TimerEntry& a, const TimerEntry& b) { return a.time > b.time; });
+
+	out->print_with_new_line("");
+	out->print_with_new_line(fmt::format("  {:<40} {:>10}  {:>6}", "Runtime", "Time (s)", "%"));
+	out->print_with_new_line(fmt::format("  {}", std::string(60, '-')));
+
+	for (const auto& entry : timer_entries) {
+		const double pct = total_time > 0 ? 100.0 * entry.time / total_time : 0.0;
+		out->print_with_new_line(fmt::format("  {:<40} {:>10.6f}  {:>5.1f}%", entry.label, entry.time, pct));
+	}
+
+	out->print_with_new_line(fmt::format("  {}", std::string(60, '-')));
+	out->print_with_new_line(fmt::format("  {:<40} {:>10.6f}  {:>5.1f}%", "Total", total_time, 100.0));
+	out->print_new_line();
 }

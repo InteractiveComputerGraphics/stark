@@ -75,6 +75,14 @@ namespace symx
         // =============================================================
         // Statistics — "TOTAL | AVG | [MIN, MAX]" for double and int series
         // =============================================================
+        struct Stats {
+            double total = 0.0;
+            double avg = 0.0;
+            double min = 0.0;
+            double max = 0.0;
+            bool found = false;
+        };
+        Stats get_stats(const std::string& label) const;
         std::string get_statistics(const std::string& label) const;
 
         // =============================================================

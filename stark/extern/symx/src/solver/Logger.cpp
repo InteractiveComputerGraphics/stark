@@ -123,7 +123,7 @@ double Logger::get_double(const std::string& label) const
 {
     auto it = acc_double_.find(label);
     if (it == acc_double_.end()) {
-        std::cout << "symx::Logger::get_double warning: Label '" << label << "' not found." << std::endl;
+        std::cout << "symx::Logger::get_double error: Label '" << label << "' not found." << std::endl;
         exit(-1);
     }
     return it->second;
@@ -133,7 +133,7 @@ int Logger::get_int(const std::string& label) const
 {
     auto it = acc_int_.find(label);
     if (it == acc_int_.end()) {
-        std::cout << "symx::Logger::get_int warning: Label '" << label << "' not found." << std::endl;
+        std::cout << "symx::Logger::get_int error: Label '" << label << "' not found." << std::endl;
         exit(-1);
     }
     return it->second;
@@ -143,7 +143,7 @@ const std::vector<double>& Logger::get_double_series(const std::string& label) c
 {
     auto it = series_double_.find(label);
     if (it == series_double_.end()) {
-        std::cout << "symx::Logger::get_double_series warning: Label '" << label << "' not found." << std::endl;
+        std::cout << "symx::Logger::get_double_series error: Label '" << label << "' not found." << std::endl;
         exit(-1);
     }
     return it->second;
@@ -153,7 +153,7 @@ const std::vector<int>& Logger::get_int_series(const std::string& label) const
 {
     auto it = series_int_.find(label);
     if (it == series_int_.end()) {
-        std::cout << "symx::Logger::get_int_series warning: Label '" << label << "' not found." << std::endl;
+        std::cout << "symx::Logger::get_int_series error: Label '" << label << "' not found." << std::endl;
         exit(-1);
     }
     return it->second;
@@ -163,7 +163,7 @@ const std::vector<std::string>& Logger::get_string_series(const std::string& lab
 {
     auto it = series_string_.find(label);
     if (it == series_string_.end()) {
-        std::cout << "symx::Logger::get_string_series warning: Label '" << label << "' not found." << std::endl;
+        std::cout << "symx::Logger::get_string_series error: Label '" << label << "' not found." << std::endl;
         exit(-1);
     }
     return it->second;
@@ -176,7 +176,7 @@ double Logger::get_timer_total(const std::string& label) const
 {
     auto it = timers_.find(label);
     if (it == timers_.end()) {
-        std::cout << "symx::Logger::get_timer_total warning: Label '" << label << "' not found." << std::endl;
+        std::cout << "symx::Logger::get_timer_total error: Label '" << label << "' not found." << std::endl;
         exit(-1);
     }
     return it->second.total;
@@ -186,7 +186,7 @@ int Logger::get_timer_count(const std::string& label) const
 {
     auto it = timers_.find(label);
     if (it == timers_.end()) {
-        std::cout << "symx::Logger::get_timer_count warning: Label '" << label << "' not found." << std::endl;
+        std::cout << "symx::Logger::get_timer_count error: Label '" << label << "' not found." << std::endl;
         exit(-1);
     }
     return it->second.count;
@@ -196,7 +196,7 @@ double Logger::get_timer_avg(const std::string& label) const
 {
     auto it = timers_.find(label);
     if (it == timers_.end()) {
-        std::cout << "symx::Logger::get_timer_avg warning: Label '" << label << "' not found." << std::endl;
+        std::cout << "symx::Logger::get_timer_avg error: Label '" << label << "' not found." << std::endl;
         exit(-1);
     }
     if (it->second.count == 0) return 0.0;
@@ -207,7 +207,7 @@ double Logger::get_timer_min(const std::string& label) const
 {
     auto it = timers_.find(label);
     if (it == timers_.end()) {
-        std::cout << "symx::Logger::get_timer_min warning: Label '" << label << "' not found." << std::endl;
+        std::cout << "symx::Logger::get_timer_min error: Label '" << label << "' not found." << std::endl;
         exit(-1);
     }
     if (it->second.count == 0) return 0.0;
@@ -218,7 +218,7 @@ double Logger::get_timer_max(const std::string& label) const
 {
     auto it = timers_.find(label);
     if (it == timers_.end()) {
-        std::cout << "symx::Logger::get_timer_max warning: Label '" << label << "' not found." << std::endl;
+        std::cout << "symx::Logger::get_timer_max error: Label '" << label << "' not found." << std::endl;
         exit(-1);
     }
     if (it->second.count == 0) return 0.0;
@@ -233,6 +233,41 @@ const std::vector<std::string>& Logger::get_timer_labels() const
 // =============================================================
 // Statistics
 // =============================================================
+Logger::Stats Logger::get_stats(const std::string& label) const
+{
+    // Check double series first
+    {
+        auto it = series_double_.find(label);
+        if (it != series_double_.end() && !it->second.empty()) {
+            const auto& data = it->second;
+            double sum = 0.0, mn = data[0], mx = data[0];
+            for (double v : data) { sum += v; mn = std::min(mn, v); mx = std::max(mx, v); }
+            return { sum, sum / data.size(), mn, mx, true };
+        }
+    }
+    // Check int series
+    {
+        auto it = series_int_.find(label);
+        if (it != series_int_.end() && !it->second.empty()) {
+            const auto& data = it->second;
+            long long sum = 0; int mn = data[0], mx = data[0];
+            for (int v : data) { sum += v; mn = std::min(mn, v); mx = std::max(mx, v); }
+            return { (double)sum, (double)sum / data.size(), (double)mn, (double)mx, true };
+        }
+    }
+    // Check timer
+    {
+        auto it = timers_.find(label);
+        if (it != timers_.end() && it->second.count > 0) {
+            const auto& t = it->second;
+            return { t.total, t.total / t.count, t.min, t.max, true };
+        }
+    }
+    
+    std::cout << "symx::Logger::get_stats error: Label '" << label << "' not found." << std::endl;
+    exit(-1);
+}
+
 std::string Logger::get_statistics(const std::string& label) const
 {
     // Check double series first
@@ -247,7 +282,7 @@ std::string Logger::get_statistics(const std::string& label) const
                 mx = std::max(mx, v);
             }
             double avg = sum / data.size();
-            return fmt::format("{:.6f} total | {:.6f} avg | [{:.6f}, {:.6f}]", sum, avg, mn, mx);
+            return fmt::format("{:.6f} total | {:.6f} avg | [{:.6f}, {:.6f}] min, max", sum, avg, mn, mx);
         }
     }
 
@@ -264,7 +299,7 @@ std::string Logger::get_statistics(const std::string& label) const
                 mx = std::max(mx, v);
             }
             double avg = (double)sum / data.size();
-            return fmt::format("{} total | {:.1f} avg | [{}, {}]", sum, avg, mn, mx);
+            return fmt::format("{} total | {:.1f} avg | [{}, {}] min, max", sum, avg, mn, mx);
         }
     }
 
@@ -274,7 +309,7 @@ std::string Logger::get_statistics(const std::string& label) const
         if (it != timers_.end() && it->second.count > 0) {
             const auto& t = it->second;
             double avg = t.total / t.count;
-            return fmt::format("{:.6f} total | {:.6f} avg | [{:.6f}, {:.6f}]", t.total, avg, t.min, t.max);
+            return fmt::format("{:.6f} total | {:.6f} avg | [{:.6f}, {:.6f}] min, max", t.total, avg, t.min, t.max);
         }
     }
 

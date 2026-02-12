@@ -51,6 +51,7 @@ namespace symx
 
 		// Stats
         SolveStats stats;
+		int last_cg_iterations = 0;
 		
 		// Line search failure logging
 		bool _ls_logging_mode = false;
@@ -66,6 +67,7 @@ namespace symx
 		static std::shared_ptr<NewtonsMethod> create(spGlobalPotential global_potential, spContext context, spSolverCallbacks callbacks = nullptr);
         SolverReturn solve();
 		const SolveStats& get_last_solve_stats() const { return this->stats; }
+		void print_summary(double total_time = -1.0) const;
 
     private:
 		// Returns true if all elements are projected (can't project more)
@@ -74,7 +76,6 @@ namespace symx
 		void _decrease_projection(); // Search direction descends
 
 		bool _solve_linear_system(Eigen::VectorXd& du, const ElementHessians::spBSM& hess, const Eigen::VectorXd& grad);
-		// SolverReturn _solve_impl();  // Internal solve implementation (called by solve())
 		SolverReturn _line_search_inplace(double E0, double du_dot_grad, double du_max);
 	};
 	using spNewtonsMethod = std::shared_ptr<NewtonsMethod>;

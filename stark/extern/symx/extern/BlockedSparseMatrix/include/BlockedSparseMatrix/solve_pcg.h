@@ -21,7 +21,7 @@ namespace bsm
     struct PCGInfo
     {
         bool converged = false;
-        int n_iterations = -1;
+        int n_iterations = 1;
         double error = -1.0;
         bool found_indefiniteness = false;
     };

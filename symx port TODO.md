@@ -5,7 +5,6 @@
     - forcing sequence was a difference. But it is a tradeoff.
     - New CG seems slower on same iterations
 
-- zero CG iterations print. Cant be
 
 - Summary: [total | avg | [min, max]] for key metrics (newton, ls, cg its)
 
@@ -50,6 +49,7 @@
 * Try direct solve
 
 
+* Decide for forcing sequence or not
 
 * Add `step` to the armijo condition.
 

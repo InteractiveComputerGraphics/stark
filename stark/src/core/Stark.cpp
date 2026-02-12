@@ -269,63 +269,9 @@ void stark::core::Stark::print()
 	out->print_with_new_line(fmt::format("  Time steps:         {}", logger->get_int("time_steps")));
 	out->print_with_new_line(fmt::format("  avg dt:             {:.3f} ms", 1000.0 * this->current_time / time_steps));
 
-	// ── Solve ──
-	const int total_newton       = logger->get_int("newton_iterations");
-	const int total_cg           = logger->get_int("cg_iterations");
-	const double avg_newton      = (double)total_newton / time_steps;
-	const double avg_cg_newton   = total_newton > 0 ? (double)total_cg / total_newton : 0.0;
-
-	const int ls_cap = logger->get_int("ls_cap");
-	const int ls_max = logger->get_int("ls_max");
-	const int ls_inv = logger->get_int("ls_inv");
-	const int ls_bt  = logger->get_int("ls_bt");
-	const double avg_ls_newton   = total_newton > 0 ? (double)ls_bt / total_newton : 0.0;
-
-	const double n_hess     = logger->get_double("n_hessians");
-	const double n_proj     = logger->get_double("n_projected_hessians");
-	const double proj_ratio = n_hess > 0 ? 100.0 * n_proj / n_hess : 0.0;
-
-	const double cr = logger->get_timer_total("total")/this->current_time;
-
-	auto ratio = [](int count, int total) { return total > 0 ? (double)count / (double)total : 0.0; };
-	out->print_with_new_line("");
-	out->print_with_new_line("Solve");
-	out->print_with_new_line(fmt::format("  Newton iterations:  {:d} ({:.1f} avg/step)", total_newton, avg_newton));
-	out->print_with_new_line(fmt::format("  CG iterations:      {:d} ({:.1f} avg/newton)", total_cg, avg_cg_newton));
-	out->print_with_new_line(fmt::format("  Line search:        [{:d}|{:d}|{:d}|{:d}] ([{:.1f}|{:.1f}|{:.1f}|{:.1f}] avg/newton) [cap|max|inv|bt] ", 
-		ls_cap, ls_max, ls_inv, ls_bt,  ratio(ls_cap, total_newton),  ratio(ls_max, total_newton),  ratio(ls_inv, total_newton),  ratio(ls_bt, total_newton)));
-	out->print_with_new_line(fmt::format("  Projected hessians: {:.1f}%", proj_ratio));
-	out->print_with_new_line(fmt::format("  Comp. ratio (cr):   {:.2f}", cr));
-
-	// ── Runtime — sorted by decreasing time ──
+	// ── Solve + Runtime (delegated to NewtonsMethod) ──
 	const double total_time = logger->get_timer_total("total");
-
-	struct TimerEntry { std::string label; double time; };
-	std::vector<TimerEntry> timer_entries;
-	double acc = 0.0;
-	for (const auto& label : logger->get_timer_labels()) {
-		if (label == "total") continue;
-		double time = logger->get_timer_total(label);
-		acc += time;
-		if (time/total_time < 0.001) continue;  // Skip timers that are less than 0.1% of total time
-		timer_entries.push_back({label, time});
-	}
-	timer_entries.push_back({"misc", total_time - acc});
-	std::sort(timer_entries.begin(), timer_entries.end(),
-		[](const TimerEntry& a, const TimerEntry& b) { return a.time > b.time; });
-
-	out->print_with_new_line("");
-	out->print_with_new_line(fmt::format("  {:<40} {:>10}  {:>6}", "Runtime", "Time (s)", "%"));
-	out->print_with_new_line(fmt::format("  {}", std::string(60, '-')));
-
-	for (const auto& entry : timer_entries) {
-		const double pct = total_time > 0 ? 100.0 * entry.time / total_time : 0.0;
-		out->print_with_new_line(fmt::format("  {:<40} {:>10.6f}  {:>5.1f}%", entry.label, entry.time, pct));
-	}
-
-	out->print_with_new_line(fmt::format("  {}", std::string(60, '-')));
-	out->print_with_new_line(fmt::format("  {:<40} {:>10.6f}  {:>5.1f}%", "Total", total_time, 100.0));
-	out->print_new_line();
+	this->newton->print_summary(total_time);
 
 	// Save final YAML log
 	logger->save_to_disk();
