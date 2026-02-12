@@ -212,29 +212,10 @@ SolverReturn NewtonsMethod::_solve_impl()
             break;
         }
 
-        // Apply step size limit
-        if (du_max > this->settings.step_cap) {
-            this->du *= this->settings.step_cap / du_max;
-            du_max = this->settings.step_cap;
-            this->output->print(fmt::format("du cap {:.1e} | ", du_max), Verbosity::Medium);
-            this->stats.ls_cap_iterations++;
-        }
-
-        // Max allowed step (e.g. CCD)
-        double max_step = this->callbacks->run_max_allowed_step();
-        if (du_max > max_step) {
-            this->du *= max_step / du_max;
-            du_max = max_step;
-            this->output->print(fmt::format("ls max {:.1e} | ", du_max), Verbosity::Medium);
-            this->stats.ls_max_iterations++;
-        }
-
         // Line search
-        int armijo_iterations = 0;
-        result = this->_line_search_inplace(armijo_iterations, E0, du_dot_grad);
-        if (armijo_iterations > 0) {
-            this->_increase_projection();
-        }
+        result = this->_line_search_inplace(E0, du_dot_grad, du_max);
+
+        // Exit Newton's loop
         if (result != SolverReturn::Running) {
             break;
         }
@@ -263,7 +244,7 @@ SolverReturn NewtonsMethod::_solve_impl()
     logger->add_and_append("ls_bt", stats.ls_bt_iterations);
     logger->add_and_append("ls_cap", stats.ls_cap_iterations);
     logger->add_and_append("ls_max", stats.ls_max_iterations);
-    logger->add_and_append("ls_hit", stats.ls_hit_iterations);
+    logger->add_and_append("ls_inv", stats.ls_inv_iterations);
 
     return result;
 }
@@ -468,11 +449,17 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
     }
 }
 
-SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double E0, double du_dot_grad)
+SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, double du_max)
 {
-    // Backtracking line search with Armijo condition.
-    // First ensures intermediate state validity, then checks energy descent.
-    
+    /*
+    * There are four line search checks. In order:
+    *   - [cap] Hard cap to the user-specified maximum a single step can take
+    *   - [max] Hard cap based on `max_allowed_step()` callbacks. E.g. CCD.
+    *   - [inv] Backtracking based on `is_intermediate_state_valid()` callbacks. E.g. penetration or inversions
+    *   - [bt]  Armijo sufficient descend backtracking based on global energy
+    */
+
+    // Define apply step function
     Eigen::VectorXd original_dofs(this->du.size());
     this->global_potential->get_dofs(original_dofs.data());
     
@@ -483,16 +470,34 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         // this->global_potential->apply_dof_increment(this->step_du.data());
     };
     
+    /* ============================== Limit the step ============================== */
+    /* ------------------------------------ Cap ----------------------------------- */
+    if (du_max > this->settings.step_cap) {
+        this->du *= this->settings.step_cap / du_max;
+        du_max = this->settings.step_cap;
+        this->output->print(fmt::format("du cap {:.1e} | ", du_max), Verbosity::Medium);
+        this->stats.ls_cap_iterations++;
+    }
+    
+    /* ------------------------------------ Max ----------------------------------- */
+    double max_step = this->callbacks->run_max_allowed_step();
+    if (du_max > max_step) {
+        this->du *= max_step / du_max;
+        du_max = max_step;
+        this->output->print(fmt::format("ls max {:.1e} | ", du_max), Verbosity::Medium);
+        this->stats.ls_max_iterations++;
+    }
+    
+    /* ============================== Backtracking ============================== */
     constexpr double shrink = 0.5;
     double step = 1.0;
     int it = 0;
-    armijo_iterations = 0;
-
+    
     // Apply full step forward
     apply_scaled_du(step);
     
-    // First loop: find a valid intermediate state
-    int ls_hit_iterations = 0;
+    /* ------------------------------------ Inv ----------------------------------- */
+    int ls_inv_iterations = 0;
     for (; it < this->settings.max_line_search_iterations; ++it) {
         if (this->callbacks->run_is_intermediate_state_valid()) {
             break;
@@ -500,28 +505,32 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         else {
             this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | Invalid state", it, step), Verbosity::Full);
             step *= shrink;
-            apply_scaled_du(step);  // Undo and apply smaller step
-            this->stats.ls_hit_iterations++;
-            ls_hit_iterations++;
+            apply_scaled_du(step);
+            this->stats.ls_inv_iterations++;
+            ls_inv_iterations++;
         }
     }
-
-    if (this->output->get_verbosity() != Verbosity::Full && ls_hit_iterations > 0) {
-        this->output->print(fmt::format("ls hit {:2d} | ", ls_hit_iterations), Verbosity::Medium);
+    
+    // Print
+    if (this->output->get_verbosity() != Verbosity::Full && ls_inv_iterations > 0) {
+        this->output->print(fmt::format("ls inv {:2d} | ", ls_inv_iterations), Verbosity::Medium);
     }
-
-    // Failed to find valid state within line search iterations
+    
+    // Exit: Failed to find valid state within line search iterations
     if (it == this->settings.max_line_search_iterations) {
         this->callbacks->run_on_intermediate_state_invalid();
         return SolverReturn::InvalidIntermediateConfiguration;
     }
     
+    
+    /* ------------------------------------ Armijo ----------------------------------- */
     if (!this->settings.enable_armijo_bracktracking) {
         return SolverReturn::Running;
     }
 
-    // Sample energy for logging if in logging mode
+    // Fail mode: Generate data for plotting the energy profile along the step
     if (this->_ls_logging_mode) {
+
         // Undo current step to get back to x0
         apply_scaled_du(step);
         
@@ -544,20 +553,20 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         // apply_scaled_du(step);
     }
 
-    // Second loop: check Armijo condition (sufficient energy descent)
-    // Armijo: E(x + s*du) <= E(x) + beta * <du, gradE>
+    // Sufficient descend loop
     const double expected_decrease = this->settings.line_search_armijo_beta * du_dot_grad;
     const double E_threshold = E0 + expected_decrease;
     double E1 = 0.0;
     bool success = false;
+    int armijo_iterations = 0;
     for (; it < this->settings.max_line_search_iterations; ++it) {
-        armijo_iterations++;
         
         // Evaluate energy
         this->callbacks->run_before_energy_evaluation();
         this->compiled->evaluate_P(E1);
         this->callbacks->run_after_energy_evaluation();
         
+        // Print
         this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | E: {:.2e} | E_bt: {:.2e} | E/E_bt: {:.2e} | ", it, step, E1, E_threshold, E1 / E_threshold), Verbosity::Full);
         
         // Check Armijo condition
@@ -567,21 +576,24 @@ SolverReturn NewtonsMethod::_line_search_inplace(int& armijo_iterations, double 
         }
         else {
             step *= shrink;
-            apply_scaled_du(step);  // Undo and apply smaller step
+            apply_scaled_du(step);
             this->stats.ls_bt_iterations++;
+            armijo_iterations++;
             this->output->print("Backtrack", Verbosity::Full);
         }
     }
 
+    // Print
     if (this->output->get_verbosity() != Verbosity::Full) {
         this->output->print(fmt::format("ls bt {:2d} | ", armijo_iterations), Verbosity::Medium);
     }
 
+    // Success
     if (success) {
         return SolverReturn::Running;
     }
 
-    // Visualize line search failure if in logging mode
+    // Failure mode: Visualize line search failure if in logging mode
     if (this->_ls_logging_mode && !this->_ls_energy_samples.empty()) {
         visualize_line_search_failure(
             this->_ls_energy_samples,

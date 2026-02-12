@@ -9,9 +9,6 @@
 
 - Exits without notice upon some fails
 
-- error stark::barycentric_edge_edge(): parallel edge found.
-    Remove msg or leave as warning
-
 - Summary: [total | avg | [min, max]] for key metrics (newton, ls, cg its)
 
 - runtime summary move to symx with arg `double total_time`
@@ -20,14 +17,13 @@
 
 - Refactor all related to line search in Newton's Method
 
+- Refactor retrying for line plot
+
 * Revamp and cleanup Stark.run_one_step()
     Take inspiration from the new Newton's Method
 
 - debug line search logic inside line search
     Remove _solve_impl
-
-- log counters might be wrong
-    hit -> inv(valid)
 
 - enable_output individually control:  
         - VTK
@@ -56,6 +52,11 @@
 * Quasistatic should let gravity go
 
 * Verify logic for adaptive stiffness and time step size upon failures
+
+* Try failing all possible ways
+    TooManyIterations, LinearSystemFail...
+
+* Try direct solve
 
 
 

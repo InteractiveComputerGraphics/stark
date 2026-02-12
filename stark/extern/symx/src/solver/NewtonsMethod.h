@@ -19,7 +19,7 @@ namespace symx
 			int cg_iterations = 0;
 			int ls_cap_iterations = 0;
 			int ls_max_iterations = 0;
-			int ls_hit_iterations = 0;
+			int ls_inv_iterations = 0;
 			int ls_bt_iterations = 0;
 			uint64_t n_hessians = 0;
 			uint64_t n_projected_hessians = 0;
@@ -74,7 +74,7 @@ namespace symx
 
 		bool _solve_linear_system(Eigen::VectorXd& du, const ElementHessians::spBSM& hess, const Eigen::VectorXd& grad);
 		SolverReturn _solve_impl();  // Internal solve implementation (called by solve())
-		SolverReturn _line_search_inplace(int& armijo_iterations, double E0, double du_dot_grad);
+		SolverReturn _line_search_inplace(double E0, double du_dot_grad, double du_max);
 	};
 	using spNewtonsMethod = std::shared_ptr<NewtonsMethod>;
 }

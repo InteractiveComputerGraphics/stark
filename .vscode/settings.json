@@ -11,5 +11,9 @@
         "/local-ssd/libs/stark/build/examples/examples": true,
         "diff": true
     },
-    "cmake.parallelJobs": 8
+    "cmake.parallelJobs": 8,
+    "cSpell.words": [
+        "armijo",
+        "bracktracking"
+    ]
 }

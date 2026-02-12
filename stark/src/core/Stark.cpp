@@ -183,11 +183,11 @@ bool Stark::run_one_step()
 			output->print("             "); // So the summary lines up
 		}
 		output->print(fmt::format(
-			"#newton: {:2d} | ph: {:4.1f}% | #CG/newton: {:4d} | ls (cap|max|hit|bt): {:2d}|{:2d}|{:2d}|{:2d}| runtime: {:6.1f} ms | cr: {:6.1f}", 
+			"#newton: {:2d} | ph: {:4.1f}% | #CG/newton: {:4d} | ls (cap|max|inv|bt): {:2d}|{:2d}|{:2d}|{:2d}| runtime: {:6.1f} ms | cr: {:6.1f}", 
 			stats.newton_iterations, 
 			100.0 * stats.projected_hessians_ratio, 
 			stats.cg_iterations / stats.newton_iterations, 
-			stats.ls_cap_iterations, stats.ls_max_iterations, stats.ls_hit_iterations, stats.ls_bt_iterations, 
+			stats.ls_cap_iterations, stats.ls_max_iterations, stats.ls_inv_iterations, stats.ls_bt_iterations, 
 			1000.0 * runtime, cr), 
 			Verbosity::Summary);
 
@@ -277,7 +277,7 @@ void stark::core::Stark::print()
 
 	const int ls_cap = logger->get_int("ls_cap");
 	const int ls_max = logger->get_int("ls_max");
-	const int ls_hit = logger->get_int("ls_hit");
+	const int ls_inv = logger->get_int("ls_inv");
 	const int ls_bt  = logger->get_int("ls_bt");
 	const double avg_ls_newton   = total_newton > 0 ? (double)ls_bt / total_newton : 0.0;
 
@@ -292,8 +292,8 @@ void stark::core::Stark::print()
 	out->print_with_new_line("Solve");
 	out->print_with_new_line(fmt::format("  Newton iterations:  {:d} ({:.1f} avg/step)", total_newton, avg_newton));
 	out->print_with_new_line(fmt::format("  CG iterations:      {:d} ({:.1f} avg/newton)", total_cg, avg_cg_newton));
-	out->print_with_new_line(fmt::format("  Line search:        [{:d}|{:d}|{:d}|{:d}] ([{:.1f}|{:.1f}|{:.1f}|{:.1f}] avg/newton) [cap|max|hit|bt] ", 
-		ls_cap, ls_max, ls_hit, ls_bt,  ratio(ls_cap, total_newton),  ratio(ls_max, total_newton),  ratio(ls_hit, total_newton),  ratio(ls_bt, total_newton)));
+	out->print_with_new_line(fmt::format("  Line search:        [{:d}|{:d}|{:d}|{:d}] ([{:.1f}|{:.1f}|{:.1f}|{:.1f}] avg/newton) [cap|max|inv|bt] ", 
+		ls_cap, ls_max, ls_inv, ls_bt,  ratio(ls_cap, total_newton),  ratio(ls_max, total_newton),  ratio(ls_inv, total_newton),  ratio(ls_bt, total_newton)));
 	out->print_with_new_line(fmt::format("  Projected hessians: {:.1f}%", proj_ratio));
 	out->print_with_new_line(fmt::format("  Comp. ratio (cr):   {:.2f}", cr));
 

@@ -439,7 +439,7 @@ void twisting_cloth()
 	settings.output.simulation_name = "twisting_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/twisting_cloth_no_SL";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 20.0;
+	settings.execution.end_simulation_time = 2.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
 	
 	
@@ -462,7 +462,7 @@ void twisting_cloth()
 	
 	// Cloth
 	double s = 0.5;
-	int n = 100;
+	int n = 50;
 	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
 	material.strain.elasticity_only = true;
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
