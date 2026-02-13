@@ -57,7 +57,7 @@ void pystark_Settings(nb::module_& m)
         .def_rw("cg_max_iterations", &symx::NewtonSettings::cg_max_iterations)
         .def_rw("cg_abs_tolerance", &symx::NewtonSettings::cg_abs_tolerance)
         .def_rw("cg_rel_tolerance", &symx::NewtonSettings::cg_rel_tolerance)
-        .def_rw("epsilon_residual", &symx::NewtonSettings::epsilon_residual);
+        .def_rw("bailout_residual", &symx::NewtonSettings::bailout_residual);
 
     auto execution_struct = nb::class_<Settings::Execution>(settings_struct, "Execution")
         .def(nb::init<>())

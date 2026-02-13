@@ -7,10 +7,6 @@
 
 
 ## High Priority
-- ToFile print should contain all information
-
-* `std::string to_string` for symx options should be in symx
-
 * Add `step` to the armijo condition.
 
 * I think the time stepping logic with adaptivity and the script is broken

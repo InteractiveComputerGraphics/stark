@@ -99,7 +99,7 @@ SolverReturn NewtonsMethod::solve()
         this->output->print(fmt::format("r0: {:.2e} | ", residual_norm), Verbosity::Medium);
 
         // Residual too small for numerical stability?
-        if (residual_norm < this->settings.epsilon_residual) {
+        if (residual_norm < this->settings.bailout_residual) {
             result = SolverReturn::Successful;
             break;
         }

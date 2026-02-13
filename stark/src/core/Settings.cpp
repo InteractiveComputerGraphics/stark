@@ -28,15 +28,10 @@ std::string time_stamp()
 	oss << std::put_time(&localTime, "%Y-%m-%d__%H-%M-%S");
 	return oss.str();
 }
-std::string to_string(const bool v)
-{
-	if (v) {
-		return "true";
-	}
-	else {
-		return "false";
-	}
-}
+using symx::to_string;
+using symx::to_string_sci;
+using symx::to_string_fixed;
+
 std::string to_string(const Eigen::Vector3d& v)
 {
 	return fmt::format("({:f}, {:f}, {:f})", v[0], v[1], v[2]);
@@ -75,40 +70,19 @@ std::string Settings::as_string() const
 	out += "\n     Simulation";
 	out += "\n         gravity: " + to_string(this->simulation.gravity);
 	out += "\n         init_frictional_contact: " + to_string(this->simulation.init_frictional_contact);
-	out += "\n         max_time_step_size: " + to_string(this->simulation.max_time_step_size);
+	out += "\n         max_time_step_size: " + to_string_sci(this->simulation.max_time_step_size, 4);
 	out += "\n         use_adaptive_time_step: " + to_string(this->simulation.use_adaptive_time_step);
-	out += "\n         time_step_size_success_multiplier: " + to_string(this->simulation.time_step_size_success_multiplier);
-	out += "\n         time_step_size_lower_bound: " + fmt::format("{:.1e}", this->simulation.time_step_size_lower_bound);
+	out += "\n         time_step_size_success_multiplier: " + to_string_fixed(this->simulation.time_step_size_success_multiplier);
+	out += "\n         time_step_size_lower_bound: " + to_string_sci(this->simulation.time_step_size_lower_bound);
 
 	out += "\n     Newton's Method";
-	// SolverSettings (base class)
-	out += "\n         max_iterations: " + std::to_string(this->newton.max_iterations);
-	out += "\n         min_iterations: " + std::to_string(this->newton.min_iterations);
-	out += "\n         max_backtracking_invalid_state_iterations: " + std::to_string(this->newton.max_backtracking_invalid_state_iterations);
-	out += "\n         max_backtracking_armijo_iterations: " + std::to_string(this->newton.max_backtracking_armijo_iterations);
-	out += "\n         step_cap: " + fmt::format("{:.1e}", this->newton.step_cap);
-	out += "\n         residual_tolerance: " + fmt::format("{:.1e}", this->newton.residual_tolerance);
-	out += "\n         step_tolerance: " + fmt::format("{:.1e}", this->newton.step_tolerance);
-	out += "\n         line_search_armijo_beta: " + fmt::format("{:.1e}", this->newton.line_search_armijo_beta);
-	// NewtonSettings
-	out += "\n         projection_mode: " + to_string(this->newton.projection_mode);
-	out += "\n         projection_eps: " + fmt::format("{:.1e}", this->newton.projection_eps);
-	out += "\n         project_to_pd_use_mirroring: " + to_string(this->newton.project_to_pd_use_mirroring);
-	out += "\n         project_on_demand_countdown: " + std::to_string(this->newton.project_on_demand_countdown);
-	out += "\n         ppn_tightening_factor: " + fmt::format("{:.2f}", this->newton.ppn_tightening_factor);
-	out += "\n         ppn_release_factor: " + fmt::format("{:.2f}", this->newton.ppn_release_factor);
-	out += "\n         linear_solver: " + to_string(this->newton.linear_solver);
-	out += "\n         cg_max_iterations: " + fmt::format("{:.0f}", this->newton.cg_max_iterations);
-	out += "\n         cg_abs_tolerance: " + fmt::format("{:.1e}", this->newton.cg_abs_tolerance);
-	out += "\n         cg_rel_tolerance: " + fmt::format("{:.1e}", this->newton.cg_rel_tolerance);
-	out += "\n         cg_stop_on_indefiniteness: " + to_string(this->newton.cg_stop_on_indefiniteness);
-	out += "\n         epsilon_residual: " + fmt::format("{:.1e}", this->newton.epsilon_residual);
+	out += this->newton.as_string("         ");
 
 	out += "\n     Execution";
-	out += "\n         allowed_execution_time: " + fmt::format("{:.1e}", this->execution.allowed_execution_time);
-	out += "\n         end_simulation_time: " + fmt::format("{:.1e}", this->execution.end_simulation_time);
-	out += "\n         end_frame: " + fmt::format("{:d}", this->execution.end_frame);
-	out += "\n         n_threads: " + fmt::format("{:d}", this->execution.n_threads);
+	out += "\n         allowed_execution_time: " + to_string_sci(this->execution.allowed_execution_time);
+	out += "\n         end_simulation_time: " + to_string_sci(this->execution.end_simulation_time);
+	out += "\n         end_frame: " + std::to_string(this->execution.end_frame);
+	out += "\n         n_threads: " + std::to_string(this->execution.n_threads);
 	out += "\n";
 	return out;
 }
