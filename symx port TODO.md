@@ -7,33 +7,16 @@
 
 
 ## High Priority
-* logger->get_stats and logger->get_statisticcs   ??
-
-* Is there a way to uniformize the Callback structs?
-    For expansion between symx and stark
-    but also for utils and timings
-
-* Revamp and cleanup Stark.run_one_step()
-    Take inspiration from the new Newton's Method
-
-- enable_output individually control:
-        - VTK
-        - console print and file
-        - log
-
-        Verbosity::Disabled
-
 - ToFile print should contain all information
 
 * `std::string to_string` for symx options should be in symx
-
-* Verify logic for adaptive stiffness and time step size upon failures
-    - Invalid needs its max iterations, independent from armijo
 
 * Add `step` to the armijo condition.
 
 * I think the time stepping logic with adaptivity and the script is broken
     The quasistatic extrussion restarts in wrong ways in respect to the script
+
+* Revise all Settings prints are correct
 
 
 ## Low Priority

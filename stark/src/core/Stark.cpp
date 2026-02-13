@@ -55,7 +55,7 @@ Stark::Stark(const Settings& settings)
 	this->context->logger->set_path(filename + ".yaml");
 
 	//// OutputSink
-	this->context->output->set_enabled(this->settings.output.enable_output);
+	this->context->output->set_enabled(this->settings.output.enable_print_output);
 	this->context->output->set_verbosity(this->settings.output.verbosity);
 	this->context->output->set_output_to(this->settings.output.output_to);
 	this->context->output->open_file(filename + ".log");
@@ -185,7 +185,7 @@ bool Stark::run_one_step()
 			"#newton: {:2d} | ph: {:4.1f}% | #CG/newton: {:4d} | ls (cap|max|inv|bt): {:2d}|{:2d}|{:2d}|{:2d}| runtime: {:6.1f} ms | cr: {:6.1f}", 
 			stats.newton_iterations, 
 			100.0 * stats.projected_hessians_ratio, 
-			stats.cg_iterations / stats.newton_iterations, 
+			(stats.newton_iterations > 0) ? stats.cg_iterations / stats.newton_iterations : 0,
 			stats.ls_cap_iterations, stats.ls_max_iterations, stats.ls_inv_iterations, stats.ls_bt_iterations, 
 			1000.0 * runtime, cr), 
 			Verbosity::Summary);
@@ -198,7 +198,14 @@ bool Stark::run_one_step()
 		logger->set("avg dt", this->current_time / this->current_time_step);
 
 		// Frames
-		this->_write_frame();
+		if (this->settings.output.enable_frame_writes) { 
+			this->_write_frame();
+		}
+
+		// Log
+		if (this->context->logger->time_since_last_write() > 10.0) {
+			this->context->logger->save_to_disk();
+		}
 
 		// Return
 		success = true;
@@ -309,8 +316,6 @@ void Stark::_initialize()
 }
 void Stark::_write_frame()
 {
-	if (!this->settings.output.enable_output) { return; }
-
 	auto write_frame_impl = [&]()
 		{
 			if (this->settings.output.fps != 0) {
@@ -333,5 +338,4 @@ void Stark::_write_frame()
 			this->next_frame_time += 1.0 / (double)this->settings.output.fps;
 		}
 	}
-	this->context->logger->save_to_disk();
 }

@@ -83,15 +83,16 @@ namespace symx
             bool found = false;
         };
         Stats get_stats(const std::string& label) const;
-        std::string get_statistics(const std::string& label) const;
+        std::string get_stats_as_string(const std::string& label) const;
 
         // =============================================================
         // Persistence
         // =============================================================
         void set_path(const std::string& path);
         std::string get_path() const;
-        void save_to_disk(const std::string& path) const;
-        void save_to_disk() const;
+        void save_to_disk(const std::string& path);
+        void save_to_disk();
+        double time_since_last_write() const;
 
         // =============================================================
         // Control
@@ -122,6 +123,7 @@ namespace symx
 
         // Persistence path
         std::string path_;
+        double last_write_time_ = -1.0;
 
         // Empty vectors for safe reference returns
         static const std::vector<double> empty_double_series_;

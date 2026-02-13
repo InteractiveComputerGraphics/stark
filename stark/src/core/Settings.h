@@ -18,7 +18,8 @@ namespace stark::core
 			int fps = 30;
 			symx::Verbosity verbosity = symx::Verbosity::Summary;
 			symx::OutputTo output_to = symx::OutputTo::PrintAndFile;
-			bool enable_output = true;
+			bool enable_frame_writes = true;
+			bool enable_print_output = true;
 		};
 		struct Simulation
 		{

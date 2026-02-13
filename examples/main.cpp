@@ -114,7 +114,7 @@ void hanging_deformable_box()
 	stark::Simulation simulation(settings);
 
 	// Box
-	const int n = 60;
+	const int n = 10;
 	const double d = 0.5;
 	const double hd = d/2.0;
 	auto material = stark::Volume::Params::Soft_Rubber();
@@ -439,11 +439,11 @@ void twisting_cloth()
 	settings.output.simulation_name = "twisting_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/twisting_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 20.0;
+	settings.execution.end_simulation_time = 2.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
 	
 	
-	settings.simulation.init_frictional_contact = true;
+	settings.simulation.init_frictional_contact = false;
 	settings.simulation.use_adaptive_time_step = false;
 	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
 	settings.newton.step_tolerance = 0.001;
@@ -795,7 +795,6 @@ void console_demo()
 			s.output.codegen_directory = COMPILE_PATH;
 			s.output.verbosity = lvl;
 			s.output.output_to = symx::OutputTo::PrintAndFile;
-			s.output.enable_output = true;
 			s.execution.end_simulation_time = 0.2;  // short run
 			s.simulation.init_frictional_contact = false;
 			s.simulation.gravity = { 0.0, 0.0, 0.0 };

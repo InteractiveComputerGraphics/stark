@@ -1,6 +1,7 @@
 #include "Logger.h"
 
 #include <iostream>
+#include <limits>
 #include <fstream>
 #include <algorithm>
 #include <cmath>
@@ -268,7 +269,7 @@ Logger::Stats Logger::get_stats(const std::string& label) const
     exit(-1);
 }
 
-std::string Logger::get_statistics(const std::string& label) const
+std::string Logger::get_stats_as_string(const std::string& label) const
 {
     // Check double series first
     {
@@ -329,7 +330,17 @@ std::string Logger::get_path() const
     return path_;
 }
 
-void Logger::save_to_disk(const std::string& path) const
+double symx::Logger::time_since_last_write() const
+{
+    if (this->last_write_time_ < 0.0) {
+        return std::numeric_limits<double>::max();
+    }
+    else {
+        return omp_get_wtime() - this->last_write_time_;
+    }
+}
+
+void Logger::save_to_disk(const std::string& path)
 {
     std::ofstream out(path);
     if (!out) {
@@ -441,9 +452,11 @@ void Logger::save_to_disk(const std::string& path) const
     }
 
     out.close();
+
+    this->last_write_time_ = omp_get_wtime();
 }
 
-void Logger::save_to_disk() const
+void Logger::save_to_disk()
 {
     if (path_.empty()) {
         std::cout << "symx::Logger::save_to_disk error: no path set." << std::endl;

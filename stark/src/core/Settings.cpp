@@ -69,7 +69,8 @@ std::string Settings::as_string() const
 	out += "\n         fps: " + std::to_string(this->output.fps);
 	out += "\n         verbosity: " + to_string(this->output.verbosity);
 	out += "\n         console_output_to: " + to_string(this->output.output_to);
-	out += "\n         enable_output: " + to_string(this->output.enable_output);
+	out += "\n         enable_frame_writes: " + to_string(this->output.enable_frame_writes);
+	out += "\n         enable_print_output: " + to_string(this->output.enable_print_output);
 
 	out += "\n     Simulation";
 	out += "\n         gravity: " + to_string(this->simulation.gravity);
