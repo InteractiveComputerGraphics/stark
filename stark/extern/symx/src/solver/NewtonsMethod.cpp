@@ -77,7 +77,7 @@ SolverReturn NewtonsMethod::solve()
         newton_iteration++;
 
         // Check maximum iterations
-        if (newton_iteration > this->settings.max_iterations) {
+        if (newton_iteration == this->settings.max_iterations) {
             this->output->print_with_new_line("Newton failure: Too many iteration.", Verbosity::Medium);
             result = SolverReturn::TooManyIterations;
             break;
