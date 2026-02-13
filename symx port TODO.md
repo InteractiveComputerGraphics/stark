@@ -22,6 +22,10 @@
     + on_armijo_backtrack_fail
     - after_evaluation
 
+* Newton max iterations as successful
+
+* logger->get_stats and logger->get_statisticcs   ??
+
 * Is there a way to uniformize the Callback structs?
     For expansion between symx and stark
     but also for utils and timings

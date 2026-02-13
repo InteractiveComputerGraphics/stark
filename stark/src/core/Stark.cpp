@@ -146,7 +146,6 @@ bool Stark::run_one_step()
 
 	// Check if the simulation should continue
 	if (!this->callbacks->run_should_continue_execution()) {
-		logger->set("success", 0);
 		output->print_with_new_line("Simulation interrupted by user.");
 		return false;
 	}
@@ -164,7 +163,7 @@ bool Stark::run_one_step()
 	// Time step ended with success
 	if (newton == SolverReturn::Successful) {
 
-		// After successful time step
+		// Actually move the simulation forward with the solution
 		this->callbacks->run_on_time_step_accepted();
 		this->callbacks->run_after_time_step();
 		this->current_time += this->dt;
@@ -213,9 +212,9 @@ bool Stark::run_one_step()
 		this->context->logger->add("failed_steps", runtime);
 
 		// The failure was due to loose stiffnesses
-		if (newton == SolverReturn::InvalidConvergedState || newton == SolverReturn::InvalidIntermediateConfiguration) {
-			// Tighter stiffness should be already when measured during Newton's solve.
-			// Do nothing, just run the time step again.
+		if (newton == SolverReturn::InvalidConvergedState || newton == SolverReturn::TooManyInvalidIntermediateIterations) {
+			// Stiffness should have been tightened in callbacks.
+			// Do nothing here, just run the time step again.
 		}
 
 		// The failure was due to the time step being too tough. Adapt the time step size and run the time step again.
@@ -259,6 +258,7 @@ void stark::core::Stark::print()
 	}
 
 	const int time_steps = std::max(logger->get_int("time_steps"), 1);
+	auto dt_stats = logger->get_stats("dt");
 
 	// ── Info ──
 	out->print_with_new_line("Info");
@@ -267,7 +267,7 @@ void stark::core::Stark::print()
 	out->print_with_new_line(fmt::format("  ndofs:              {}", this->global_potential->get_total_n_dofs()));
 	out->print_with_new_line(fmt::format("  Frames:             {}", this->current_frame));
 	out->print_with_new_line(fmt::format("  Time steps:         {}", logger->get_int("time_steps")));
-	out->print_with_new_line(fmt::format("  avg dt:             {:.3f} ms", 1000.0 * this->current_time / time_steps));
+	out->print_with_new_line(fmt::format("  dt [ms]:            avg: {:.1f} | min: {:.1f} | max: {:.1f}", 1000.0*dt_stats.avg, 1000.0*dt_stats.min, 1000.0*dt_stats.max));
 
 	// ── Solve + Runtime (delegated to NewtonsMethod) ──
 	const double total_time = logger->get_timer_total("total");

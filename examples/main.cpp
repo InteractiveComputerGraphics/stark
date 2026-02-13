@@ -448,7 +448,10 @@ void twisting_cloth()
 	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
 	settings.newton.step_tolerance = 0.001;
 	settings.simulation.max_time_step_size = 1.0/30.0;
-	settings.output.verbosity = symx::Verbosity::Full;
+	settings.output.verbosity = symx::Verbosity::Medium;
+
+	settings.simulation.use_adaptive_time_step = true;
+	settings.newton.max_iterations = 10;
 
 
 	stark::Simulation simulation(settings);

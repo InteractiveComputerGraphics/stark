@@ -13,11 +13,12 @@ namespace symx
     {
         Successful,
         Running,
-        TooManyNewtonIterations,
-        TooManyLineSearchIterations,
-        LinearSystemFailure,
-        InvalidIntermediateConfiguration,
-        LineSearchDoesNotDescend,
+        InvalidInitialState,
+        TooManyIterations,
+        TooManyArmijoIterations,
+        LinearSystemSolveFailure,
+        TooManyInvalidIntermediateIterations,
+        StepDoesNotDescend,
         InvalidConvergedState,
     };
 
@@ -27,15 +28,14 @@ namespace symx
 	private:
 		/* Fields */
 		std::vector<std::function<void()>> before_energy_evaluation;
-		std::vector<std::function<void()>> after_energy_evaluation;
 		std::vector<std::function<bool()>> is_initial_state_valid;
 		std::vector<std::function<bool()>> is_intermediate_state_valid;
 		std::vector<std::function<void()>> on_intermediate_state_invalid;
+		std::vector<std::function<void()>> on_armijo_fail;
 		std::vector<std::function<bool()>> is_converged_state_valid;
         std::vector<std::function<double()>> max_allowed_step;
         std::function<double(Eigen::VectorXd&)> residual = default_residual;
         spContext context = nullptr;
-
 
 		/* Methods */
 		void _run(std::vector<std::function<void()>>& fs)
@@ -60,10 +60,10 @@ namespace symx
 
 		// Add callbacks
 		void add_before_energy_evaluation(std::function<void()> f) { this->before_energy_evaluation.push_back(f); }
-		void add_after_energy_evaluation(std::function<void()> f) { this->after_energy_evaluation.push_back(f); }
 		void add_is_initial_state_valid(std::function<bool()> f) { this->is_initial_state_valid.push_back(f); }
 		void add_is_intermediate_state_valid(std::function<bool()> f) { this->is_intermediate_state_valid.push_back(f); }
 		void add_on_intermediate_state_invalid(std::function<void()> f) { this->on_intermediate_state_invalid.push_back(f); }
+		void add_on_armijo_fail(std::function<void()> f) { this->on_armijo_fail.push_back(f); }
 		void add_is_converged_state_valid(std::function<bool()> f) { this->is_converged_state_valid.push_back(f); }
         void add_max_allowed_step(std::function<double()> f) { this->max_allowed_step.push_back(f); }
 
@@ -71,10 +71,6 @@ namespace symx
 		void run_before_energy_evaluation() { 
             auto _t = this->context->logger->time("before_energy_evaluation");
             this->_run(this->before_energy_evaluation); 
-        }
-		void run_after_energy_evaluation() {
-            auto _t = this->context->logger->time("after_energy_evaluation");
-            this->_run(this->after_energy_evaluation); 
         }
 		bool run_is_initial_state_valid() { 
             auto _t = this->context->logger->time("is_initial_state_valid");
@@ -87,6 +83,10 @@ namespace symx
 		void run_on_intermediate_state_invalid() { 
             auto _t = this->context->logger->time("on_intermediate_state_invalid");
             this->_run(this->on_intermediate_state_invalid); 
+        }
+		void run_on_armijo_fail() { 
+            auto _t = this->context->logger->time("on_armijo_fail");
+            this->_run(this->on_armijo_fail); 
         }
 		bool run_is_converged_state_valid() { 
             auto _t = this->context->logger->time("is_converged_state_valid");

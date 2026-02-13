@@ -67,7 +67,8 @@ SolverReturn NewtonsMethod::solve()
     // Check initial state validity
     bool initial_valid = this->callbacks->run_is_initial_state_valid();
     if (!initial_valid) {
-        result = SolverReturn::InvalidIntermediateConfiguration;
+        this->output->print_with_new_line("Newton failure: Invalid initial state.", Verbosity::Medium);
+        result = SolverReturn::InvalidInitialState;
     }
 
     // ====== MAIN NEWTON LOOP ======
@@ -77,7 +78,8 @@ SolverReturn NewtonsMethod::solve()
 
         // Check maximum iterations
         if (newton_iteration > this->settings.max_iterations) {
-            result = SolverReturn::TooManyNewtonIterations;
+            this->output->print_with_new_line("Newton failure: Too many iteration.", Verbosity::Medium);
+            result = SolverReturn::TooManyIterations;
             break;
         }
 
@@ -87,7 +89,6 @@ SolverReturn NewtonsMethod::solve()
         // Evaluate energy, gradient, and Hessian
         this->callbacks->run_before_energy_evaluation();
         element_hessians = this->compiled->evaluate_P__dP_du__local_d2P_du2(E0, this->grad);
-        this->callbacks->run_after_energy_evaluation();
 
         // Compute residual
         double residual_norm = this->callbacks->compute_residual(this->grad);
@@ -124,8 +125,8 @@ SolverReturn NewtonsMethod::solve()
             if (!linear_system_solve_success) {
                 bool can_project_more = (this->settings.projection_mode != ProjectionToPD::Newton) && !all_projected;
                 if (!can_project_more) {
-                    this->output->print("Linear system failed. ", Verbosity::Full);
-                    result = SolverReturn::LinearSystemFailure;
+                    this->output->print("Linear system failed. ", Verbosity::Summary);
+                    result = SolverReturn::LinearSystemSolveFailure;
                     break;
                 }
             }
@@ -138,8 +139,8 @@ SolverReturn NewtonsMethod::solve()
                 if (!descends) {
                     bool can_project_more = (this->settings.projection_mode != ProjectionToPD::Newton) && !all_projected;
                     if (!can_project_more) {
-                        this->output->print("Does not descend. ", Verbosity::Full);
-                        result = SolverReturn::LineSearchDoesNotDescend;
+                        this->output->print("Step does not descend. ", Verbosity::Summary);
+                        result = SolverReturn::StepDoesNotDescend;
                         break;
                     }
                 }
@@ -191,9 +192,6 @@ SolverReturn NewtonsMethod::solve()
 
         // Line search
         result = this->_line_search_inplace(E0, du_dot_grad, du_max);
-        if (result == SolverReturn::TooManyLineSearchIterations) {
-            this->output->print_with_new_line("Newton failure: Too many line search iterations.", Verbosity::Summary);
-        }
 
         // Exit Newton's loop
         if (result != SolverReturn::Running) {
@@ -206,6 +204,7 @@ SolverReturn NewtonsMethod::solve()
         bool converged_valid = true;
         converged_valid = this->callbacks->run_is_converged_state_valid();
         if (!converged_valid) {
+            this->output->print_with_new_line("Newton failure: Invalid converged state.", Verbosity::Medium);
             result = SolverReturn::InvalidConvergedState;
         }
     }
@@ -430,7 +429,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     *   - [cap] Hard cap to the user-specified maximum a single step can take
     *   - [max] Hard cap based on `max_allowed_step()` callbacks. E.g. CCD.
     *   - [inv] Backtracking based on `is_intermediate_state_valid()` callbacks. E.g. penetration or inversions
-    *   - [bt]  Armijo sufficient descend backtracking based on global energy
+    *   - [bt]  Backtracking based on Armijo sufficient descend using the global energy
     */
 
     // Define apply step function
@@ -497,8 +496,9 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     
     // Exit: Failed to find valid state within line search iterations
     if (ls_inv_it == this->settings.max_backtracking_invalid_state_iterations) {
+        this->output->print_with_new_line("Newton failure: Too many invalid intermediate state iterations.", Verbosity::Medium);
         this->callbacks->run_on_intermediate_state_invalid();
-        return SolverReturn::InvalidIntermediateConfiguration;
+        return SolverReturn::TooManyInvalidIntermediateIterations;
     }
     
     
@@ -522,7 +522,6 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
             double E_sample = 0.0;
             this->callbacks->run_before_energy_evaluation();
             this->compiled->evaluate_P(E_sample);
-            this->callbacks->run_after_energy_evaluation();
             samples[i] = E_sample;
         }
         this->_ls_energy_samples.push_back(samples);
@@ -532,14 +531,12 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     const double expected_decrease = this->settings.line_search_armijo_beta * du_dot_grad;
     const double E_threshold = E0 + expected_decrease;
     double E1 = 0.0;
-    bool success = false;
     int armijo_iterations = 0;
     for (; armijo_iterations < this->settings.max_backtracking_armijo_iterations; ++armijo_iterations) {
         
         // Evaluate energy
         this->callbacks->run_before_energy_evaluation();
         this->compiled->evaluate_P(E1);
-        this->callbacks->run_after_energy_evaluation();
         
         // Print
         this->output->print_with_new_line(fmt::format("{:d}. step: {:.2e} | E: {:.2e} | E_bt: {:.2e} | E/E_bt: {:.2e} | ", 
@@ -547,7 +544,6 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
         
         // Check Armijo condition
         if (E1 < E_threshold) {
-            success = true;
             break;
         }
         else {
@@ -564,44 +560,48 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
         this->output->print(fmt::format("ls bt {:2d} | ", armijo_iterations), Verbosity::Medium);
     }
 
-    // Success
-    if (success) {
-        return SolverReturn::Running;
-    }
+    // Exit: Armijo backtracking could not find a suitable descend
+    if (armijo_iterations == this->settings.max_backtracking_armijo_iterations) {
+        this->output->print_with_new_line("Newton failure: Too many armijo iterations.", Verbosity::Medium);
+        this->callbacks->run_on_armijo_fail();
 
-    // Failure mode: Visualize line search failure if in logging mode
-    if (this->settings.print_line_search_upon_failure) {
+        // Failure mode: Visualize line search failure if in logging mode
+        if (this->settings.print_line_search_upon_failure) {
 
-        // The whole Newton search needs to be recorded
-        if (!this->_ls_logging_mode) {
-            this->_ls_logging_mode = true;
+            // The whole Newton search needs to be recorded
+            if (!this->_ls_logging_mode) {
+                this->_ls_logging_mode = true;
 
-            // Restore initial state and run
-            this->global_potential->set_dofs(this->initial_dofs.data());
-            SolverReturn retry_result = this->solve();
-        
-            // If the second attempt succeeds, something is wrong (non-deterministic behavior)
-            if (retry_result == SolverReturn::Successful) {
-                std::cout << "Error: Line search debug retry succeeded unexpectedly. Non-deterministic behavior detected." << std::endl;
-                exit(1);
+                // Restore initial state and run
+                this->global_potential->set_dofs(this->initial_dofs.data());
+                SolverReturn retry_result = this->solve();
+            
+                // If the second attempt succeeds, something is wrong (non-deterministic behavior)
+                if (retry_result == SolverReturn::Successful) {
+                    std::cout << "Error: Line search debug retry succeeded unexpectedly. Non-deterministic behavior detected." << std::endl;
+                    exit(1);
+                }
             }
+
+            // Generate logs and plots
+            visualize_line_search_failure(
+                this->_ls_energy_samples,
+                this->context->compilation_directory,
+                E0,
+                E_threshold,
+                du_dot_grad
+            );
+
+            // Exit
+            std::cout << "Exiting stark..." << std::endl;
+            exit(-1);
         }
 
-        // Generate logs and plots
-        visualize_line_search_failure(
-            this->_ls_energy_samples,
-            this->context->compilation_directory,
-            E0,
-            E_threshold,
-            du_dot_grad
-        );
-
-        // Exit
-        std::cout << "Exiting stark..." << std::endl;
-        exit(-1);
+        return SolverReturn::TooManyArmijoIterations;
     }
 
-    return SolverReturn::TooManyLineSearchIterations;
+    // Finish
+    return SolverReturn::Running;
 }
 
 void NewtonsMethod::print_summary(double total_time) const
