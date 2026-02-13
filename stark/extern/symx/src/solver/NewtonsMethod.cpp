@@ -396,6 +396,7 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
     else if (this->settings.linear_solver == LinearSolver::BDPCG) {
         // Forcing sequence
         const double forcing_cg_tol = std::min(1e-2, residual_norm * std::min(0.5, std::sqrt(residual_norm)));
+        const double abs_tol = std::max(forcing_cg_tol, this->settings.cg_abs_tolerance);
 
         // Prepare preconditioning
         hess->set_preconditioner(bsm::Preconditioner::BlockDiagonal);
@@ -411,8 +412,7 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
             du.data(),
             this->rhs.data(),
             ndofs,
-            // this->settings.cg_abs_tolerance,  // DEBUG
-            forcing_cg_tol,  // DEBUG
+            abs_tol,
             this->settings.cg_rel_tolerance,
             this->settings.cg_max_iterations,
             this->context->n_threads,

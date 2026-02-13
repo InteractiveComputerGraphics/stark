@@ -453,7 +453,7 @@ void twisting_cloth()
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
 		.set_default_contact_thickness(0.00025)
-		.set_min_contact_stiffness(1e8)
+		.set_min_contact_stiffness(1e4)
 	);
 	
 	// Cloth
@@ -831,9 +831,9 @@ void console_demo()
 int main()
 {
 	//console_demo();
-	//twisting_cloth();
+	twisting_cloth();
 	//hanging_deformable_box();
-	column_extrusion_PPN_test();
+	//column_extrusion_PPN_test();
 	return 0;
 
 	/*

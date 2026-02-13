@@ -7,12 +7,6 @@
 
 
 ## High Priority
-* Add `step` to the armijo condition.
-
-* I think the time stepping logic with adaptivity and the script is broken
-    The quasistatic extrussion restarts in wrong ways in respect to the script
-
-* Revise all Settings prints are correct
 
 
 ## Low Priority
@@ -60,6 +54,9 @@
 * There will be a lot of dead code and old/AI comments. Massive cleanup.
 
 * Run all the simulations from PPN to certify it runs as expected
+
+* I think the time stepping logic with adaptivity and the script is broken
+    The quasistatic extrussion restarts in wrong ways in respect to the script
 
 * Revise that rigid body inertia is correct. It is formulated as velocity.
 
