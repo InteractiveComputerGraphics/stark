@@ -155,6 +155,7 @@ namespace symx
         double residual_tolerance = 1e-6;
         double step_tolerance = std::numeric_limits<double>::epsilon();
         double line_search_armijo_beta = 1e-4;
+        bool max_iterations_as_success = false;
         bool enable_armijo_bracktracking = true;
         bool print_line_search_upon_failure = false;
     };

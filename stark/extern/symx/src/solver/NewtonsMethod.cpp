@@ -79,7 +79,11 @@ SolverReturn NewtonsMethod::solve()
         // Check maximum iterations
         if (newton_iteration == this->settings.max_iterations) {
             this->output->print_with_new_line("Newton failure: Too many iteration.", Verbosity::Medium);
-            result = SolverReturn::TooManyIterations;
+            if (this->settings.max_iterations_as_success) {
+                result = SolverReturn::Successful;
+            } else {
+                result = SolverReturn::TooManyIterations;
+            }
             break;
         }
 
@@ -210,7 +214,7 @@ SolverReturn NewtonsMethod::solve()
     }
 
     // Log
-    this->stats.newton_iterations = newton_iteration + 1;
+    this->stats.newton_iterations = newton_iteration;
     if (this->stats.n_hessians > 0) {
         this->stats.projected_hessians_ratio = (double)this->stats.n_projected_hessians / (double)this->stats.n_hessians;
     }

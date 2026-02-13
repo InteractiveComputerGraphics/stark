@@ -7,23 +7,6 @@
 
 
 ## High Priority
-- `SolverReturn` is too specific of Newton. It should be general.
-    Even if it contains things unused by other solvers (e.g. linear system failure)
-
-- Generally refer to line search more specifically
-    armijo
-    backtracking
-    invalid state
-
-    _everywhere_, also in `SolverReturn`
-
-
-* Callbacks
-    + on_armijo_backtrack_fail
-    - after_evaluation
-
-* Newton max iterations as successful
-
 * logger->get_stats and logger->get_statisticcs   ??
 
 * Is there a way to uniformize the Callback structs?
