@@ -436,11 +436,11 @@ void twisting_cloth()
 	settings.output.simulation_name = "twisting_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/twisting_cloth";
 	settings.output.codegen_directory = COMPILE_PATH;
-	settings.execution.end_simulation_time = 2.0;
+	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
 	
 	
-	settings.simulation.init_frictional_contact = false;
+	settings.simulation.init_frictional_contact = true;
 	settings.simulation.use_adaptive_time_step = false;
 	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
 	settings.newton.step_tolerance = 0.001;
@@ -453,12 +453,12 @@ void twisting_cloth()
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
 		.set_default_contact_thickness(0.00025)
-		.set_min_contact_stiffness(1e4)
+		.set_min_contact_stiffness(1e8)
 	);
 	
 	// Cloth
 	double s = 0.5;
-	int n = 50;
+	int n = 100;
 	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
 	material.strain.elasticity_only = true;
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
@@ -588,7 +588,7 @@ void simple_contact_test()
 	
 	// DEBUG
 	// settings.execution.n_threads = 1;
-	settings.newton.enable_armijo_bracktracking = true;
+	settings.newton.enable_armijo_backtracking = true;
 	settings.simulation.max_time_step_size = 0.01;
 	settings.simulation.use_adaptive_time_step = false;
 	stark::Simulation simulation(settings);
@@ -707,15 +707,15 @@ void column_extrusion_PPN_test()
 		In this setting, the solve is analogous to positional dofs.
 	*/
 	// Parameters
-	const double duration = 2.0;
+	const double duration = 1.0;
 	const double extrusion_factor = 5.0;
-	const int refinement_level = 10;
+	const int refinement_level = 30;
 
 	const double youngs_modulus = 1e8;
 	const double poisson_ratio = 0.49;
 	const double bc_stiffness = 1e10;
 
-	const double dt = 1.0/120.0;
+	const double dt = 0.999;
 	Eigen::Vector3d size(1.0, 1.0, 0.5);
 	
 	// Settings
@@ -723,17 +723,19 @@ void column_extrusion_PPN_test()
 	settings.output.simulation_name = "column_extrusion_PPN_test";
 	settings.output.output_directory = OUTPUT_PATH + "/column_extrusion";
 	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.console_verbosity = symx::Verbosity::Full;
 	settings.execution.end_simulation_time = duration;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
 	settings.simulation.max_time_step_size = dt;
 	
 	settings.simulation.init_frictional_contact = false;
 	settings.simulation.use_adaptive_time_step = false;
-	// settings.newton.project_to_pd_use_mirroring = true;
+
+	settings.newton.project_to_pd_use_mirroring = true;
 	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
 	settings.newton.step_tolerance = 0.001/dt; // Velocity!
-	// settings.newton.step_cap = 0.5/dt;  // Velocity!
-	// settings.newton.min_iterations = 0;
+	settings.newton.step_cap = 0.5/dt;  // Velocity!
+	settings.newton.min_iterations = 0;
 	// settings.newton.linear_solver = symx::LinearSolver::DirectLU;
 	
 	stark::Simulation simulation(settings);
@@ -751,6 +753,7 @@ void column_extrusion_PPN_test()
 	material.inertia.damping = 1.0;
 	material.strain.poissons_ratio = poisson_ratio;
 	material.strain.youngs_modulus = youngs_modulus;
+	material.inertia.quasistatic = true;
 	auto [V, T, H] = simulation.presets->deformables->add_volume_grid("block", size, elements_per_axis, material);
 	
 	// BC
@@ -828,9 +831,9 @@ void console_demo()
 int main()
 {
 	//console_demo();
-	twisting_cloth();
+	//twisting_cloth();
 	//hanging_deformable_box();
-	//column_extrusion_PPN_test();
+	column_extrusion_PPN_test();
 	return 0;
 
 	/*

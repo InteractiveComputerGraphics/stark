@@ -98,7 +98,7 @@ namespace symx
         double run_max_allowed_step()
         {
             auto _t = this->context->logger->time("max_allowed_step");
-			double max_step = std::numeric_limits<double>::infinity();
+			double max_step = 1.0;
 			for (auto f : this->max_allowed_step) {
 				max_step = std::min(max_step, f());
 			}
@@ -176,7 +176,7 @@ namespace symx
         double step_cap = std::numeric_limits<double>::infinity();  // Clamp step norm to this value
 
         // Line search (Armijo backtracking)
-        bool enable_armijo_bracktracking = true;
+        bool enable_armijo_backtracking = true;
         double line_search_armijo_beta = 1e-4;           // Sufficient decrease parameter
         int max_backtracking_armijo_iterations = 20;
         int max_backtracking_invalid_state_iterations = 8;
@@ -195,7 +195,7 @@ namespace symx
             out += "\n" + p + "    step_tolerance: " + to_string_sci(step_tolerance);
             out += "\n" + p + "    step_cap: " + to_string_sci(step_cap);
             out += "\n" + p + "Line search";
-            out += "\n" + p + "    enable_armijo_backtracking: " + to_string(enable_armijo_bracktracking);
+            out += "\n" + p + "    enable_armijo_backtracking: " + to_string(enable_armijo_backtracking);
             out += "\n" + p + "    armijo_beta: " + to_string_sci(line_search_armijo_beta);
             out += "\n" + p + "    max_armijo_iterations: " + std::to_string(max_backtracking_armijo_iterations);
             out += "\n" + p + "    max_invalid_state_iterations: " + std::to_string(max_backtracking_invalid_state_iterations);
@@ -220,7 +220,7 @@ namespace symx
 
         // Linear solver
         LinearSolver linear_solver = LinearSolver::BDPCG;
-        double cg_max_iterations = 10000;
+        int cg_max_iterations = 10000;
         double cg_abs_tolerance = 1e-12;
         double cg_rel_tolerance = 1e-4;
         bool cg_stop_on_indefiniteness = true;
@@ -240,7 +240,7 @@ namespace symx
             out += "\n" + p + "    ppn_release_factor: " + to_string_fixed(ppn_release_factor);
             out += "\n" + p + "Linear solver";
             out += "\n" + p + "    solver: " + to_string(linear_solver);
-            out += "\n" + p + "    cg_max_iterations: " + std::to_string((int)cg_max_iterations);
+            out += "\n" + p + "    cg_max_iterations: " + std::to_string(cg_max_iterations);
             out += "\n" + p + "    cg_abs_tolerance: " + to_string_sci(cg_abs_tolerance);
             out += "\n" + p + "    cg_rel_tolerance: " + to_string_sci(cg_rel_tolerance);
             out += "\n" + p + "    cg_stop_on_indefiniteness: " + to_string(cg_stop_on_indefiniteness);

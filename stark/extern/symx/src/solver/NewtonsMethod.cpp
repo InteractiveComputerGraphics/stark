@@ -28,7 +28,7 @@ spNewtonsMethod symx::NewtonsMethod::create(spGlobalPotential global_potential, 
 SolverReturn NewtonsMethod::solve()
 {
     const int ndofs = global_potential->get_total_n_dofs();
-    const int n_dof_blocks = ndofs / 3;
+    const int n_dof_blocks = ndofs / ElementHessians::BLOCK_SIZE;
 
     // Check
     if (!global_potential) {
@@ -40,6 +40,12 @@ SolverReturn NewtonsMethod::solve()
         std::cout << "symx error NewtonsMethod::solve(): No degrees of freedom." << std::endl;
         exit(1);
     }
+
+    if (ndofs % ElementHessians::BLOCK_SIZE != 0) {
+        std::cout << "symx error NewtonsMethod::solve(): ndofs must be divisible by 3." << std::endl;
+        exit(1);
+    }
+
 
     // Set up
     this->stats = SolveStats(); // Reset stats
@@ -123,7 +129,7 @@ SolverReturn NewtonsMethod::solve()
             bool all_projected = this->_project_and_assemble(element_hessians, hess, ndofs);
 
             // Solve linear system
-            linear_system_solve_success = this->_solve_linear_system(this->du, hess, this->grad);
+            linear_system_solve_success = this->_solve_linear_system(this->du, hess, this->grad, residual_norm);
 
             // Handle linear system failure
             if (!linear_system_solve_success) {
@@ -288,7 +294,7 @@ bool NewtonsMethod::_project_and_assemble(spElementHessians element_hessians, El
                     // Select blocks based on gradient magnitude
                     all_projected = true;
                     for (int block_row = 0; block_row < n_dof_blocks; block_row++) {
-                        if (this->grad.segment<3>(3 * block_row).cwiseAbs().maxCoeff() > this->ppn_threshold) {
+                        if (this->grad.segment<3>(3 * block_row).cwiseAbs().maxCoeff() >= this->ppn_threshold) {
                             this->ppn_active_dof_blocks_for_projection[block_row] = TRUE_U8;
                         } else {
                             this->ppn_active_dof_blocks_for_projection[block_row] = FALSE_U8;
@@ -359,7 +365,7 @@ void NewtonsMethod::_decrease_projection()
     }
 }
 
-bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessians::spBSM& hess, const Eigen::VectorXd& grad)
+bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessians::spBSM& hess, const Eigen::VectorXd& grad, double residual_norm)
 {
     auto timer_ls = this->logger->time("linear_system_solve");
 
@@ -389,8 +395,7 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
     // Block Diagonal Preconditioner Conjugate Gradient
     else if (this->settings.linear_solver == LinearSolver::BDPCG) {
         // Forcing sequence
-        const double grad_norm = rhs.norm();
-        const double forcing_cg_tol = std::min(1e-2, grad_norm * std::min(0.5, std::sqrt(grad_norm)));
+        const double forcing_cg_tol = std::min(1e-2, residual_norm * std::min(0.5, std::sqrt(residual_norm)));
 
         // Prepare preconditioning
         hess->set_preconditioner(bsm::Preconditioner::BlockDiagonal);
@@ -446,9 +451,12 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     };
     
     /* ============================== Limit the step ============================== */
+    double retraction = 1.0;  // Keeps track of `du` shrinkage to scale `du_dot_grad` in armijo
+
     /* ------------------------------------ Cap ----------------------------------- */
     if (du_max > this->settings.step_cap) {
-        this->du *= this->settings.step_cap / du_max;
+        retraction *= this->settings.step_cap / du_max;
+        this->du *= retraction;
         du_max = this->settings.step_cap;
         this->output->print(fmt::format("du cap {:.1e} | ", du_max), Verbosity::Medium);
         this->stats.ls_cap_iterations++;
@@ -460,9 +468,10 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     
     /* ------------------------------------ Max ----------------------------------- */
     double max_step = this->callbacks->run_max_allowed_step();
-    if (du_max > max_step) {
-        this->du *= max_step / du_max;
-        du_max = max_step;
+    if (max_step < 1.0) {
+        retraction *= max_step;
+        this->du *= max_step;
+        du_max *= max_step;
         this->output->print(fmt::format("ls max {:.1e} | ", du_max), Verbosity::Medium);
         this->stats.ls_max_iterations++;
         logger->add_and_append("ls_max", 1);
@@ -507,16 +516,13 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     
     
     /* ----------------------------------- Armijo ---------------------------------- */
-    if (!this->settings.enable_armijo_bracktracking) {
+    if (!this->settings.enable_armijo_backtracking) {
         return SolverReturn::Running;
     }
 
     // Fail mode: Generate data for plotting the energy profile along the step
     if (this->_ls_logging_mode) {
 
-        // Undo current step to get back to x0
-        apply_scaled_du(step);
-        
         // Sample energy from -0.5*du to 1.5*du using 1000 samples
         const int n_samples = 1000;
         std::vector<double> samples(n_samples);
@@ -532,8 +538,8 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     }
 
     // Sufficient descend loop
-    const double expected_decrease = this->settings.line_search_armijo_beta * du_dot_grad;
-    const double E_threshold = E0 + expected_decrease;
+    const double expected_decrease = this->settings.line_search_armijo_beta * du_dot_grad * retraction;
+    double E_threshold = E0 + expected_decrease*step;
     double E1 = 0.0;
     int armijo_iterations = 0;
     for (; armijo_iterations < this->settings.max_backtracking_armijo_iterations; ++armijo_iterations) {
@@ -553,6 +559,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
         else {
             step *= shrink;
             apply_scaled_du(step);
+            E_threshold = E0 + expected_decrease*step;
             this->stats.ls_bt_iterations++;
             this->output->print("Backtrack", Verbosity::Full);
         }
