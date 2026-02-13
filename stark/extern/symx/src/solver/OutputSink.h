@@ -25,30 +25,17 @@ namespace symx
         }
     }
 
-    enum class OutputTo
-    {
-        PrintOnly,
-        FileOnly,
-        PrintAndFile,
-    };
-    inline std::string to_string(OutputTo m)
-    {
-        switch (m) {
-            case OutputTo::PrintOnly:     return "PrintOnly";
-            case OutputTo::FileOnly:      return "FileOnly";
-            case OutputTo::PrintAndFile:  return "PrintAndFile";
-            default:
-                std::cout << "symx::OutputTo " << (int)m << " does not have a name. Exiting." << std::endl;
-                exit(-1);
-        }
-    }
-
     class OutputSink
     {
     public:
         // --- Verbosity ---
-        void set_verbosity(Verbosity v) { verbosity_ = v; }
-        Verbosity get_verbosity() const { return verbosity_; }
+        void set_console_verbosity(Verbosity v) { console_verbosity_ = v; }
+        void set_file_verbosity(Verbosity v) { file_verbosity_ = v; }
+        Verbosity get_console_verbosity() const { return console_verbosity_; }
+        Verbosity get_file_verbosity() const { return file_verbosity_; }
+
+        /// Returns the maximum of console and file verbosity (for client-side gating).
+        Verbosity get_verbosity() const { return std::max(console_verbosity_, file_verbosity_); }
 
         // --- Indentation ---
         void set_root_tab(int level) { root_tab_ = level; }
@@ -56,10 +43,7 @@ namespace symx
         int get_root_tab() const { return root_tab_; }
         int get_tab_size() const { return tab_size_; }
 
-        // --- Output mode & file ---
-        void set_output_to(OutputTo m) { output_to_ = m; }
-        OutputTo get_output_to() const { return output_to_; }
-
+        // --- File ---
         void open_file(const std::string& path) {
             file_.open(path);
             if (!file_.is_open()) {
@@ -74,7 +58,7 @@ namespace symx
         }
         bool is_file_open() const { return file_.is_open(); }
 
-        // --- Console enable ---
+        // --- Global enable ---
         void set_enabled(bool v) { enabled_ = v; }
         bool is_enabled() const { return enabled_; }
 
@@ -82,33 +66,30 @@ namespace symx
 
         // Print with verbosity gate.
         void print(const std::string& msg, Verbosity level) const {
-            if (level > verbosity_) return;
-            _emit(msg);
+            _emit(msg, level);
         }
 
         // Ungated print — no verbosity check, no auto-indent.
         void print(const std::string& msg) const {
-            _emit(msg);
+            _emit(msg, Verbosity::Minimal);
         }
 
         void print_new_line(int indent = 0) const {
-            _emit(indent ? "\n" + _indent(indent) : "\n");
+            _emit(indent ? "\n" + _indent(indent) : "\n", Verbosity::Minimal);
         }
 
         void print_new_line(Verbosity level, bool indent = true) const {
-            if (level > verbosity_) return;
-            _emit(indent ? "\n" + _indent(level) : "\n");
+            _emit(indent ? "\n" + _indent(level) : "\n", level);
         }
 
         void print_with_new_line(const std::string& msg, Verbosity level, bool indent = true) const {
-            if (level > verbosity_) return;
             const std::string new_line = indent ? "\n" + _indent(level) : "\n";
-            this->print(new_line + msg, level);
+            _emit(new_line + msg, level);
         }
 
         void print_with_new_line(const std::string& msg, int indent = 0) const {
             const std::string new_line = "\n" + _indent(indent);
-            this->print(new_line + msg);
+            _emit(new_line + msg, Verbosity::Minimal);
         }
 
         void flush_file() {
@@ -116,19 +97,13 @@ namespace symx
         }
 
     private:
-        void _emit(const std::string& msg) const {
+        void _emit(const std::string& msg, Verbosity level) const {
             if (!enabled_) return;
-            if (output_to_ != OutputTo::FileOnly) {
+            if (level <= console_verbosity_) {
                 std::cout << msg;
             }
-            if (output_to_ != OutputTo::PrintOnly) {
-                if (file_.is_open()) {
-                    file_ << msg;
-                }
-                else {
-                    std::cout << "symx::OutputSink error: File output mode enabled but file is not open. Use OutputSink::open_file() before directing to file." << std::endl;
-                    exit(-1);
-                }
+            if (file_.is_open() && level <= file_verbosity_) {
+                file_ << msg;
             }
         }
 
@@ -140,8 +115,8 @@ namespace symx
             return _indent(depth);
         }
 
-        Verbosity verbosity_ = Verbosity::Medium;
-        OutputTo output_to_ = OutputTo::PrintOnly;
+        Verbosity console_verbosity_ = Verbosity::Summary;
+        Verbosity file_verbosity_ = Verbosity::Full;
         bool enabled_ = true;
         int root_tab_ = 0;
         int tab_size_ = 4;

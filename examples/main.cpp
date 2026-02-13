@@ -102,9 +102,6 @@ void hanging_deformable_box()
 	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	
-	// settings.output.enable_output = false;
-	// settings.output.verbosity = symx::Verbosity::Full;
-	
 	settings.simulation.init_frictional_contact = false;
 	settings.simulation.use_adaptive_time_step = false;
 	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
@@ -448,7 +445,7 @@ void twisting_cloth()
 	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
 	settings.newton.step_tolerance = 0.001;
 	settings.simulation.max_time_step_size = 1.0/30.0;
-	settings.output.verbosity = symx::Verbosity::Summary;
+	settings.output.console_verbosity = symx::Verbosity::Summary;
 
 	stark::Simulation simulation(settings);
 
@@ -461,7 +458,7 @@ void twisting_cloth()
 	
 	// Cloth
 	double s = 0.5;
-	int n = 100;
+	int n = 50;
 	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
 	material.strain.elasticity_only = true;
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
@@ -793,8 +790,7 @@ void console_demo()
 			s.output.simulation_name = "verbosity_" + to_string(lvl);
 			s.output.output_directory = OUTPUT_PATH + "/verbosity_demo";
 			s.output.codegen_directory = COMPILE_PATH;
-			s.output.verbosity = lvl;
-			s.output.output_to = symx::OutputTo::PrintAndFile;
+			s.output.console_verbosity = lvl;
 			s.execution.end_simulation_time = 0.2;  // short run
 			s.simulation.init_frictional_contact = false;
 			s.simulation.gravity = { 0.0, 0.0, 0.0 };

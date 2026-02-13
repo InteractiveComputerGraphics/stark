@@ -16,10 +16,10 @@ namespace stark::core
 			std::string codegen_directory = "";
 			std::string time_stamp = "SET_TO_CREATION_TIME_BY_DEFAULT";
 			int fps = 30;
-			symx::Verbosity verbosity = symx::Verbosity::Summary;
-			symx::OutputTo output_to = symx::OutputTo::PrintAndFile;
+			symx::Verbosity console_verbosity = symx::Verbosity::Summary;
+			symx::Verbosity file_verbosity = symx::Verbosity::Full;
 			bool enable_frame_writes = true;
-			bool enable_print_output = true;
+			bool enable_output = true;
 		};
 		struct Simulation
 		{

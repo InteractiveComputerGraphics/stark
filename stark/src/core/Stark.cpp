@@ -55,9 +55,9 @@ Stark::Stark(const Settings& settings)
 	this->context->logger->set_path(filename + ".yaml");
 
 	//// OutputSink
-	this->context->output->set_enabled(this->settings.output.enable_print_output);
-	this->context->output->set_verbosity(this->settings.output.verbosity);
-	this->context->output->set_output_to(this->settings.output.output_to);
+	this->context->output->set_enabled(this->settings.output.enable_output);
+	this->context->output->set_console_verbosity(this->settings.output.console_verbosity);
+	this->context->output->set_file_verbosity(this->settings.output.file_verbosity);
 	this->context->output->open_file(filename + ".log");
 	this->context->output->set_root_tab(1);
 
