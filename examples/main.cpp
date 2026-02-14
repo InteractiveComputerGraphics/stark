@@ -830,10 +830,10 @@ void console_demo()
 int main()
 {
 	//console_demo();
-	twisting_cloth();
+	//twisting_cloth();
 	//hanging_deformable_box();
 	//column_extrusion_PPN_test();
-	return 0;
+	// return 0;
 
 	/*
 		Here you can find a list of simple scenes to test the library.
@@ -844,8 +844,9 @@ int main()
 		these are just simple examples that don't require external assets to get you started.
 	*/
 
-	// // Simple rigid body scenes
-	//	rb_constraints_all();
+	// Simple rigid body scenes
+	rb_constraints_all();
+	
 	//
 	//	// Simple simulations: No collisions, only presets
 	//  hanging_net();

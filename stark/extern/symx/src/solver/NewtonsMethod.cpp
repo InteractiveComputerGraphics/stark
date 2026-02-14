@@ -173,7 +173,7 @@ SolverReturn NewtonsMethod::solve()
         }
         
         // Solve successful
-        if (this->output->get_verbosity() != Verbosity::Full) {
+        if (this->output->get_console_verbosity() != Verbosity::Full) {
             this->output->print(fmt::format("ph: {:4.1f}% | #CG: {:4d} | ", 
                 element_hessians->projection_ratio() * 100.0, this->stats.cg_iterations - initial_cp_iterations), Verbosity::Medium);
         }
@@ -508,7 +508,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
     logger->add_and_append("ls_inv", ls_inv_it);
     
     // Print
-    if (this->output->get_verbosity() != Verbosity::Full && ls_inv_it > 0) {
+    if (this->output->get_console_verbosity() != Verbosity::Full && ls_inv_it > 0) {
         this->output->print(fmt::format("ls inv {:2d} | ", ls_inv_it), Verbosity::Medium);
     }
     
@@ -572,7 +572,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
 
     // Print
     logger->add_and_append("ls_bt", armijo_iterations);
-    if (this->output->get_verbosity() != Verbosity::Full && armijo_iterations > 0) {
+    if (this->output->get_console_verbosity() != Verbosity::Full && armijo_iterations > 0) {
         this->output->print(fmt::format("ls bt {:2d} | ", armijo_iterations), Verbosity::Medium);
     }
 

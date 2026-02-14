@@ -34,9 +34,6 @@ namespace symx
         Verbosity get_console_verbosity() const { return console_verbosity_; }
         Verbosity get_file_verbosity() const { return file_verbosity_; }
 
-        /// Returns the maximum of console and file verbosity (for client-side gating).
-        Verbosity get_verbosity() const { return std::max(console_verbosity_, file_verbosity_); }
-
         // --- Indentation ---
         void set_root_tab(int level) { root_tab_ = level; }
         void set_tab_size(int spaces) { tab_size_ = spaces; }

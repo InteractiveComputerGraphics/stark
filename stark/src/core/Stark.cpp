@@ -146,12 +146,12 @@ bool Stark::run_one_step()
 
 	// Check if the simulation should continue
 	if (!this->callbacks->run_should_continue_execution()) {
-		output->print_with_new_line("Simulation interrupted by user.");
+		output->print_with_new_line("Simulation interrupted by user.", Verbosity::Minimal);
 		return false;
 	}
 
 	// Time step begin
-	if (output->get_verbosity() != Verbosity::Minimal) {
+	if (output->get_console_verbosity() != Verbosity::Minimal) {
 		output->print_with_new_line(fmt::format("{}. dt: {:5.2f} ms | ", this->current_time_step, 1000.0 * this->dt), Verbosity::Summary);
 	}
 	this->callbacks->run_before_time_step();
@@ -177,18 +177,20 @@ bool Stark::run_one_step()
 		const double runtime = omp_get_wtime() - t0;
 		const double cr = runtime / this->dt;
 		auto stats = this->newton->get_last_solve_stats();
-		if (output->get_verbosity() != Verbosity::Summary && output->get_verbosity() != Verbosity::Minimal) {
-			output->print_new_line();
-			output->print("             "); // So the summary lines up
+		if (output->get_console_verbosity() != Verbosity::Minimal) {
+			if (output->get_console_verbosity() != Verbosity::Summary) { // For summary, just write at the cursor
+				output->print_new_line();
+				output->print("             "); // So the summary lines up
+			}
+			output->print(fmt::format(
+				"#newton: {:2d} | ph: {:4.1f}% | #CG/newton: {:4d} | ls (cap|max|inv|bt): {:2d}|{:2d}|{:2d}|{:2d}| runtime: {:6.1f} ms | cr: {:6.1f}", 
+				stats.newton_iterations, 
+				100.0 * stats.projected_hessians_ratio, 
+				(stats.newton_iterations > 0) ? stats.cg_iterations / stats.newton_iterations : 0,
+				stats.ls_cap_iterations, stats.ls_max_iterations, stats.ls_inv_iterations, stats.ls_bt_iterations, 
+				1000.0 * runtime, cr), 
+				Verbosity::Summary);
 		}
-		output->print(fmt::format(
-			"#newton: {:2d} | ph: {:4.1f}% | #CG/newton: {:4d} | ls (cap|max|inv|bt): {:2d}|{:2d}|{:2d}|{:2d}| runtime: {:6.1f} ms | cr: {:6.1f}", 
-			stats.newton_iterations, 
-			100.0 * stats.projected_hessians_ratio, 
-			(stats.newton_iterations > 0) ? stats.cg_iterations / stats.newton_iterations : 0,
-			stats.ls_cap_iterations, stats.ls_max_iterations, stats.ls_inv_iterations, stats.ls_bt_iterations, 
-			1000.0 * runtime, cr), 
-			Verbosity::Summary);
 
 		// Log
 		logger->append("dt", this->dt);
@@ -250,7 +252,7 @@ std::string Stark::get_frame_path(std::string name) const
 }
 void stark::core::Stark::print()
 {
-	this->context->output->print_new_line(Verbosity::Summary);
+	this->context->output->print_new_line(Verbosity::Minimal);
 	this->context->output->print_with_new_line("================================== Summary ===============================");
 
 	auto& logger = this->context->logger;
@@ -299,7 +301,7 @@ void Stark::_initialize()
 	this->newton->settings = this->settings.newton;
 
 	// Stark banner
-	this->context->output->print_new_line(Verbosity::Summary);
+	this->context->output->print_new_line(Verbosity::Minimal);
 	this->context->output->print_with_new_line("==================================== STARK ===============================");
 
 	// Write frame zero

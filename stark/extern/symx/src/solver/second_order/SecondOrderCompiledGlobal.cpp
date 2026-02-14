@@ -25,7 +25,7 @@ SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential global_po
     // Initialize compiled potentials
     const int n_potentials = (int)potentials.size();
     this->compiled_potentials.resize(n_potentials);
-    context->output->print_with_new_line("Second Order Potentials:");
+    context->output->print_with_new_line("Second Order Potentials:", Verbosity::Minimal);
 
     // Parallel init
     DeferredParallelTasks tasks;
@@ -43,29 +43,29 @@ SecondOrderCompiledGlobal::SecondOrderCompiledGlobal(spGlobalPotential global_po
 		#pragma omp critical
 		{
             if (compiled_potentials[i]->was_cached()) {
-                context->output->print_with_new_line(in_two_columns(potentials[i]->get_name(), "loaded", 70), Verbosity::Summary);
+                context->output->print_with_new_line("    " + in_two_columns(potentials[i]->get_name(), "loaded", 70), Verbosity::Minimal);
 			}
 			else {
-                context->output->print_with_new_line(in_two_columns(potentials[i]->get_name(), "queued for compilation", 70), Verbosity::Summary);
+                context->output->print_with_new_line("    " + in_two_columns(potentials[i]->get_name(), "queued for compilation", 70), Verbosity::Minimal);
 			}
 		}
     }
     
     //// Run compilation tasks
-    context->output->print_with_new_line("Compiling... ");
+    context->output->print_with_new_line("Compiling... ", Verbosity::Minimal);
     tasks.run(context->n_threads);
-    context->output->print("done.", Verbosity::Summary);
+    context->output->print("done.", Verbosity::Minimal);
     const double t1 = omp_get_wtime();
-    context->output->print_with_new_line("Total time: " + std::to_string(t1 - t0) + " s");
+    context->output->print_with_new_line("Total time: " + std::to_string(t1 - t0) + " s", Verbosity::Minimal);
 
 	// Print ndofs
-	this->context->output->print_with_new_line("\nDegrees of freedom:");
+	this->context->output->print_with_new_line("\nDegrees of freedom:", Verbosity::Minimal);
 	for (int set_i = 0; set_i < this->global_potential->get_n_dof_sets(); set_i++) {
         const std::string label = this->global_potential->get_dof_label(set_i);
         std::string msg = fmt::format("{}: {:d}", (label == "") ? "Set " + std::to_string(set_i) : label, this->global_potential->get_n_dofs(set_i));
-		this->context->output->print_with_new_line(msg, Verbosity::Summary);
+		this->context->output->print_with_new_line(msg, Verbosity::Minimal);
 	}
-	this->context->output->print_with_new_line(fmt::format("Total: {:d}", this->global_potential->get_total_n_dofs()), Verbosity::Summary);
+	this->context->output->print_with_new_line(fmt::format("Total: {:d}", this->global_potential->get_total_n_dofs()), Verbosity::Minimal);
 }
 
 void SecondOrderCompiledGlobal::evaluate_P(double &out_P)

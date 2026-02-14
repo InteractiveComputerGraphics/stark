@@ -8,6 +8,7 @@
 
 ## High Priority
 * Logger and Console use internally in symx
+    But most internal prints are just error messages...
 
 
 ## Low Priority
