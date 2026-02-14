@@ -2,7 +2,7 @@
 #include "gnuplot.h"
 #include <fmt/format.h>
 #include <BlockedSparseMatrix/solve_pcg.h>
-#include <Eigen/SparseLU>
+#include <Eigen/SparseCholesky>
 #include <limits>
 #include <omp.h>
 #include <algorithm>
@@ -372,7 +372,7 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
     this->rhs = -grad;
     const int ndofs = (int)grad.size();
 
-    if (this->settings.linear_solver == LinearSolver::DirectLU) {
+    if (this->settings.linear_solver == LinearSolver::DirectLLT) {
         // Direct LU solver via Eigen
         std::vector<Eigen::Triplet<double>> triplets;
         hess->to_triplets(triplets);
@@ -380,7 +380,7 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
         Eigen::SparseMatrix<double> sparse_hess(ndofs, ndofs);
         sparse_hess.setFromTriplets(triplets.begin(), triplets.end());
         
-        Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+        Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> solver;
         solver.compute(sparse_hess);
         
         if (solver.info() != Eigen::Success) {
@@ -388,6 +388,11 @@ bool NewtonsMethod::_solve_linear_system(Eigen::VectorXd& du, const ElementHessi
         }
 
         du = solver.solve(this->rhs);
+
+        if (solver.info() != Eigen::Success) {
+            return false;
+        }
+
         
         return solver.info() == Eigen::Success;
     }

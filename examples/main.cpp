@@ -445,8 +445,7 @@ void twisting_cloth()
 	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
 	settings.newton.step_tolerance = 0.001;
 	settings.simulation.max_time_step_size = 1.0/30.0;
-	settings.output.console_verbosity = symx::Verbosity::Summary;
-
+	
 	stark::Simulation simulation(settings);
 
 	// Contact
@@ -458,7 +457,7 @@ void twisting_cloth()
 	
 	// Cloth
 	double s = 0.5;
-	int n = 100;
+	int n = 50;
 	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
 	material.strain.elasticity_only = true;
 	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
@@ -656,7 +655,7 @@ void column_extrusion()
 	settings.newton.step_tolerance = 0.001/dt; // Velocity!
 	settings.newton.step_cap = 0.5/dt;  // Velocity!
 	settings.newton.min_iterations = 0;
-	// settings.newton.linear_solver = symx::LinearSolver::DirectLU;
+	// settings.newton.linear_solver = symx::LinearSolver::DirectLLT;
 	
 	// DEBUG
 	// settings.execution.n_threads = 1;
@@ -736,7 +735,7 @@ void column_extrusion_PPN_test()
 	settings.newton.step_tolerance = 0.001/dt; // Velocity!
 	settings.newton.step_cap = 0.5/dt;  // Velocity!
 	settings.newton.min_iterations = 0;
-	// settings.newton.linear_solver = symx::LinearSolver::DirectLU;
+	// settings.newton.linear_solver = symx::LinearSolver::DirectLLT;
 	
 	stark::Simulation simulation(settings);
 

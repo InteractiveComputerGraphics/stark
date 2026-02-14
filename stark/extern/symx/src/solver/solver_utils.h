@@ -112,7 +112,7 @@ namespace symx
 
     enum class LinearSolver
     {
-        DirectLU,
+        DirectLLT,
         BDPCG,  // Block Diagonal Preconditioned Conjugate Gradient
     };
     inline std::string to_string(symx::LinearSolver v)
@@ -120,7 +120,7 @@ namespace symx
         switch (v)
         {
         case symx::LinearSolver::BDPCG: return "BDPCG"; break;
-        case symx::LinearSolver::DirectLU: return "DirectLU"; break;
+        case symx::LinearSolver::DirectLLT: return "DirectLLT"; break;
         default:
             std::cout << "symx::LinearSolver " << (int)v << " does not have a name. Exiting." << std::endl;
             exit(-1);

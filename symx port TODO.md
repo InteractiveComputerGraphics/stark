@@ -7,6 +7,7 @@
 
 
 ## High Priority
+* Logger and Console use internally in symx
 
 
 ## Low Priority
@@ -19,20 +20,8 @@
 
 * TONS of debug commented out stuff everywhere
 
-* Logger and Console use internally in symx
-
 * Try failing all possible ways
     TooManyIterations, LinearSystemFail...
-
-* Try direct solve
-
-* Revise numerics
-    - line search implementation
-    - forcing sequence
-    - all tolerances
-
-* Decide for forcing sequence or not
-    If so, remove cg_abs_tolerance from settings
 
 * Unify mesh generation. Prefer mid point insertion for quads? What about quadratic quads?
 
