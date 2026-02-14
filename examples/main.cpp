@@ -771,7 +771,6 @@ void column_extrusion_PPN_test()
 	simulation.run();
 }
 
-
 void console_demo()
 {
 	// --- Per-verbosity output demo ---
@@ -826,14 +825,160 @@ void console_demo()
 	}
 }
 
+void cylinder_press(const int n = 12)
+{
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "cylinder_press_" + std::to_string(n);
+	settings.output.output_directory = OUTPUT_PATH + "/cylinder_press";
+	settings.output.codegen_directory = COMPILE_PATH;
+
+	settings.execution.end_simulation_time = 5.001;
+	settings.simulation.max_time_step_size = 1.0 / 30.0;
+	settings.newton.step_tolerance = 0.001;
+	settings.newton.max_iterations = std::numeric_limits<int>::max();
+	settings.newton.min_iterations = 0;
+
+	// settings.output.console_verbosity = symx::Verbosity::Full;
+	settings.simulation.use_adaptive_time_step = false;
+
+	stark::Simulation simulation(settings);
+
+
+	// Contact
+	const double contact_thickness = 0.0005;
+	simulation.interactions->contact->set_global_params(
+		stark::EnergyFrictionalContact::GlobalParams()
+		.set_default_contact_thickness(contact_thickness)
+		.set_friction_stick_slide_threshold(0.01)
+		.set_min_contact_stiffness(2e8)
+	);
+
+	// Global parameters
+	const double damping = 0.0;
+	const double friction = 0.5;
+	const double bc_stiffness = 1e7;
+
+	// Container
+	const double radius = 0.15;
+	const double height = 0.5;
+	const double mass = 1.0;
+	auto [Vc, Cc, container] = simulation.presets->rigidbodies->add_cylinder("container", 1.0, radius, height, 64, 5);
+	container.rigidbody.set_translation({0.0, 0.0, 0.5*height - 3.0*contact_thickness});
+	auto fix = simulation.rigidbodies->add_constraint_fix(container.rigidbody);
+	fix.set_stiffness(bc_stiffness);
+	fix.set_tolerance_in_deg(90.0);
+	fix.set_tolerance_in_m(9.9);
+
+	// Floor
+	auto params_floor = stark::Surface::Params::Cotton_Fabric();
+	params_floor.bending.set_elasticity_only(true);
+	params_floor.strain.set_elasticity_only(true);
+	params_floor.bending.set_flat_rest_angle(true);
+	auto [Vf, Cf, floor] = simulation.presets->deformables->add_surface_grid("floor", { 3, 3 }, { 1, 1 }, params_floor);
+	floor.point_set.add_displacement({ 0.75, -0.75, 0.0 });
+	auto floor_bc = simulation.deformables->prescribed_positions->add_inside_aabb(floor.point_set, { 0.0, 0.0, 0.0 }, { 100.0, 100.0, 100.0 },
+		stark::EnergyPrescribedPositions::Params()
+		.set_stiffness(bc_stiffness)
+	);
+
+	// Box
+	const double density = 1000.0;
+	const double young_modulus = 1e5;
+	const double poissons_ratio = 0.4;
+
+	// Material
+	auto params = stark::Volume::Params::Soft_Rubber();
+	params.inertia.density = density;
+	params.inertia.damping = damping;
+	params.strain.elasticity_only = true;
+	params.strain.poissons_ratio = poissons_ratio;
+	params.strain.youngs_modulus = young_modulus;
+
+	double box_size = 0.0;
+	std::vector<stark::Volume::Handler> boxes;
+
+	//// One box
+	if (false) {
+		box_size = 0.15;
+		auto [Vb, Cb, box] = simulation.presets->deformables->add_volume_grid("box", { box_size, box_size, box_size }, { n, n, n }, params);
+		box.point_set.add_displacement({ 0.0, 0.0, box_size });
+		boxes.push_back(box);
+	} 
+
+	//// For boxes side by side
+	else {
+		box_size = 0.09;
+		const double spacing = 0.25*box_size;
+		const double bottom = -0.5*(box_size + spacing);
+		for (int i = 0; i < 2; i++) {
+			for (int j = 0; j < 2; j++) {
+				auto [Vb, Cb, box] = simulation.presets->deformables->add_volume_grid("box", { box_size, box_size, box_size }, { n, n, n }, params);
+				box.point_set.add_displacement({ bottom + i*(box_size + spacing), bottom +j*(box_size + spacing), box_size });
+				boxes.push_back(box);
+			}
+		}
+	}
+
+	// Press
+	const double box_top = box_size + 0.5 * box_size;
+	const Eigen::Vector3d press_center = { 0.0, 0.0, box_top + 0.5*radius + 3.0*contact_thickness };
+	auto [Vp, Cp, press] = simulation.presets->rigidbodies->add_cylinder("press", mass, radius, radius, 64, 1);
+	press.rigidbody.set_translation(press_center);
+	auto press_fix = simulation.rigidbodies->add_constraint_fix(press.rigidbody);
+	press_fix.set_stiffness(bc_stiffness);
+	press_fix.set_tolerance_in_deg(90.0);
+	press_fix.set_tolerance_in_m(9.9);
+
+	// Interactions
+	container.contact.disable_collision(press.contact);
+	container.contact.disable_collision(floor.contact);
+	const int n_boxes = (int)boxes.size();
+	for (int i = 0; i < n_boxes; i++) {
+		boxes[i].contact.set_friction(floor.contact, friction);
+		boxes[i].contact.set_friction(press.contact, friction);
+		//for (int j = i; j < n_boxes; j++) {
+		//	boxes[i].contact.set_friction(boxes[j].contact, friction);
+		//}
+	}
+
+	// Script
+	const double target_z = 0.5*box_size + 0.5*radius;
+	double z = press_center[2];
+	simulation.add_time_event(1.0, 2.0, [&](double t) {
+		z = stark::blend(press_center[2], target_z, 1.0, 2.0, t, stark::BlendType::Linear);
+		press_fix.set_transformation({ press_center[0], press_center[1], z }, 0.0, Eigen::Vector3d::UnitZ());
+		});
+
+	//const double angular_velocity = 180.0;  // [deg / s]
+	//simulation.add_time_event(2.5, 4.5, [&](double t) {
+	//	const Eigen::Vector3d translation = { press_center[0], press_center[1], z };
+	//	const double angle = angular_velocity * (t - 2.5);
+	//	press_fix.set_transformation(translation, angle, Eigen::Vector3d::UnitZ());
+	//	});
+
+	const double angular_velocity = 180.0;  // [deg / s]
+	simulation.add_time_event(2.5, 999.0, [&](double t) {
+		const Eigen::Vector3d translation = { press_center[0], press_center[1], z };
+		const double angle = angular_velocity * (t - 2.5);
+		press_fix.set_transformation(translation, angle, Eigen::Vector3d::UnitZ());
+		});
+
+	// Run
+	simulation.run(
+		[&]() 
+		{
+		});
+}
+
 
 int main()
 {
+	cylinder_press();
 	//console_demo();
 	//twisting_cloth();
 	//hanging_deformable_box();
 	//column_extrusion_PPN_test();
-	// return 0;
+	return 0;
 
 	/*
 		Here you can find a list of simple scenes to test the library.
@@ -845,21 +990,21 @@ int main()
 	*/
 
 	// Simple rigid body scenes
-	rb_constraints_all();
+	// rb_constraints_all();
+
 	
-	//
-	//	// Simple simulations: No collisions, only presets
-	//  hanging_net();
-	//  hanging_cloth();
-	//	hanging_deformable_box();
-	//	attachments();
-	//
-	//	// Composite materials
-	//	hanging_box_with_composite_material();
-	//
-	//	// Simulations with collisions
-	//	deformable_and_rigid_collisions();
-	//	simple_grasp(); 
-	//  twisting_cloth();
-	//	magnetic_deformables();
+	// Simple simulations: No collisions, only presets
+	hanging_net();
+	hanging_cloth();
+	hanging_deformable_box();
+	attachments();
+
+	// Composite materials
+	hanging_box_with_composite_material();
+
+	// Simulations with collisions
+	deformable_and_rigid_collisions();
+	simple_grasp(); 
+	twisting_cloth();
+	magnetic_deformables();
 }
