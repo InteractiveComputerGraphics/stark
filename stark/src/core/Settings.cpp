@@ -48,6 +48,9 @@ Settings::Settings()
 	this->newton.step_tolerance = 1e-3;
 	this->newton.max_backtracking_invalid_state_iterations = 8; // increase IPC stiffness if penetrations at ~0.004 step length
 	this->newton.projection_mode = symx::ProjectionToPD::Progressive;
+
+	// SymX specified codegen directory (could be defined in CMake)
+	this->output.codegen_directory = symx::get_codegen_dir();
 }
 
 std::string Settings::as_string() const

@@ -5,6 +5,10 @@
 #include "rb_constraint_test_scenes.h"  // Contains a bunch of simple rigid body scenes with predictable outcomes
 
 
+// Paths
+std::string OUTPUT_PATH = std::string(STARK_EXAMPLES_OUTPUT_DIR);
+std::string RES_PATH = std::string(STARK_EXAMPLES_RES_DIR);
+
 
 void hanging_net()
 {
@@ -15,7 +19,6 @@ void hanging_net()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "hanging_net";
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_net";
-	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);
@@ -45,7 +48,6 @@ void hanging_cloth()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "hanging_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_cloth";
-	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 1.0;
 	
 	settings.simulation.init_frictional_contact = true; // TOOGLE
@@ -99,7 +101,6 @@ void hanging_deformable_box()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "hanging_deformable_box";
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_deformable_box";
-	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	
 	settings.simulation.init_frictional_contact = false;
@@ -135,7 +136,6 @@ void attachments()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "attachments";
 	settings.output.output_directory = OUTPUT_PATH + "/attachments";
-	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);
@@ -185,7 +185,6 @@ void hanging_box_with_composite_material()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "hanging_box_with_composite_material";
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_box_with_composite_material";
-	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 8.0;
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);
@@ -263,7 +262,6 @@ void deformable_and_rigid_collisions()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "deformable_and_rigid_collisions";
 	settings.output.output_directory = OUTPUT_PATH + "/deformable_and_rigid_collisions";
-	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	stark::Simulation simulation(settings);
 
@@ -326,7 +324,6 @@ void simple_grasp()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "simple_grasp";
 	settings.output.output_directory = OUTPUT_PATH + "/simple_grasp";
-	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 7.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
 	stark::Simulation simulation(settings);
@@ -435,7 +432,6 @@ void twisting_cloth()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "twisting_cloth";
 	settings.output.output_directory = OUTPUT_PATH + "/twisting_cloth";
-	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
 	
@@ -487,7 +483,6 @@ void magnetic_deformables()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "magnetic_deformables";
 	settings.output.output_directory = OUTPUT_PATH + "/magnetic_deformables";
-	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 7.0;
 	stark::Simulation simulation(settings);
 
@@ -581,7 +576,6 @@ void simple_contact_test()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "simple_contact_test";
 	settings.output.output_directory = OUTPUT_PATH + "/simple_contact_test";
-	settings.output.codegen_directory = COMPILE_PATH;
 	settings.execution.end_simulation_time = 0.5;
 	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
 	
@@ -644,7 +638,6 @@ void column_extrusion()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "column_extrusion_PN_dyn";
 	settings.output.output_directory = OUTPUT_PATH + "/column_extrusion";
-	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.fps = 1.0/dt;
 	settings.execution.end_simulation_time = duration;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
@@ -721,7 +714,6 @@ void column_extrusion_PPN_test()
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "column_extrusion_PPN_test";
 	settings.output.output_directory = OUTPUT_PATH + "/column_extrusion";
-	settings.output.codegen_directory = COMPILE_PATH;
 	settings.output.console_verbosity = symx::Verbosity::Full;
 	settings.execution.end_simulation_time = duration;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
@@ -790,7 +782,6 @@ void console_demo()
 			stark::Settings s = stark::Settings();
 			s.output.simulation_name = "verbosity_" + to_string(lvl);
 			s.output.output_directory = OUTPUT_PATH + "/verbosity_demo";
-			s.output.codegen_directory = COMPILE_PATH;
 			s.output.console_verbosity = lvl;
 			s.execution.end_simulation_time = 0.2;  // short run
 			s.simulation.init_frictional_contact = false;
@@ -830,7 +821,6 @@ void cylinder_press(const int n = 12)
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = "cylinder_press_" + std::to_string(n);
 	settings.output.output_directory = OUTPUT_PATH + "/cylinder_press";
-	settings.output.codegen_directory = COMPILE_PATH;
 
 	settings.execution.end_simulation_time = 5.001;
 	settings.simulation.max_time_step_size = 1.0 / 30.0;
@@ -973,12 +963,12 @@ void cylinder_press(const int n = 12)
 
 int main()
 {
-	cylinder_press();
+	//cylinder_press();
 	//console_demo();
 	//twisting_cloth();
 	//hanging_deformable_box();
 	//column_extrusion_PPN_test();
-	return 0;
+	// return 0;
 
 	/*
 		Here you can find a list of simple scenes to test the library.

@@ -9,8 +9,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include "../examples/paths.h"
-
 #define ENABLE_TESTS_IN_THIS_FILE true
 
 
@@ -31,8 +29,7 @@ stark::Settings test_settings(std::string name)
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = name;
-	settings.output.output_directory = OUTPUT_PATH + "/test_output";
-	settings.output.codegen_directory = COMPILE_PATH;
+	settings.output.output_directory = std::string(STARK_EXAMPLES_OUTPUT_DIR) + "/test_output";
 	settings.output.enable_output = false;
 	settings.output.enable_frame_writes = false;
 	settings.execution.end_simulation_time = 3.0;
