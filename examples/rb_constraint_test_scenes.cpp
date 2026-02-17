@@ -16,7 +16,7 @@ void template_sim(std::string name, std::function<void(stark::Simulation& simula
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = name;
-	settings.output.output_directory = OUTPUT_PATH + "/rb_constraints";
+	settings.output.output_directory = std::string(STARK_EXAMPLES_OUTPUT_DIR) + "/rb_constraints";
 	settings.output.console_verbosity = symx::Verbosity::Minimal;
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.init_frictional_contact = false;
