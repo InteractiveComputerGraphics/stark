@@ -670,6 +670,7 @@ void NewtonsMethod::print_summary(double total_time) const
 	if (total_time <= 0.0) {
 		total_time = 0.0;
 		for (const auto& label : logger->get_timer_labels()) {
+            if (label == "total") { continue; }
 			total_time += logger->get_timer_total(label);
 		}
 	}
@@ -680,6 +681,7 @@ void NewtonsMethod::print_summary(double total_time) const
 	std::vector<TimerEntry> timer_entries;
 	double acc = 0.0;
 	for (const auto& label : logger->get_timer_labels()) {
+        if (label == "total") { continue; }
 		double time = logger->get_timer_total(label);
 		acc += time;
 		if (time / total_time < 0.001) continue;  // Hide very small runtime
