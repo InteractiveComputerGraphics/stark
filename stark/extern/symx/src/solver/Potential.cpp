@@ -15,6 +15,10 @@ const std::string& Potential::get_name() const
 {
     return this->name;
 }
+spMWS<double> Potential::get_mws() const
+{
+    return this->mws;
+}
 std::string symx::Potential::get_checksum(const std::string &pre_hash) const
 {
     return this->mws->get_workspace().get_expression_graph().get_checksum(pre_hash);

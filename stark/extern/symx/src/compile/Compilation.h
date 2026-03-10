@@ -1,6 +1,4 @@
 #pragma once
-#include <fstream>
-#include <sstream>
 #ifdef SYMX_ENABLE_AVX2
 #include <immintrin.h>
 #endif
@@ -63,9 +61,9 @@ namespace symx
 		~Compilation();
 		Compilation(const Compilation&) = delete; // Copying makes unclear who owns this->lib
 
-		bool load_if_cached(std::string name, std::string folder, std::string cache_id, FloatType float_type);
-		void compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id = "", FloatType float_type = FloatType::Double);
-		void try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id = "", FloatType float_type = FloatType::Double);
+		bool load_if_cached(const std::string& name, const std::string& folder, const std::string& cache_id, FloatType float_type);
+		void compile(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id = "", FloatType float_type = FloatType::Double);
+		void try_load_otherwise_compile(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id = "", FloatType float_type = FloatType::Double);
 		bool is_valid() const;
 
 		int get_n_inputs() const;
@@ -78,36 +76,36 @@ namespace symx
 		// (Static methods removed, use global functions in symx namespace)
 		
 		template<typename FLOAT>
-		bool load_if_cached(std::string name, std::string folder, std::string cache_id);
+		bool load_if_cached(const std::string& name, const std::string& folder, const std::string& cache_id);
 		template<typename FLOAT>
-		void compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id = "");
+		void compile(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id = "");
 		template<typename FLOAT>
-		void try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id = "");
+		void try_load_otherwise_compile(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id = "");
 
 		template<typename FLOAT>
 		fptr<FLOAT> get_f();
 
 	private:
-		void _write_shared_object_code(Sequence& eval, std::string name, std::string folder, std::string cache_id, FloatType float_type);
-		void _add_instructions_scalar(std::string& code, Sequence& eval, std::string type);
-		void _add_instructions_simd(std::string& code, Sequence& eval, std::string type);
+		void _write_shared_object_code(Sequence& eval, const std::string& name, const std::string& folder, const std::string& cache_id, FloatType float_type);
+		void _add_instructions_scalar(std::string& code, Sequence& eval, const std::string& type);
+		void _add_instructions_simd(std::string& code, Sequence& eval, const std::string& type);
 		void _add_core_simd_functions(std::string& code, FloatType float_type);
 		
 
 	};
 
 	template<typename FLOAT>
-	inline bool Compilation::load_if_cached(std::string name, std::string folder, std::string cache_id)
+	inline bool Compilation::load_if_cached(const std::string& name, const std::string& folder, const std::string& cache_id)
 	{
 		return this->load_if_cached(name, folder, cache_id, get_float_type_as_enum<FLOAT>());
 	}
 	template<typename FLOAT>
-	inline void Compilation::compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id)
+	inline void Compilation::compile(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id)
 	{
 		this->compile(expr, name, folder, cache_id, get_float_type_as_enum<FLOAT>());
 	}
 	template<typename FLOAT>
-	inline void Compilation::try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id)
+	inline void Compilation::try_load_otherwise_compile(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id)
 	{
 		this->try_load_otherwise_compile(expr, name, folder, cache_id, get_float_type_as_enum<FLOAT>());
 	}

@@ -14,7 +14,12 @@ namespace symx
 	template<typename T>
 	T fem_interpolation(const FEM_Element& element, std::vector<T>& vh, const Vector& xi);
 	Matrix fem_jacobian(const FEM_Element& element, std::vector<Vector>& xh, const Vector& xi);
-	std::vector<std::array<double, 4>> get_integration_rule(const FEM_Element& element);
+	std::vector<std::array<double, 4>> get_integration_rule(const FEM_Element& element); // Returns {xi0, xi1, xi2, weight} quadrature points for the element type
+
+	// Registers a Summation in the MappedWorkspace so that the compiled kernel is called
+	// once per quadrature point. The summand lambda receives the weight w and reference
+	// coordinates xi, and returns the integrand scalar. The result is the weighted sum
+	// over all integration points (Gauss quadrature).
 	Scalar fem_integrator(MappedWorkspace<double>& mws, const FEM_Element& element, std::function<Scalar(Scalar& w, Vector& xi)> summand);
 	
 

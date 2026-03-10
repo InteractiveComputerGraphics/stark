@@ -244,12 +244,6 @@ namespace bsm
 
 		void clear();
 
-		// Allow PCG solver access to internal _spmxv
-		template<typename BSM_TYPE>
-		friend PCGInfo bsm::solve_pcg(BSM_TYPE&, double*, const double*, int, double, double, int, int, bool);
-		template<typename BSM_TYPE>
-		friend PCGInfo bsm::solve_pcg(BSM_TYPE&, double*, const double*, int, double, double, int, int, bool, PCGContext&);
-		
 	private:
 		/* Methods */
 		// Insertion

@@ -6,9 +6,9 @@ Workspace::Workspace()
 {
 }
 
-Scalar Workspace::make_scalar(const std::string label)
+Scalar Workspace::make_scalar()
 {
-	return Scalar(this->expressions.declare_symbol(label), &this->expressions);
+	return Scalar(this->expressions.declare_symbol(), &this->expressions);
 }
 
 Scalar Workspace::get_scalar(const int32_t symbol_id)
@@ -16,49 +16,49 @@ Scalar Workspace::get_scalar(const int32_t symbol_id)
 	return Scalar(this->expressions.get_symbol_location(symbol_id), &this->expressions);
 }
 
-Vector Workspace::make_vector(const std::string label, const int32_t size)
+Vector Workspace::make_vector(const int32_t size)
 {
 	std::vector<Scalar> values;
 	for (int32_t i = 0; i < size; i++) {
-		values.push_back(this->make_scalar(label + "(" + std::to_string(i) + ")"));
+		values.push_back(this->make_scalar());
 	}
 	return Vector(values);
 }
 
-Matrix Workspace::make_matrix(const std::string label, const std::array<int32_t, 2> shape)
+Matrix Workspace::make_matrix(const std::array<int32_t, 2> shape)
 {
 	std::vector<Scalar> values;
 	for (int32_t i = 0; i < shape[0]; i++) {
 		for (int32_t j = 0; j < shape[1]; j++) {
-			values.push_back(this->make_scalar(label + "(" + std::to_string(i) + ", " + std::to_string(j) + ")"));
+			values.push_back(this->make_scalar());
 		}
 	}
 	return Matrix(values, shape);
 }
 
-std::vector<Scalar> Workspace::make_scalars(const std::string label, const int32_t n)
+std::vector<Scalar> Workspace::make_scalars(const int32_t n)
 {
 	std::vector<Scalar> scalars;
 	for (int i = 0; i < n; i++) {
-		scalars.push_back(this->make_scalar(label + std::to_string(i)));
+		scalars.push_back(this->make_scalar());
 	}
 	return scalars;
 }
 
-std::vector<Vector> Workspace::make_vectors(const std::string label, const int32_t size, const int32_t n)
+std::vector<Vector> Workspace::make_vectors(const int32_t size, const int32_t n)
 {
 	std::vector<Vector> vectors;
 	for (int i = 0; i < n; i++) {
-		vectors.push_back(this->make_vector(label + std::to_string(i), size));
+		vectors.push_back(this->make_vector(size));
 	}
 	return vectors;
 }
 
-std::vector<Matrix> Workspace::make_matrices(const std::string label, const std::array<int32_t, 2> shape, const int32_t n)
+std::vector<Matrix> Workspace::make_matrices(const std::array<int32_t, 2> shape, const int32_t n)
 {
     std::vector<Matrix> matrices;
     for (int i = 0; i < n; i++) {
-        matrices.push_back(this->make_matrix(label + std::to_string(i), shape));
+        matrices.push_back(this->make_matrix(shape));
     }
     return matrices;
 }

@@ -162,7 +162,7 @@ namespace symx
 		}
 
 		// Helper lambda to access buffers with clear semantics
-		auto get_buf = [this](int32_t tid, BufferIndex idx) -> char* {
+		auto get_buf = [&](int32_t tid, BufferIndex idx) -> char* {
 			return this->thread_buf[tid * N_BUFFERS_PER_THREAD + idx]->data();
 		};
 

@@ -9,6 +9,15 @@
 
 namespace symx
 {
+	/*
+	 * A connectivity table with N named entries per element/stencil/row.
+	 *
+	 * Typical use:
+	 *   LabelledConnectivity<4> conn({"elem_idx", "v0", "v1", "v2"});
+	 *   conn.numbered_push_back({v0, v1, v2});  // prepends element index automatically
+	 *   auto [mws, elem] = MappedWorkspace<double>::create(conn);
+	 *   auto x = mws->make_vector(positions, elem["v0"]);
+	 */
 	template<std::size_t N>
 	struct LabelledConnectivity
 	{
@@ -59,6 +68,8 @@ namespace symx
 			}
 			return v;
 		};
+		// Push a row without an element index, prepending the current row count as column 0.
+		// Useful when the first column of the connectivity is the element's own id.
 		inline int32_t numbered_push_back(const std::array<int32_t, N-1>& v)
 		{ 
 			std::array<int32_t, N> v_;

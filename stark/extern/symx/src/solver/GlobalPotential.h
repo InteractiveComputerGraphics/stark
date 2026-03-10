@@ -4,6 +4,14 @@
 
 namespace symx
 {
+    /*
+     * Aggregates multiple Potential objects and DOF sets in a structure 
+     * suitable for Newton-based optimization.
+     *
+     * - Call add_potential() for each energy term, passing connectivity + a lambda
+     *     that builds the symbolic expression in a MappedWorkspace.
+     * - Call add_dof() for each optimization variable array.
+     */
     class GlobalPotential
     {
     public:
@@ -104,7 +112,7 @@ namespace symx
         this->add_dof(
             [&arr]() { return reinterpret_cast<std::uintptr_t>(&arr); },
             [&arr]() { return arr[0].data(); }, 
-            [&arr]() { return (int32_t)(arr.size()*stride); }, 
+            [&arr, stride]() { return (int32_t)(arr.size()*stride); }, 
             name);
     }
     template<typename DYNAMIC_VECTOR>

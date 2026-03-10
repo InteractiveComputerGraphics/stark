@@ -4,8 +4,12 @@
 
 namespace symx
 {
-    struct Index { int idx; };
+    struct Index { int idx; };  // Index in the element stencil
 
+    /*
+     * Provides typed Index handles for Elements.
+     * These indices get recorded to later data fetching during evaluation.
+     */
     struct Element
     {
         Element(const int& n_items_per_element);

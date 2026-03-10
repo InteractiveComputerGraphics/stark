@@ -347,8 +347,9 @@ void symx::Scalar::_get_checksum(picosha2::hash256_one_by_one& hasher, std::unor
         }
     }
     else if (this->expr.type == ExprType::Symbol) {
-        const std::string& label = this->get_name();
-        hasher.process(label.begin(), label.end());
+        const int32_t symbol_id = this->expr.a;
+        const std::array<char, sizeof(int32_t)>* bytes = reinterpret_cast<const std::array<char, sizeof(int32_t)>*>(&symbol_id);
+        hasher.process(bytes->begin(), bytes->end());
     }
 	else if (this->expr.type == ExprType::Zero || this->expr.type == ExprType::One || this->expr.type == ExprType::ConstantFloat) {
 		double value = 0.0;
@@ -448,14 +449,6 @@ int32_t symx::Scalar::get_symbol_idx() const
 bool symx::Scalar::is_symbol() const
 {
 	return this->expr.type == ExprType::Symbol;
-}
-std::string symx::Scalar::get_name() const
-{
-	if (!this->is_symbol()) {
-		std::cout << "symx error: Scalar::get_name() can only be used on non-derived symbols." << std::endl;
-		exit(-1);
-	}
-	return this->expressions->symbols[this->expr.a];
 }
 const symx::Expressions* symx::Scalar::get_expression_graph() const
 {

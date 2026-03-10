@@ -42,13 +42,13 @@ namespace symx
         spContext context = nullptr;
         
 		/* Methods */
-		void _run(std::vector<std::function<void()>>& fs)
+		void _run(const std::vector<std::function<void()>>& fs)
 		{
             for (auto& f : fs) {
                 f();
 			}
 		}
-		bool _run_bool(bool default_bool, std::vector<std::function<bool()>>& fs)
+		bool _run_bool(bool default_bool, const std::vector<std::function<bool()>>& fs)
 		{
             bool valid = default_bool;
 			for (auto& f : fs) {

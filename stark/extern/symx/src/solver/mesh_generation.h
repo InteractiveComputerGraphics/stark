@@ -26,6 +26,8 @@ namespace symx
         std::vector<std::array<int, 3>> triangles;
     };
 
+    // Prepend each element in a flat connectivity array with its 0-based element index,
+    // growing the stride by 1.
     std::vector<int> enumerate(const std::vector<int>& connectivity, int stride);
 
     template <std::size_t STRIDE>
@@ -65,7 +67,7 @@ namespace symx
 
 	// DEFINITIONS ==========================================================================================
     template <std::size_t STRIDE>
-    std::vector<std::array<int, STRIDE>> symx::as_array_vec(const std::vector<int> &connectivity)
+    std::vector<std::array<int, STRIDE>> as_array_vec(const std::vector<int> &connectivity)
     {
         const int n_elements = static_cast<int>(connectivity.size() / STRIDE);
         std::vector<std::array<int, STRIDE>> out;

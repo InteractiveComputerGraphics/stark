@@ -22,10 +22,12 @@ namespace detail
     #define BSM_RESTRICT __restrict
     #define BSM_ASSUME_ALIGNED(ptr, align) (ptr)
     #define BSM_USE_ATOMIC_REDUCTION 1
+    #define BSM_PRAGMA_OMP_PARALLEL_SIMD __pragma(omp parallel for schedule(static) num_threads(nthreads) if(n >= N_MIN_FOR_PARALLEL))
 #else
     #define BSM_RESTRICT __restrict__
     #define BSM_ASSUME_ALIGNED(ptr, align) static_cast<decltype(ptr)>(__builtin_assume_aligned(ptr, align))
     #define BSM_USE_ATOMIC_REDUCTION 0
+    #define BSM_PRAGMA_OMP_PARALLEL_SIMD _Pragma("omp parallel for simd schedule(static) num_threads(nthreads) if(n >= N_MIN_FOR_PARALLEL)")
 #endif
 
     // ============================================================================
@@ -57,7 +59,7 @@ namespace detail
         x = BSM_ASSUME_ALIGNED(x, SIMD_ALIGN);
         y = BSM_ASSUME_ALIGNED(y, SIMD_ALIGN);
         
-        #pragma omp parallel for simd schedule(static) num_threads(nthreads) if(n >= N_MIN_FOR_PARALLEL)
+        BSM_PRAGMA_OMP_PARALLEL_SIMD
         for (int i = 0; i < n; i++) {
             z[i] = a * x[i] + b * y[i];
         }
@@ -75,7 +77,7 @@ namespace detail
         x = BSM_ASSUME_ALIGNED(x, SIMD_ALIGN);
         y = BSM_ASSUME_ALIGNED(y, SIMD_ALIGN);
         
-        #pragma omp parallel for simd schedule(static) num_threads(nthreads) if(n >= N_MIN_FOR_PARALLEL)
+        BSM_PRAGMA_OMP_PARALLEL_SIMD
         for (int i = 0; i < n; i++) {
             x[i] += a * y[i];
         }
@@ -93,7 +95,7 @@ namespace detail
         z = BSM_ASSUME_ALIGNED(z, SIMD_ALIGN);
         x = BSM_ASSUME_ALIGNED(x, SIMD_ALIGN);
         
-        #pragma omp parallel for simd schedule(static) num_threads(nthreads) if(n >= N_MIN_FOR_PARALLEL)
+        BSM_PRAGMA_OMP_PARALLEL_SIMD
         for (int i = 0; i < n; i++) {
             z[i] = x[i];
         }
@@ -113,7 +115,7 @@ namespace detail
         x = BSM_ASSUME_ALIGNED(x, SIMD_ALIGN);
         y = BSM_ASSUME_ALIGNED(y, SIMD_ALIGN);
         
-        #pragma omp parallel for simd schedule(static) num_threads(nthreads) if(n >= N_MIN_FOR_PARALLEL)
+        BSM_PRAGMA_OMP_PARALLEL_SIMD
         for (int i = 0; i < n; i++) {
             r[i] = x[i] - y[i];
         }
@@ -134,7 +136,7 @@ namespace detail
         p = BSM_ASSUME_ALIGNED(p, SIMD_ALIGN);
         q = BSM_ASSUME_ALIGNED(q, SIMD_ALIGN);
         
-        #pragma omp parallel for simd schedule(static) num_threads(nthreads) if(n >= N_MIN_FOR_PARALLEL)
+        BSM_PRAGMA_OMP_PARALLEL_SIMD
         for (int i = 0; i < n; i++) {
             x[i] += a * p[i];
             r[i] -= a * q[i];

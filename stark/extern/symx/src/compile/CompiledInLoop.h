@@ -20,15 +20,24 @@
 namespace symx
 {
 	/*
-		Represents loop executions of compiled functions.
-		The main loop needs a connectivity and pointers and stride data to arrays.
+		Executes a compiled symbolic kernel over all elements in a connectivity array.
 
-		This class also handles the case of summations per entry in the connectivity 
-		array where the data changes across summation iterations is fixed. The typical
-		use case is FEM integrators where the compiled function evaluates one integration 
-		point and the summation just calls that function for a set of integration points 
-		and weights.
+		Template parameters:
+		  INPUT_FLOAT    — scalar type of the input data arrays (usually double or float)
+		  COMPILED_FLOAT — floating-point type the kernel is compiled for. Can be a SIMD type
+		                   (__m256d, __m256, etc.) to process multiple elements per kernel call.
+		                   Defaults to INPUT_FLOAT.
+		  OUTPUT_FLOAT   — scalar type written by the user callback.
+		                   Defaults to INPUT_FLOAT.
 
+		How it works:
+		  For each element in the MappedWorkspace connectivity, the runner gathers input data
+		  from the registered DataMaps into a SIMD-aligned buffer and calls the compiled kernel.
+		  The result is delivered to a user-supplied callback.
+
+		Parallelism:
+		  run() is OpenMP-parallel over elements. With coloring enabled, write-conflicting
+		  elements are grouped into colors so each color can be processed without data races.
 	*/
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT = INPUT_FLOAT, typename OUTPUT_FLOAT = INPUT_FLOAT>
 	class CompiledInLoop
@@ -93,8 +102,8 @@ namespace symx
 		CompiledInLoop() = default;
 		~CompiledInLoop() = default;
 		CompiledInLoop(const CompiledInLoop&) = delete; // Copying makes unclear who owns the DLL
-		CompiledInLoop(const spMWS<INPUT_FLOAT>& mws, const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id = "");
-		static spCIL create(const spMWS<INPUT_FLOAT>& mws, const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id = "");
+		CompiledInLoop(const spMWS<INPUT_FLOAT>& mws, const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id = "");
+		static spCIL create(const spMWS<INPUT_FLOAT>& mws, const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id = "");
 		
 		/*
 		* This can load having a MappedWorkspace context which does not contain the output symbols.
@@ -102,9 +111,9 @@ namespace symx
 		* A prominent use case for `load_if_cached` is loading a complex compiled object that exists and matches the cached_id without churning the math.
 		* For instance, we can safely load the Hessian compiled object from a cache related to the energy form and dofs, without needing to differentiate it.
 		*/
-		bool load_if_cached(const spMWS<INPUT_FLOAT>& mws, std::string name, std::string folder, std::string cache_id);
-		void compile(const spMWS<INPUT_FLOAT>& mws, const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id = "");
-		void try_load_otherwise_compile(const spMWS<INPUT_FLOAT>& mws, const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id = "");
+		bool load_if_cached(const spMWS<INPUT_FLOAT>& mws, const std::string& name, const std::string& folder, const std::string& cache_id);
+		void compile(const spMWS<INPUT_FLOAT>& mws, const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id = "");
+		void try_load_otherwise_compile(const spMWS<INPUT_FLOAT>& mws, const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id = "");
 		
 		bool is_valid() const;
 		bool was_cached() const;
@@ -171,17 +180,17 @@ namespace symx
 			"COMPILED_FLOAT must be {float, double, __m128d, __m128, __m256d, __m256}");
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::CompiledInLoop(const spMWS<INPUT_FLOAT>& mws, const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id)
+	inline CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::CompiledInLoop(const spMWS<INPUT_FLOAT>& mws, const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id)
 	{
 		this->try_load_otherwise_compile(mws, expr, name, folder, cache_id);
 	}
     template <typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-    inline std::shared_ptr<CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>> CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::create(const spMWS<INPUT_FLOAT> &mws, const std::vector<Scalar> &expr, std::string name, std::string folder, std::string cache_id)
+    inline std::shared_ptr<CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>> CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::create(const spMWS<INPUT_FLOAT> &mws, const std::vector<Scalar> &expr, const std::string& name, const std::string& folder, const std::string& cache_id)
     {
        return std::make_shared<CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>>(mws, expr, name, folder, cache_id);
     }
     template <typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-    inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::compile(const spMWS<INPUT_FLOAT> &mws, const std::vector<Scalar> &expr, std::string name, std::string folder, std::string cache_id)
+    inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::compile(const spMWS<INPUT_FLOAT> &mws, const std::vector<Scalar> &expr, const std::string& name, const std::string& folder, const std::string& cache_id)
     {
 		this->mws = mws;
 		this->name = name;
@@ -189,13 +198,14 @@ namespace symx
 		this->_check_types();
 	}
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::try_load_otherwise_compile(const spMWS<INPUT_FLOAT>& mws, const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id)
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::try_load_otherwise_compile(const spMWS<INPUT_FLOAT>& mws, const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id)
 	{
-		if (cache_id == "") {
-			cache_id = get_checksum(expr);
+		std::string id = cache_id;
+		if (id == "") {
+			id = get_checksum(expr);
 		}
-		if (!this->load_if_cached(mws, name, folder, cache_id)) {
-			this->compile(mws, expr, name, folder, cache_id);
+		if (!this->load_if_cached(mws, name, folder, id)) {
+			this->compile(mws, expr, name, folder, id);
 		}
 	}
     template <typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
@@ -223,7 +233,7 @@ namespace symx
 		);
     }
     template <typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-    inline bool CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::load_if_cached(const spMWS<INPUT_FLOAT>& mws, std::string name, std::string folder, std::string cache_id)
+    inline bool CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::load_if_cached(const spMWS<INPUT_FLOAT>& mws, const std::string& name, const std::string& folder, const std::string& cache_id)
     {
 		const bool success = this->compilation.template load_if_cached<COMPILED_FLOAT>(name, folder, cache_id);
 		if (success) {

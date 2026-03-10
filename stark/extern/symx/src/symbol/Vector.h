@@ -42,10 +42,12 @@ namespace symx
 		Vector cross3(const Vector& other) const;
 		Scalar squared_norm() const;
 		Scalar norm() const;
-		Scalar stable_norm(const Scalar& scalar) const;
-		Scalar stable_norm(double val) const;
 		Vector normalized() const;
 		void normalize();
+
+		// norm() regularized by adding scalar under the sqrt: sqrt(||v||^2 + eps)
+		Scalar stable_norm(const Scalar& scalar) const; 
+		Scalar stable_norm(double val) const;
 
 		Vector operator+(const Vector& other) const;
 		Vector operator-(const Vector& other) const;

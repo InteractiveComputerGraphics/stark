@@ -41,15 +41,15 @@ namespace symx
 		Compiled() = default;
 		~Compiled() = default;
 		Compiled(const Compiled&) = delete;  // Copying makes unclear who owns the DLL
-		Compiled(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id = "");
+		Compiled(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id = "");
 		
 		// Compilation management
-		void compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id = "");
-		bool load_if_cached(std::string name, std::string folder, std::string cache_id);
-		void try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id = "");
+		void compile(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id = "");
+		bool load_if_cached(const std::string& name, const std::string& folder, const std::string& cache_id);
+		void try_load_otherwise_compile(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id = "");
 		
 		// Status queries
-		bool is_valid();
+		bool is_valid() const;
 		bool was_cached() const;
 		Compilation::Info get_compilation_info() const;
 		
@@ -80,8 +80,8 @@ namespace symx
 		View<FLOAT> run(int thread_id);
 		
 		// Information
-		int get_n_inputs();
-		int get_n_outputs();
+		int get_n_inputs() const;
+		int get_n_outputs() const;
 		std::string get_name() const;
 
 		// Raw buffer access for advanced users

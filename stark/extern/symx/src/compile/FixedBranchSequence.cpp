@@ -53,7 +53,7 @@ void symx::core::Op::print(const std::vector<Op>& ops)
 	}
 }
 
-std::vector<int> symx::core::Op::count_ops(std::vector<Op>& ops)
+std::vector<int> symx::core::Op::count_ops(const std::vector<Op>& ops)
 {
 	std::vector<int> count(n_expr_types());
 	for (const Op& op : ops) {
@@ -62,7 +62,7 @@ std::vector<int> symx::core::Op::count_ops(std::vector<Op>& ops)
 	return count;
 }
 
-std::string symx::core::Op::count_ops_string(std::vector<Op>& ops, std::string pre_string)
+std::string symx::core::Op::count_ops_string(const std::vector<Op>& ops, const std::string& pre_string)
 {
 	std::string out;
 	std::vector<int> count = Op::count_ops(ops);
@@ -99,15 +99,15 @@ symx::core::FixedBranchSequence::FixedBranchSequence(const std::vector<Scalar>& 
 		this->ops.push_back(Op(ExprType::Symbol, i, expr_sol_idx, -1)); // We use ExprType::Symbol to indicate move solution to output
 	}
 }
-int symx::core::FixedBranchSequence::get_n_inputs()
+int symx::core::FixedBranchSequence::get_n_inputs() const
 {
 	return this->n_inputs;
 }
-int symx::core::FixedBranchSequence::get_n_outputs()
+int symx::core::FixedBranchSequence::get_n_outputs() const
 {
 	return this->n_outputs;
 }
-int symx::core::FixedBranchSequence::get_n_variables()
+int symx::core::FixedBranchSequence::get_n_variables() const
 {
 	return this->ops.back().dst + 1;
 }

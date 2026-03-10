@@ -21,7 +21,6 @@ void reorder_RCM(TriangleMesh<FLOAT>& mesh)
     apply_permutation_inplace(mesh.vertices, res.old_to_new);
 }
 
-template <typename FLOAT>
 std::vector<int> symx::enumerate(const std::vector<int> &connectivity, int stride)
 {
     const int n_elements = static_cast<int>(connectivity.size() / stride);

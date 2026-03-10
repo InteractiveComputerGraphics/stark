@@ -68,26 +68,28 @@ namespace symx
 		// Functionalities
 		bool is_zero() const;
 		bool is_one() const;
+		bool is_symbol() const;
 		void set_value(const double val);
 		double get_value() const;
 		double eval() const;
-		std::string get_checksum() const;
+		std::string get_checksum() const;  // Computes a reproducible hash from the section of the expression graph relevant to this Scalar
 
+		// Expression tree traversal and inspection
 		Scalar left() const;
 		Scalar right() const;
 		bool has_right() const;
 		bool has_not_right() const;
-		bool has_branch() const;
+		bool has_branch() const;          // True if this node is a Branch (conditional) expression
+		int32_t get_symbol_idx() const;   // Index of this symbol in the Workspace symbol table (valid only when is_symbol() is true)
+		const Expressions* get_expression_graph() const;
+
+		// Get/Make
 		Scalar get_zero() const;
 		Scalar get_one() const;
-		Scalar get_condition() const;
+		Scalar get_condition() const;     // Condition scalar of a Branch node
 		Scalar make_constant(const double val) const;
 		Scalar make_branch(const Scalar& condition, const Scalar& positive_branch, const Scalar& negative_branch) const;
 
-		int32_t get_symbol_idx() const;
-		bool is_symbol() const;
-		std::string get_name() const;
-		const Expressions* get_expression_graph() const;
 
 	private:
 		void _get_checksum(picosha2::hash256_one_by_one& hasher, std::unordered_set<int32_t>& visited) const;

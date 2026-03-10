@@ -33,7 +33,7 @@ namespace symx
 		Sequence(const std::vector<Scalar>& expr);
 		int get_n_inputs() const;
 		int get_n_outputs() const;
-		std::string count_ops_string(std::string pre_string = "");
+		std::string count_ops_string(const std::string& pre_string = "") const;
 
 	private:
 		std::vector<core::FixedBranchSequence> branch_sequences;

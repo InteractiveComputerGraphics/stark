@@ -135,7 +135,7 @@ namespace bsm
         // ===================================================================
         // Step 4: r = b - A*x  (initial residual)
         // ===================================================================
-        bsm._spmxv(Ap, x, n_threads);
+        bsm.spmxv_from_ptr(Ap, x, n_threads);
         vec_sub(r, b, Ap, n, n_threads);
 
         // ===================================================================
@@ -174,7 +174,7 @@ namespace bsm
         for (int it = 1; it <= max_iter; it++) {
             
             // Ap = A*p
-            bsm._spmxv(Ap, p, n_threads);
+            bsm.spmxv_from_ptr(Ap, p, n_threads);
 
             // pAp = p.Ap
             const double pAp = vec_dot(p, Ap, n, n_threads);

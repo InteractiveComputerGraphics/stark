@@ -5,13 +5,13 @@
 using namespace symx;
 
 template<typename FLOAT>
-Compiled<FLOAT>::Compiled(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id)
+Compiled<FLOAT>::Compiled(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id)
 {
 	this->try_load_otherwise_compile(expr, name, folder, cache_id);
 }
 
 template<typename FLOAT>
-void Compiled<FLOAT>::compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id)
+void Compiled<FLOAT>::compile(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id)
 {
 	this->name = name;
 	this->compilation.template compile<FLOAT>(expr, name, folder, cache_id);
@@ -19,7 +19,7 @@ void Compiled<FLOAT>::compile(const std::vector<Scalar>& expr, std::string name,
 }
 
 template<typename FLOAT>
-bool Compiled<FLOAT>::load_if_cached(std::string name, std::string folder, std::string cache_id)
+bool Compiled<FLOAT>::load_if_cached(const std::string& name, const std::string& folder, const std::string& cache_id)
 {
 	bool success = this->compilation.template load_if_cached<FLOAT>(name, folder, cache_id);
 	if (success) {
@@ -30,7 +30,7 @@ bool Compiled<FLOAT>::load_if_cached(std::string name, std::string folder, std::
 }
 
 template<typename FLOAT>
-void Compiled<FLOAT>::try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id)
+void Compiled<FLOAT>::try_load_otherwise_compile(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id)
 {
 	this->name = name;
 	this->compilation.template try_load_otherwise_compile<FLOAT>(expr, name, folder, cache_id);
@@ -38,7 +38,7 @@ void Compiled<FLOAT>::try_load_otherwise_compile(const std::vector<Scalar>& expr
 }
 
 template<typename FLOAT>
-bool Compiled<FLOAT>::is_valid()
+bool Compiled<FLOAT>::is_valid() const
 {
 	return this->compilation.is_valid();
 }
@@ -179,13 +179,13 @@ View<FLOAT> Compiled<FLOAT>::run(int32_t thread_id)
 }
 
 template<typename FLOAT>
-int32_t Compiled<FLOAT>::get_n_inputs()
+int32_t Compiled<FLOAT>::get_n_inputs() const
 {
 	return this->compilation.get_n_inputs();
 }
 
 template<typename FLOAT>
-int32_t Compiled<FLOAT>::get_n_outputs()
+int32_t Compiled<FLOAT>::get_n_outputs() const
 {
 	return this->compilation.get_n_outputs();
 }
@@ -251,9 +251,9 @@ const FLOAT* Compiled<FLOAT>::get_output_buffer(int32_t thread_id) const
 
 
 // Explicit template instantiation
-template class Compiled<double>;
-template class Compiled<float>;
+template class symx::Compiled<double>;
+template class symx::Compiled<float>;
 #ifdef SYMX_ENABLE_AVX2
-template class Compiled<__m256d>;
-template class Compiled<__m256>;
+template class symx::Compiled<__m256d>;
+template class symx::Compiled<__m256>;
 #endif

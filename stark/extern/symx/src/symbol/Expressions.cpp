@@ -4,17 +4,6 @@
 #include <cmath>
 #include <picoSHA2/picosha2.h>
 
-// Helpers ========================================================================================
-bool containsOnlyASCII(const std::string& string) {
-	for (auto c : string) {
-		if (static_cast<unsigned char>(c) > 127) {
-			return false;
-		}
-	}
-	return true;
-}
-// ================================================================================================
-
 using namespace symx;
 
 // CSE Mode
@@ -36,21 +25,14 @@ Expressions::Expressions()
 	this->_find_or_add(Expr(ExprType::Zero, -1, -1));
 	this->_find_or_add(Expr(ExprType::One, -1, -1));
 }
-int32_t Expressions::declare_symbol(std::string label)
+int32_t Expressions::declare_symbol()
 {
-	if (!containsOnlyASCII(label)) {
-		std::cout << "symx error: Symbols labels must be only ASCII." << std::endl;
-		exit(-1);
-	}
-
-	// Create the symbol
-	this->symbols.push_back(label);
 	this->symbol_values_set.push_back(false);
 	this->symbol_values.push_back(0.0);
 	this->symbol_locations.push_back((int32_t)this->expressions.size());
 
 	// Add it to the expression graph
-	const int32_t symbol_id = (int32_t)this->symbols.size() - 1;
+	const int32_t symbol_id = (int32_t)this->symbol_locations.size() - 1;
 	const int32_t expr_id = (int32_t)this->expressions.size();
 	this->expressions.push_back(Expr(ExprType::Symbol, symbol_id, -1));
 
@@ -97,7 +79,7 @@ int32_t Expressions::size() const
 }
 int32_t Expressions::get_n_symbols() const
 {
-	return (int32_t)this->symbols.size();
+	return (int32_t)this->symbol_locations.size();
 }
 int32_t symx::Expressions::get_symbol_location(int32_t symbol_id) const
 {
@@ -106,10 +88,6 @@ int32_t symx::Expressions::get_symbol_location(int32_t symbol_id) const
 const std::vector<Expr> &Expressions::get_expressions() const
 {
 	return this->expressions;
-}
-const std::vector<std::string>& Expressions::get_symbol_names() const
-{
-	return this->symbols;
 }
 int32_t Expressions::get_zero_idx()
 {
@@ -139,7 +117,7 @@ double Expressions::get_value(int32_t expr_id) const
 		exit(-1);
 	}
 	if (!this->symbol_values_set[expr.a]) {
-		std::cout << "symx error: Can't read a value not set. Missing symbol " << this->symbols[expr.a] << std::endl;
+		std::cout << "symx error: Can't read a value not set. Missing symbol [idx=" << expr.a << "]" << std::endl;
 	}
 
 	const int symbol_id = expr.a;
@@ -159,7 +137,7 @@ double Expressions::eval(int32_t expr_id) const
 		return expr.unpack_double(); break;
 	case ExprType::Symbol:
 		if (!this->symbol_values_set[expr.a]) {
-			std::cout << "symx error: Cannot evaluate an expression if all symbols are not set.\nMissing symbol " << this->symbols[expr.a] << std::endl;
+			std::cout << "symx error: Cannot evaluate an expression if all symbols are not set.\nMissing symbol [idx=" << expr.a << "]" << std::endl;
 		}
 		return this->symbol_values[expr.a]; break;
 	case ExprType::Add:

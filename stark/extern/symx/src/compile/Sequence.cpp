@@ -95,7 +95,7 @@ int symx::Sequence::get_n_outputs() const
 	return this->n_outputs;
 }
 
-std::string symx::Sequence::count_ops_string(std::string pre_string)
+std::string symx::Sequence::count_ops_string(const std::string& pre_string) const
 {
 	return core::Op::count_ops_string(this->ops, pre_string);
 }

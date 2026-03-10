@@ -4,6 +4,7 @@
 
 namespace symx
 {
+    /* Non-owning, bounds-checked view over a contiguous array. */
     template<typename T>
     class View
     {

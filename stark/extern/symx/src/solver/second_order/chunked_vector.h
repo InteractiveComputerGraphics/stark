@@ -23,7 +23,7 @@ namespace symx
 		/* Fields */
 		// Each chunk holds a pair: [begin pointer, current "cursor" pointer]
 		std::vector<std::array<T*, 2>> chunks;
-		int current = 0; // Currect chunk in use
+		int current = 0; // Current chunk in use
 
 	public:
 		/* Methods */

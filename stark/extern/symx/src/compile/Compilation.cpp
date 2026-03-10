@@ -2,6 +2,7 @@
 #include "compiler_utils.h"
 
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <array>
@@ -55,7 +56,7 @@ symx::Compilation::~Compilation()
 #endif
 	}
 }
-void symx::Compilation::compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id, FloatType float_type)
+void symx::Compilation::compile(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id, FloatType float_type)
 {
 	std::string id = cache_id;
 	if (id == "") {
@@ -88,8 +89,8 @@ void symx::Compilation::compile(const std::vector<Scalar>& expr, std::string nam
 	t0 = omp_get_wtime();
 	err = system(command.c_str());
 
-	// When compiling multiple units in parallel, sometimes it will not run successfully.
-	// Trying it again solves the problem.
+	// When compiling multiple units in parallel, a transient failure may occur.
+	// Retrying once typically resolves it.
 	if (err != 0) {
 		err = system(command.c_str());
 	}
@@ -124,7 +125,7 @@ void symx::Compilation::compile(const std::vector<Scalar>& expr, std::string nam
 		exit(-1);
 	}
 }
-bool symx::Compilation::load_if_cached(std::string name, std::string folder, std::string cache_id, FloatType float_type)
+bool symx::Compilation::load_if_cached(const std::string& name, const std::string& folder, const std::string& cache_id, FloatType float_type)
 {
 	if (!this->override_load && !symx::is_load_compiled_enabled()) {
 		return false; // Global load is disabled, do not load
@@ -223,7 +224,7 @@ bool symx::Compilation::load_if_cached(std::string name, std::string folder, std
 		return false;
 	}
 }
-void symx::Compilation::try_load_otherwise_compile(const std::vector<Scalar>& expr, std::string name, std::string folder, std::string cache_id, FloatType float_type)
+void symx::Compilation::try_load_otherwise_compile(const std::vector<Scalar>& expr, const std::string& name, const std::string& folder, const std::string& cache_id, FloatType float_type)
 {
 	std::string id = cache_id;
 	if (id == "") {
@@ -239,7 +240,7 @@ void symx::Compilation::try_load_otherwise_compile(const std::vector<Scalar>& ex
 		this->compile(expr, name, folder, id, float_type);
 	}
 }
-void symx::Compilation::_write_shared_object_code(Sequence& seq, std::string name, std::string folder, std::string cache_id, FloatType float_type)
+void symx::Compilation::_write_shared_object_code(Sequence& seq, const std::string& name, const std::string& folder, const std::string& cache_id, FloatType float_type)
 {
 	std::string code;
 
@@ -377,7 +378,7 @@ void symx::Compilation::Info::print() const
 	std::cout << "Number of bytes for symbols:  " << this->n_bytes_symbols << " bytes" << std::endl;
 }
 
-void symx::Compilation::_add_instructions_scalar(std::string& code, Sequence& seq, std::string type)
+void symx::Compilation::_add_instructions_scalar(std::string& code, Sequence& seq, const std::string& type)
 {
 	auto idx = [&](const int32_t& i)
 	{
@@ -466,7 +467,7 @@ void symx::Compilation::_add_instructions_scalar(std::string& code, Sequence& se
 		}
 	}
 }
-void symx::Compilation::_add_instructions_simd(std::string& code, Sequence& eval, std::string type)
+void symx::Compilation::_add_instructions_simd(std::string& code, Sequence& eval, const std::string& type)
 {
 	auto idx = [&](const int32_t& i)
 	{

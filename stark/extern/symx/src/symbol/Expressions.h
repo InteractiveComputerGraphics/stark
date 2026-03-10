@@ -26,7 +26,7 @@ namespace symx
 	public:
 		/* Methods */
 		Expressions();
-		int32_t declare_symbol(std::string label);
+		int32_t declare_symbol();
 		int32_t declare_constant_float(double constant);
 		int32_t add_operation(ExprType type, int32_t a, int32_t b);
 		int32_t add_branch(int32_t cond_expr_id, int32_t positive_branch_expr_id, int32_t negative_branch_expr_id);
@@ -36,7 +36,6 @@ namespace symx
 		int32_t get_n_symbols() const;
 		int32_t get_symbol_location(int32_t symbol_id) const;
 		const std::vector<Expr>& get_expressions() const;
-		const std::vector<std::string>& get_symbol_names() const;
 		void set_value(int32_t expr_id, double val);
 		double get_value(int32_t expr_id) const;
 		double eval(int32_t expr_id) const;
@@ -46,7 +45,6 @@ namespace symx
 	private:
 		/* Fields */
 		std::vector<Expr> expressions;  // Expression graph. Zero and One are always at indices 0 and 1.
-		std::vector<std::string> symbols;
 		std::vector<int32_t> symbol_locations;
 
 		// Evaluation

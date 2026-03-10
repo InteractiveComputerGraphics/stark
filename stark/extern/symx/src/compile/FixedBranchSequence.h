@@ -2,9 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
-#include <random>
 #include <string>
-#include <fstream>
 #include <cmath>
 #include <unordered_map>
 #include <unordered_set>
@@ -82,8 +80,8 @@ namespace symx
 			}
 
 			static void print(const std::vector<Op>& ops);
-			static std::vector<int> count_ops(std::vector<Op>& ops);
-			static std::string count_ops_string(std::vector<Op>& ops, std::string pre_string = "");
+			static std::vector<int> count_ops(const std::vector<Op>& ops);
+			static std::string count_ops_string(const std::vector<Op>& ops, const std::string& pre_string = "");
 		};
 
 		class FixedBranchSequence
@@ -98,9 +96,9 @@ namespace symx
 
 			/* Methods */
 			FixedBranchSequence(const std::vector<Scalar>& expr, const std::unordered_map<int, bool>& branch_combination = {});
-			int get_n_inputs();
-			int get_n_outputs();
-			int get_n_variables();
+			int get_n_inputs() const;
+			int get_n_outputs() const;
+			int get_n_variables() const;
 			void print();
 
 		private:

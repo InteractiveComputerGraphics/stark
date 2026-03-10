@@ -4,7 +4,7 @@
 #include "project_to_PD.h"
 
 symx::SecondOrderCompiledPotential::SecondOrderCompiledPotential(const Potential &potential, const std::vector<DataMap<double>> &dofs_maps, const std::string &compilation_directory, DeferredParallelTasks& tasks)
-    : mws(potential.mws)
+    : mws(potential.get_mws())
 {
     // Identity DoF scalars
     std::vector<Scalar> dofs;
@@ -45,7 +45,7 @@ symx::SecondOrderCompiledPotential::SecondOrderCompiledPotential(const Potential
     // Compute checksum
     std::string pre_hash = potential.get_name();
     for (const Scalar& dof : dofs) {
-        pre_hash += dof.get_name();
+        pre_hash += std::to_string(dof.get_symbol_idx());
     }
     const std::string checksum = potential.get_checksum(pre_hash);
 

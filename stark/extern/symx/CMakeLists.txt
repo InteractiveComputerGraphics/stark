@@ -103,6 +103,10 @@ add_library(symx ${SOURCE_FILES})
 target_compile_features(symx PUBLIC cxx_std_17)
 
 # OpenMP
+if(APPLE)
+	set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH};/opt/homebrew/opt/libomp)
+endif()
+
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(symx PUBLIC OpenMP::OpenMP_CXX)

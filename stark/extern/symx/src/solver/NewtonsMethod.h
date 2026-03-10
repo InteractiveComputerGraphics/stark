@@ -9,6 +9,22 @@
 
 namespace symx
 {
+	/*
+	 * Newton's method solver for energy minimization problems defined via GlobalPotential.
+	 *
+	 * Takes in a GlobalPotential (aggregate of Potentials + DoFs) and provides the solution
+	 * of the non-linear optimization problem.
+	 * 
+	 * Each call to solve() runs a Newton loop:
+	 *   1. Evaluate potential, gradient, and per-element Hessians via SecondOrderCompiledGlobal.
+	 *   2. (optionally) Project element Hessians to positive-definiteness (PD) and assemble the global Hessian.
+	 *   3. Solve the linear system  H * du = -grad  with a preconditioned CG solver (default).
+	 *   4. Line search: backtrack or bisect until energy decreases sufficiently.
+	 *
+	 * The process is _highly_ customizable. The user is strongly encouraged to check:
+	 *   NewtonSettings   — convergence tolerances, line search limits, projection mode, etc.
+	 *   SolverCallbacks  — optional hooks to inject custom functionality.
+	 */
 	class NewtonsMethod
 	{
 	public:

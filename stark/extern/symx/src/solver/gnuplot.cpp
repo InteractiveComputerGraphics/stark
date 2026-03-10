@@ -109,7 +109,6 @@ void visualize_line_search_failure(
 
     // Write one gnuplot script per Newton iteration for separate windows
     std::vector<std::string> script_files;
-    // for (size_t iter = 0; iter < energy_samples.size(); ++iter) {
     for (int iter = (int)energy_samples.size() - 1; iter >= 0; iter--) {
         std::string iter_script = dir + "/_linesearch_failure_" + std::to_string(iter) + ".gp";
         script_files.push_back(iter_script);

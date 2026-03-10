@@ -644,10 +644,6 @@ void NewtonsMethod::print_summary(double total_time) const
 {
 	auto* out = this->output.get();
 
-	// ── Solve table ──
-	//const double n_hess = logger->get_double("n_hessians");
-	//const double n_proj = logger->get_double("n_projected_hessians");
-	//const double proj_ratio = n_hess > 0 ? 100.0 * n_proj / n_hess : 0.0;
 
 	out->print_with_new_line("");
 	out->print_with_new_line(fmt::format("  {:<24} {:>10} {:>8} {:>8} {:>8}", "Solve", "Total", "Avg", "Min", "Max"));
