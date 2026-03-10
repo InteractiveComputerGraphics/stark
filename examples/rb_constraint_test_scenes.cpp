@@ -2,7 +2,6 @@
 #include <functional>
 
 #include <stark>
-#include "paths.h"
 
 stark::RigidBodyHandler make_box(stark::Simulation& simulation)
 {
