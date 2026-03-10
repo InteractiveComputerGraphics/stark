@@ -7,7 +7,10 @@
 
 namespace symx
 {
-	// Thin wrapper to expressions with the ability to create new ones
+	/*
+	* Symbolic scalar value. Interfaces manipulating the expression graph
+	* with nice readable operator overloads.
+	*/
 	class Scalar
 	{
 	friend class Workspace;

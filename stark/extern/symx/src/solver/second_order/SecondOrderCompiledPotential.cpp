@@ -98,7 +98,7 @@ void symx::SecondOrderCompiledPotential::evaluate_P(Assembly &assembly)
 
     // Evaluate potential
     this->P.run(assembly.n_threads,
-        [&assembly, this](const View<double> sol, int32_t element_idx, int32_t thread_id, const View<const int32_t> conn)
+        [&assembly, this](const View<double> sol, int32_t element_idx, int32_t thread_id, const View<int32_t> conn)
         {
             assembly.E.get(thread_id) += sol[0];
         },
@@ -113,7 +113,7 @@ void symx::SecondOrderCompiledPotential::evaluate_P__dP_du(Assembly &assembly)
 
     // Evaluate potential and gradient
     this->P__dP_du.run(assembly.n_threads,
-        [&assembly, this](const View<double> sol, int32_t element_idx, int32_t thread_id, const View<const int32_t> conn)
+        [&assembly, this](const View<double> sol, int32_t element_idx, int32_t thread_id, const View<int32_t> conn)
         {
             constexpr int BLOCK_SIZE = ElementHessians::BLOCK_SIZE;
             const int n_block_rows = this->n_dofs / BLOCK_SIZE;
@@ -146,7 +146,7 @@ void symx::SecondOrderCompiledPotential::evaluate_P__dP_du__local_d2P_du2(Assemb
     
     // Evaluate potential, gradient, and Hessian
     this->P__dP_du__d2P_du2.run(assembly.n_threads,
-        [&assembly, this](const View<double> sol, int32_t element_idx, int32_t thread_id, const View<const int32_t> conn)
+        [&assembly, this](const View<double> sol, int32_t element_idx, int32_t thread_id, const View<int32_t> conn)
         {
             constexpr int BLOCK_SIZE = ElementHessians::BLOCK_SIZE;
             const int n_block_rows = this->n_dofs / BLOCK_SIZE;
@@ -188,7 +188,7 @@ void symx::SecondOrderCompiledPotential::_evaluate_element_condition(int32_t n_t
         const int n_elements = this->mws->conn.n_elements();
         this->has_element_positive_condition.resize(n_elements);
         this->C.run(n_threads,
-            [this](const View<double> sol, int32_t element_idx, int32_t thread_id, const View<const int32_t> conn)
+            [this](const View<double> sol, int32_t element_idx, int32_t thread_id, const View<int32_t> conn)
             {
                 this->has_element_positive_condition[element_idx] = static_cast<uint8_t>(sol[0] > 0);
             }

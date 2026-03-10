@@ -105,6 +105,13 @@ namespace symx
 			break;
 		}
 	}
+
+	/*
+	* Node in the expression graph. It can represent an operation, a symbol,
+	* a branch or a constant. Fields `a` and `b` are usually the indices to 
+	* the left and right operators in the expression, but they can also be 
+	* used to store the constants in double precision.
+	*/
 	struct Expr
 	{
 		ExprType type;

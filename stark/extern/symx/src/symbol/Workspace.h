@@ -12,6 +12,10 @@
 
 namespace symx
 {
+	/*
+	* User interface to the expression graph. Mainly to create Scalar, 
+	* Vector and Matrix.
+	*/
 	class Workspace
 	{
 	public:

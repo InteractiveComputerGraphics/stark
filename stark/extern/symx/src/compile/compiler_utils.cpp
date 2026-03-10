@@ -246,10 +246,10 @@ void symx::print_compiler_help()
     std::cout << "2. Make sure the compiler supports C++17 or higher." << std::endl;
     std::cout << "3. If using SIMD features, ensure the compiler supports AVX instructions." << std::endl;
     std::cout << "4. You can set the compiler path in symx using symx::set_compiler_path(path)." << std::endl;
-    std::cout << "5. Manually delete cached compiled shared objects in the codegen folder." << std::endl;
     std::cout << "5. Use symx::suppress_compiler_output(false) to see detailed compilation errors." << std::endl;
     std::cout << "6. For specific compiler diagnostics, run symx::print_compiler_diagnostics()." << std::endl;
     std::cout << "7. To check all auto-detected compilers, run symx::validate_auto_search_compiler_paths()." << std::endl;
+    std::cout << "8. Try after manually deleting cached compiled shared objects in the codegen folder." << std::endl;
 }
 
 // =============================================================================

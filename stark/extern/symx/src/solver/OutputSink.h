@@ -112,7 +112,7 @@ namespace symx
             return _indent(depth);
         }
 
-        Verbosity console_verbosity_ = Verbosity::Summary;
+        Verbosity console_verbosity_ = Verbosity::Medium;
         Verbosity file_verbosity_ = Verbosity::Full;
         bool enabled_ = true;
         int root_tab_ = 0;

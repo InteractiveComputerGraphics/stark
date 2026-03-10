@@ -55,6 +55,7 @@ SolverReturn NewtonsMethod::solve()
     this->grad.resize(ndofs);
     double E0 = 0.0;
     double du_dot_grad = 0.0;
+    double res_0 = std::numeric_limits<double>::max();
     spElementHessians element_hessians = nullptr;
     ElementHessians::spBSM hess = nullptr;
     SolverReturn result = SolverReturn::Running;
@@ -103,6 +104,9 @@ SolverReturn NewtonsMethod::solve()
         // Compute residual
         double residual_norm = this->callbacks->compute_residual(this->grad);
         this->output->print(fmt::format("r0: {:.2e} | ", residual_norm), Verbosity::Medium);
+        if (newton_iteration == 0) {
+            res_0 = residual_norm;
+        }
 
         // Residual too small for numerical stability?
         if (residual_norm < this->settings.bailout_residual) {
@@ -111,9 +115,19 @@ SolverReturn NewtonsMethod::solve()
         }
 
         // Residual convergence?
-        if (newton_iteration >= this->settings.min_iterations && residual_norm < this->settings.residual_tolerance) {
-            result = SolverReturn::Successful;
-            break;
+        if (newton_iteration >= this->settings.min_iterations) {
+            
+            //// Absolute residual
+            if (residual_norm < this->settings.residual_tolerance_abs) {
+                result = SolverReturn::Successful;
+                break;
+            }
+            
+            //// Relative residual
+            if (newton_iteration > 0 && residual_norm/res_0 < this->settings.residual_tolerance_rel) {
+                result = SolverReturn::Successful;
+                break;
+            }
         }
 
         // Inner loop: project + solve until we get a descent direction (or give up)
@@ -202,6 +216,12 @@ SolverReturn NewtonsMethod::solve()
 
         // Line search
         result = this->_line_search_inplace(E0, du_dot_grad, du_max);
+
+        // User's convergence
+        if (newton_iteration >= this->settings.min_iterations && this->callbacks->run_is_converged()) {
+            result = SolverReturn::Successful;
+            break;
+        }
 
         // Exit Newton's loop
         if (result != SolverReturn::Running) {
@@ -609,7 +629,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
             );
 
             // Exit
-            std::cout << "Exiting stark..." << std::endl;
+            std::cout << "Exiting..." << std::endl;
             exit(-1);
         }
 
@@ -664,18 +684,21 @@ void NewtonsMethod::print_summary(double total_time) const
 	std::vector<TimerEntry> timer_entries;
 	double acc = 0.0;
 	for (const auto& label : logger->get_timer_labels()) {
-		if (label == "total") continue;
 		double time = logger->get_timer_total(label);
 		acc += time;
-		if (total_time > 0.0 && time / total_time < 0.001) continue;
+		if (time / total_time < 0.001) continue;  // Hide very small runtime
 		timer_entries.push_back({label, time});
 	}
-	const double total_logged = logger->get_timer_total("total");
-	const double misc = (total_logged > 0.0 ? total_logged : total_time) - acc;
+
+    // Add rest not accounted for
+	const double misc = total_time - acc;
 	timer_entries.push_back({"misc", misc});
+
+    // Sort
 	std::sort(timer_entries.begin(), timer_entries.end(),
 		[](const TimerEntry& a, const TimerEntry& b) { return a.time > b.time; });
 
+    // Print
 	out->print_with_new_line("");
 	out->print_with_new_line(fmt::format("  {:<40} {:>10}  {:>6}", "Runtime", "Time (s)", "%"));
 	out->print_with_new_line(fmt::format("  {}", std::string(60, '-')));

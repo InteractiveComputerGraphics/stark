@@ -39,7 +39,7 @@ namespace symx
 			}
 			
 			// Error
-			std::cout << "stark error: LabelledConnectivity.get_label_idx() Label not found" << std::endl;
+			std::cout << "symx error: LabelledConnectivity.get_label_idx() Label not found" << std::endl;
 			exit(-1);
 		};
 		inline std::array<int32_t, N> get_label_indices(const std::array<std::string, N>& labels) const

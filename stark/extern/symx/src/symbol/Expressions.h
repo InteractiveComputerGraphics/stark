@@ -16,9 +16,9 @@ namespace symx
 	/*
 		Low level (internal) representation of symbolic expression graphs.
 		Provides a way to declare symbols, constants, and operations, and to evaluate the resulting expression.
-		It is interfaced via integers, which are used to refer to the expressions.
+		It is interfaced via integer indices, which are used to refer to the expressions.
 
-		Higher level abstractions are Scalar, Vector and Matrix.
+		Higher level abstractions are `Scalar`, `Vector` and `Matrix`.
 	*/
 	class Expressions
 	{

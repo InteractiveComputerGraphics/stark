@@ -44,7 +44,7 @@ Settings::Settings()
 	this->output.time_stamp = time_stamp();
 
 	// Override symx defaults for simulation
-	this->newton.residual_tolerance = 1e-6;
+	this->newton.residual_tolerance_abs = 1e-6;
 	this->newton.step_tolerance = 1e-3;
 	this->newton.max_backtracking_invalid_state_iterations = 8; // increase IPC stiffness if penetrations at ~0.004 step length
 	this->newton.projection_mode = symx::ProjectionToPD::Progressive;

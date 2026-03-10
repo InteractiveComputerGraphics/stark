@@ -41,6 +41,7 @@ namespace bsm
 		const int n = (int)this->values.size()/this->padding;
 		for (int i = 1; i < n; i++) {
 			this->values[0] += this->values[i * this->padding];
+			this->values[i * this->padding] = 0.0;
 		}
 		return this->values[0];
 	}

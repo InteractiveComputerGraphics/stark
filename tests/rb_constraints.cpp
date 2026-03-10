@@ -39,7 +39,7 @@ stark::Settings test_settings(std::string name)
 	// High resolution for accurate results
 	settings.simulation.max_time_step_size = 0.002;
 	settings.newton.linear_solver = symx::LinearSolver::DirectLLT;
-	settings.newton.residual_tolerance = 1e-6;
+	settings.newton.residual_tolerance_abs = 1e-6;
 
 	return settings;
 }

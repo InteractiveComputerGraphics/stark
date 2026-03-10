@@ -18,47 +18,37 @@ static bool _force_load_global = false;
 static std::mutex _compiler_mutex;
 
 void symx::set_compiler_path(const std::string& path) { 
-	std::lock_guard<std::mutex> lock(_compiler_mutex);
 	_compiler_path_setting = path; 
 }
 std::string symx::get_compiler_path() { 
-	std::lock_guard<std::mutex> lock(_compiler_mutex);
 	return _compiler_path_setting; 
 }
 
 void symx::suppress_compiler_output(bool suppress) { 
-	std::lock_guard<std::mutex> lock(_compiler_mutex);
 	_suppress_compiler_output_global = suppress; 
 }
 bool symx::get_suppress_compiler_output() { 
-	std::lock_guard<std::mutex> lock(_compiler_mutex);
 	return _suppress_compiler_output_global; 
 }
 
 void symx::check_mode_ON(bool check) { 
-	std::lock_guard<std::mutex> lock(_compiler_mutex);
 	_check_mode_ON_global = check; 
 }
 bool symx::get_check_mode_ON() { 
-	std::lock_guard<std::mutex> lock(_compiler_mutex);
 	return _check_mode_ON_global; 
 }
 
 void symx::enable_load_compiled(bool enable) { 
-	std::lock_guard<std::mutex> lock(_compiler_mutex);
 	_is_load_compiled_enabled_global = enable; 
 }
 bool symx::is_load_compiled_enabled() { 
-	std::lock_guard<std::mutex> lock(_compiler_mutex);
 	return _is_load_compiled_enabled_global; 
 }
 
 void symx::force_load(bool force) { 
-	std::lock_guard<std::mutex> lock(_compiler_mutex);
 	_force_load_global = force; 
 }
 bool symx::get_force_load() { 
-	std::lock_guard<std::mutex> lock(_compiler_mutex);
 	return _force_load_global; 
 }
 

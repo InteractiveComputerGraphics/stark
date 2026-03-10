@@ -78,7 +78,7 @@ void visualize_line_search_failure(
     csv_file << "\n";
 
     // Data rows
-    const int n_samples = 1000;
+    const int n_samples = (int)energy_samples[0].size();
     for (int i = 0; i < n_samples; ++i) {
         double step_value = -0.5 + (2.0 * i) / (n_samples - 1);  // -0.5 to 1.5
         csv_file << fmt::format("{:.6e}", step_value);

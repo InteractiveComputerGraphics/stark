@@ -133,7 +133,7 @@ namespace bsm
 		 * @param base_col col of the element m(0, 0)
 		 * @param m	Matrix to insert stored flat in memory with single index access.
 		 */
-		template<typename FLOAT, Ordering ORDERING, ThreadSafety THREAD_SAFETY = ThreadSafety::UseMutex>
+		template<typename FLOAT = double, Ordering ORDERING = Ordering::RowMajor, ThreadSafety THREAD_SAFETY = ThreadSafety::UseMutex>
 		void add_block_from_ptr(const int base_row, const int base_col, const FLOAT* m);
 
 		/**

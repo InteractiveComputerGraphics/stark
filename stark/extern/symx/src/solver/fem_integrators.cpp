@@ -118,16 +118,16 @@ std::vector<std::array<double, 4>> symx::get_integration_rule(const FEM_Element&
 		exit(-1);
 	}
 }
-Scalar symx::fem_integrator(const FEM_Element& element, MappedWorkspace<double>& mws, std::function<Scalar(Scalar& w, Vector& xi)> summand)
+Scalar symx::fem_integrator(MappedWorkspace<double>& mws, const FEM_Element& element, std::function<Scalar(Scalar& w, Vector& xi)> summand)
 {
-	std::vector<std::array<double, 4>> gp = get_integration_rule(element);
-	Scalar summation = mws.add_for_each(gp,
-		[&](Vector& rule)
-		{
-			Scalar w = rule[0];
-			Vector xi = Vector({ rule[1], rule[2], rule[3] });
-			return summand(w, xi);
-		}
-	);
-	return summation;
+    std::vector<std::array<double, 4>> rule = get_integration_rule(element);
+    Scalar summation = mws.add_for_each(rule,
+        [&](Vector& ip)
+        {
+            Scalar w = ip[0];
+            Vector xi = Vector({ ip[1], ip[2], ip[3] });
+            return summand(w, xi);
+        }
+    );
+    return summation;
 }

@@ -1,8 +1,6 @@
 #pragma once
 #include "CompiledInLoop.h"
 
-#include <fmt/format.h>
-
 /*
 ================================================================================
                      DATA FLOW AND BUFFER MANAGEMENT
@@ -64,9 +62,10 @@ The key design constraints are:
 namespace symx
 {
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	template<typename CALLBACK_T>
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run(
 		int32_t n_threads, 
-		std::function<void(View<OUTPUT_FLOAT> solution, int32_t element_idx, int32_t thread_id, View<const int32_t> connectivity)> callback,
+		CALLBACK_T callback,
 		const std::vector<uint8_t>& is_element_active)
 	{
 
@@ -463,9 +462,9 @@ namespace symx
 				for (int line_i = 0; line_i < LINES; line_i++) {
 					if (!is_pad_element[line_i]) {
 						const int elem_idx = element_indices[line_i];
-						const int32_t* loc_conn = group_elem_conn.data() + line_i * connectivity_stride;
+						int32_t* loc_conn = group_elem_conn.data() + line_i * connectivity_stride;
 						OUTPUT_FLOAT* f_output_line = f_output + line_i * padded_n_outputs;
-						callback(View<OUTPUT_FLOAT>(f_output_line, n_outputs), elem_idx, thread_id, View<const int32_t>(loc_conn, connectivity_stride));
+						callback(View<OUTPUT_FLOAT>(f_output_line, n_outputs), elem_idx, thread_id, View<int32_t>(loc_conn, connectivity_stride));
 					}
 				}
 			} // End of group loop

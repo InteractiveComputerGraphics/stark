@@ -1,5 +1,6 @@
 #include "SecondOrderCompiledGlobal.h"
 
+#include <fmt/format.h>
 #include <Eigen/Sparse>
 #include "../solver_utils.h"
 

@@ -137,17 +137,17 @@ namespace symx
 		inline Matrix make_identity_matrix(const int32_t size);
 
 		// Connectivity
-		inline int get_n_elements() const;
-		inline int get_connectivity_stride() const;
+		inline int32_t get_n_elements() const;
+		inline int32_t get_connectivity_stride() const;
 		inline const int32_t* get_connectivity_data() const;
-		inline View<const int32_t> get_connectivity_elem(const int32_t i) const;
-		inline const Workspace& get_workspace() const;
-
+		inline View<int32_t> get_connectivity_elem(const int32_t i) const;
+		
 		// Verification
 		inline void verify_data_maps() const;
 		inline void verify_no_out_of_bounds() const;
-
+		
 		// Misc
+		inline const Workspace& get_workspace() const;
 		std::vector<Scalar> get_symbols(const DataMap<double>& data_map);
 		std::vector<DataMap<const FLOAT>> get_original_maps(const DataMap<double>& data_map);
 
@@ -633,13 +633,13 @@ namespace symx
 	// Verification
 	// ============================================================================
 	template<typename FLOAT>
-	inline int MappedWorkspace<FLOAT>::get_n_elements() const
+	inline int32_t MappedWorkspace<FLOAT>::get_n_elements() const
 	{
 		return this->conn.n_elements();
 	}
 
 	template<typename FLOAT>
-	inline int MappedWorkspace<FLOAT>::get_connectivity_stride() const
+	inline int32_t MappedWorkspace<FLOAT>::get_connectivity_stride() const
 	{
 		return this->conn.stride;
 	}
@@ -651,9 +651,9 @@ namespace symx
 	}
 
 	template<typename FLOAT>
-	inline View<const int32_t> MappedWorkspace<FLOAT>::get_connectivity_elem(const int32_t i) const
+	inline View<int32_t> MappedWorkspace<FLOAT>::get_connectivity_elem(const int32_t i) const
 	{
-		return View<const int32_t>(this->conn.data() + this->conn.stride*i, this->conn.stride);
+		return View<int32_t>(this->conn.data() + this->conn.stride*i, this->conn.stride);
 	}
 
     template <typename FLOAT>

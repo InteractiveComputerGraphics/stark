@@ -30,6 +30,8 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif()
 
 # Dependencies
+set(SYMX_EIGEN_PUBLIC ON)
+set(SYMX_FMT_PUBLIC   ON)
 add_subdirectory(extern/symx)
 add_subdirectory(extern/TriangleMeshCollisionDetection)
 

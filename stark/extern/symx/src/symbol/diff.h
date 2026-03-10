@@ -11,6 +11,11 @@
 
 namespace symx
 {
+	/*
+	* Cache to reuse partial differentiation results. Use it across
+	* differentiation operations in the same workspace to greatly reduce
+	* computation times.
+	*/
 	using DiffCache = std::unordered_map<int64_t, Scalar>;
 	
 	// Basic diff functions

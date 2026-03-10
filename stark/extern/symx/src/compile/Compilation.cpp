@@ -368,15 +368,13 @@ symx::Compilation::Info symx::Compilation::get_info() const
 }
 void symx::Compilation::Info::print() const
 {
-	std::cout << "=== Compilation Info ===" << std::endl;
-	std::cout << "Number of inputs: " << this->n_inputs << std::endl;
-	std::cout << "Number of outputs: " << this->n_outputs << std::endl;
-	std::cout << "Compiled float type: " << get_float_type_as_string(this->compiled_type) << std::endl;
-	std::cout << "Was cached: " << (this->was_cached ? "Yes" : "No") << std::endl;
-	std::cout << "Runtime code generation time (s): " << this->runtime_codegen << std::endl;
-	std::cout << "Runtime compilation time (s): " << this->runtime_compilation << std::endl;
-	std::cout << "Number of bytes for symbols: " << this->n_bytes_symbols << " bytes" << std::endl;
-	std::cout << "========================" << std::endl;
+	std::cout << "Number of inputs:             " << this->n_inputs << std::endl;
+	std::cout << "Number of outputs:            " << this->n_outputs << std::endl;
+	std::cout << "Compiled float type:          " << get_float_type_as_string(this->compiled_type) << std::endl;
+	std::cout << "Was cached:                   " << (this->was_cached ? "Yes" : "No") << std::endl;
+	std::cout << "Runtime code generation (s):  " << this->runtime_codegen << std::endl;
+	std::cout << "Runtime compilation (s):      " << this->runtime_compilation << std::endl;
+	std::cout << "Number of bytes for symbols:  " << this->n_bytes_symbols << " bytes" << std::endl;
 }
 
 void symx::Compilation::_add_instructions_scalar(std::string& code, Sequence& seq, std::string type)

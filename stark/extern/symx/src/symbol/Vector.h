@@ -6,6 +6,9 @@
 
 namespace symx
 {
+	/*
+	* Symbolic vector of dynamic size. Uses `Scalar` for the entries.
+	*/
 	class Vector
 	{
 	private:

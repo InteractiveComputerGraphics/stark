@@ -35,38 +35,41 @@ namespace symx
 		std::vector<std::function<bool()>> is_intermediate_state_valid;
 		std::vector<std::function<void()>> on_intermediate_state_invalid;
 		std::vector<std::function<void()>> on_armijo_fail;
+		std::vector<std::function<bool()>> is_converged;
 		std::vector<std::function<bool()>> is_converged_state_valid;
         std::vector<std::function<double()>> max_allowed_step;
         std::function<double(Eigen::VectorXd&)> residual = default_residual;
         spContext context = nullptr;
-
+        
 		/* Methods */
 		void _run(std::vector<std::function<void()>>& fs)
 		{
-			for (auto& f : fs) {
-				f();
+            for (auto& f : fs) {
+                f();
 			}
 		}
-		bool _run_bool(std::vector<std::function<bool()>>& fs)
+		bool _run_bool(bool default_bool, std::vector<std::function<bool()>>& fs)
 		{
-			bool valid = true;
+            bool valid = default_bool;
 			for (auto& f : fs) {
-				valid = valid && f();
+                valid = valid && f();
 			}
 			return valid;
 		}
-
-	public:
+        
+        public:
 		/* Methods */
         SolverCallbacks(spContext context) : context(context) {}
         static std::shared_ptr<SolverCallbacks> create(spContext context) { return std::make_shared<SolverCallbacks>(context); }
 
 		// Add callbacks
+        void set_residual(std::function<double(Eigen::VectorXd&)> f) { this->residual = f; }
 		void add_before_energy_evaluation(std::function<void()> f) { this->before_energy_evaluation.push_back(f); }
 		void add_is_initial_state_valid(std::function<bool()> f) { this->is_initial_state_valid.push_back(f); }
 		void add_is_intermediate_state_valid(std::function<bool()> f) { this->is_intermediate_state_valid.push_back(f); }
 		void add_on_intermediate_state_invalid(std::function<void()> f) { this->on_intermediate_state_invalid.push_back(f); }
 		void add_on_armijo_fail(std::function<void()> f) { this->on_armijo_fail.push_back(f); }
+		void add_is_converged(std::function<bool()> f) { this->is_converged.push_back(f); }
 		void add_is_converged_state_valid(std::function<bool()> f) { this->is_converged_state_valid.push_back(f); }
         void add_max_allowed_step(std::function<double()> f) { this->max_allowed_step.push_back(f); }
 
@@ -77,11 +80,11 @@ namespace symx
         }
 		bool run_is_initial_state_valid() { 
             auto _t = this->context->logger->time("is_initial_state_valid");
-            return this->_run_bool(this->is_initial_state_valid); 
+            return this->_run_bool(true, this->is_initial_state_valid); 
         }
 		bool run_is_intermediate_state_valid() { 
             auto _t = this->context->logger->time("is_intermediate_state_valid");
-            return this->_run_bool(this->is_intermediate_state_valid); 
+            return this->_run_bool(true, this->is_intermediate_state_valid); 
         }
 		void run_on_intermediate_state_invalid() { 
             auto _t = this->context->logger->time("on_intermediate_state_invalid");
@@ -91,9 +94,13 @@ namespace symx
             auto _t = this->context->logger->time("on_armijo_fail");
             this->_run(this->on_armijo_fail); 
         }
+		bool run_is_converged() { 
+            auto _t = this->context->logger->time("is_converged");
+            return this->_run_bool(false, this->is_converged); 
+        }
 		bool run_is_converged_state_valid() { 
             auto _t = this->context->logger->time("is_converged_state_valid");
-            return this->_run_bool(this->is_converged_state_valid); 
+            return this->_run_bool(true, this->is_converged_state_valid); 
         }
         double run_max_allowed_step()
         {
@@ -166,16 +173,17 @@ namespace symx
     struct SolverSettings
     {
         // Iteration limits
-        int max_iterations = 100;
-        int min_iterations = 1;
-        bool max_iterations_as_success = false;          // Treat hitting max_iterations as convergence
-
+        int max_iterations = std::numeric_limits<int>::max();
+        int min_iterations = 0;
+        
         // Convergence criteria
-        double residual_tolerance = 1e-6;
-        double step_tolerance = std::numeric_limits<double>::epsilon();
+        double residual_tolerance_abs = 1e-6;
+        double residual_tolerance_rel = 0.0;
+        double step_tolerance = 0.0;
+        bool max_iterations_as_success = false;          // Treat hitting max_iterations as convergence
+        
+        // Line search
         double step_cap = std::numeric_limits<double>::infinity();  // Clamp step norm to this value
-
-        // Line search (Armijo backtracking)
         bool enable_armijo_backtracking = true;
         double line_search_armijo_beta = 1e-4;           // Sufficient decrease parameter
         int max_backtracking_armijo_iterations = 20;
@@ -189,12 +197,13 @@ namespace symx
             out += "\n" + p + "Iteration limits";
             out += "\n" + p + "    max_iterations: " + std::to_string(max_iterations);
             out += "\n" + p + "    min_iterations: " + std::to_string(min_iterations);
-            out += "\n" + p + "    max_iterations_as_success: " + to_string(max_iterations_as_success);
             out += "\n" + p + "Convergence";
-            out += "\n" + p + "    residual_tolerance: " + to_string_sci(residual_tolerance);
+            out += "\n" + p + "    residual_tolerance_abs: " + to_string_sci(residual_tolerance_abs);
+            out += "\n" + p + "    residual_tolerance_rel: " + to_string_sci(residual_tolerance_rel);
             out += "\n" + p + "    step_tolerance: " + to_string_sci(step_tolerance);
-            out += "\n" + p + "    step_cap: " + to_string_sci(step_cap);
+            out += "\n" + p + "    max_iterations_as_success: " + to_string(max_iterations_as_success);
             out += "\n" + p + "Line search";
+            out += "\n" + p + "    step_cap: " + to_string_sci(step_cap);
             out += "\n" + p + "    enable_armijo_backtracking: " + to_string(enable_armijo_backtracking);
             out += "\n" + p + "    armijo_beta: " + to_string_sci(line_search_armijo_beta);
             out += "\n" + p + "    max_armijo_iterations: " + std::to_string(max_backtracking_armijo_iterations);
@@ -211,7 +220,7 @@ namespace symx
         double projection_eps = 1e-10;               // Min eigenvalue after projection
         bool project_to_pd_use_mirroring = false;    // Mirror instead of clamp for negative eigenvalues
 
-        // ProjectOnDemand
+        // Project-On-Demand
         int project_on_demand_countdown = 4;         // Iterations to project after failure
 
         // Progressive Projected Newton (PPN)

@@ -3,7 +3,6 @@
 #include <array>
 #include <unordered_map>
 #include <string>
-#include <fmt/format.h>
 
 #include <omp.h>
 
@@ -86,6 +85,8 @@ namespace symx
 			double runtime_codegen = 0.0;
 			double runtime_compilation = 0.0;
 			int n_bytes_symbols = 0;
+
+			void print() const;
 		};
 
 		/* Methods */
@@ -107,10 +108,10 @@ namespace symx
 		
 		bool is_valid() const;
 		bool was_cached() const;
-		// Info get_info() const;
+		Info get_info() const;
 		
 		/*
-		* @param conn_indices: indices in the connectivity array to use for coloring. E.g. tet4 conn = { enum, v0, v1, v2, v4 } -> conn_indices = {1,2,3,4}
+		* @param conn_indices: indices in the connectivity array to use for coloring. E.g. Tet4 conn = { enum, v0, v1, v2, v4 } -> conn_indices = {1,2,3,4}
 		* Warning: This is a dangerous stateful option.
 		* If coloring is enabled, the evaluation will happen on the colors.
 		* If the connectivity changes, but update_coloring is not called, the coloring will be stale and the evaluation will be incorrect.
@@ -119,16 +120,13 @@ namespace symx
 		void disable_coloring();
 		void update_coloring();
 
-		// Run
-		void run(
-			int32_t n_threads,
-			std::function<void(View<OUTPUT_FLOAT> solution, int32_t element_idx, int32_t thread_id, View<const int32_t> connectivity)> callback
-		);
-		void run(
-			int32_t n_threads,
-			std::function<void(View<OUTPUT_FLOAT> solution, int32_t element_idx, int32_t thread_id, View<const int32_t> connectivity)> callback,
-			const std::vector<uint8_t>& is_element_active
-		);
+		// CALLBACK_T = std::function<void(View<OUTPUT_FLOAT> solution, int32_t element_idx, int32_t thread_id, View<int32_t> element_conn)>
+		template<typename CALLBACK_T>
+		void run(int32_t n_threads, CALLBACK_T callback);
+
+		// CALLBACK_T = std::function<void(View<OUTPUT_FLOAT> solution, int32_t element_idx, int32_t thread_id, View<int32_t> element_conn)>
+		template<typename CALLBACK_T>
+		void run(int32_t n_threads, CALLBACK_T callback, const std::vector<uint8_t>& is_element_active);
 
 	private:
 		void _check_types();
@@ -137,6 +135,22 @@ namespace symx
 
 
 	// ===================================== DEFINITIONS =====================================
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::Info::print() const
+	{
+		std::cout << "Number of inputs:             " << this->n_inputs << std::endl;
+		std::cout << "Number of outputs:            " << this->n_outputs << std::endl;
+		std::cout << "Number of elements:           " << this->n_elements << std::endl;
+		std::cout << "Connectivity stride:          " << this->connectivity_stride << std::endl;
+		std::cout << "Input float type:             " << get_float_type_as_string(this->input_float) << std::endl;
+		std::cout << "Compiled float type:          " << get_float_type_as_string(this->compiled_type) << std::endl;
+		std::cout << "Output float type:            " << get_float_type_as_string(this->output_float) << std::endl;
+		std::cout << "Was cached:                   " << (this->was_cached ? "Yes" : "No") << std::endl;
+		std::cout << "Runtime code generation (s):  " << this->runtime_codegen << std::endl;
+		std::cout << "Runtime compilation (s):      " << this->runtime_compilation << std::endl;
+		std::cout << "Number of bytes for symbols:  " << this->n_bytes_symbols << " bytes" << std::endl;
+	}
+
 	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
 	inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::_check_types()
 	{
@@ -229,27 +243,28 @@ namespace symx
 	{
 		return this->compilation.was_cached();
 	}
-	// template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-	// inline typename CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::Info CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::get_info() const
-	// {
-	// 	Compilation::Info compilation_info = this->compilation.get_info();
-	// 	Info info;
-	// 	info.n_inputs = compilation_info.n_inputs;
-	// 	info.n_outputs = compilation_info.n_outputs;
-	// 	info.n_elements = this->get_n_elements();
-	// 	info.connectivity_stride = this->get_connectivity_stride();
-	// 	info.input_float = get_float_type_as_enum<INPUT_FLOAT>();
-	// 	info.compiled_type = this->compilation.get_compiled_type();
-	// 	info.output_float = get_float_type_as_enum<OUTPUT_FLOAT>();
-	// 	info.was_cached = this->was_cached();
-	// 	info.runtime_codegen = compilation_info.runtime_codegen;
-	// 	info.runtime_compilation = compilation_info.runtime_compilation;
-	// 	info.n_bytes_symbols = compilation_info.n_bytes_symbols;
-	// 	return info;
-	// }
+	template<typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
+	inline typename CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::Info CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::get_info() const
+	{
+		Compilation::Info compilation_info = this->compilation.get_info();
+		Info info;
+		info.n_inputs = compilation_info.n_inputs;
+		info.n_outputs = compilation_info.n_outputs;
+		info.n_elements = this->mws->get_n_elements();
+		info.connectivity_stride = this->mws->get_connectivity_stride();
+		info.input_float = get_float_type_as_enum<INPUT_FLOAT>();
+		info.compiled_type = this->compilation.get_compiled_type();
+		info.output_float = get_float_type_as_enum<OUTPUT_FLOAT>();
+		info.was_cached = this->was_cached();
+		info.runtime_codegen = compilation_info.runtime_codegen;
+		info.runtime_compilation = compilation_info.runtime_compilation;
+		info.n_bytes_symbols = compilation_info.n_bytes_symbols;
+		return info;
+	}
 
     template <typename INPUT_FLOAT, typename COMPILED_FLOAT, typename OUTPUT_FLOAT>
-    inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run(int32_t n_threads, std::function<void(View<OUTPUT_FLOAT> solution, int32_t element_idx, int32_t thread_id, View<const int32_t> connectivity)> callback)
+	template<typename CALLBACK_T>
+    inline void CompiledInLoop<INPUT_FLOAT, COMPILED_FLOAT, OUTPUT_FLOAT>::run(int32_t n_threads, CALLBACK_T callback)
     {
 		this->run(n_threads, callback, this->empty_condition); // No conditional evaluation
     }

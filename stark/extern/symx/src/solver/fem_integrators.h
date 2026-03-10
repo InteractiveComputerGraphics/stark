@@ -15,7 +15,7 @@ namespace symx
 	T fem_interpolation(const FEM_Element& element, std::vector<T>& vh, const Vector& xi);
 	Matrix fem_jacobian(const FEM_Element& element, std::vector<Vector>& xh, const Vector& xi);
 	std::vector<std::array<double, 4>> get_integration_rule(const FEM_Element& element);
-	Scalar fem_integrator(const FEM_Element& element, MappedWorkspace<double>& mws, std::function<Scalar(Scalar& w, Vector& xi)> summand);
+	Scalar fem_integrator(MappedWorkspace<double>& mws, const FEM_Element& element, std::function<Scalar(Scalar& w, Vector& xi)> summand);
 	
 
 	template<typename T>
@@ -29,7 +29,7 @@ namespace symx
 		auto summation = [](std::vector<Scalar>& Nh, std::vector<T>& vh)
 		{
 			T x = Nh[0] * vh[0];
-			for (int i = 1; i < Nh.size(); i++) {
+			for (int i = 1; i < (int)Nh.size(); i++) {
 				x += Nh[i] * vh[i];
 			}
 			return x;
@@ -58,7 +58,8 @@ namespace symx
 			Scalar N1 = xi[0];
 			Scalar N2 = xi[1];
 			Scalar N3 = xi[2];
-			std::vector<Scalar> Nh = { N0 * (2.0 * N0 - 1.0),
+			std::vector<Scalar> Nh = { 
+				N0 * (2.0 * N0 - 1.0),
 				N1 * (2.0 * N1 - 1.0),
 				N2 * (2.0 * N2 - 1.0),
 				N3 * (2.0 * N3 - 1.0),

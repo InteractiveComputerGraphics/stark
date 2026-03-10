@@ -8,6 +8,9 @@
 
 namespace symx
 {
+	/*
+	* Symbolic matrix of dynamic size. Uses `Scalar` for the entries.
+	*/
 	class Matrix
 	{
 	private:
