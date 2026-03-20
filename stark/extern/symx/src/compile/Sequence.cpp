@@ -63,7 +63,7 @@ symx::Sequence::Sequence(const std::vector<Scalar>& expr)
 	}
 	else {
 		if (n_branches > 8) {
-			std::cout << "symx error: Too unique many branches found in Sequence. Max allowed is 8 due to combinatorial explosion." << std::endl;
+			std::cout << "symx error: Too many unique branches found in Sequence. Max allowed is 8 due to combinatorial explosion." << std::endl;
 			exit(-1);
 		}
 

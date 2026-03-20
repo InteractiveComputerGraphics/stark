@@ -85,7 +85,7 @@ SolverReturn NewtonsMethod::solve()
 
         // Check maximum iterations
         if (newton_iteration == this->settings.max_iterations) {
-            this->output->print_with_new_line("Newton failure: Too many iteration.", Verbosity::Medium);
+            this->output->print_with_new_line("Newton failure: Too many iterations.", Verbosity::Medium);
             if (this->settings.max_iterations_as_success) {
                 result = SolverReturn::Successful;
             } else {
@@ -614,7 +614,7 @@ SolverReturn NewtonsMethod::_line_search_inplace(double E0, double du_dot_grad, 
             
                 // If the second attempt succeeds, something is wrong (non-deterministic behavior)
                 if (retry_result == SolverReturn::Successful) {
-                    std::cout << "Error: Line search debug retry succeeded unexpectedly. Non-deterministic behavior detected." << std::endl;
+                    std::cout << "symx error: Newton re-solve for line search visualization succeeded unexpectedly. Non-deterministic behavior detected." << std::endl;
                     exit(1);
                 }
             }
@@ -670,7 +670,6 @@ void NewtonsMethod::print_summary(double total_time) const
 	if (total_time <= 0.0) {
 		total_time = 0.0;
 		for (const auto& label : logger->get_timer_labels()) {
-            if (label == "total") { continue; }
 			total_time += logger->get_timer_total(label);
 		}
 	}
@@ -681,7 +680,6 @@ void NewtonsMethod::print_summary(double total_time) const
 	std::vector<TimerEntry> timer_entries;
 	double acc = 0.0;
 	for (const auto& label : logger->get_timer_labels()) {
-        if (label == "total") { continue; }
 		double time = logger->get_timer_total(label);
 		acc += time;
 		if (time / total_time < 0.001) continue;  // Hide very small runtime

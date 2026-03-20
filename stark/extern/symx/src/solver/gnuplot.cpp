@@ -26,7 +26,7 @@ bool is_gnuplot_available()
 
 void print_gnuplot_install_instructions()
 {
-    std::cout << "\n[Line Search Debug] gnuplot is not installed or not in PATH.\n";
+    std::cout << "\ngnuplot is not installed or not in PATH.\n";
     std::cout << "To visualize the data, install gnuplot:\n";
 #ifdef _WIN32
     std::cout << "  Windows: Download from http://www.gnuplot.info/ or use 'choco install gnuplot'\n";
@@ -66,7 +66,7 @@ void visualize_line_search_failure(
     // Write CSV file
     std::ofstream csv_file(csv_filename);
     if (!csv_file.is_open()) {
-        std::cout << "\n[Line Search Debug] ERROR: Could not write to " << csv_filename << std::endl;
+        std::cout << "\nsymx error: Could not write to " << csv_filename << std::endl;
         return;
     }
 
@@ -94,11 +94,11 @@ void visualize_line_search_failure(
     }
     csv_file.close();
 
-    std::cout << "\n========== LINE SEARCH FAILURE DEBUG ==========\n";
+    std::cout << "\n========== Line Search Failure ==========\n";
     std::cout << "E0 = " << fmt::format("{:6e}", E0) << ", E_threshold = " << fmt::format("{:6e}", E_threshold) << "\n";
     std::cout << "du_dot_grad = " << fmt::format("{:6e}", du_dot_grad) << "\n";
     std::cout << "CSV file written to: " << csv_filename << "\n";
-    std::cout << "================================================\n";
+    std::cout << "=========================================\n";
 
     // Check if gnuplot is installed
     bool gnuplot_available = is_gnuplot_available();
@@ -128,7 +128,7 @@ void visualize_line_search_failure(
     }
 
     if (gnuplot_available) {
-        std::cout << "[Line Search Debug] Launching " << script_files.size() << " gnuplot windows in order...\n";
+        std::cout << "Launching " << script_files.size() << " gnuplot windows in order...\n";
         // Launch in order with small delay to ensure window ordering
         for (size_t i = 0; i < script_files.size(); ++i) {
             const auto& script = script_files[i];

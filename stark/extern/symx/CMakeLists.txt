@@ -1,7 +1,20 @@
 cmake_minimum_required(VERSION 3.15)
 
 # SymX options
-set(SYMX_ENABLE_AVX2 ON CACHE BOOL "Flag to enable AVX2 for symx")
+set(SYMX_ENABLE_AVX2 "AUTO" CACHE STRING "Enable AVX2+FMA SIMD: AUTO, ON, or OFF. AUTO enables on x86/x86_64/AMD64.")
+set_property(CACHE SYMX_ENABLE_AVX2 PROPERTY STRINGS "AUTO" "ON" "OFF")
+string(TOUPPER "${SYMX_ENABLE_AVX2}" _SYMX_AVX2)
+if(NOT _SYMX_AVX2 MATCHES "^(AUTO|ON|OFF)$")
+    message(FATAL_ERROR "SYMX_ENABLE_AVX2 must be AUTO, ON, or OFF (got: ${SYMX_ENABLE_AVX2})")
+endif()
+if(_SYMX_AVX2 STREQUAL "AUTO")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|X86_64|amd64|AMD64|i[3-6]86)$")
+        set(_SYMX_AVX2 "ON")
+    else()
+        set(_SYMX_AVX2 "OFF")
+    endif()
+endif()
+message(STATUS "SymX: AVX2 = ${_SYMX_AVX2} (SYMX_ENABLE_AVX2=${SYMX_ENABLE_AVX2}, processor=${CMAKE_SYSTEM_PROCESSOR})")
 set(SYMX_COMPILER_PATH "AUTO" CACHE STRING "Path to the compiler to use for runtime compilation. Set to AUTO to auto-detect.")
 set(SYMX_HESS_STORAGE_FLOAT "float" CACHE STRING "Storage type for Hessian matrices (float or double)")
 
@@ -113,7 +126,7 @@ if(OpenMP_CXX_FOUND)
 endif()
 
 # SIMD: when AVX2 is enabled its intrinsics appear in public headers
-if(${SYMX_ENABLE_AVX2})
+if(_SYMX_AVX2 STREQUAL "ON")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(symx PUBLIC -mavx2 -mfma -Wno-ignored-attributes)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -130,7 +143,7 @@ if(MSVC)
 endif()
 
 # Enable/disable the use of AVX2 instructions
-if(${SYMX_ENABLE_AVX2})
+if(_SYMX_AVX2 STREQUAL "ON")
     target_compile_definitions(symx PUBLIC SYMX_ENABLE_AVX2 BSM_ENABLE_AVX2)
 endif()
 
