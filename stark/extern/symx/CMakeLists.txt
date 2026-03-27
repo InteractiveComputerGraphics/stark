@@ -16,7 +16,7 @@ if(_SYMX_AVX2 STREQUAL "AUTO")
 endif()
 message(STATUS "SymX: AVX2 = ${_SYMX_AVX2} (SYMX_ENABLE_AVX2=${SYMX_ENABLE_AVX2}, processor=${CMAKE_SYSTEM_PROCESSOR})")
 set(SYMX_COMPILER_PATH "AUTO" CACHE STRING "Path to the compiler to use for runtime compilation. Set to AUTO to auto-detect.")
-set(SYMX_HESS_STORAGE_FLOAT "float" CACHE STRING "Storage type for Hessian matrices (float or double)")
+set(SYMX_HESS_STORAGE_FLOAT "double" CACHE STRING "Storage type for Hessian matrices (float or double)")
 
 # CMake option to make fmt and Eigen PUBLIC to use in parent projects
 if(NOT DEFINED SYMX_FMT_PUBLIC)

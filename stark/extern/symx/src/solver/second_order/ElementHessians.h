@@ -44,7 +44,7 @@ namespace symx
 		#ifdef SYMX_HESS_STORAGE_FLOAT
 			using HESS_STORAGE_FLOAT = SYMX_HESS_STORAGE_FLOAT;
 		#else
-			using HESS_STORAGE_FLOAT = float;    // Global Hessian storage (saves memory and bandwidth)
+			using HESS_STORAGE_FLOAT = double;    // Global Hessian storage (saves memory and bandwidth)
 		#endif
 		using spBSM = bsm::spBlockedSparseMatrix<BLOCK_SIZE, BLOCK_SIZE, HESS_STORAGE_FLOAT>;
 

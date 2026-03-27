@@ -448,7 +448,7 @@ void symx::Compilation::_add_instructions_scalar(std::string& code, Sequence& se
 				code += tab() + "}\n";
 			}
 			if (op.is_positive_branch()) {
-				code += tab() + "if (" + idx(op.cond) + " >= 0.0)\n";
+					code += tab() + "if (" + idx(op.cond) + " > 0.0)\n";
 				code += tab() + "{\n";
 				indentation++;
 			}

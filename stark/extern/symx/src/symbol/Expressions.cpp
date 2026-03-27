@@ -188,7 +188,7 @@ double Expressions::eval(int32_t expr_id) const
 		return std::atan(this->eval(expr.a)); break;
 
 	case ExprType::Branch:
-		if (this->eval(expr.cond) >= 0) {
+		if (this->eval(expr.cond) > 0) {
 			return this->eval(expr.a);
 		}
 		else {

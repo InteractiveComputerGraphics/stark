@@ -32,6 +32,7 @@ endif()
 # Dependencies
 set(SYMX_EIGEN_PUBLIC ON)
 set(SYMX_FMT_PUBLIC   ON)
+set(SYMX_HESS_STORAGE_FLOAT "float" CACHE STRING "Storage type for Hessian matrices (float or double)" FORCE)
 add_subdirectory(extern/symx)
 add_subdirectory(extern/TriangleMeshCollisionDetection)
 
