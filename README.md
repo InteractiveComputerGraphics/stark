@@ -4,15 +4,20 @@ In any case, Stark itself is fully functional and actively used in our own resea
 We appreciate your patience and interest.
 
 # Stark
-<p align=center>
- <img src="docs/images/robotic_hand.png" width="400">
-  &nbsp;&nbsp;
- <img src="docs/images/franka_plastic_cup.jpg" width="400">
+
+<p align="center">
+    <img src="docs/images/stark1920.png" alt="SymX Logo" style="width:75%;">
 </p>
 
 Stark is a C++ and Python simulation _platform_ that provides easy access to state-of-the-art methods to robustly solve simulations of rigid and deformable objects in a strongly coupled manner.
 To the best of our knowledge, no other existing open source simulation environment provides such a rich collection of models, including coupling, with the same level of robustness.
 Stark has been validated through real-world, challenging cases of interactions between robots and deformable objects, see the [Stark ICRA'24 paper](https://www.animation.rwth-aachen.de/publication/0588/).
+
+<p align=center>
+ <img src="docs/images/robotic_hand.png" height="200">
+  &nbsp;&nbsp;
+ <img src="docs/images/franka_plastic_cup.jpg" height="200">
+</p>
 
 One of the main features of Stark is that it uses a powerful symbolic differentiation and code generation engine that allows for a concise formulation of the global variational form of the non-linear dynamic problem.
 Adding new models (e.g. materials, joints, interactions, ...) in Stark is as simple as specifying their energy potential in symbolic form together with the data they depend on.
