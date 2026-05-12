@@ -512,10 +512,8 @@ void twisting_cloth()
 	settings.execution.end_simulation_time = 5.0;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
 	
-	
 	settings.simulation.init_frictional_contact = true;
 	settings.simulation.use_adaptive_time_step = false;
-	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
 	settings.newton.step_tolerance = 0.001;
 	settings.simulation.max_time_step_size = 1.0/30.0;
 	
@@ -562,13 +560,17 @@ void magnetic_deformables()
 	settings.output.simulation_name = "magnetic_deformables";
 	settings.output.output_directory = OUTPUT_PATH + "/magnetic_deformables";
 	settings.execution.end_simulation_time = 7.0;
+
+	settings.newton.step_tolerance = 0.001;
+	settings.simulation.max_time_step_size = 1.0/30.0;
+
 	stark::Simulation simulation(settings);
 
 	// Contact
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(0.002)
-		.set_min_contact_stiffness(1e7)
+		.set_default_contact_thickness(0.005)
+		.set_min_contact_stiffness(1e6)
 	);
 
 	// Add floor
@@ -651,7 +653,7 @@ void magnetic_deformables()
 
 int main()
 {
-	hanging_deformable_box();
+	magnetic_deformables();
 	return 0;
 
 	/*

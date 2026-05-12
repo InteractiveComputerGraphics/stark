@@ -2,16 +2,13 @@
 
 ## Post Eurographics
 
+Bergou
 Examples
-   - Magnetic simulation way too slow
-
-PPN
-Python API
+   - Clean
 Cleanup files and comments
 Docs
     - Panic sheet
 Readme
-Bergou
 LinkedIn Post
 pip install
 
