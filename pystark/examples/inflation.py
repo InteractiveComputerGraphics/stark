@@ -48,7 +48,7 @@ simulation.deformables().prescribed_positions().add_inside_aabb(cH.point_set, np
 simulation.deformables().prescribed_positions().add_inside_aabb(cH.point_set, np.array([-0.5*s, -0.5*s, 0.0]), 0.001*pystark.ONES, pystark.EnergyPrescribedPositions.Params())
 
 # Script
-duration = 6.0
+duration = 1.0
 def script(t):
     material.strain.inflation = pystark.blend(0.0, 1e4, 0.0, duration, t, pystark.BlendType.EaseInOut)
     cH.strain.set_params(material.strain)

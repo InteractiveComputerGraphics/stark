@@ -16,7 +16,7 @@ cmake --build build --parallel --target pystark
 Then set `PYTHONPATH` to include both the native `.so` directory and the Python package wrapper:
 
 ```bash
-export PYTHONPATH=/path/to/stark/build/pystark/cpp:/path/to/stark/pystark:$PYTHONPATH
+export PYTHONPATH=/path/to/stark/pystark:$PYTHONPATH
 ```
 
 Verify the install:

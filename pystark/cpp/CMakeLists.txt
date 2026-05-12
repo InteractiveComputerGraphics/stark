@@ -94,6 +94,12 @@ set(PYSTARK_FILES
 # Create the pystark module
 nanobind_add_module(pystark ${PYSTARK_FILES})
 
+# Output the .so directly into the Python package directory so that
+# `import pystark` from the source tree always picks up the latest build.
+set_target_properties(pystark PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../pystark"
+)
+
 # Link the pystark module to the stark library
 target_link_libraries(pystark PUBLIC stark)
 target_include_directories(pystark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../stark/include)

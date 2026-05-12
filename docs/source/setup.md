@@ -63,12 +63,12 @@ cmake -B build -DPython_EXECUTABLE=$(which python)
 cmake --build build --parallel --target pystark
 ```
 
-This produces a shared library at `build/pystark/cpp/pystark*.so`.
+This produces a shared library and places it directly into `pystark/pystark/` so the Python package is immediately importable.
 
-To make `import pystark` work, set `PYTHONPATH` to point at both the native module and the Python package wrapper:
+To make `import pystark` work, add the `pystark/` source directory to `PYTHONPATH`:
 
 ```bash
-export PYTHONPATH=/path/to/stark/build/pystark/cpp:/path/to/stark/pystark:$PYTHONPATH
+export PYTHONPATH=/path/to/stark/pystark:$PYTHONPATH
 ```
 
 Then verify:
