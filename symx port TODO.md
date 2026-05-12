@@ -6,9 +6,8 @@ Examples
    - Magnetic simulation way too slow
 
 PPN
-Claude pass
 Python API
-Cleanup
+Cleanup files and comments
 Docs
 Readme
 LinkedIn Post
