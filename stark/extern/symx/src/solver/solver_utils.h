@@ -179,7 +179,7 @@ namespace symx
         // Convergence criteria
         double residual_tolerance_abs = 1e-6;
         double residual_tolerance_rel = 0.0;
-        double step_tolerance = 0.0;
+        double step_tolerance = 1e-6;
         bool max_iterations_as_success = false;          // Treat hitting max_iterations as convergence
         
         // Line search

@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+import numpy as np
+
+# Import all
 from .pystark import *
 from .serialize import *
 
-import numpy as np
 ZERO = np.array([0.0, 0.0, 0.0])
 ONES = np.array([1.0, 1.0, 1.0])
 UNITX = np.array([1.0, 0.0, 0.0])

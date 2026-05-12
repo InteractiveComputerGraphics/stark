@@ -1,11 +1,26 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
 import numpy as np
+
+# PYTHONPATH to the built stark python module (adjust as needed)
+build_dir = os.path.join(os.path.dirname(__file__), "../../build")
+include_path = os.path.join(os.path.dirname(__file__), "..")
+sys.path.append(include_path)
 import pystark
 
+
+# Create simulation
 settings = pystark.Settings()
 settings.output.simulation_name = "viscoelasticity"
-settings.output.output_directory = "output_folder"
-settings.output.codegen_directory = "codegen_folder"
+settings.output.output_directory = os.path.join(build_dir, "output/viscoelasticity")
+settings.output.codegen_directory = os.path.join(build_dir, "codegen/viscoelasticity")
+
+# settings.simulation.gravity = pystark.ZERO
+# settings.simulation.max_time_step_size = 1.0/30.0
+# settings.newton.residual_tolerance_abs = 1e-6
+# settings.newton.step_tolerance = 1e-3
+
 simulation = pystark.Simulation(settings)
 
 # Contact
@@ -22,7 +37,9 @@ d = s*f
 n = 25
 
 material = pystark.Volume.Params.Soft_Rubber()
-material.strain.damping = 2e3
+material.strain.elasticity_only = True
+# material.strain.damping = 2e3
+# material.strain.youngs_modulus = 1e6
 bV, bT, bH = simulation.presets().deformables().add_volume_grid("box",
     size=np.array([s, s, d]),
     subdivisions=np.array([n, n, f*n], dtype=np.int32),

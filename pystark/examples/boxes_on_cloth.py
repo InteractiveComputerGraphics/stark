@@ -1,19 +1,33 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
 import numpy as np
+
+# PYTHONPATH to the built stark python module (adjust as needed)
+build_dir = os.path.join(os.path.dirname(__file__), "../../build")
+include_path = os.path.join(os.path.dirname(__file__), "..")
+sys.path.append(include_path)
 import pystark
 
+
+# Create simulation
 settings = pystark.Settings()
 settings.output.simulation_name = "boxes_on_cloth"
-settings.output.output_directory = "output_folder"
-settings.output.codegen_directory = "codegen_folder"
+settings.output.output_directory = os.path.join(build_dir, "output/boxes_on_cloth")
+settings.output.codegen_directory = os.path.join(build_dir, "codegen")
+
+settings.simulation.max_time_step_size = 1.0/30.0
+settings.newton.residual_tolerance_abs = 1e-6
+settings.newton.step_tolerance = 1e-6
+
 simulation = pystark.Simulation(settings)
 
 # Contact
-thickness = 0.00025
+thickness = 0.0005
 contact_params = pystark.EnergyFrictionalContact.GlobalParams()
 contact_params.default_contact_thickness = thickness
 contact_params.friction_stick_slide_threshold = 0.01
-contact_params.min_contact_stiffness = 2e8
+contact_params.min_contact_stiffness = 5e7
 simulation.interactions().contact().set_global_params(contact_params)
 
 # Floor
@@ -23,7 +37,7 @@ simulation.rigidbodies().add_constraint_fix(fH.rigidbody).set_stiffness(1e8)
 
 # Geometrical description
 s = 0.5  # Size [m]
-n = 100   # Subdivisions per dimension (This is very hires!)
+n = 64   # Subdivisions per dimension
 
 # Add cloth
 cloth_material = pystark.Surface.Params.Cotton_Fabric()
