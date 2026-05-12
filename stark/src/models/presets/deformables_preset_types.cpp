@@ -46,7 +46,7 @@ stark::Surface::Params::Params(const Preset& preset)
 		this->inertia.damping = 0.1;
 		this->strain.elasticity_only = false;
 		this->strain.thickness = 0.001;  // [m]
-		this->strain.youngs_modulus = 1e3;
+		this->strain.youngs_modulus = 5e3;
 		this->strain.poissons_ratio = 0.3;
 		this->strain.strain_limit = 0.1;
 		this->strain.strain_limit_stiffness = 1e6;

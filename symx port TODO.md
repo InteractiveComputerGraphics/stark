@@ -2,9 +2,9 @@
 
 ## Post Eurographics
 
-Bergou
 Examples
    - Clean
+   - column extrussion is a mess
 Cleanup files and comments
 Docs
     - Panic sheet
