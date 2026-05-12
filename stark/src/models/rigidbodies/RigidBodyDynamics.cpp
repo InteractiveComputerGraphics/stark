@@ -77,7 +77,7 @@ std::vector<Vector> stark::RigidBodyDynamics::get_v1(MappedWorkspace<double>& mw
 	for (const Vector& x_loc_a : x_loc) {
 		Vector x1a = local_to_global_point(x_loc_a, t1, R1);
 		Vector r1a = x1a - t1;
-		Vector v1a = global_point_velocity_in_rigib_body(v1, w1, r1a);
+		Vector v1a = global_point_velocity_in_rigid_body(v1, w1, r1a);
 		v1_glob.push_back(v1a);
 	}
 	return v1_glob;

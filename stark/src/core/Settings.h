@@ -30,7 +30,6 @@ namespace stark::core
 			double time_step_size_success_multiplier = 1.05;
 			double time_step_size_lower_bound = 1e-6;
 		};
-		// struct symx::NewtonSettings {};
 		struct Execution
 		{
 			double allowed_execution_time = std::numeric_limits<double>::max();

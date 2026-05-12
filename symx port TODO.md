@@ -1,5 +1,23 @@
 # symx port TODO
 
+## Post Eurographics
+
+Examples
+   - Magnetic simulation way too slow
+
+PPN
+Claude pass
+Python API
+Cleanup
+Docs
+Readme
+LinkedIn Post
+
+Misc
+    - Still get   `misc                                     -370.734211  -99.8%`
+
+
+
 ## Comparison to PPN ref
     - Dont compare CG iterations with Progressive because we are counting failures differently.
     - forcing sequence was a difference. But it is a tradeoff.

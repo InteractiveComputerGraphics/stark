@@ -75,7 +75,7 @@ std::vector<stark::Mesh<3>> stark::load_obj(const std::string& path)
         int index_offset = 0;
         for (int tri_i = 0; tri_i < shapes[shape_i].mesh.num_face_vertices.size(); tri_i++) {
             if (shapes[shape_i].mesh.num_face_vertices[tri_i] != 3) {
-                std::cout << "learnSPH error: readTriMeshesFromObj can only read triangle meshes." << std::endl;
+                std::cout << "Stark error: readTriMeshesFromObj can only read triangle meshes." << std::endl;
             }
 
             // Gather triangle global indices

@@ -70,7 +70,7 @@ stark::EnergyRigidBodyInertia::EnergyRigidBodyInertia(core::Stark& stark, spRigi
 void stark::EnergyRigidBodyInertia::add(const int rb_idx, const double mass, const Eigen::Matrix3d& inertia_loc)
 {
 	if (rb_idx != (int)this->mass.size()) {
-		std::cout << "Stark error: EnergyRigidBodyInertia::add() found non-consequtive rigid body added." << std::endl;
+		std::cout << "Stark error: EnergyRigidBodyInertia::add() found non-consecutive rigid body added." << std::endl;
 		exit(-1);
 	}
 

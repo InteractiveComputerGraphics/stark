@@ -27,7 +27,7 @@ EnergyFrictionalContact::EnergyFrictionalContact(core::Stark& stark, const spPoi
 	stark.callbacks->add_on_time_step_accepted([&]() { this->_on_time_step_accepted(stark); });
 	stark.callbacks->add_should_continue_execution([&]() { return this->_should_continue_execution(stark); });
 
-	// Contact declarations // DEBUG
+	// Contact
 	this->_energies_contact_deformables(stark);
 	this->_energies_contact_rb(stark);
 	this->_energies_contact_rb_deformables(stark);

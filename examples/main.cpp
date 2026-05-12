@@ -38,6 +38,7 @@ void hanging_net()
 	// Run
 	simulation.run();
 }
+
 void hanging_cloth()
 {
 	/*
@@ -49,7 +50,7 @@ void hanging_cloth()
 	settings.output.output_directory = OUTPUT_PATH + "/hanging_cloth";
 	settings.execution.end_simulation_time = 1.0;
 	
-	settings.simulation.init_frictional_contact = true; // TOOGLE
+	settings.simulation.init_frictional_contact = true; // TOGGLE
 	settings.simulation.use_adaptive_time_step = false;
 	settings.simulation.max_time_step_size = 0.001;
 	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
@@ -91,6 +92,7 @@ void hanging_cloth()
 	// Run
 	simulation.run();
 }
+
 void hanging_deformable_box()
 {
 	/*
@@ -126,51 +128,7 @@ void hanging_deformable_box()
 	// Run
 	simulation.run();
 }
-void attachments()
-{
-	/*
-		Simulation of two pieces of cloth and a rigid body attached by distance constraints and hanging due to gravity.
-	*/
 
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "attachments";
-	settings.output.output_directory = OUTPUT_PATH + "/attachments";
-	settings.execution.end_simulation_time = 5.0;
-	settings.simulation.init_frictional_contact = false;
-	stark::Simulation simulation(settings);
-
-	// Cloth
-	const int n = 20;
-	const double d = 1.0;
-	const double hd = d/2.0;
-	const double gap = 0.001;
-	auto params = stark::Surface::Params::Cotton_Fabric();
-	auto [V1, T1, H1] = simulation.presets->deformables->add_surface_grid("A", { d, d }, { n, n }, params);
-	auto [V2, T2, H2] = simulation.presets->deformables->add_surface_grid("B", { d, d }, { n, n }, params);
-	H2.point_set.add_rotation(45.0, Eigen::Vector3d::UnitZ());
-	H2.point_set.add_displacement({ d, 0.0, gap });
-
-	// RB
-	const double bs = 0.25;
-	const stark::Mesh<3> box_mesh = stark::make_box({ bs, bs, bs });
-	auto [V, C, box] = simulation.presets->rigidbodies->add_box("box", 0.1, bs);
-	box.rigidbody.add_translation({ 1.7, 0.0, 0.5 * bs + 2.0 * gap });
-
-	// Attachments
-	auto att_cloth = simulation.interactions->attachments->add_by_distance(H2.point_set, H1.point_set, H2.point_set.all(), T1, 2.0*gap, 
-		stark::EnergyAttachments::Params().set_tolerance(0.01)
-	);
-	auto att_rb = simulation.interactions->attachments->add_by_distance(box.rigidbody, H2.point_set, box_mesh.vertices, box_mesh.conn, H2.point_set.all(), 4.0*gap,
-		stark::EnergyAttachments::Params().set_tolerance(0.01)
-	);
-
-	// BC
-	auto bc1 = simulation.deformables->prescribed_positions->add_inside_aabb(H1.point_set, { -hd, -hd, 0.0 }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params());
-	auto bc2 = simulation.deformables->prescribed_positions->add_inside_aabb(H1.point_set, { -hd, hd, 0.0 }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params());
-
-	// Run
-	simulation.run();
-}
 void hanging_box_with_composite_material()
 {
 	/*
@@ -178,7 +136,7 @@ void hanging_box_with_composite_material()
 		The box is fixed by two corners and hanging due to gravity.
 
 		This scene exemplifies how to use individual energies to model different materials in a single deformable object,
-		as opose to using a preset with a pre-selection.
+		as opposed to using a preset with a pre-selection.
 	*/
 
 	stark::Settings settings = stark::Settings();
@@ -252,6 +210,130 @@ void hanging_box_with_composite_material()
 	// Run
 	simulation.run();
 }
+
+void column_extrusion()
+{
+	/*
+		IMPORTANT: STARK solves for velocity updates, therefore, it is advisable to use duration = dt = 1.0 for quasistatics.
+		In this setting, the solve is analogous to positional dofs.
+	*/
+	// Parameters
+	const double duration = 1.0;
+	const double extrusion_factor = 5.0;
+	const int refinement_level = 40;
+
+	const double youngs_modulus = 1e8;
+	const double poisson_ratio = 0.49;
+	const double bc_stiffness = 1e10;
+
+	const double dt = 1.0/30.0;
+	//const double dt = duration*0.99999;
+	Eigen::Vector3d size(1.0, 1.0, 0.5);
+	const bool is_quasistatic = false;
+	
+	// Settings
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "column_extrusion";
+	settings.output.output_directory = OUTPUT_PATH + "/column_extrusion";
+	settings.output.fps = 1.0/dt;
+	settings.execution.end_simulation_time = duration;
+	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
+	settings.simulation.max_time_step_size = dt;
+	
+	settings.newton.project_to_pd_use_mirroring = true;
+	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
+	settings.newton.step_tolerance = 0.001/dt; // Velocity!
+	settings.newton.step_cap = 0.5/dt;  // Velocity!
+	settings.newton.min_iterations = 0;
+	// settings.newton.linear_solver = symx::LinearSolver::DirectLLT;
+	
+	settings.simulation.init_frictional_contact = false;
+	stark::Simulation simulation(settings);
+
+	// Contact
+	// simulation.interactions->contact->set_global_params(
+	// 	stark::EnergyFrictionalContact::GlobalParams()
+	// 	.set_default_contact_thickness(0.002)
+	// 	.set_min_contact_stiffness(1e8)
+	// );
+	auto bc_params = stark::EnergyPrescribedPositions::Params();
+	bc_params.set_stiffness(bc_stiffness);
+	
+	
+	// Block
+    std::array<int32_t, 3> elements_per_axis = { refinement_level, refinement_level, (int)std::round(extrusion_factor*(int)refinement_level) };
+	auto mesh = symx::generate_cuboid_Tet4_mesh(size, elements_per_axis);
+
+	stark::Volume::Params material = stark::Volume::Params::Soft_Rubber();
+	material.strain.elasticity_only = true;
+	material.inertia.quasistatic = is_quasistatic;
+	material.inertia.damping = 1.0;
+	material.strain.poissons_ratio = poisson_ratio;
+	material.strain.youngs_modulus = youngs_modulus;
+	auto H = simulation.presets->deformables->add_volume("block", mesh.vertices, symx::as_array_vec<4>(mesh.connectivity), material);
+	
+	// BC
+	auto bottom = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { 0.0, 0.0, -size[2]/2.0 }, { 10.0, 10.0, 0.001 }, bc_params);
+	auto top = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { 0.0, 0.0, size[2]/2.0 }, { 10.0, 10.0, 0.001 }, bc_params);
+
+	// Script
+	simulation.add_time_event(0, duration, [&](double t) {
+		double max_displacement = (extrusion_factor - 1) * size[2];
+		double vel = max_displacement / duration;
+		double displacement = vel * t;
+		top.set_transformation({ 0.0, 0.0, displacement }, Eigen::Matrix3d::Identity());
+	});
+
+	// Run
+	simulation.run();
+}
+
+void attachments()
+{
+	/*
+		Simulation of two pieces of cloth and a rigid body attached by distance constraints and hanging due to gravity.
+	*/
+
+	stark::Settings settings = stark::Settings();
+	settings.output.simulation_name = "attachments";
+	settings.output.output_directory = OUTPUT_PATH + "/attachments";
+	settings.execution.end_simulation_time = 5.0;
+	settings.simulation.init_frictional_contact = false;
+	stark::Simulation simulation(settings);
+
+	// Cloth
+	const int n = 20;
+	const double d = 1.0;
+	const double hd = d/2.0;
+	const double gap = 0.001;
+	auto params = stark::Surface::Params::Cotton_Fabric();
+	auto [V1, T1, H1] = simulation.presets->deformables->add_surface_grid("A", { d, d }, { n, n }, params);
+	auto [V2, T2, H2] = simulation.presets->deformables->add_surface_grid("B", { d, d }, { n, n }, params);
+	H2.point_set.add_rotation(45.0, Eigen::Vector3d::UnitZ());
+	H2.point_set.add_displacement({ d, 0.0, gap });
+
+	// RB
+	const double bs = 0.25;
+	const stark::Mesh<3> box_mesh = stark::make_box({ bs, bs, bs });
+	auto [V, C, box] = simulation.presets->rigidbodies->add_box("box", 0.1, bs);
+	box.rigidbody.add_translation({ 1.7, 0.0, 0.5 * bs + 2.0 * gap });
+
+	// Attachments
+	auto att_cloth = simulation.interactions->attachments->add_by_distance(H2.point_set, H1.point_set, H2.point_set.all(), T1, 2.0*gap, 
+		stark::EnergyAttachments::Params().set_tolerance(0.01)
+	);
+	auto att_rb = simulation.interactions->attachments->add_by_distance(box.rigidbody, H2.point_set, box_mesh.vertices, box_mesh.conn, H2.point_set.all(), 4.0*gap,
+		stark::EnergyAttachments::Params().set_tolerance(0.01)
+	);
+
+	// BC
+	auto bc1 = simulation.deformables->prescribed_positions->add_inside_aabb(H1.point_set, { -hd, -hd, 0.0 }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params());
+	auto bc2 = simulation.deformables->prescribed_positions->add_inside_aabb(H1.point_set, { -hd, hd, 0.0 }, { 0.001, 0.001, 0.001 }, stark::EnergyPrescribedPositions::Params());
+
+	// Run
+	simulation.run();
+}
+
 void deformable_and_rigid_collisions()
 {
 	/*
@@ -308,6 +390,7 @@ void deformable_and_rigid_collisions()
 	// Run
 	simulation.run();
 }
+
 void simple_grasp()
 {
 	/*
@@ -416,16 +499,12 @@ void simple_grasp()
 	// Run
 	simulation.run();
 }
+
 void twisting_cloth()
 {
 	/*
 		Simulation of a cloth twisted by rotating two sides in opposite directions in absence of gravity.
 		This scene shows how to use boundary condition transformations together with time events to animate the simulation.
-		
-		Also interesting to note in this simulation is that we can use a high acceleration residual value in Newton's Method to avoid excessive Newton iterations.
-		In simulations when objects might fall due to gravity, the acceleration residual must be set to a lower value than the gravity itself to avoid excessive 
-		numerical damping or even the objects not falling at all. Since in this simulation there is no gravity involved, we can use a higher residual to obtain 
-		a faster simulation while preserving fidelity.
 	*/
 
 	stark::Settings settings = stark::Settings();
@@ -473,6 +552,7 @@ void twisting_cloth()
 	// Run
 	simulation.run();
 }
+
 void magnetic_deformables()
 {
 	/*
@@ -570,404 +650,10 @@ void magnetic_deformables()
 }
 
 
-void simple_contact_test()
-{
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "simple_contact_test";
-	settings.output.output_directory = OUTPUT_PATH + "/simple_contact_test";
-	settings.execution.end_simulation_time = 0.5;
-	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
-	
-	// DEBUG
-	// settings.execution.n_threads = 1;
-	settings.newton.enable_armijo_backtracking = true;
-	settings.simulation.max_time_step_size = 0.01;
-	settings.simulation.use_adaptive_time_step = false;
-	stark::Simulation simulation(settings);
-
-	// Contact
-	simulation.interactions->contact->set_global_params(
-		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(0.002)
-		.set_min_contact_stiffness(1e8)
-	);
-	auto bc_params = stark::EnergyPrescribedPositions::Params();
-	
-	// Cloth
-	double s = 0.5;
-	int n = 2;
-	stark::Surface::Params material = stark::Surface::Params::Cotton_Fabric();
-	material.strain.elasticity_only = true;  // Strain limiting would make the cloth too stiff and would fight with the prescribed BC, leading to unrealistic stresses
-	auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { s, s }, { n, n }, material);
-	auto left = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { -s/2.0, 0.0, 0.0 }, { 0.001, s, s }, bc_params);
-	H.contact.set_friction(H.contact, 1.0);
-
-	// Floor
-	auto [Vf, Tf, Hf] = simulation.presets->deformables->add_surface_grid("floor", { 2.0*s, 2.0*s }, { 1, 1 }, material);
-	Hf.point_set.add_displacement({ 0.1, 0.03, -0.1 });
-
-	// BC
-	auto floor_bc = simulation.deformables->prescribed_positions->add_inside_aabb(Hf.point_set, { 0.0, 0.0, 0.0 }, { 10.0, 10.0, 10.0 }, bc_params);
-
-	// Run
-	simulation.run();
-}
-
-void column_extrusion()
-{
-	/*
-		IMPORTANT: STARK solves for velocity updates, therefore, it is advisable to use duration = dt = 1.0 for quasistatics.
-		In this setting, the solve is analogous to positional dofs.
-	*/
-	// Parameters
-	const double duration = 1.0;
-	const double extrusion_factor = 5.0;
-	const int refinement_level = 40;
-
-	const double youngs_modulus = 1e8;
-	const double poisson_ratio = 0.49;
-	const double bc_stiffness = 1e10;
-
-	const double dt = 1.0/30.0;
-	//const double dt = duration*0.99999;
-	Eigen::Vector3d size(1.0, 1.0, 0.5);
-	const bool is_quasistatic = false;
-	
-	// Settings
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "column_extrusion_PN_dyn";
-	settings.output.output_directory = OUTPUT_PATH + "/column_extrusion";
-	settings.output.fps = 1.0/dt;
-	settings.execution.end_simulation_time = duration;
-	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
-	settings.simulation.max_time_step_size = dt;
-	
-	settings.newton.project_to_pd_use_mirroring = true;
-	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
-	settings.newton.step_tolerance = 0.001/dt; // Velocity!
-	settings.newton.step_cap = 0.5/dt;  // Velocity!
-	settings.newton.min_iterations = 0;
-	// settings.newton.linear_solver = symx::LinearSolver::DirectLLT;
-	
-	// DEBUG
-	// settings.execution.n_threads = 1;
-	settings.simulation.init_frictional_contact = false;
-	stark::Simulation simulation(settings);
-
-	// Contact
-	// simulation.interactions->contact->set_global_params(
-	// 	stark::EnergyFrictionalContact::GlobalParams()
-	// 	.set_default_contact_thickness(0.002)
-	// 	.set_min_contact_stiffness(1e8)
-	// );
-	auto bc_params = stark::EnergyPrescribedPositions::Params();
-	bc_params.set_stiffness(bc_stiffness);
-	
-	
-	// Block
-    std::array<int32_t, 3> elements_per_axis = { refinement_level, refinement_level, (int)std::round(extrusion_factor*(int)refinement_level) };
-	auto mesh = symx::generate_cuboid_Tet4_mesh(size, elements_per_axis);
-
-	stark::Volume::Params material = stark::Volume::Params::Soft_Rubber();
-	material.strain.elasticity_only = true;
-	material.inertia.quasistatic = is_quasistatic;
-	material.inertia.damping = 1.0;
-	material.strain.poissons_ratio = poisson_ratio;
-	material.strain.youngs_modulus = youngs_modulus;
-	auto H = simulation.presets->deformables->add_volume("block", mesh.vertices, symx::as_array_vec<4>(mesh.connectivity), material);
-	
-	// BC
-	auto bottom = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { 0.0, 0.0, -size[2]/2.0 }, { 10.0, 10.0, 0.001 }, bc_params);
-	auto top = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { 0.0, 0.0, size[2]/2.0 }, { 10.0, 10.0, 0.001 }, bc_params);
-
-	// Script
-	simulation.add_time_event(0, duration, [&](double t) {
-		double max_displacement = (extrusion_factor - 1) * size[2];
-		double vel = max_displacement / duration;
-		double displacement = vel * t;
-		top.set_transformation({ 0.0, 0.0, displacement }, Eigen::Matrix3d::Identity());
-	});
-
-	// Run
-	simulation.run();
-}
-void column_extrusion_PPN_test()
-{
-	/*
-		IMPORTANT: STARK solves for velocity updates, therefore, it is advisable to use duration = dt = 1.0 for quasistatics.
-		In this setting, the solve is analogous to positional dofs.
-	*/
-	// Parameters
-	const double duration = 1.0;
-	const double extrusion_factor = 5.0;
-	const int refinement_level = 30;
-
-	const double youngs_modulus = 1e8;
-	const double poisson_ratio = 0.49;
-	const double bc_stiffness = 1e10;
-
-	const double dt = 0.999;
-	Eigen::Vector3d size(1.0, 1.0, 0.5);
-	
-	// Settings
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "column_extrusion_PPN_test";
-	settings.output.output_directory = OUTPUT_PATH + "/column_extrusion";
-	settings.output.console_verbosity = symx::Verbosity::Full;
-	settings.execution.end_simulation_time = duration;
-	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
-	settings.simulation.max_time_step_size = dt;
-	
-	settings.simulation.init_frictional_contact = false;
-	settings.simulation.use_adaptive_time_step = false;
-
-	settings.newton.project_to_pd_use_mirroring = true;
-	settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
-	settings.newton.step_tolerance = 0.001/dt; // Velocity!
-	settings.newton.step_cap = 0.5/dt;  // Velocity!
-	settings.newton.min_iterations = 0;
-	// settings.newton.linear_solver = symx::LinearSolver::DirectLLT;
-	
-	stark::Simulation simulation(settings);
-
-	// BC
-	auto bc_params = stark::EnergyPrescribedPositions::Params();
-	bc_params.set_stiffness(bc_stiffness);
-	
-	// Block
-    std::array<int32_t, 3> elements_per_axis = { refinement_level, refinement_level, (int)std::round(extrusion_factor*(int)refinement_level) };
-	auto mesh = symx::generate_cuboid_Tet4_mesh(size, elements_per_axis);
-
-	stark::Volume::Params material = stark::Volume::Params::Soft_Rubber();
-	material.strain.elasticity_only = true;
-	material.inertia.damping = 1.0;
-	material.strain.poissons_ratio = poisson_ratio;
-	material.strain.youngs_modulus = youngs_modulus;
-	material.inertia.quasistatic = true;
-	auto [V, T, H] = simulation.presets->deformables->add_volume_grid("block", size, elements_per_axis, material);
-	
-	// BC
-	auto bottom = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { 0.0, 0.0, -size[2]/2.0 }, { 10.0, 10.0, 0.001 }, bc_params);
-	auto top = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { 0.0, 0.0, size[2]/2.0 }, { 10.0, 10.0, 0.001 }, bc_params);
-
-	// Script
-	simulation.add_time_event(0, duration, [&](double t) {
-		double max_displacement = (extrusion_factor - 1) * size[2];
-		double vel = max_displacement / duration;
-		double displacement = vel * t;
-		top.set_transformation({ 0.0, 0.0, displacement }, Eigen::Matrix3d::Identity());
-	});
-
-	// Run
-	simulation.run();
-}
-
-void console_demo()
-{
-	// --- Per-verbosity output demo ---
-	// Run a short twisting_cloth at each verbosity level, 
-	// writing output to output/verbosity_demo/
-	{
-		std::vector<symx::Verbosity> levels = {
-			symx::Verbosity::Minimal,
-			symx::Verbosity::Summary,
-			symx::Verbosity::Medium,
-			symx::Verbosity::Full,
-		 };
-
-		for (auto& lvl : levels) {
-			std::cout << "Running verbosity level: " << to_string(lvl) << " ..." << std::flush;
-
-			stark::Settings s = stark::Settings();
-			s.output.simulation_name = "verbosity_" + to_string(lvl);
-			s.output.output_directory = OUTPUT_PATH + "/verbosity_demo";
-			s.output.console_verbosity = lvl;
-			s.execution.end_simulation_time = 0.2;  // short run
-			s.simulation.init_frictional_contact = false;
-			s.simulation.gravity = { 0.0, 0.0, 0.0 };
-			s.simulation.use_adaptive_time_step = false;
-			s.newton.projection_mode = symx::ProjectionToPD::Progressive;
-			s.newton.step_tolerance = 0.001;
-			s.simulation.max_time_step_size = 1.0/30.0;
-
-			stark::Simulation simulation(s);
-
-			double sz = 0.5;
-			int n = 10;
-			auto material = stark::Surface::Params::Cotton_Fabric();
-			material.strain.elasticity_only = true;
-			auto [V, T, H] = simulation.presets->deformables->add_surface_grid("cloth", { sz, sz }, { n, n }, material);
-			H.point_set.add_rotation(90.0, Eigen::Vector3d::UnitX());
-
-			auto bc_params = stark::EnergyPrescribedPositions::Params();
-			auto left = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { -sz/2.0, 0.0, 0.0 }, { 0.001, sz, sz }, bc_params);
-			auto right = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { sz/2.0, 0.0, 0.0 }, { 0.001, sz, sz }, bc_params);
-
-			double angular_velocity = 90.0;
-			simulation.add_time_event(0, 5.0, [&](double t) { left.set_transformation(Eigen::Vector3d::Zero(), angular_velocity * t, Eigen::Vector3d::UnitX()); });
-			simulation.add_time_event(0, 5.0, [&](double t) { right.set_transformation(Eigen::Vector3d::Zero(), -angular_velocity * t, Eigen::Vector3d::UnitX()); });
-
-			
-			simulation.run();
-			std::cout << " done.\n";
-		}
-		std::cout << "\nSink log files written to: " << OUTPUT_PATH << "/verbosity_demo/\n";
-	}
-}
-
-void cylinder_press(const int n = 12)
-{
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "cylinder_press_" + std::to_string(n);
-	settings.output.output_directory = OUTPUT_PATH + "/cylinder_press";
-
-	settings.execution.end_simulation_time = 5.001;
-	settings.simulation.max_time_step_size = 1.0 / 30.0;
-	settings.newton.step_tolerance = 0.001;
-	settings.newton.max_iterations = std::numeric_limits<int>::max();
-	settings.newton.min_iterations = 0;
-
-	// settings.output.console_verbosity = symx::Verbosity::Full;
-	settings.simulation.use_adaptive_time_step = false;
-
-	stark::Simulation simulation(settings);
-
-
-	// Contact
-	const double contact_thickness = 0.0005;
-	simulation.interactions->contact->set_global_params(
-		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(contact_thickness)
-		.set_friction_stick_slide_threshold(0.01)
-		.set_min_contact_stiffness(2e8)
-	);
-
-	// Global parameters
-	const double damping = 0.0;
-	const double friction = 0.5;
-	const double bc_stiffness = 1e7;
-
-	// Container
-	const double radius = 0.15;
-	const double height = 0.5;
-	const double mass = 1.0;
-	auto [Vc, Cc, container] = simulation.presets->rigidbodies->add_cylinder("container", 1.0, radius, height, 64, 5);
-	container.rigidbody.set_translation({0.0, 0.0, 0.5*height - 3.0*contact_thickness});
-	auto fix = simulation.rigidbodies->add_constraint_fix(container.rigidbody);
-	fix.set_stiffness(bc_stiffness);
-	fix.set_tolerance_in_deg(90.0);
-	fix.set_tolerance_in_m(9.9);
-
-	// Floor
-	auto params_floor = stark::Surface::Params::Cotton_Fabric();
-	params_floor.bending.set_elasticity_only(true);
-	params_floor.strain.set_elasticity_only(true);
-	params_floor.bending.set_flat_rest_angle(true);
-	auto [Vf, Cf, floor] = simulation.presets->deformables->add_surface_grid("floor", { 3, 3 }, { 1, 1 }, params_floor);
-	floor.point_set.add_displacement({ 0.75, -0.75, 0.0 });
-	auto floor_bc = simulation.deformables->prescribed_positions->add_inside_aabb(floor.point_set, { 0.0, 0.0, 0.0 }, { 100.0, 100.0, 100.0 },
-		stark::EnergyPrescribedPositions::Params()
-		.set_stiffness(bc_stiffness)
-	);
-
-	// Box
-	const double density = 1000.0;
-	const double young_modulus = 1e5;
-	const double poissons_ratio = 0.4;
-
-	// Material
-	auto params = stark::Volume::Params::Soft_Rubber();
-	params.inertia.density = density;
-	params.inertia.damping = damping;
-	params.strain.elasticity_only = true;
-	params.strain.poissons_ratio = poissons_ratio;
-	params.strain.youngs_modulus = young_modulus;
-
-	double box_size = 0.0;
-	std::vector<stark::Volume::Handler> boxes;
-
-	//// One box
-	if (false) {
-		box_size = 0.15;
-		auto [Vb, Cb, box] = simulation.presets->deformables->add_volume_grid("box", { box_size, box_size, box_size }, { n, n, n }, params);
-		box.point_set.add_displacement({ 0.0, 0.0, box_size });
-		boxes.push_back(box);
-	} 
-
-	//// For boxes side by side
-	else {
-		box_size = 0.09;
-		const double spacing = 0.25*box_size;
-		const double bottom = -0.5*(box_size + spacing);
-		for (int i = 0; i < 2; i++) {
-			for (int j = 0; j < 2; j++) {
-				auto [Vb, Cb, box] = simulation.presets->deformables->add_volume_grid("box", { box_size, box_size, box_size }, { n, n, n }, params);
-				box.point_set.add_displacement({ bottom + i*(box_size + spacing), bottom +j*(box_size + spacing), box_size });
-				boxes.push_back(box);
-			}
-		}
-	}
-
-	// Press
-	const double box_top = box_size + 0.5 * box_size;
-	const Eigen::Vector3d press_center = { 0.0, 0.0, box_top + 0.5*radius + 3.0*contact_thickness };
-	auto [Vp, Cp, press] = simulation.presets->rigidbodies->add_cylinder("press", mass, radius, radius, 64, 1);
-	press.rigidbody.set_translation(press_center);
-	auto press_fix = simulation.rigidbodies->add_constraint_fix(press.rigidbody);
-	press_fix.set_stiffness(bc_stiffness);
-	press_fix.set_tolerance_in_deg(90.0);
-	press_fix.set_tolerance_in_m(9.9);
-
-	// Interactions
-	container.contact.disable_collision(press.contact);
-	container.contact.disable_collision(floor.contact);
-	const int n_boxes = (int)boxes.size();
-	for (int i = 0; i < n_boxes; i++) {
-		boxes[i].contact.set_friction(floor.contact, friction);
-		boxes[i].contact.set_friction(press.contact, friction);
-		//for (int j = i; j < n_boxes; j++) {
-		//	boxes[i].contact.set_friction(boxes[j].contact, friction);
-		//}
-	}
-
-	// Script
-	const double target_z = 0.5*box_size + 0.5*radius;
-	double z = press_center[2];
-	simulation.add_time_event(1.0, 2.0, [&](double t) {
-		z = stark::blend(press_center[2], target_z, 1.0, 2.0, t, stark::BlendType::Linear);
-		press_fix.set_transformation({ press_center[0], press_center[1], z }, 0.0, Eigen::Vector3d::UnitZ());
-		});
-
-	//const double angular_velocity = 180.0;  // [deg / s]
-	//simulation.add_time_event(2.5, 4.5, [&](double t) {
-	//	const Eigen::Vector3d translation = { press_center[0], press_center[1], z };
-	//	const double angle = angular_velocity * (t - 2.5);
-	//	press_fix.set_transformation(translation, angle, Eigen::Vector3d::UnitZ());
-	//	});
-
-	const double angular_velocity = 180.0;  // [deg / s]
-	simulation.add_time_event(2.5, 999.0, [&](double t) {
-		const Eigen::Vector3d translation = { press_center[0], press_center[1], z };
-		const double angle = angular_velocity * (t - 2.5);
-		press_fix.set_transformation(translation, angle, Eigen::Vector3d::UnitZ());
-		});
-
-	// Run
-	simulation.run(
-		[&]() 
-		{
-		});
-}
-
-
 int main()
 {
-	//cylinder_press();
-	//console_demo();
-	//twisting_cloth();
-	//hanging_deformable_box();
-	//column_extrusion_PPN_test();
-	// return 0;
+	hanging_net();
+	return 0;
 
 	/*
 		Here you can find a list of simple scenes to test the library.
@@ -979,8 +665,7 @@ int main()
 	*/
 
 	// Simple rigid body scenes
-	// rb_constraints_all();
-
+	rb_constraints_all();
 	
 	// Simple simulations: No collisions, only presets
 	hanging_net();
