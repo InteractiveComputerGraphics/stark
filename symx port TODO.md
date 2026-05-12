@@ -2,11 +2,11 @@
 
 ## Post Eurographics
 
-Examples
-   - Clean
-   - column extrussion is a mess
 Cleanup files and comments
 Docs
+    - Explain all parameters
+    - Explain all callbacks
+    - Color with VSCode style
     - Panic sheet
 Readme
 LinkedIn Post

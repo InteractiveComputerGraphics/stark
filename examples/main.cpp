@@ -86,8 +86,6 @@ void hanging_deformable_box()
 	settings.execution.end_simulation_time = 5.0;
 	
 	settings.simulation.init_frictional_contact = false;
-	settings.simulation.use_adaptive_time_step = false;
-	settings.newton.step_tolerance = 0.001;
 	settings.simulation.max_time_step_size = 1.0/30.0;
 
 	stark::Simulation simulation(settings);
@@ -116,7 +114,7 @@ void hanging_box_with_composite_material()
 		The box is fixed by two corners and hanging due to gravity.
 
 		This scene exemplifies how to use individual energies to model different materials in a single deformable object,
-		as opposed to using a preset with a pre-selection.
+		as opposed to using a preset.
 	*/
 
 	stark::Settings settings = stark::Settings();
@@ -191,30 +189,40 @@ void hanging_box_with_composite_material()
 	simulation.run();
 }
 
-void column_extrusion()
+void quasistatic_column_extrusion()
 {
 	/*
+		This simulation illustrate how to use STARK for quasistatic simulations.
+		While it is _not_ possible to switch off time entirely, it is possible to set up the simulation
+		parametrization to obtain the equivalent effect.
+
+		If you work with quasistatics, _maybe_ it is more ergonomic for you to use SymX directly in order
+		to avoid bringing all the time step machinery.
+		Check this quasistatic extrusion example implemented directly in SymX: 
+		https://github.com/InteractiveComputerGraphics/SymX/blob/main/examples/rubber_extrusion.cpp
+
 		IMPORTANT: STARK solves for velocity updates, therefore, it is advisable to use duration = dt = 1.0 for quasistatics.
 		In this setting, the solve is analogous to positional dofs.
 	*/
 	// Parameters
 	const double duration = 1.0;
 	const double extrusion_factor = 5.0;
-	const int refinement_level = 40;
+	const int refinement_level = 16;
 
 	const double youngs_modulus = 1e8;
-	const double poisson_ratio = 0.49;
+	const double poissons_ratio = 0.49;
 	const double bc_stiffness = 1e10;
 
-	const double dt = 1.0/30.0;
-	//const double dt = duration*0.99999;
+	const double dt = duration*0.99999;  // if dt == duration, the simulation is over as it steps
 	Eigen::Vector3d size(1.0, 1.0, 0.5);
-	const bool is_quasistatic = false;
+	const bool is_quasistatic = true;
 	
 	// Settings
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "column_extrusion";
-	settings.output.output_directory = OUTPUT_PATH + "/column_extrusion";
+	settings.output.simulation_name = "quasistatic_column_extrusion";
+	settings.output.output_directory = OUTPUT_PATH + "/quasistatic_column_extrusion";
+	settings.output.console_verbosity = symx::Verbosity::Medium;
+
 	settings.output.fps = 1.0/dt;
 	settings.execution.end_simulation_time = duration;
 	settings.simulation.gravity = { 0.0, 0.0, 0.0 };
@@ -229,16 +237,6 @@ void column_extrusion()
 	
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);
-
-	// Contact
-	// simulation.interactions->contact->set_global_params(
-	// 	stark::EnergyFrictionalContact::GlobalParams()
-	// 	.set_default_contact_thickness(0.002)
-	// 	.set_min_contact_stiffness(1e8)
-	// );
-	auto bc_params = stark::EnergyPrescribedPositions::Params();
-	bc_params.set_stiffness(bc_stiffness);
-	
 	
 	// Block
     std::array<int32_t, 3> elements_per_axis = { refinement_level, refinement_level, (int)std::round(extrusion_factor*(int)refinement_level) };
@@ -247,12 +245,13 @@ void column_extrusion()
 	stark::Volume::Params material = stark::Volume::Params::Soft_Rubber();
 	material.strain.elasticity_only = true;
 	material.inertia.quasistatic = is_quasistatic;
-	material.inertia.damping = 1.0;
-	material.strain.poissons_ratio = poisson_ratio;
+	material.strain.poissons_ratio = poissons_ratio;
 	material.strain.youngs_modulus = youngs_modulus;
 	auto H = simulation.presets->deformables->add_volume("block", mesh.vertices, symx::as_array_vec<4>(mesh.connectivity), material);
 	
 	// BC
+	auto bc_params = stark::EnergyPrescribedPositions::Params();
+	bc_params.set_stiffness(bc_stiffness);
 	auto bottom = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { 0.0, 0.0, -size[2]/2.0 }, { 10.0, 10.0, 0.001 }, bc_params);
 	auto top = simulation.deformables->prescribed_positions->add_inside_aabb(H.point_set, { 0.0, 0.0, size[2]/2.0 }, { 10.0, 10.0, 0.001 }, bc_params);
 
@@ -633,7 +632,7 @@ void magnetic_deformables()
 
 int main()
 {
-	twisting_cloth();
+	quasistatic_column_extrusion();
 	return 0;
 
 	/*
@@ -653,6 +652,7 @@ int main()
 	hanging_cloth();
 	hanging_deformable_box();
 	attachments();
+	quasistatic_column_extrusion();
 
 	// Composite materials
 	hanging_box_with_composite_material();
