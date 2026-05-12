@@ -46,32 +46,46 @@ Generated C++ code from SymX is written to `settings.output.codegen_directory` a
 |---|---|---|
 | `STARK_ENABLE_EXAMPLES` | `ON` | Build the example scenes |
 | `STARK_ENABLE_TESTS` | `ON` | Build the test suite |
+| `STARK_BUILD_PYTHON_BINDINGS` | `ON` | Build the pystark Python bindings |
 
 Stark inherits SymX CMake options for AVX2, compiler path, and Hessian storage.
 See the [SymX setup docs](https://github.com/InteractiveComputerGraphics/SymX) for details on those.
 
 ## Building pystark (Python Bindings)
 
-pystark uses [nanobind](https://github.com/wjakob/nanobind) and is built as a separate CMake project inside `pystark/cpp/`.
+pystark uses [nanobind](https://github.com/wjakob/nanobind) (fetched automatically at configure time) and is built as part of the main CMake project via the `STARK_BUILD_PYTHON_BINDINGS` option (enabled by default).
+
+**Prerequisites:** Python 3.8+ with development headers and NumPy.
 
 ```bash
-# From the repo root
-cd pystark/cpp
-cmake -B build
-cmake --build build --parallel
+# Tell CMake which Python to use (required when using conda/virtualenv)
+cmake -B build -DPython_EXECUTABLE=$(which python)
+cmake --build build --parallel --target pystark
 ```
 
-This produces a shared library (`pystark*.so` or `.pyd` on Windows) in `pystark/cpp/build/`.
+This produces a shared library at `build/pystark/cpp/pystark*.so`.
 
-To make `import pystark` work, either:
+To make `import pystark` work, set `PYTHONPATH` to point at both the native module and the Python package wrapper:
 
-- Add `pystark/cpp/build/` to your `PYTHONPATH`:
-  ```bash
-  export PYTHONPATH=/path/to/stark/pystark/cpp/build:$PYTHONPATH
-  ```
-- Or copy `pystark*.so` into your Python environment's site-packages.
+```bash
+export PYTHONPATH=/path/to/stark/build/pystark/cpp:/path/to/stark/pystark:$PYTHONPATH
+```
 
-A convenience wrapper at `pystark/pystark/__init__.py` re-exports everything from the native module.
+Then verify:
+
+```python
+import pystark
+s = pystark.Settings()
+print(s.as_string())
+```
+
+To disable pystark when building only the C++ library:
+
+```bash
+cmake -B build -DSTARK_BUILD_PYTHON_BINDINGS=OFF
+```
+
+The Python package at `pystark/pystark/__init__.py` re-exports everything from the native module and adds convenience aliases (e.g. `pystark.ZERO`, `pystark.UNITX`) and utilities (`pystark.blend`).
 
 ## Requirements Summary
 

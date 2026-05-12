@@ -161,7 +161,7 @@ set(ALL_FILES
 	${UTILS_FILES}
 )
 
-# Create lireary
+# Create library
 add_library(stark ${ALL_FILES})
 
 # Include/link dependencies

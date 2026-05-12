@@ -5,24 +5,31 @@ The API is intentionally kept parallel to C++ — almost every class and method 
 
 ## Installation
 
-See [Setup](setup.md) for the build instructions.
-Once built, make the native module importable:
+Build pystark as part of the main CMake project (enabled by default with `STARK_BUILD_PYTHON_BINDINGS=ON`):
 
 ```bash
-export PYTHONPATH=/path/to/stark/pystark/cpp/build:$PYTHONPATH
+# From the repo root — specify your Python interpreter explicitly
+cmake -B build -DPython_EXECUTABLE=$(which python)
+cmake --build build --parallel --target pystark
 ```
 
-Then in Python:
+Then set `PYTHONPATH` to include both the native `.so` directory and the Python package wrapper:
+
+```bash
+export PYTHONPATH=/path/to/stark/build/pystark/cpp:/path/to/stark/pystark:$PYTHONPATH
+```
+
+Verify the install:
 
 ```python
 import pystark
-
-# Check it works
 settings = pystark.Settings()
-print(settings.output.simulation_name)  # ""
+print(settings.as_string())
 ```
 
-The `pystark/pystark/` folder contains a thin Python wrapper (`__init__.py`) that re-exports everything and adds a few convenience utilities (e.g. `pystark.blend`).
+See [Setup](setup.md) for full build instructions including conda/virtualenv and platform-specific notes.
+
+The `pystark/pystark/` folder is a thin Python wrapper (`__init__.py`) that re-exports everything from the native module and adds convenience aliases (`pystark.ZERO`, `pystark.UNITX`, etc.) and utilities (`pystark.blend`).
 
 ## API Differences from C++
 
@@ -82,10 +89,13 @@ C++ lambdas become Python callables (functions or lambdas):
 simulation.add_time_event(0.0, duration, lambda t: my_update(t))
 ```
 
-### `run()` Callback
+### `run()` Signatures
 
 ```python
-simulation.run(10.0, lambda: per_step_callback())
+simulation.run(duration)                      # run for 'duration' seconds
+simulation.run(duration, lambda: callback())  # with per-step callback (no args)
+simulation.run(lambda: callback())            # run until end time set in Settings
+simulation.run_one_time_step()                # advance exactly one time step
 ```
 
 ## Convenience Utilities
@@ -107,38 +117,54 @@ v = pystark.blend(
 
 Available blend types: `Linear`, `EaseIn`, `EaseOut`, `EaseInOut`.
 
-## Example: Inflation
+## Example: Boxes on Cloth
+
+A minimal working example (from `pystark/examples/boxes_on_cloth.py`):
 
 ```python
 import numpy as np
 import pystark
 
 settings = pystark.Settings()
-settings.output.simulation_name   = "inflation"
-settings.output.output_directory  = "output"
-settings.output.codegen_directory = "codegen"
+settings.output.simulation_name   = "boxes_on_cloth"
+settings.output.output_directory  = "output_folder"
+settings.output.codegen_directory = "codegen_folder"
 simulation = pystark.Simulation(settings)
 
+# Contact parameters
+thickness = 0.00025
 contact_params = pystark.EnergyFrictionalContact.GlobalParams()
-contact_params.default_contact_thickness = 0.001
+contact_params.default_contact_thickness = thickness
+contact_params.min_contact_stiffness = 2e8
 simulation.interactions().contact().set_global_params(contact_params)
 
-# Balloon surface
-params = pystark.Surface.Params.Cotton_Fabric()
-params.inertia.density = 50.0
-vV, vC, vH = simulation.presets().deformables().add_surface_grid(
-    "balloon", np.array([0.5, 0.5]), np.array([20, 20]), params
+# Static floor
+fV, fC, fH = simulation.presets().rigidbodies().add_box(
+    "floor", 1.0, np.array([1.0, 10.0, 0.05]))
+fH.rigidbody.add_translation(np.array([0.0, 4.0, -0.05/2.0 - thickness]))
+simulation.rigidbodies().add_constraint_fix(fH.rigidbody).set_stiffness(1e8)
+
+# Cloth surface
+cloth_material = pystark.Surface.Params.Cotton_Fabric()
+cV, cC, cH = simulation.presets().deformables().add_surface_grid(
+    "cloth", np.array([0.5, 0.5]), np.array([20, 20]), cloth_material)
+simulation.interactions().contact().set_friction(fH.contact, cH.contact, 0.5)
+
+# Fixed cloth edge
+cloth_bc = simulation.deformables().prescribed_positions().add_inside_aabb(
+    cH.point_set,
+    np.array([0.0, 0.25, 0.0]),   # AABB center
+    np.array([0.25, 0.001, 0.5]), # AABB half-extents
+    pystark.EnergyPrescribedPositions.Params()
 )
 
-# Internal pressure via a time event
-def apply_pressure(t):
-    pressure = 1000.0 * min(t / 2.0, 1.0)  # ramp up over 2 s
-    for i in range(len(vV)):
-        # Add outward force proportional to pressure
-        pass  # placeholder — see examples/inflation.py
+# A rigid box falling on the cloth
+bV, bC, bH = simulation.presets().rigidbodies().add_box(
+    "box", 1.0, np.array([0.08, 0.08, 0.08]))
+bH.rigidbody.add_translation(np.array([0.0, 0.0, 0.2]))
+simulation.interactions().contact().set_friction(bH.contact, cH.contact, 0.5)
 
-simulation.add_time_event(0.0, 10.0, apply_pressure)
-simulation.run(10.0)
+simulation.run(3.0)
 ```
 
 See `pystark/examples/` for complete, runnable examples:

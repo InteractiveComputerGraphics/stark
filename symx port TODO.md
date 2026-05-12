@@ -9,8 +9,10 @@ PPN
 Python API
 Cleanup files and comments
 Docs
+    - Panic sheet
 Readme
 LinkedIn Post
+pip install
 
 
 ### Claude

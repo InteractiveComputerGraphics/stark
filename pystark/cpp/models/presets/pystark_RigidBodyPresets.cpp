@@ -21,36 +21,36 @@ void pystark_RigidBodyPresets(nb::module_& m)
 			{ 
 				auto [V, C, H] = self.add_sphere(output_label, mass, radius, subdivisions, contact_params);
 				nb::tuple out = nb::make_tuple(stark_to_nb(V), stark_to_nb(C), H);
-				return create_named_tuple("RigidBodyOutput", { "vertices", "segments", "handler" }, out);
+				return create_named_tuple("RigidBodyOutput", { "vertices", "triangles", "handler" }, out);
 			},
 			"output_label"_a, "mass"_a, "radius"_a, "subdivisions"_a = 2, "contact_params"_a = ContactParams())
 		.def("add_box", [](RigidBodyPresets& self, const std::string& output_label, double mass, const Eigen::Vector3d& size, const ContactParams& contact_params)
 			{ 
 				auto [V, C, H] = self.add_box(output_label, mass, size, contact_params);
 				nb::tuple out = nb::make_tuple(stark_to_nb(V), stark_to_nb(C), H);
-				return create_named_tuple("RigidBodyOutput", { "vertices", "segments", "handler" }, out);
+				return create_named_tuple("RigidBodyOutput", { "vertices", "triangles", "handler" }, out);
 			},
 			"output_label"_a, "mass"_a, "size"_a, "contact_params"_a = ContactParams())
 		.def("add_box", [](RigidBodyPresets& self, const std::string& output_label, double mass, double size, const ContactParams& contact_params)
 			{ 
 				auto [V, C, H] = self.add_box(output_label, mass, size, contact_params);
 				nb::tuple out = nb::make_tuple(stark_to_nb(V), stark_to_nb(C), H);
-				return create_named_tuple("RigidBodyOutput", { "vertices", "segments", "handler" }, out);
+				return create_named_tuple("RigidBodyOutput", { "vertices", "triangles", "handler" }, out);
 			},
 			"output_label"_a, "mass"_a, "size"_a, "contact_params"_a = ContactParams())
 		.def("add_cylinder", [](RigidBodyPresets& self, const std::string& output_label, double mass, double radius, double full_height, int slices, int stacks, const ContactParams& contact_params)
 			{ 
 				auto [V, C, H] = self.add_cylinder(output_label, mass, radius, full_height, slices, stacks, contact_params);
 				nb::tuple out = nb::make_tuple(stark_to_nb(V), stark_to_nb(C), H);
-				return create_named_tuple("RigidBodyOutput", { "vertices", "segments", "handler" }, out);
+				return create_named_tuple("RigidBodyOutput", { "vertices", "triangles", "handler" }, out);
 			},
 			"output_label"_a, "mass"_a, "radius"_a, "full_height"_a, "slices"_a = 16, "stacks"_a = 1, "contact_params"_a = ContactParams())
 		.def("add_torus", [](RigidBodyPresets& self, const std::string& output_label, double mass, double outer_radius, double inner_radius, int slices, int stacks, const ContactParams& contact_params)
 			{ 
 				auto [V, C, H] = self.add_torus(output_label, mass, outer_radius, inner_radius, slices, stacks, contact_params);
 				nb::tuple out = nb::make_tuple(stark_to_nb(V), stark_to_nb(C), H);
-				return create_named_tuple("RigidBodyOutput", { "vertices", "segments", "handler" }, out);
+				return create_named_tuple("RigidBodyOutput", { "vertices", "triangles", "handler" }, out);
 			},
-			"output_label"_a, "mass"_a, "radius"_a, "full_height"_a, "slices"_a = 16, "stacks"_a = 32, "contact_params"_a = ContactParams())
+			"output_label"_a, "mass"_a, "outer_radius"_a, "inner_radius"_a, "slices"_a = 16, "stacks"_a = 32, "contact_params"_a = ContactParams())
 		;
 }

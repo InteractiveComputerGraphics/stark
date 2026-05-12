@@ -4,7 +4,7 @@ void pystark_Settings(nb::module_& m)
 {
     // symx enums
     nb::enum_<symx::LinearSolver>(m, "LinearSolver")
-        .value("DirectLU", symx::LinearSolver::DirectLU)
+        .value("DirectLLT", symx::LinearSolver::DirectLLT)
         .value("BDPCG", symx::LinearSolver::BDPCG);
 
     nb::enum_<symx::ProjectionToPD>(m, "ProjectionToPD")
@@ -12,9 +12,6 @@ void pystark_Settings(nb::module_& m)
         .value("ProjectedNewton", symx::ProjectionToPD::ProjectedNewton)
         .value("ProjectOnDemand", symx::ProjectionToPD::ProjectOnDemand)
         .value("Progressive", symx::ProjectionToPD::Progressive);
-
-    // Functions
-    m.def("set_compiler_command", &set_compiler_command);
 
     // Structs
     auto settings_struct = nb::class_<Settings>(m, "Settings")
@@ -33,8 +30,9 @@ void pystark_Settings(nb::module_& m)
         .def_rw("time_stamp", &Settings::Output::time_stamp)
         .def_rw("fps", &Settings::Output::fps)
         .def_rw("console_verbosity", &Settings::Output::console_verbosity)
-        .def_rw("console_output_to", &Settings::Output::console_output_to)
-        .def_rw("enable_output", &Settings::Output::enable_output);
+        .def_rw("file_verbosity",    &Settings::Output::file_verbosity)
+        .def_rw("enable_frame_writes", &Settings::Output::enable_frame_writes)
+        .def_rw("enable_output",     &Settings::Output::enable_output);
 
     auto simulation_struct = nb::class_<Settings::Simulation>(settings_struct, "Simulation")
         .def(nb::init<>())
@@ -42,22 +40,31 @@ void pystark_Settings(nb::module_& m)
         .def_rw("init_frictional_contact", &Settings::Simulation::init_frictional_contact)
         .def_rw("max_time_step_size", &Settings::Simulation::max_time_step_size)
         .def_rw("use_adaptive_time_step", &Settings::Simulation::use_adaptive_time_step)
-        .def_rw("time_step_size_success_muliplier", &Settings::Simulation::time_step_size_success_muliplier)
+        .def_rw("time_step_size_success_multiplier", &Settings::Simulation::time_step_size_success_multiplier)
         .def_rw("time_step_size_lower_bound", &Settings::Simulation::time_step_size_lower_bound);
 
-    // symx::NewtonSettings bindings
+    // symx::NewtonSettings bindings (inherits SolverSettings fields)
     auto newton_settings_struct = nb::class_<symx::NewtonSettings>(m, "NewtonSettings")
         .def(nb::init<>())
-        .def_rw("max_iterations", &symx::NewtonSettings::max_iterations)
-        .def_rw("max_line_search_iterations", &symx::NewtonSettings::max_line_search_iterations)
-        .def_rw("residual_tolerance", &symx::NewtonSettings::residual_tolerance)
-        .def_rw("linear_solver", &symx::NewtonSettings::linear_solver)
-        .def_rw("projection_mode", &symx::NewtonSettings::projection_mode)
-        .def_rw("projection_eps", &symx::NewtonSettings::projection_eps)
-        .def_rw("cg_max_iterations", &symx::NewtonSettings::cg_max_iterations)
-        .def_rw("cg_abs_tolerance", &symx::NewtonSettings::cg_abs_tolerance)
-        .def_rw("cg_rel_tolerance", &symx::NewtonSettings::cg_rel_tolerance)
-        .def_rw("bailout_residual", &symx::NewtonSettings::bailout_residual);
+        // SolverSettings base fields
+        .def_rw("max_iterations",                         &symx::NewtonSettings::max_iterations)
+        .def_rw("min_iterations",                         &symx::NewtonSettings::min_iterations)
+        .def_rw("residual_tolerance_abs",                 &symx::NewtonSettings::residual_tolerance_abs)
+        .def_rw("residual_tolerance_rel",                 &symx::NewtonSettings::residual_tolerance_rel)
+        .def_rw("step_tolerance",                         &symx::NewtonSettings::step_tolerance)
+        .def_rw("max_iterations_as_success",              &symx::NewtonSettings::max_iterations_as_success)
+        .def_rw("enable_armijo_backtracking",             &symx::NewtonSettings::enable_armijo_backtracking)
+        .def_rw("max_backtracking_armijo_iterations",     &symx::NewtonSettings::max_backtracking_armijo_iterations)
+        .def_rw("max_backtracking_invalid_state_iterations", &symx::NewtonSettings::max_backtracking_invalid_state_iterations)
+        // NewtonSettings fields
+        .def_rw("projection_mode",                        &symx::NewtonSettings::projection_mode)
+        .def_rw("projection_eps",                         &symx::NewtonSettings::projection_eps)
+        .def_rw("linear_solver",                          &symx::NewtonSettings::linear_solver)
+        .def_rw("cg_max_iterations",                      &symx::NewtonSettings::cg_max_iterations)
+        .def_rw("cg_abs_tolerance",                       &symx::NewtonSettings::cg_abs_tolerance)
+        .def_rw("cg_rel_tolerance",                       &symx::NewtonSettings::cg_rel_tolerance)
+        .def_rw("cg_stop_on_indefiniteness",              &symx::NewtonSettings::cg_stop_on_indefiniteness)
+        .def_rw("bailout_residual",                       &symx::NewtonSettings::bailout_residual);
 
     auto execution_struct = nb::class_<Settings::Execution>(settings_struct, "Execution")
         .def(nb::init<>())
