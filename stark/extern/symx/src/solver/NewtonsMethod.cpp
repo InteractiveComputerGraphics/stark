@@ -644,7 +644,6 @@ void NewtonsMethod::print_summary(double total_time) const
 {
 	auto* out = this->output.get();
 
-
 	out->print_with_new_line("");
 	out->print_with_new_line(fmt::format("  {:<24} {:>10} {:>8} {:>8} {:>8}", "Solve", "Total", "Avg", "Min", "Max"));
 	out->print_with_new_line(fmt::format("  {}", std::string(62, '-')));
@@ -688,7 +687,9 @@ void NewtonsMethod::print_summary(double total_time) const
 
     // Add rest not accounted for
 	const double misc = total_time - acc;
-	timer_entries.push_back({"misc", misc});
+    if (misc / total_time >= 0.001) {
+    	timer_entries.push_back({"misc", misc});
+    }
 
     // Sort
 	std::sort(timer_entries.begin(), timer_entries.end(),

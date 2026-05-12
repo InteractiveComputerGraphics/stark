@@ -132,8 +132,6 @@ bool Stark::run(double duration, std::function<void()> callback)
 }
 bool Stark::run_one_step()
 {
-	auto t_ = this->context->logger->time("total");
-
 	auto& logger = this->context->logger;
 	auto& output = this->context->output;
 
@@ -269,7 +267,7 @@ void stark::core::Stark::print()
 	const int time_steps = std::max(logger->get_int("time_steps"), 1);
 	auto dt_stats = logger->get_stats("dt");
 
-	// ── Info ──
+	// Info
 	out->print_with_new_line("Info");
 	out->print_with_new_line(fmt::format("  Name:               {}", this->settings.output.simulation_name));
 	out->print_with_new_line(fmt::format("  Simulation time:    {:.3f} s", this->current_time));
@@ -278,9 +276,8 @@ void stark::core::Stark::print()
 	out->print_with_new_line(fmt::format("  Time steps:         {}", logger->get_int("time_steps")));
 	out->print_with_new_line(fmt::format("  dt [ms]:            avg: {:.1f} | min: {:.1f} | max: {:.1f}", 1000.0*dt_stats.avg, 1000.0*dt_stats.min, 1000.0*dt_stats.max));
 
-	// ── Solve + Runtime (delegated to NewtonsMethod) ──
-	const double total_time = logger->get_timer_total("total");
-	this->newton->print_summary(total_time);
+	// Solve + Runtime (delegated to NewtonsMethod)
+	this->newton->print_summary();
 
 	// Save final YAML log
 	logger->save_to_disk();
