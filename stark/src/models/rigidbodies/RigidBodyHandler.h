@@ -49,6 +49,7 @@ namespace stark
 		RigidBodyHandler& add_angular_velocity(const Eigen::Vector3d& angular_vel_glob_coords);
 
 		Eigen::Vector3d get_force() const;
+		RigidBodyHandler& set_force_at(const Eigen::Vector3d& force_glob_coords, const Eigen::Vector3d& application_point_glob_coords);
 		RigidBodyHandler& add_force_at(const Eigen::Vector3d& force_glob_coords, const Eigen::Vector3d& application_point_glob_coords);
 		RigidBodyHandler& set_force_at_centroid(const Eigen::Vector3d& force_glob_coords);
 		RigidBodyHandler& add_force_at_centroid(const Eigen::Vector3d& force_glob_coords);

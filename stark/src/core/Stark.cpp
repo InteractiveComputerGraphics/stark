@@ -140,12 +140,11 @@ bool Stark::run_one_step()
 		auto t_ = this->context->logger->time("initialization");
 		this->_initialize();
 	}
-	bool success = false;
 
 	// Check if the simulation should continue
 	if (!this->callbacks->run_should_continue_execution()) {
 		output->print_with_new_line("Simulation interrupted by user.", Verbosity::Minimal);
-		return false;
+		return false;  // Exit simulation
 	}
 
 	// Time step begin
@@ -208,41 +207,40 @@ bool Stark::run_one_step()
 		}
 
 		// Return
-		success = true;
+		return true;  // Successful (and taken) time step
 	}
 
-	// Time step failure
+	// Time step failure: do not advance time. Adjust parameters and signal the caller to retry.
 	else {
 		// Output
 		const double runtime = omp_get_wtime() - t0;
 		output->print("\n", Verbosity::Medium);
 		this->context->logger->add("failed_steps", runtime);
 
-		// The failure was due to loose stiffnesses
+		// Failure due to invalid converged state (e.g. contact penetration):
+		// the relevant callback has already hardened the offending parameter (e.g. contact stiffness).
+		// Signal the caller to retry the same time step with the new parameters.
 		if (newton == SolverReturn::InvalidConvergedState || newton == SolverReturn::TooManyInvalidIntermediateIterations) {
-			// Stiffness should have been tightened in callbacks.
-			// Do nothing here, just run the time step again.
+			return true;  // Not successful, not taken (state not updated), but should retry with new parameters
 		}
 
-		// The failure was due to the time step being too tough. Adapt the time step size and run the time step again.
+		// Failure due to the time step being too difficult to solve:
+		// halve dt and signal the caller to retry.
 		else {
 			if (!this->settings.simulation.use_adaptive_time_step) {
-				output->print_with_new_line("settings.simulation.adaptive_time_step is set to false. Exiting simulation.\n", Verbosity::Summary);
-				return false;
+				output->print_with_new_line("settings.simulation.use_adaptive_time_step is false. Exiting simulation.\n", Verbosity::Summary);
+				return false;  // Not successful, not taken, and should not retry (exit simulation)
 			}
 
 			this->dt /= 2.0;
 			if (this->dt < this->settings.simulation.time_step_size_lower_bound) {
 				output->print_with_new_line(fmt::format("Adaptive time step size out of bounds ({:.e}). Exiting simulation.\n", this->settings.simulation.time_step_size_lower_bound), Verbosity::Summary);
-				return false;
+				return false; // Not successful, not taken, and should not retry (exit simulation)
 			}
 		}
-
-		// Return
-		success = true;
 	}
 
-	return success;
+	return true;  // avoids compiler warning about no return, but this line should never be reached
 }
 std::string Stark::get_frame_path(std::string name) const
 {

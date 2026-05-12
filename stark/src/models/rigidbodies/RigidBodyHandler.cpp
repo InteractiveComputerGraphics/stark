@@ -89,10 +89,16 @@ Eigen::Vector3d stark::RigidBodyHandler::get_force() const
 {
 	return this->rb->force[this->idx];
 }
-stark::RigidBodyHandler& stark::RigidBodyHandler::add_force_at(const Eigen::Vector3d& force_glob_coords, const Eigen::Vector3d& application_point_glob_coords)
+stark::RigidBodyHandler& stark::RigidBodyHandler::set_force_at(const Eigen::Vector3d& force_glob_coords, const Eigen::Vector3d& application_point_glob_coords)
 {
 	this->rb->force[this->idx] = force_glob_coords;
 	this->rb->torque[this->idx] = (application_point_glob_coords - this->rb->t1[this->idx]).cross(force_glob_coords);
+	return (*this);
+}
+stark::RigidBodyHandler& stark::RigidBodyHandler::add_force_at(const Eigen::Vector3d& force_glob_coords, const Eigen::Vector3d& application_point_glob_coords)
+{
+	this->rb->force[this->idx] += force_glob_coords;
+	this->rb->torque[this->idx] += (application_point_glob_coords - this->rb->t1[this->idx]).cross(force_glob_coords);
 	return (*this);
 }
 stark::RigidBodyHandler& stark::RigidBodyHandler::set_force_at_centroid(const Eigen::Vector3d& force_glob_coords)

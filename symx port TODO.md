@@ -13,8 +13,13 @@ Docs
 Readme
 LinkedIn Post
 
-Misc
-    - Still get   `misc                                     -370.734211  -99.8%`
+
+### Claude
+- Critical — EnergyTetStrain with elasticity_only = false is silently inactive
+    just drop strain limiting for now
+    or make it as edge strain limiting
+- don't exit but throw
+
 
 
 
