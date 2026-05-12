@@ -11,15 +11,12 @@ Cleanup files and comments
 Docs
     - Panic sheet
 Readme
+Bergou
 LinkedIn Post
 pip install
 
 
 ### Claude
-- Critical — EnergyTetStrain with elasticity_only = false is silently inactive
-    just drop strain limiting for now
-    or make it as edge strain limiting
-    -> viscoelasticity.py is also broken because of this
 - don't exit but throw
 
 

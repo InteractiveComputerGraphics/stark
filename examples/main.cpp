@@ -106,7 +106,6 @@ void hanging_deformable_box()
 	
 	settings.simulation.init_frictional_contact = false;
 	settings.simulation.use_adaptive_time_step = false;
-	settings.newton.projection_mode = symx::ProjectionToPD::Progressive;
 	settings.newton.step_tolerance = 0.001;
 	settings.simulation.max_time_step_size = 1.0/30.0;
 
@@ -117,8 +116,8 @@ void hanging_deformable_box()
 	const double d = 0.5;
 	const double hd = d/2.0;
 	auto material = stark::Volume::Params::Soft_Rubber();
-	material.strain.youngs_modulus = 1e5;
-	// material.strain.elasticity_only = true;
+	material.strain.youngs_modulus = 1e4;
+	material.strain.elasticity_only = false;
 	auto [V, T, H] = simulation.presets->deformables->add_volume_grid("box", { d, d, d }, {n, n, n}, material);
 	
 	// BC
@@ -652,7 +651,7 @@ void magnetic_deformables()
 
 int main()
 {
-	twisting_cloth();
+	hanging_deformable_box();
 	return 0;
 
 	/*

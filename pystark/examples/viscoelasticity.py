@@ -14,18 +14,18 @@ import pystark
 settings = pystark.Settings()
 settings.output.simulation_name = "viscoelasticity"
 settings.output.output_directory = os.path.join(build_dir, "output/viscoelasticity")
-settings.output.codegen_directory = os.path.join(build_dir, "codegen/viscoelasticity")
+settings.output.codegen_directory = os.path.join(build_dir, "codegen")
 
-# settings.simulation.gravity = pystark.ZERO
-# settings.simulation.max_time_step_size = 1.0/30.0
-# settings.newton.residual_tolerance_abs = 1e-6
-# settings.newton.step_tolerance = 1e-3
+settings.simulation.gravity = pystark.ZERO
+settings.simulation.max_time_step_size = 1.0/30.0
+settings.newton.residual_tolerance_abs = 1e-6
+settings.newton.step_tolerance = 1e-3
 
 simulation = pystark.Simulation(settings)
 
 # Contact
 contact_params = pystark.EnergyFrictionalContact.GlobalParams()
-contact_params.default_contact_thickness = 0.00025
+contact_params.default_contact_thickness = 0.0005
 contact_params.friction_enabled = False
 contact_params.min_contact_stiffness = 1e7
 simulation.interactions().contact().set_global_params(contact_params)
@@ -34,12 +34,10 @@ simulation.interactions().contact().set_global_params(contact_params)
 s = 0.2
 f = 0.25
 d = s*f
-n = 25
+n = 32
 
 material = pystark.Volume.Params.Soft_Rubber()
-material.strain.elasticity_only = True
-# material.strain.damping = 2e3
-# material.strain.youngs_modulus = 1e6
+material.strain.damping = 2e3
 bV, bT, bH = simulation.presets().deformables().add_volume_grid("box",
     size=np.array([s, s, d]),
     subdivisions=np.array([n, n, f*n], dtype=np.int32),

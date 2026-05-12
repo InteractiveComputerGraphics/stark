@@ -68,6 +68,8 @@ namespace symx
 	Vector operator-(const Vector& vec);
 
 	Scalar dot(const Vector& a, const Vector& b);
+	Scalar stable_norm(const Scalar& squared, const Scalar& eps);
+	Scalar stable_norm(const Scalar& squared, double eps);
     
 	
 	template <typename T>

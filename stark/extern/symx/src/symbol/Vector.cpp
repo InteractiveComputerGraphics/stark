@@ -215,3 +215,13 @@ symx::Scalar symx::dot(const Vector& a, const Vector& b)
 {
 	return a.dot(b);
 }
+
+symx::Scalar symx::stable_norm(const Scalar &squared, const Scalar &eps)
+{
+    return (squared + eps).sqrt() - eps.sqrt();
+}
+
+symx::Scalar symx::stable_norm(const Scalar &squared, double eps)
+{
+    return stable_norm(squared, squared.make_constant(eps));
+}

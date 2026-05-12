@@ -1,6 +1,7 @@
 *.pyc
 *.pyi
 *.pyd
+*.so
 build/
 output/
 codegen/

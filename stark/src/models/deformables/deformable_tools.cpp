@@ -56,3 +56,7 @@ std::array<Scalar, 3> stark::eigenvalues_sym_3x3(const Matrix& A)
 		1.0 / 3.0 * (a + b + c + 2.0 * sqrt(x1) * cos((phi + M_PI) / 3.0))
 	};
 }
+Scalar stark::soft_activation(const Scalar& x, const Scalar& eps)
+{
+	return 0.5 * (x + sqrt(x*x + eps*eps));
+}
