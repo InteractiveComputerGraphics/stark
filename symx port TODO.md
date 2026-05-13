@@ -11,9 +11,11 @@ Docs
     - Panic sheet
         Friction and contact parameters
     - Upload to https://stark.physics-simulation.org
+    - Setup: `pip install stark`
+pip install
+Tests don't pass
 Readme
 LinkedIn Post
-pip install
 
 
 ### Claude

@@ -19,7 +19,7 @@ endif()
 
 add_subdirectory(stark)
 add_subdirectory(examples)
-# add_subdirectory(tests)
+add_subdirectory(tests)
 
 option(STARK_BUILD_PYTHON_BINDINGS "Build Python Bindings" ON)
 if(STARK_BUILD_PYTHON_BINDINGS)

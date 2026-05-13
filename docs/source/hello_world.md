@@ -4,7 +4,7 @@ Two quick STARK "hello world" programs — one in Python, one in C++.
 Both simulate a piece of cloth falling on a rigid box that spins in place.
 
 <p align="center">
-    <img src="spinning_box_cloth.gif" alt="Spinning box cloth simulation" style="width:65%;">
+    <img src="../images/spinning_box_cloth.gif" alt="Spinning box cloth simulation" style="width:65%;">
 </p>
 
 ## Python

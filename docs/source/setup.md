@@ -1,7 +1,7 @@
 # Setup
 
 STARK requires **CMake 3.15+**, a **C++17** compiler, and **OpenMP**.
-It bundles Eigen, fmt, and SymX as dependencies — nothing else needs to be installed for the C++ build.
+It bundles Eigen, fmt, and SymX as dependencies.
 Python bindings (pystark) require Python 3.8+ and are built separately.
 
 ## Project Structure
@@ -9,11 +9,13 @@ Python bindings (pystark) require Python 3.8+ and are built separately.
 | Folder | Contents |
 |---|---|
 | `stark/` | The core C++ library |
-| `stark/extern/symx/` | SymX symbolic differentiation engine (bundled) |
 | `examples/` | Self-contained C++ example scenes |
 | `pystark/` | Python bindings (nanobind) |
 | `tests/` | C++ unit tests |
 | `docs/` | This documentation |
+
+## `pip install stark`
+TODO
 
 ## Building the C++ Library and Examples
 
@@ -71,6 +73,12 @@ To make `import pystark` work, add the `pystark/` source directory to `PYTHONPAT
 export PYTHONPATH=/path/to/stark/pystark:$PYTHONPATH
 ```
 
+You can also add the path to the built pystark manually from python by
+```python
+import sys
+sys.path.append("path/to/stark/pystark")
+```
+
 Then verify:
 
 ```python
@@ -85,27 +93,8 @@ To disable pystark when building only the C++ library:
 cmake -B build -DSTARK_BUILD_PYTHON_BINDINGS=OFF
 ```
 
-The Python package at `pystark/pystark/__init__.py` re-exports everything from the native module and adds convenience aliases (e.g. `pystark.ZERO`, `pystark.UNITX`) and utilities (`pystark.blend`).
+The Python package at `pystark/pystark/__init__.py` re-exports everything from the native module and adds convenience aliases (e.g. `pystark.ZERO`, `pystark.UNITX`), utilities and safeguards to transfer lambdas between C++ and Python.
 
-## Requirements Summary
+## SymX Options
+Check out SymX building options as they will be available through STARK: [SymX Setup](https://symx.physics-simulation.org/setup.html)
 
-| Component | Requirement |
-|---|---|
-| CMake | 3.15+ |
-| C++ compiler | C++17, with OpenMP support |
-| Python (pystark) | 3.8+ |
-| NumPy (pystark) | Any recent version |
-
-### Linux
-GCC 9+ or Clang 9+ recommended. OpenMP is usually available via `libgomp` (GCC) or `libomp` (Clang).
-
-### macOS
-Apple Clang does not ship OpenMP by default. Install via Homebrew:
-```bash
-brew install libomp
-```
-then pass the include/lib paths to CMake.
-
-### Windows
-MSVC 2019+ with the C++ and CMake workloads installed.
-OpenMP support is enabled by the `/openmp` flag (added automatically by CMake's `FindOpenMP`).

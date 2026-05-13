@@ -55,7 +55,8 @@ class SymXCppLexer(CppLexer):
             SymXSemanticHintFilter(
                 types=[
                     "Settings", "symx", "stark", "Surface", "Params", "GlobalParams",
-                    "EnergyFrictionalContact", "Volume", "Vector3d", "Vector2d", "Cotton_Fabric"
+                    "EnergyFrictionalContact", "Volume", "Vector3d", "Vector2d", "Cotton_Fabric",
+                    "Eigen", 
                 ],
                 funcs=[
                     "PLACEHOLDER",

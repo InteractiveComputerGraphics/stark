@@ -11,7 +11,6 @@
 
 #define ENABLE_TESTS_IN_THIS_FILE true
 
-
 using namespace Catch::Matchers;
 
 double rng() {
@@ -29,7 +28,7 @@ stark::Settings test_settings(std::string name)
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = name;
-	settings.output.output_directory = std::string(STARK_EXAMPLES_OUTPUT_DIR) + "/test_output";
+	settings.output.output_directory = std::string(STARK_TESTS_OUTPUT_DIR) + "/test_output";
 	settings.output.enable_output = false;
 	settings.output.enable_frame_writes = false;
 	settings.execution.end_simulation_time = 3.0;

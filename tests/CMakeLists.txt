@@ -16,3 +16,6 @@ target_include_directories(stark_tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../sta
 
 ## Catch2
 target_link_libraries(stark_tests PRIVATE Catch2::Catch2WithMain)
+
+# Define directory paths
+target_compile_definitions(stark_tests PUBLIC STARK_TESTS_OUTPUT_DIR="${CMAKE_BINARY_DIR}/output")
