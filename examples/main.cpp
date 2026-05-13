@@ -632,7 +632,7 @@ void magnetic_deformables()
 
 int main()
 {
-	quasistatic_column_extrusion();
+	hanging_net();
 	return 0;
 
 	/*

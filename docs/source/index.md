@@ -37,6 +37,7 @@ architecture
 :maxdepth: 1
 
 settings
+io
 simulation_loop
 ```
 

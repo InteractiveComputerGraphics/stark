@@ -12,6 +12,13 @@ Docs
         Friction and contact parameters
     - Upload to https://stark.physics-simulation.org
     - Setup: `pip install stark`
+    - Architecture
+        Simulations -> presets -> deformables, RB, interactions -> Points, RB, Energies
+    - Simulation Loop
+        Adaptive time step
+        Quasistatics
+        Callbacks
+        Control/Scripting
 pip install
 Tests don't pass
 Readme
