@@ -1,16 +1,16 @@
-# Extending Stark
+# Extending STARK
 
-Stark's physics models are defined using SymX — the symbolic differentiation and JIT compilation engine bundled with Stark.
+STARK's physics models are defined using SymX — the symbolic differentiation and JIT compilation engine bundled with STARK.
 Adding a new material, joint, or interaction model requires writing the energy potential in symbolic form.
-Stark takes care of differentiation, code generation, compilation, and assembly automatically.
+STARK takes care of differentiation, code generation, compilation, and assembly automatically.
 
 > This page gives an overview of the process.
 > For the full SymX API reference, see the [SymX documentation](https://github.com/InteractiveComputerGraphics/SymX).
 
 ## The Core Idea
 
-Every physics model in Stark is an **energy potential** — a scalar function of the degrees of freedom (DoFs).
-Stark assembles all potentials, differentiates them symbolically to get the gradient and Hessian, and feeds them to Newton's Method.
+Every physics model in STARK is an **energy potential** — a scalar function of the degrees of freedom (DoFs).
+STARK assembles all potentials, differentiates them symbolically to get the gradient and Hessian, and feeds them to Newton's Method.
 
 To add a model you need to:
 
@@ -64,7 +64,7 @@ struct MySpring
 };
 ```
 
-## Key SymX Concepts Used in Stark
+## Key SymX Concepts Used in STARK
 
 | Concept | What it does |
 |---|---|
@@ -77,7 +77,7 @@ struct MySpring
 
 ## Looking at Existing Models
 
-The cleanest way to learn how to extend Stark is to read an existing, simple model:
+The cleanest way to learn how to extend STARK is to read an existing, simple model:
 
 - **`EnergyPrescribedPositions`** — a point-to-point penalty attachment; one of the simplest models.
   See `stark/src/models/deformables/point/`.
@@ -90,16 +90,16 @@ The cleanest way to learn how to extend Stark is to read an existing, simple mod
 
 The full SymX API is documented at the [SymX GitHub repo](https://github.com/InteractiveComputerGraphics/SymX).
 
-Topics most relevant to extending Stark:
+Topics most relevant to extending STARK:
 
-- **Symbol–Data Maps (Layer 3):** `MappedWorkspace`, `CompiledInLoop` — the mechanism Stark uses internally for all its models.
-- **Second-Order Optimization (Layer 4):** `GlobalPotential`, `NewtonsMethod` — the solver infrastructure Stark wraps.
+- **Symbol–Data Maps (Layer 3):** `MappedWorkspace`, `CompiledInLoop` — the mechanism STARK uses internally for all its models.
+- **Second-Order Optimization (Layer 4):** `GlobalPotential`, `NewtonsMethod` — the solver infrastructure STARK wraps.
 - **FEM Integration:** built-in FEM element types and integration helpers (`fem_integrator`, `fem_jacobian`).
 
 ## Callbacks in Custom Models
 
 Custom models often need to hook into the simulation loop.
-Use `stark.core.Stark` callbacks (accessible via `sim.stark` in `Simulation`):
+Use `stark.core.STARK` callbacks (accessible via `sim.stark` in `Simulation`):
 
 ```cpp
 stark.callbacks->add_before_time_step([&]() {
@@ -108,7 +108,7 @@ stark.callbacks->add_before_time_step([&]() {
 
 stark.callbacks->newton->add_is_converged_state_valid([&]() -> bool {
     // Return false if the converged state is invalid (e.g. interpenetration)
-    // Stark will harden your stiffness parameter and retry the time step
+    // STARK will harden your stiffness parameter and retry the time step
     return check_validity();
 });
 ```

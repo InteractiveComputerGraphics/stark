@@ -1,6 +1,6 @@
 # Frictional Contact
 
-Stark uses an **IPC (Incremental Potential Contact)** based formulation for frictional contact.
+STARK uses an **IPC (Incremental Potential Contact)** based formulation for frictional contact.
 It is guaranteed to be intersection-free and handles all contact pairs (deformable–deformable, rigid–deformable, rigid–rigid) in a unified framework.
 
 Contact is handled by `simulation.interactions->contact` (C++) or `simulation.interactions().contact()` (Python).

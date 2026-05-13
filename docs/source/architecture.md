@@ -1,6 +1,6 @@
 # Architecture
 
-Stark is organized as a layered platform.
+STARK is organized as a layered platform.
 The outermost layer is what users interact with; the innermost layer is SymX, which handles symbolic math, code generation, and the Newton solver.
 
 ## The Big Picture
@@ -20,7 +20,7 @@ RB["RigidBodies"]:::model
 INT["Interactions"]:::model
 PRE["Presets"]:::model
 
-STARK["stark::core::Stark"]:::core
+STARK["stark::core::STARK"]:::core
 
 SYMX["SymX\n(GlobalPotential + NewtonsMethod)"]:::symx
 
@@ -61,7 +61,7 @@ Models exposed to users:
 
 ### Yellow · Core Engine
 
-`stark::core::Stark` owns:
+`stark::core::STARK` owns:
 - The SymX `GlobalPotential` (all registered energy potentials)
 - The SymX `Context` (thread count, logger, output verbosity)
 - The simulation loop (`run()`, `run_one_step()`)
@@ -74,8 +74,8 @@ SymX handles everything below the waterline:
 - JIT C++ code generation and compilation (once, then cached)
 - Newton's Method with adaptive line search and Hessian projection
 
-You do not need to interact with SymX directly to use Stark.
-If you want to add new energy models, you will use the SymX API to define potentials — see [Extending Stark](extending.md) and the [SymX documentation](https://github.com/InteractiveComputerGraphics/SymX).
+You do not need to interact with SymX directly to use STARK.
+If you want to add new energy models, you will use the SymX API to define potentials — see [Extending STARK](extending.md) and the [SymX documentation](https://github.com/InteractiveComputerGraphics/SymX).
 
 ## Data Flow Through a Time Step
 
@@ -101,6 +101,6 @@ They are the mechanism by which models react to solver events (e.g. contact stif
 
 ## Output
 
-Stark writes per-frame mesh output as VTK (`.vtk`) files by default, one file per registered object per frame.
+STARK writes per-frame mesh output as VTK (`.vtk`) files by default, one file per registered object per frame.
 The frame rate is controlled by `settings.output.fps`.
 A YAML log with timing and solver statistics is also written to disk.

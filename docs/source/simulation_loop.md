@@ -1,6 +1,6 @@
 # Simulation Loop
 
-This page explains how Stark advances time, how to script kinematic motion, and how to inject custom logic into the loop via callbacks.
+This page explains how STARK advances time, how to script kinematic motion, and how to inject custom logic into the loop via callbacks.
 
 ## Running the Simulation
 
@@ -118,7 +118,7 @@ This is useful for scenes where gravity is ramped up gradually (e.g. to avoid ex
 
 ## Callbacks (Advanced)
 
-For lower-level control, Stark exposes a callback system.
+For lower-level control, STARK exposes a callback system.
 These are mainly used internally by the physics models, but you can register your own.
 
 | Callback | When it fires |
@@ -127,16 +127,16 @@ These are mainly used internally by the physics models, but you can register you
 | `add_before_time_step` | At the start of every time step attempt |
 | `add_after_time_step` | After every accepted time step |
 | `add_on_time_step_accepted` | After Newton converges, before advancing time |
-| `add_write_frame` | When Stark decides to output a frame |
+| `add_write_frame` | When STARK decides to output a frame |
 | `add_should_continue_execution` | Every step; return `false` to stop the simulation |
 
 ```cpp
-// C++ (via stark.callbacks, available on core::Stark)
+// C++ (via stark.callbacks, available on core::STARK)
 // In typical usage you access this through Simulation internals or model code
 ```
 
 For most user scenarios, time events cover everything you need.
-Callbacks are mainly relevant when you are [extending Stark](extending.md) with new models.
+Callbacks are mainly relevant when you are [extending STARK](extending.md) with new models.
 
 ## Query Methods
 

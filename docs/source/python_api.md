@@ -1,6 +1,6 @@
 # Python API (pystark)
 
-pystark exposes the full Stark C++ API to Python via [nanobind](https://github.com/wjakob/nanobind) bindings.
+pystark exposes the full STARK C++ API to Python via [nanobind](https://github.com/wjakob/nanobind) bindings.
 The API is intentionally kept parallel to C++ — almost every class and method has a 1:1 counterpart.
 
 ## Installation

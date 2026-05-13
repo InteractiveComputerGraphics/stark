@@ -1,6 +1,6 @@
 # Setup
 
-Stark requires **CMake 3.15+**, a **C++17** compiler, and **OpenMP**.
+STARK requires **CMake 3.15+**, a **C++17** compiler, and **OpenMP**.
 It bundles Eigen, fmt, and SymX as dependencies — nothing else needs to be installed for the C++ build.
 Python bindings (pystark) require Python 3.8+ and are built separately.
 
@@ -48,7 +48,7 @@ Generated C++ code from SymX is written to `settings.output.codegen_directory` a
 | `STARK_ENABLE_TESTS` | `ON` | Build the test suite |
 | `STARK_BUILD_PYTHON_BINDINGS` | `ON` | Build the pystark Python bindings |
 
-Stark inherits SymX CMake options for AVX2, compiler path, and Hessian storage.
+STARK inherits SymX CMake options for AVX2, compiler path, and Hessian storage.
 See the [SymX setup docs](https://github.com/InteractiveComputerGraphics/SymX) for details on those.
 
 ## Building pystark (Python Bindings)

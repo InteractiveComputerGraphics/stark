@@ -8,6 +8,7 @@ Docs
     - Explain all callbacks
     - Color with VSCode style
     - Panic sheet
+    - Upload to https://stark.physics-simulation.org
 Readme
 LinkedIn Post
 pip install

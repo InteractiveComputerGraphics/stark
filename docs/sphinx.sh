@@ -1,31 +1,30 @@
-#!/usr/bin/env bash
-# Sphinx docs build helper for Stark
-# Run from anywhere; the script resolves its own location.
+# 1) If you don't already have Miniforge installed (pick ONE)
+# Linux/macOS (example name; adjust to your OS/arch from conda-forge/miniforge releases)
+# bash Miniforge3-<OS>-<ARCH>.sh -b -p "$HOME/miniforge3"
+# eval "$($HOME/miniforge3/bin/conda shell.bash hook)"
 
-# -- Environment Setup --
-# If you don't already have Miniforge installed:
-#   bash Miniforge3-Linux-x86_64.sh -b -p "$HOME/miniforge3"
-#   eval "$($HOME/miniforge3/bin/conda shell.bash hook)"
+# 2) Make sure conda-forge is used (recommended with Miniforge)
+conda config --add channels conda-forge
+conda config --set channel_priority strict
 
-# 1) Add conda-forge channel (recommended with Miniforge)
-# conda config --add channels conda-forge
-# conda config --set channel_priority strict
+# 3) Create the docs environment (choose python version if you want)
+conda create -n docs python=3.11 -y
 
-# 2) Create and activate the docs environment (one-time)
-# conda create -n docs python=3.11 -y
-# conda activate docs
 
-# 3) Install Sphinx and required extensions (one-time)
-# conda install -c conda-forge sphinx myst-parser furo sphinx-autobuild sphinxcontrib-mermaid -y
+# 4) Activate it
+conda activate docs
 
-# -- Build Commands --
+# 5) Install Sphinx + autobuild (and common extensions)
+conda install -c conda-forge sphinx myst-parser furo sphinx-autobuild sphinxcontrib-mermaid -y
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SOURCE_DIR="$SCRIPT_DIR/source"
-BUILD_DIR="$SCRIPT_DIR/build/html"
+# Optional but common (uncomment what you need):
 
-# Live-reload development server
-sphinx-autobuild "$SOURCE_DIR" "$BUILD_DIR" --fresh-env --write-all
+# conda install -y sphinxcontrib-bibtex sphinxcontrib-mermaid
+# conda install -y doxygen breathe  # if you document C++ with Doxygen+Breathe
 
-# One-shot build (uncomment to use instead):
-# sphinx-build -b html "$SOURCE_DIR" "$BUILD_DIR"
+# 6) (Only once) create a Sphinx project skeleton in your docs folder
+# mkdir -p docs && cd docs
+# sphinx-quickstart
+
+# 7) Run your live-reload server (your final commands)
+sphinx-autobuild source build/html --fresh-env --write-all

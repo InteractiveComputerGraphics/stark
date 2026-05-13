@@ -1,6 +1,6 @@
 # Rigid Bodies
 
-Stark's rigid body system handles articulated mechanisms, kinematic objects, and rigid-deformable interaction.
+STARK's rigid body system handles articulated mechanisms, kinematic objects, and rigid-deformable interaction.
 The main entry point is `simulation.rigidbodies`.
 
 ## Adding a Rigid Body
@@ -96,7 +96,7 @@ Eigen::Matrix3d R       = rb.get_rotation_matrix();
 
 ## Inertia Tensors
 
-Stark provides helper functions to compute inertia tensors for common shapes:
+STARK provides helper functions to compute inertia tensors for common shapes:
 
 ```cpp
 Eigen::Matrix3d I_box      = stark::inertia_tensor_box(mass, size_vec3);
@@ -108,7 +108,7 @@ These are automatically used by the preset constructors.
 
 ## Mesh Output
 
-Rigid bodies in Stark are output as triangle meshes.
+Rigid bodies in STARK are output as triangle meshes.
 You register collision/render meshes through the presets or directly:
 
 ```cpp
@@ -133,4 +133,4 @@ You can override per-body by applying a custom acceleration:
 rb.set_acceleration(simulation.get_gravity() * custom_factor);
 ```
 
-Or disable gravity response by setting zero acceleration (gravity is added via inertia energy; disabling that is a model-level concern — see [Extending Stark](extending.md)).
+Or disable gravity response by setting zero acceleration (gravity is added via inertia energy; disabling that is a model-level concern — see [Extending STARK](extending.md)).

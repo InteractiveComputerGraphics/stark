@@ -1,26 +1,34 @@
-**Note:** This repository is a *work in progress*. 
-More documentation, examples, tutorials, etc. will be coming as the rest of our responsibilities permit. 
-In any case, Stark itself is fully functional and actively used in our own research.
-We appreciate your patience and interest.
+# STARK
 
-# Stark
-<p align=center>
- <img src="docs/images/robotic_hand.png" width="400">
-  &nbsp;&nbsp;
- <img src="docs/images/franka_plastic_cup.jpg" width="400">
+<p align="center">
+    <img src="docs/source/_static/stark1920.png" alt="STARK Logo" style="width:75%;">
 </p>
 
-Stark is a C++ and Python simulation _platform_ that provides easy access to state-of-the-art methods to robustly solve simulations of rigid and deformable objects in a strongly coupled manner.
-To the best of our knowledge, no other existing open source simulation environment provides such a rich collection of models, including coupling, with the same level of robustness.
-Stark has been validated through real-world, challenging cases of interactions between robots and deformable objects, see the [Stark ICRA'24 paper](https://www.animation.rwth-aachen.de/publication/0588/).
+<p align="center">
+    <strong>Robust Coupled Simulation · Symbolic Differentiation </strong><br>
+    <strong>FEM · Volumes · Shells · Rigid Bodies · Frictional Contact</strong><br>
+    <a href="https://stark.physics-simulation.org/">Docs</a> &nbsp;·&nbsp; <a href="https://animation.rwth-aachen.de/media/papers/88/2024_-_ICRA_-_STARK.pdf">PDF</a> &nbsp;·&nbsp; <a href="https://doi.org/10.1109/icra57147.2024.10610574">IEEE Page</a>
+</p>
 
-One of the main features of Stark is that it uses a powerful symbolic differentiation and code generation engine that allows for a concise formulation of the global variational form of the non-linear dynamic problem.
-Adding new models (e.g. materials, joints, interactions, ...) in Stark is as simple as specifying their energy potential in symbolic form together with the data they depend on.
+
+**STARK** is a C++ and Python simulation platform providing robust, state-of-the-art methods for simulating rigid and deformable objects in strongly coupled scenarios. It provides a rich set of physics models — FEM deformables, discrete shells, rigid bodies with joints, and IPC frictional contact — with a powerful symbolic differentiation engine ([SymX](https://github.com/InteractiveComputerGraphics/SymX)) that eliminates the need for virtually any manual task beyond mathematical and discretization definitions.
+
+STARK is **very easy to use** and **great for research**.
+It has been validated through real-world, challenging cases of interactions between robots and deformable objects, see the [STARK ICRA'24 paper](https://www.animation.rwth-aachen.de/publication/0588/).
+
+<p align=center>
+ <img src="docs/images/robotic_hand.png" height="200">
+  &nbsp;&nbsp;
+ <img src="docs/images/franka_plastic_cup.jpg" height="200">
+</p>
+
+One of the main features of STARK is that it uses a powerful symbolic differentiation and code generation engine that allows for a concise formulation of the global variational form of the non-linear dynamic problem.
+Adding new models (e.g. materials, joints, interactions, ...) in STARK is as simple as specifying their energy potential in symbolic form together with the data they depend on.
 This removes the tedium of manually deriving, implementing, testing and optimizing new models and integrating them in existing complex simulation environments.
-Stark collects all the potentials and uses Newton's Method to find the solution to the non-linear implicit time-stepping problem.
-Presently, even though Stark has a C++ and Python API, models can only be defined in C++.
+STARK collects all the potentials and uses Newton's Method to find the solution to the non-linear implicit time-stepping problem.
+Presently, even though STARK has a C++ and Python API, models can only be defined in C++.
 
-By default, Stark comes out-of-the-box with important widely used models:
+By default, STARK comes out-of-the-box with important widely used models:
 - 3D and 2D **FEM** discretizations for deformable non-linear materials
 - **Discrete Shells** for cloths and stiff shells
 - **Rigid Bodies** with joints and motors
@@ -28,16 +36,16 @@ By default, Stark comes out-of-the-box with important widely used models:
 
 See [Features](#features) section for more details.
 
-There are two use cases for Stark:
+There are two use cases for STARK:
   - As an external, black-box, powerful simulator that can handle very challenging scenarios.
-  No knowledge of Stark internals are needed in this case, and users can directly use the high-level C++ or Python APIs.
+  No knowledge of STARK internals are needed in this case, and users can directly use the high-level C++ or Python APIs.
   - As a research and development tool for simulation.
-  Thanks mainly to the symbolic differentiation and integrated collision detection, Stark can dramatically increase productivity of simulation technology research.
-  See [here](stark/src/models) how the models contained in Stark are implemented.
+  Thanks mainly to the symbolic differentiation and integrated collision detection, STARK can dramatically increase productivity of simulation technology research.
+  See [here](stark/src/models) how the models contained in STARK are implemented.
 
 
 ## Hello World
-The following is a script example using Stark's Python API to execute a simulation of a piece of cloth falling on a rigid box with a prescribed spinning motion.
+The following is a script example using STARK's Python API to execute a simulation of a piece of cloth falling on a rigid box with a prescribed spinning motion.
 
 <p align=center>
  <img src="docs/images/spinning_box_cloth.gif">
@@ -91,7 +99,7 @@ The output is a sequence of VTK files per output group (in this case one sequenc
 VTK files can be viewed in Blender with [this](https://github.com/InteractiveComputerGraphics/blender-sequence-loader) add-on or in [Paraview](https://www.paraview.org/).
 You can use [meshio](https://github.com/nschloe/meshio) to transform VTK meshes to other formats.
 
-Stark code will always follow the same structure:
+STARK code will always follow the same structure:
   - Define global settings and parameters.
   - Add objects, boundary conditions and define interactions. In this example, `presets` are used but custom objects and composed materials are also possible.
   - Optionally, specify time-dependent events (script).
@@ -100,28 +108,34 @@ Stark code will always follow the same structure:
 See the folder [`stark/pystark/examples`](pystark/examples) for more scenes using the Python API and [`stark/examples`](examples/) for scenes written in C++.
 
 
-## Get Stark
-Stark's C++ and Python APIs are essentially equivalent.
-A user who just wants to _use_ Stark with the models that it comes with, probably will prefer the Python API.
-Users looking to work on their own new models to _extend_ Stark with new functionality will have to work directly in the C++ source code.
+## Get STARK
+STARK's C++ and Python APIs are essentially equivalent.
+A user who just wants to _use_ STARK with the models that it comes with, probably will prefer the Python API.
+Users looking to work on their own new models to _extend_ STARK with new functionality will have to work directly in the C++ source code.
 
-Every time Stark encounters a new potential energy, it will generate and compile code to compute its derivatives.
+Every time STARK encounters a new potential energy, it will generate and compile code to compute its derivatives.
 Therefore, a C++17 compiler is required.
 You can specify the command to invoke a compatible compiler using `pystark.set_compiler_command(str)` in Python and `stark::set_compiler_command(str)` in C++.
-By default, it is `"g++"` in Unix and `"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvarsx86_amd64.bat"` in Windows.
+By default, it is `"g++"` in Unix and 
+```
+pystark.set_compiler_command("\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"")
+```
+in Windows.
+Use `pystark.Settings().debug.symx_suppress_compiler_output = False` to inspect the compiler's output.
 
-If you don't have a C++17 compiler and just want to use the models shipped with Stark by default, you can download the corresponding compiled binaries [here](https://rwth-aachen.sciebo.de/s/5NXgsPtoDyVl8Yo).
-Don't forget to point Stark to the folder containing those in `settings.output.codegen_directory`.
+
+If you don't have a C++17 compiler and just want to use the models shipped with STARK by default, you can download the corresponding compiled binaries [here](https://rwth-aachen.sciebo.de/s/5NXgsPtoDyVl8Yo).
+Don't forget to point STARK to the folder containing those in `settings.output.codegen_directory`.
 
 ### Python API
-You can install Stark for Python 3.8+ using
+You can install STARK for Python 3.8+ using
 ```
 pip install stark-sim
 ```
 
 ### Build from source
 To build from source you will need [CMake](https://cmake.org/) and a C++17 compiler.
-All dependencies are bundled with Stark or are downloaded by CMake at build time.
+All dependencies are bundled with STARK or are downloaded by CMake at build time.
 
 ## Examples with code
 <div align="center">
@@ -158,7 +172,7 @@ All dependencies are bundled with Stark or are downloaded by CMake at build time
 ## Features
 
 ### Models
-Besides a simulator, Stark is a repository of potential energies commonly used for deformable and rigid objects and frictional contact.
+Besides a simulator, STARK is a repository of potential energies commonly used for deformable and rigid objects and frictional contact.
 The following models can be found in symbolic form in `stark/stark/src/models/`:
 
 * Deformable objects
@@ -187,12 +201,12 @@ The following models can be found in symbolic form in `stark/stark/src/models/`:
   - Optional numerical PSD projection of element Hessians
 * Event-based scripts
 
-## Research using Stark
+## Research using STARK
 * ["Micropolar Elasticity in Physically-Based Animation"](https://www.animation.rwth-aachen.de/publication/0582/) - Löschner et al., 2023
 * ["Curved Three-Director Cosserat Shells with Strong Coupling"](https://www.animation.rwth-aachen.de/publication/0589/) - Löschner et al., 2024
 * ["Strongly Coupled Simulation of Magnetic Rigid Bodies"](https://www.animation.rwth-aachen.de/publication/0590/) - Westhofen et al., 2024
 
-## Cite Stark
+## Cite STARK
 ```bibtex
 @InProceedings{FLL+24,
   author={Fernández-Fernández, José Antonio and Lange, Ralph and Laible, Stefan and Arras, Kai O. and Bender, Jan},
@@ -212,7 +226,7 @@ The following models can be found in symbolic form in `stark/stark/src/models/`:
       <img src="https://raw.githubusercontent.com/boschresearch/bosch-corporate-information/main/static/Bosch_symbol_logo_black_red.svg" width="300">
     </td>
     <td>
-      Robert Bosch GmbH is acknowledged for generous financial support of the development of the initial version of Stark from 2019 to 2021.
+      Robert Bosch GmbH is acknowledged for generous financial support of the development of the initial version of STARK from 2019 to 2021.
     </td>
   </tr>
 </table>

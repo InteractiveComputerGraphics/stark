@@ -1,6 +1,6 @@
 # Settings
 
-All Stark configuration lives in a single `stark::Settings` struct that is passed to the `Simulation` constructor.
+All STARK configuration lives in a single `stark::Settings` struct that is passed to the `Simulation` constructor.
 Once the simulation is constructed, settings are immutable.
 
 ## C++ Usage
