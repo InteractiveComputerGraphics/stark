@@ -54,17 +54,8 @@ class SymXCppLexer(CppLexer):
         self.add_filter(
             SymXSemanticHintFilter(
                 types=[
-                    "Scalar", "Vector", "Matrix", "Index",
-                    "MappedWorkspace", "CompiledInLoop",
-                    "std", "vector", "Eigen", "Vector3d", 
-                    "array", "int32_t", "View", "string",
-                    "INPUT_FLOAT", "COMPILED_FLOAT", "OUTPUT_FLOAT",
-                    "__m256d", "Info", "CALLBACK_T", "function", "Triplet",
-                    "T", "FEM_Element", "Context", "spContext", "spGlobalPotential",
-                    "GlobalPotential", "Verbosity", "NewtonsMethod", "ProjectionToPD",
-                    "SolverReturn", "LabelledConnectivity", "numeric_limits", "LinearSolver",
-                    "Workspace", "Compiled", "DiffCache", "Compilation", "BlockedSparseMatrix", "bsm",
-                    "Ordering", "RowMajor", "Tet4", "Hex8", "Tet10", "Hex27", "Element", "VectorXd", "symx"
+                    "Settings", "symx", "stark", "Surface", "Params", "GlobalParams",
+                    "EnergyFrictionalContact", "Volume", "Vector3d", "Vector2d", "Cotton_Fabric"
                 ],
                 funcs=[
                     "PLACEHOLDER",

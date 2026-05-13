@@ -5,9 +5,11 @@
 Cleanup files and comments
 Docs
     - Explain all parameters
+        Friction and contact parameters
     - Explain all callbacks
     - Color with VSCode style
     - Panic sheet
+        Friction and contact parameters
     - Upload to https://stark.physics-simulation.org
 Readme
 LinkedIn Post

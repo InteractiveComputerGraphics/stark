@@ -24,7 +24,7 @@ simulation = pystark.Simulation(settings)
 
 # 3. Set global contact parameters
 contact_params = pystark.EnergyFrictionalContact.GlobalParams()
-contact_params.default_contact_thickness = 0.001
+contact_params.default_contact_thickness = 0.0025
 contact_params.friction_stick_slide_threshold = 0.01
 simulation.interactions().contact().set_global_params(contact_params)
 
@@ -32,7 +32,7 @@ simulation.interactions().contact().set_global_params(contact_params)
 cV, cT, cH = simulation.presets().deformables().add_surface_grid(
     "cloth",
     size=np.array([0.4, 0.4]),
-    subdivisions=np.array([20, 20]),
+    subdivisions=np.array([32, 32]),
     params=pystark.Surface.Params.Cotton_Fabric()
 )
 
@@ -49,7 +49,7 @@ duration = 10.0
 def script(t):
     fix_handler.set_transformation(
         np.array([0.0, 0.0, -0.08]),
-        t * 90.0,
+        90.0*t,
         np.array([0.0, 0.0, 1.0])
     )
 
@@ -81,17 +81,16 @@ void spinning_box_cloth()
     stark::Simulation simulation(settings);
 
     // 3. Set global contact parameters
-    auto& contact = *simulation.interactions->contact;
     stark::EnergyFrictionalContact::GlobalParams contact_params;
-    contact_params.default_contact_thickness = 0.001;
+    contact_params.default_contact_thickness = 0.0025;
     contact_params.friction_stick_slide_threshold = 0.01;
-    contact.set_global_params(contact_params);
+    simulation.interactions->contact->set_global_params(contact_params);
 
     // 4. Add a deformable cloth surface
     auto cloth = simulation.presets->deformables->add_surface_grid(
         "cloth",
         Eigen::Vector2d(0.4, 0.4),
-        {20, 20},
+        {32, 32},
         stark::Surface::Params::Cotton_Fabric()
     );
 
@@ -106,7 +105,10 @@ void spinning_box_cloth()
     // 7. Script: spin the box
     double duration = 10.0;
     simulation.add_time_event(0.0, duration, [&](double t) {
-        fix.set_transformation({0.0, 0.0, -0.08}, t * 90.0, {0.0, 0.0, 1.0});
+        fix.set_transformation(
+            {0.0, 0.0, -0.08 - 0.1*std::sin(t)}, 
+            90.0*t, 
+            {0.0, 0.0, 1.0});
     });
 
     // 8. Run

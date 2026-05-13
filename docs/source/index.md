@@ -5,7 +5,7 @@
 </p>
 
 Welcome to the STARK documentation pages.
-STARK is [...]
+STARK is a C++ and Python simulation platform providing robust, state-of-the-art methods for simulating rigid and deformable objects in strongly coupled scenarios.
 Check out the [STARK GitHub repo](https://github.com/InteractiveComputerGraphics/stark) and the [STARK ICRA'24 paper](https://www.animation.rwth-aachen.de/publication/0588/).
 
 In this documentation you will find an overview of how STARK works.

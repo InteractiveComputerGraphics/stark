@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import inspect
 import numpy as np
 
 # Import all
@@ -78,7 +79,25 @@ class Simulation(_NativeSimulation):
         super().add_time_event(t0, t1, wrapper)
 
     def run(self, *args, **kwargs):
-        result = super().run(*args, **kwargs)
+        # The C++ run(double, std::function<void()>) callback takes no arguments.
+        # If the user passes a callable that expects one argument (time), wrap it
+        # to call callback(self.get_time()) so the API feels natural.
+        new_args = list(args)
+        if len(new_args) >= 2 and callable(new_args[1]):
+            cb = new_args[1]
+            try:
+                n_params = sum(
+                    1 for p in inspect.signature(cb).parameters.values()
+                    if p.default is inspect.Parameter.empty
+                    and p.kind not in (inspect.Parameter.VAR_POSITIONAL,
+                                       inspect.Parameter.VAR_KEYWORD)
+                )
+            except (ValueError, TypeError):
+                n_params = 0
+            if n_params == 1:
+                sim = self
+                new_args[1] = lambda fn=cb: fn(sim.get_time())
+        result = super().run(*new_args, **kwargs)
         # Break all references from wrappers to user callbacks.
         # The C++ std::function still holds the wrappers alive, but now
         # wrapper._fn is None, so no Python objects are reachable from C++.

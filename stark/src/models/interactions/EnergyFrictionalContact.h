@@ -21,8 +21,8 @@ namespace stark
 		{
 			STARK_PARAM_POSITIVE(double, default_contact_thickness, -1.0)  // Default parameter -1.0 means no default is set
 
-			// Recommended (Default values are very soft. Probably a good idea to set them manually.)
-			STARK_PARAM_NON_NEGATIVE(double, min_contact_stiffness, 1e3)
+			// Recommended (Default values are relatively soft. Probably a good idea to set them manually.)
+			STARK_PARAM_NON_NEGATIVE(double, min_contact_stiffness, 1e6)
 			STARK_PARAM_NON_NEGATIVE(double, max_contact_stiffness, 1e20)
 			STARK_PARAM_NON_NEGATIVE(double, friction_stick_slide_threshold, 0.1)
 
