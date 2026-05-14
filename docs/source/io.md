@@ -96,7 +96,7 @@ auto block = stark::generate_tet_grid(
 
 ### Presets and Handles
 
-The highest-level way to create common simulation objects is through STARK presets. Presets generate the geometry, register the relevant physical systems, and return the created mesh data and handles.
+The highest-level option is presets, which generate geometry, register physics, and return mesh data and handles.
 
 ```cpp
 stark::Volume::Params material = stark::Volume::Params::Soft_Rubber();

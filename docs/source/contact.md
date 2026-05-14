@@ -6,17 +6,11 @@ It is guaranteed to be intersection-free and handles all contact pairs (deformab
 Contact is handled by `simulation.interactions->contact` (C++) or `simulation.interactions().contact()` (Python).
 
 ## Contact Handler
-STARK contact is object-based. Every mesh that should participate in collision detection is registered as a contact object and receives a `stark::ContactHandler`.
-Contact uses the same handler pattern as the rest of STARK: once you have a `ContactHandler`, you use it to set pairwise friction, disable collision pairs, or update the contact thickness.
+Every mesh that should collide is registered as a contact object and receives a `ContactHandler`, used to configure friction, disable pairs, or update contact thickness.
 
-A contact object contains only the collision geometry used by the contact system. The actual motion still comes from the underlying physical object: a deformable `PointSetHandler` or a `RigidBodyHandler`.
+The actual motion comes from the underlying `PointSetHandler` or `RigidBodyHandler`; the contact object holds only the collision geometry.
 
-There are two common ways to register contact geometry:
-
-1. **Through presets**, where the contact object is created automatically.
-2. **Manually**, by calling `simulation.interactions->contact->add_triangles()` or `add_edges()`.
-
-Contact registration is briefed at the end of this file.
+Contact geometry is registered either through presets (recommended) or manually. Details at the end of this page.
 
 ## Global Parameters
 
@@ -80,15 +74,15 @@ ch_a.disable_collision(ch_b);
 
 ## Stiffness Hardening
 
-When the Newton solver cannot backtrack from an intersection, the contact stiffness is automatically doubled and the time step is re-attempted with the new stiffness.
-This process repeats until either penetration is resolved or `max_contact_stiffness` is reached.
+When Newton's Method cannot resolve an intersection, contact stiffness is doubled and the step is retried.
+This repeats until penetration resolves or `max_contact_stiffness` is reached.
 You will see messages like:
 
 ```
 Penetration couldn't be avoided. Contact stiffness hardened from 1.0e+04 to 2.0e+04.
 ```
 
-This is normal behavior for heavily contacted scenes, especially if contact stiffness minimum is low.
+This is normal in contact-heavy scenes.
 
 
 ## Registering Contact Objects
@@ -122,13 +116,10 @@ auto [floor_V, floor_T, floor] = simulation.presets->rigidbodies->add_box(
 stark::ContactHandler floor_contact = floor.contact;
 ```
 
-In both cases, the collision mesh is extracted/created and the internal handing is completely automated for correct deformation, collision detection and evaluation.
-
 ### Manual contact registration
 
 For custom objects, register the contact geometry directly.
-
-For deformables, the contact geometry is attached to a `PointSetHandler`. The collision mesh indices refer to vertices of that point set.
+The collision mesh indices refer to vertices of the `PointSetHandler`.
 
 ```cpp
 stark::PointSetHandler point_set = /* your deformable point set */;
@@ -176,4 +167,4 @@ stark::ContactHandler contact =
     );
 ```
 
-This is the manual equivalent of what presets do internally for volumetric objects: the simulation may use tetrahedra, but contact should usually be registered on the boundary surface.
+This is the manual equivalent of what presets do for volumetric objects: the simulation uses tetrahedra, but contact is registered on the boundary surface.

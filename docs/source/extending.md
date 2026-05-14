@@ -1,19 +1,17 @@
 # Extending STARK
 
-STARK's physics models are defined using [SymX](https://github.com/InteractiveComputerGraphics/SymX), the symbolic differentiation and JIT compilation engine bundled with STARK.
-The easiest way to extend STARK is by adding functionality to the existing infrastructure.
-For instance, it would be rather easy to add a new bending potential or effect directly by extending `EnergyDiscreteShells` with new models and parameters.
-In this page however, we cover the process to injecting functionality from the outside to illustrate that option.
+STARK physics models are SymX energy potentials, scalar functions of the degrees of freedom.
+SymX differentiates them symbolically and feeds the gradient and Hessian to Newton's method.
+
+The simplest form of extension is adding a model inside the existing infrastructure (e.g. new bending modes in `EnergyDiscreteShells`).
+This page shows how to inject a custom energy from outside, without modifying STARK internals.
 
 ## The Core Idea
 
-Every physics model in STARK is an **energy potential**, that is, a scalar function of the degrees of freedom (DoFs).
-STARK assembles all potentials, differentiates them symbolically to obtain the gradient and Hessian, and feeds them to Newton's method.
+The DoFs for deformable objects are registered by `PointDynamics` (velocities `v1`, positions `x0`/`x1`), and analogously for rigid bodies in `RigidBodyDynamics`.
+To add a custom energy, register it with `GlobalPotential` via a connectivity table.
 
-The DoFs for deformable objects are already registered by `PointDynamics` (velocities `v1`, positions `x0`/`x1`), and analogously for rigid bodies in `RigidBodyDynamics`.
-To add a custom energy you only need to register it with `GlobalPotential` via a connectivity table.
-
-Check [SymX docs](https://symx.physics-simulation.org/second_order_optimization.html#) on global potential definitions.
+See the [SymX docs](https://symx.physics-simulation.org/second_order_optimization.html#) for the `GlobalPotential` API.
 
 
 ## Example: implicit magnetic attraction
@@ -55,8 +53,8 @@ stark_core.global_potential->add_potential("EnergyMagneticAttraction", magnetic_
 );
 ```
 
-As you can see, incorporating implicit non-trivial effects that otherwise would require significant knowledge and expertise of the codebase takes just a few lines of code.
-This is what makes STARK a powerful research tool and repository as it allows for very quick iterations and novel compositions of complex problems.
+As you can see, non-trivial implicit effects that would otherwise require deep solver expertise reduce to a handful of lines of symbolic code.
+This is what makes STARK effective as a research and prototyping platform.
 
-The entire example can be found in examples as `magnetic_deformables_implicit()`.
+The full example is in `examples/main.cpp` as `magnetic_deformables_implicit()`.
 

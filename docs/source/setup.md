@@ -1,9 +1,7 @@
 # Setup
 
-STARK is a C++ library with optional Python bindings (`pystark`).
-The core library, examples, tests, and bindings are all built with CMake.
+STARK is written in C++ and comes with optional Python bindings (`pystark`).
 STARK bundles its main third-party dependencies, including `SymX`, `Eigen`, `fmt`, `TriangleMeshCollisionDetection`, `vtkio`, `par_shapes`, and `tinyobjloader`.
-
 For SymX-specific build options such as AVX2, compiler selection, code-generation folders, and Hessian storage precision, see the [SymX setup page](https://symx.physics-simulation.org/setup.html).
 
 ## Requirements

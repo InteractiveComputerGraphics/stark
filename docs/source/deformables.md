@@ -1,9 +1,7 @@
 # Deformables
 
-This page covers the individual energy models available for deformable objects.
-All deformable models operate on **point sets**.
-A point set is an array of 3D positions and velocities managed by `PointDynamics`.
-You get a `PointSetHandler` back when you register a point set, and that handle is what you pass to every energy model you want to attach to those points.
+All deformable models operate on **point sets**, arrays of 3D positions and velocities managed by `PointDynamics`.
+Register a point set to get a `PointSetHandler`, which you pass to each energy model:
 
 ```cpp
 auto ps = simulation.deformables->point_sets->add(vertices);
@@ -24,8 +22,7 @@ ps.set_velocity({0.0, 0.0, -1.0});        // applied to all points
 ### EnergyLumpedInertia
 
 Mass and Rayleigh damping for a point set.
-Works with any element topology: edges, triangles, or tetrahedra;
-The mass is distributed (lumped) to the vertices proportional to element volume.
+Works with any topology (edges, triangles, tets); mass is lumped to vertices proportional to element volume.
 
 ```cpp
 auto inertia_h = simulation.deformables->lumped_inertia->add(
@@ -87,8 +84,8 @@ auto strain_h = simulation.deformables->segment_strain->add(
 );
 ```
 
-Optional strain limiting caps elongation beyond a given threshold, preventing explosive stretching.
-`elasticity_only = true` disables strain limiting and deformation damping for simpler more performant solve if needed.
+Optional strain limiting caps elongation to prevent explosive stretching.
+`elasticity_only = true` disables strain limiting and damping for a cheaper solve.
 
 ---
 
@@ -108,15 +105,14 @@ auto strain_h = simulation.deformables->triangle_strain->add(
 );
 ```
 
-An `inflation` parameter adds a pressure-like outward force, useful for inflatable objects.
-`elasticity_only = true` disables strain limiting and deformation damping for simpler more performant solve if needed.
+An `inflation` parameter adds an outward pressure force, useful for inflatables.
+`elasticity_only = true` disables strain limiting and damping for a cheaper solve.
 
 ---
 
 ### EnergyDiscreteShells
 
-Bending energy for triangle meshes, based on the discrete shells formulation (Grinspun et al.) or the flat rest shape quadratic bending model (Bergou et al.).
-Acts on hinge edges (pairs of adjacent triangles).
+Bending energy for triangle meshes (Grinspun et al. discrete shells or Bergou et al. flat quadratic model), acting on hinge edges.
 
 ```cpp
 auto bending_h = simulation.deformables->discrete_shells->add(
@@ -146,7 +142,7 @@ auto strain_h = simulation.deformables->tet_strain->add(
 );
 ```
 
-`elasticity_only = true` disables strain limiting and deformation damping for simpler more performant solve if needed.
+`elasticity_only = true` disables strain limiting and damping for a cheaper solve.
 
 
 ---
@@ -154,8 +150,7 @@ auto strain_h = simulation.deformables->tet_strain->add(
 ## Manual Composition
 
 Any combination of the above energies can be registered on the same `PointSetHandler`.
-This is how the `hanging_box_with_composite_material` [TODO: link] example builds a single mesh with volumetric interior, shell surface, and rod edges — each energy registers independently and they all contribute to the same Newton solve.
-See `examples/main.cpp` for the full code.
+See `examples/main.cpp` for a mesh with volumetric interior, shell surface, and rod edges — each energy registers independently and all contribute to the same Newton solve.
 
 ## Output
 

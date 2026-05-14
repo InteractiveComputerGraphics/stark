@@ -11,7 +11,7 @@ stark::Simulation simulation(settings);
 simulation.run();
 ```
 
-Internally, each call to `run_one_time_step()`: STARK updates time-dependent data, asks SymX to solve the nonlinear step with Newton's method, if accepted, it commits the state, otherwise it optionally adapts the time step, writes frame output, and updates the solver log.
+Internally, each call to `run_one_time_step()` updates time-dependent data, runs Newton's method via SymX, commits or retries the step, writes frame output, and logs solver statistics.
 
 
 ## Optimization Problem
@@ -37,8 +37,8 @@ rigid.v1: 3
 rigid.w1: 3
 ```
 
-All energies are then written as functions of the predicted next state. Elasticity, inertia, contact, attachments, prescribed positions, and rigid-body constraints all contribute to one global potential.
-A minima of such potential corresponds to a balance of forces, which is found by Newton's Method.
+All energies are written as functions of the predicted next state.
+A minimum of the global potential corresponds to a force balance, found by Newton's method.
 
 
 ## Initialization
@@ -188,8 +188,8 @@ If adaptive stepping is disabled, a non-recoverable failed step exits the simula
 
 ## Callbacks
 
-Callbacks are the main mechanism by which STARK systems inject behavior into the solver loop.
-Most users only need high-level scripting callbacks, but the lower-level callback structure is useful when extending STARK.
+Callbacks inject behavior into the solver loop.
+Most users only need the scripting interface, but lower-level callbacks are useful when extending STARK.
 
 ### STARK-level callbacks
 
@@ -299,8 +299,8 @@ This executes one script cycle and then attempts one STARK time step.
 
 ## Quasistatic simulations
 
-STARK can be used for quasistatics problems they are not a separate first-class STARK mode. STARK still runs its time-step machinery and still solves for velocity-like unknowns. 
-The trick is to choose parameters so that the velocity unknown behaves like a positional increment.
+STARK supports quasistatic problems, though not as a first-class mode: it still solves for velocity-like unknowns using the same time-step machinery.
+The trick is to choose parameters so the velocity unknown behaves as a positional increment.
 
 The `quasistatic_column_extrusion()` example uses the following key changes:
 

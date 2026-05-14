@@ -1,8 +1,8 @@
 # Rigid Body Constraints
 
-Rigid body constraints are the mechanism used to strict rigid body motion, attach bodies to each other, build joints, add springs, and drive motion with motors.
+Rigid body constraints restrict and drive rigid body motion: they attach bodies, build joints, add springs, and control velocity.
 
-All constraints are added through `simulation.rigidbodies->add_constraint_*()` and each call returns a handle. The handle can be used to change parameters, enable/disable the constraint, assign labels, or query the current violation.
+Each `add_constraint_*()` call returns a handle for adjusting parameters, enabling/disabling, labeling, or querying the constraint violation.
 
 ```cpp
 // Global defaults used by subsequently created hard constraints.
@@ -29,7 +29,8 @@ hinge.set_label("main_hinge");
 STARK rigid body constraints are implemented as **energy terms** in the global optimization problem.
 Most rigid body constraints are defined from points or directions given in world coordinates at creation time.
 
-Hard constraints use finite stiffness and a tolerance. At the end of Newton convergence, STARK checks whether the constraint violation is within tolerance. If not, the constraint stiffness is hardened and the solve continues. This makes constraints robust without requiring the user to manually guess extremely large stiffness values from the beginning.
+Hard constraints use finite stiffness with a tolerance.
+After convergence, STARK checks the violation and hardens stiffness if the tolerance is exceeded, avoiding the need to manually tune very large stiffness values.
 
 There are two important categories:
 
@@ -226,7 +227,7 @@ Fixes a rigid body in world space by combining one global point constraint with 
 auto fix = simulation.rigidbodies->add_constraint_fix(body);
 ```
 
-The body is fixed at its current translation and orientation at creation time. This is also the usual way to create kinematically scripted rigid bodies: create a fix constraint, then update its target transformation during the simulation.
+The body is fixed at its current pose at creation time.The typical scripting pattern: create a fix, then update its target transformation each step.
 
 ```cpp
 auto fix = simulation.rigidbodies->add_constraint_fix(body);

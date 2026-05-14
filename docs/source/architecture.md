@@ -1,8 +1,8 @@
 # Architecture
 
-STARK has very clear entry points to users, despite the internals be somewhat complex.
-The user will mainly interact with `Simulation`, which presents access to the different systems available for simulation.
-Internally, `core::Stark` is in charge of orchestrating time stepping and Newton solves through the SymX symbolic library.
+STARK's public API is straightforward despite the internal complexity.
+Users work through a single entry point, `Simulation`, which exposes all physics subsystems.
+Internally, `core::Stark` orchestrates time stepping and Newton solves via SymX.
 
 ## Component Map
 
@@ -93,7 +93,7 @@ The [Deformables](deformables.md) page covers the full API for when you need dir
 Manages rigid bodies and the constraints between them.
 
 Like deformables, all rigid-body state lives in a single flat array inside `RigidBodyDynamics`.
-Each body is identified by a `RigidBodyHandler` and carries six degrees of freedom: three translational and three rotational (angular velocity, mapped internally from a quaternion orientation).
+Each body has six DOFs (3 translational, 3 rotational) and is identified by a `RigidBodyHandler`.
 
 The energy models are:
 
@@ -117,11 +117,9 @@ See [Contact](contact.md) and [Attachments](attachments.md).
 
 ### `presets`
 
-A convenience layer built on top of the three subsystems above.
-It provides high-level factory calls that create objects with sensible defaults in one line, handling the composition of inertia, strain, bending, and output registration for you.
-
+High-level factory calls that compose inertia, strain, bending, and output registration into single calls.
 Most users should start here.
-See [Presets](presets.md) for the full list of available factories.
+See [Presets](presets.md) for the full list.
 
 ---
 
@@ -131,10 +129,10 @@ See [Presets](presets.md) for the full list of available factories.
 
 Its key components are:
 
-- **`GlobalPotential`** — the SymX energy registry. Every energy model calls `global_potential->add_potential(...)` during construction to register its symbolic energy expression and the connectivity that defines which state variables it acts on.
-- **`Callbacks`** — a set of hook points where models (and user scripts) can inject logic at well-defined moments in the simulation loop: `before_time_step`, `on_time_step_accepted`, `after_time_step`, and `write_frame`.
-- **`EventDrivenScript`** — a higher-level scripting system that fires registered lambdas at specified simulation times or on solver events.
-- **`Settings`** — the configuration object passed at construction: output paths, time step size, Newton solver tolerances, contact parameters, and more.
+- **`GlobalPotential`** — the SymX energy registry. Energy models call `global_potential->add_potential(...)` during construction to register their symbolic expression and the state variables it acts on.
+- **`Callbacks`** — hook points for injecting logic at fixed moments in the loop: `before_time_step`, `on_time_step_accepted`, `after_time_step`, and `write_frame`.
+- **`EventDrivenScript`** — fires lambdas at specified simulation times or on solver events.
+- **`Settings`** — output paths, time step size, Newton tolerances, contact parameters, and more.
 
 Under normal use you do not interact with `core::Stark` directly.
 When writing a custom energy model that extends STARK, you access it through `simulation.get_stark()`.

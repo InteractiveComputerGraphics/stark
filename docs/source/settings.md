@@ -4,8 +4,9 @@ All STARK configuration is collected in a single `stark::Settings` object that i
 STARK owns the output, simulation, and execution settings, while the nonlinear solver settings are provided by SymX through `symx::NewtonSettings`.
 At minimum, a simulation should provide a name and an output directory.
 
-It is **strongly recommended** that you take a look at all the options available.
-Depending on the problem you might want to use specific tolerances, linear solvers, time step size, etc.
+It is **strongly recommended** to review all available options; the right tolerances, solver, and time step often depend on the problem at hand.
+The difference in performance and accuracy between a good and a bad setup can be very significant.
+
 The following is a typical lean configuration that relies almost entirely on defaults:
 
 ```cpp
@@ -41,8 +42,7 @@ int main()
 | `settings.newton` | `symx::NewtonSettings` | SymX nonlinear solver, line search, Hessian projection, and linear solver settings. |
 | `settings.execution` | `stark::Settings::Execution` | Runtime limits and thread count. |
 
-STARK applies a few defaults in `Settings::Settings()` after the raw member initializers are constructed.
-In particular, it sets the timestamp, chooses a code-generation directory from SymX, sets the default thread count, and overwrites some SymX Newton defaults for STARK simulations.
+STARK applies defaults in `Settings::Settings()`: it sets the timestamp, picks a codegen directory from SymX, sets the default thread count, and overrides some SymX Newton defaults for simulation use.
 The tables below list the effective STARK defaults.
 
 ## Output settings
@@ -67,8 +67,8 @@ By default, `codegen_directory` is filled from `symx::get_codegen_dir()`.
 
 Simulation settings control global physical parameters and adaptive time stepping.
 The time step starts at `max_time_step_size`.
-When a step is solved successfully, STARK advances the simulation and may increase `dt` up to this maximum.
-When Newton fails because the step is too difficult, STARK halves `dt` and retries, unless adaptive time stepping is disabled.
+A successful step may grow `dt` up to this maximum.
+A failed step halves `dt` and retries, unless adaptive stepping is disabled.
 
 | Field | Effective default | Description |
 |---|---:|---|

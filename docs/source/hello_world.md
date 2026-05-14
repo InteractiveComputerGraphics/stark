@@ -57,11 +57,6 @@ def script(t):
 simulation.run(duration, script)
 ```
 
-Steps 1–2 configure and create the simulation.
-Steps 3–6 define the scene.
-Step 7 defines a time-varying script that drives the kinematic box.
-Step 8 runs the simulation to completion, writing output frames to disk.
-
 ## C++
 
 The same scene in C++:
@@ -117,4 +112,4 @@ void spinning_box_cloth()
 ```
 
 The C++ and Python APIs are intentionally parallel.
-The main difference is that C++ uses direct field access (e.g. `simulation.presets->deformables`) while Python uses accessor methods (e.g. `simulation.presets().deformables()`).
+C++ uses direct field access (`simulation.presets->deformables`); Python uses accessor methods (`simulation.presets().deformables()`).

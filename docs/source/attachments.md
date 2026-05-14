@@ -87,6 +87,6 @@ params.stiffness  = 1e6;   // penalty stiffness (N/m)
 params.tolerance  = 1e-3;  // distance below which the constraint is considered satisfied
 ```
 
-High stiffness enforces a nearly rigid bond; lower stiffness gives a soft, elastic connection.
-Stiffness is hardened automatically when the tolerance is not achieve at the solution of a time step.
+High stiffness gives a near-rigid bond; lower stiffness gives a soft connection.
+Stiffness hardens automatically when the tolerance is not met at the end of a time step.
 
