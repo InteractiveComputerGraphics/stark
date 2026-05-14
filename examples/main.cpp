@@ -669,7 +669,6 @@ void magnetic_deformables_implicit()
 	}
 
 	// Implicit magnetic potential
-
 	//// Connectivity
 	symx::LabelledConnectivity<1> magnetic_vertices{ { "point" } };
 	for (const auto& obj : objs) {
@@ -681,6 +680,7 @@ void magnetic_deformables_implicit()
 	//// Energy potential definition
 	stark::core::Stark& stark_core = simulation.get_stark();
 	stark::PointDynamics* dyn = simulation.deformables->point_sets.get();
+	
 	stark_core.global_potential->add_potential("EnergyMagneticAttraction", magnetic_vertices,
 		[&](MappedWorkspace<double>& mws, Element& elem)
 		{

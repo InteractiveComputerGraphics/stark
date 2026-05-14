@@ -57,7 +57,8 @@ class SymXCppLexer(CppLexer):
                     "Settings", "symx", "stark", "Surface", "Params", "GlobalParams",
                     "EnergyFrictionalContact", "Volume", "Vector3d", "Vector2d", "Cotton_Fabric",
                     "Eigen", "Line", "Matrix3d", "PointDynamics", "Stark", "core", "PointDynamics",
-                    "LabelledConnectivity", "PointSetHandler", "RigidBodyHandler"
+                    "LabelledConnectivity", "PointSetHandler", "RigidBodyHandler", "MappedWorkspace",
+                    "Scalar", "Vector", "Matrix"
                 ],
                 funcs=[
                     "PLACEHOLDER",
