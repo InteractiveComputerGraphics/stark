@@ -385,8 +385,7 @@ void spinning_box_cloth()
 
     // 3. Set global contact parameters
     stark::EnergyFrictionalContact::GlobalParams contact_params;
-    contact_params.default_contact_thickness = 0.0025;
-    contact_params.friction_stick_slide_threshold = 0.01;
+    contact_params.default_contact_thickness = 0.002;
     simulation.interactions->contact->set_global_params(contact_params);
 
     // 4. Add a deformable cloth surface
@@ -402,10 +401,7 @@ void spinning_box_cloth()
     box.handler.rigidbody.add_translation({0.0, 0.0, -0.08});
     auto fix = simulation.rigidbodies->add_constraint_fix(box.handler.rigidbody);
 
-    // 6. Set friction
-    cloth.handler.contact.set_friction(box.handler.contact, 1.0);
-
-    // 7. Script: spin the box
+    // 6. Script: spin the box
     double duration = 10.0;
     simulation.add_time_event(0.0, duration, [&](double t) {
         fix.set_transformation(
@@ -414,7 +410,7 @@ void spinning_box_cloth()
             {0.0, 0.0, 1.0});
     });
 
-    // 8. Run
+    // 7. Run
     simulation.run(duration);
 }
 
@@ -680,7 +676,7 @@ void magnetic_deformables_implicit()
 	//// Energy potential definition
 	stark::core::Stark& stark_core = simulation.get_stark();
 	stark::PointDynamics* dyn = simulation.deformables->point_sets.get();
-	
+
 	stark_core.global_potential->add_potential("EnergyMagneticAttraction", magnetic_vertices,
 		[&](MappedWorkspace<double>& mws, Element& elem)
 		{

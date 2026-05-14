@@ -24,12 +24,29 @@ int main()
     settings.execution.end_simulation_time = 5.0;
     settings.simulation.max_time_step_size = 1.0 / 30.0;
     settings.simulation.init_frictional_contact = false;
-    settings.newton.step_tolerance = 1e-3;
+    settings.newton.step_tolerance = 1e-3;  // [m/s]
+    settings.newton.residual_tolerance_abs = 1e-3;  // [N]
 
     stark::Simulation simulation(settings);
     simulation.run();
 }
 ```
+
+## Convergence
+Before all the options are introduced, it is important to highlight the importance of convergence.
+The following are the options given by STARK/SymX:
+- `newton.min_iterations` can be used to enforce at least N corrections are applied, even if already converged. Setting this to 1 can prevent subtle motions from freezing.
+- There are four main convergence options. Convergence is granted once one of them is true:
+    - $\| \nabla_x G \| <$ `newton.residual_tolerance_abs` in Newtons.
+    - $\frac{\| \nabla_x G \|}{\| \nabla_x G_0 \|} <$ `newton.residual_tolerance_rel`
+    - $\| \Delta \mathbf x \|_{\infty} < $ `newton.step_tolerance` the Newton step in m/s.
+    - `newton.max_iterations` reached and `newton.max_iterations_as_success = true`
+
+Most often when simulations are slow or behave unrealistically it is because the convergence criteria and tolerances are not set appropriately.
+Typically, `newton.step_tolerance` is the most robust general criteria, but it too can be really challenging to obtain in simulations with extreme densities (light or heavy).
+Sometimes, shortening the time step size is the best option.
+Other times, returning success on a fixed amount of Newton iterations is justified.
+
 
 ## Structure
 

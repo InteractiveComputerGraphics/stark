@@ -25,7 +25,6 @@ simulation = pystark.Simulation(settings)
 # 3. Set global contact parameters
 contact_params = pystark.EnergyFrictionalContact.GlobalParams()
 contact_params.default_contact_thickness = 0.0025
-contact_params.friction_stick_slide_threshold = 0.01
 simulation.interactions().contact().set_global_params(contact_params)
 
 # 4. Add a deformable cloth surface
@@ -41,10 +40,7 @@ bV, bT, bH = simulation.presets().rigidbodies().add_box("box", mass=1.0, size=0.
 bH.rigidbody.add_translation(np.array([0.0, 0.0, -0.08]))
 fix_handler = simulation.rigidbodies().add_constraint_fix(bH.rigidbody)
 
-# 6. Set friction between cloth and box
-cH.contact.set_friction(bH.contact, 1.0)
-
-# 7. Script: spin the box over time
+# 6. Script: spin the box over time
 duration = 10.0
 def script(t):
     fix_handler.set_transformation(
@@ -53,7 +49,7 @@ def script(t):
         np.array([0.0, 0.0, 1.0])
     )
 
-# 8. Run the simulation
+# 7. Run
 simulation.run(duration, script)
 ```
 
@@ -78,7 +74,6 @@ void spinning_box_cloth()
     // 3. Set global contact parameters
     stark::EnergyFrictionalContact::GlobalParams contact_params;
     contact_params.default_contact_thickness = 0.0025;
-    contact_params.friction_stick_slide_threshold = 0.01;
     simulation.interactions->contact->set_global_params(contact_params);
 
     // 4. Add a deformable cloth surface
@@ -94,10 +89,7 @@ void spinning_box_cloth()
     box.handler.rigidbody.add_translation({0.0, 0.0, -0.08});
     auto fix = simulation.rigidbodies->add_constraint_fix(box.handler.rigidbody);
 
-    // 6. Set friction
-    cloth.handler.contact.set_friction(box.handler.contact, 1.0);
-
-    // 7. Script: spin the box
+    // 6. Script: spin the box
     double duration = 10.0;
     simulation.add_time_event(0.0, duration, [&](double t) {
         fix.set_transformation(
@@ -106,7 +98,7 @@ void spinning_box_cloth()
             {0.0, 0.0, 1.0});
     });
 
-    // 8. Run
+    // 7. Run
     simulation.run(duration);
 }
 ```

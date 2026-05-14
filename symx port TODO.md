@@ -5,6 +5,8 @@
 pip install
 Update binaries in sciebo
 
+main should not run one sime and exit
+
 Readme
 New teaser images?
 Cleanup files and comments
