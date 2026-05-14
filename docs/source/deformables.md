@@ -1,10 +1,9 @@
 # Deformables
 
-STARK's deformable simulation covers three geometric primitives — **lines** (rods), **surfaces** (cloth/shells), and **volumes** (tet meshes) — plus a **prescribed positions** mechanism for kinematic control.
-Each primitive bundles inertia, strain, and (optionally) bending energies into a single parameter struct and handler.
-
+STARK's deformable simulation covers three geometric primitives: **lines**, **surfaces**, and **volumes**.
 The lowest-level access is through `simulation.deformables`, which exposes individual energy systems.
-For common cases, use the [Presets](presets.md) layer instead — it wires everything up automatically.
+For common combination cases, such as a surface with strain and bending, use the [Presets](presets.md) layer instead.
+
 
 ## Point Sets
 

@@ -19,11 +19,6 @@ simulation.run(10.0, [&]() {
 });
 ```
 
-```python
-# Python
-simulation.run(10.0)
-simulation.run(10.0, lambda: my_callback())
-```
 
 ### `run_one_time_step()`
 
@@ -48,27 +43,9 @@ simulation.add_time_event(t0, t1, [&](double t) {
 });
 ```
 
-```python
-# Python
-simulation.add_time_event(t0, t1, lambda t: my_handler.set_transformation(...))
-```
-
 The callback receives the current simulated time `t`.
 Multiple time events can overlap; they all fire in registration order.
 
-### `EventInfo`
-
-A more detailed overload gives you `EventInfo`:
-
-```cpp
-simulation.add_time_event(t0, t1, [&](double t, stark::EventInfo& info) {
-    // info.t0, info.t1 — event interval
-    // info.is_first   — true on the first call (t ≈ t0)
-    // info.is_last    — true on the last call  (t ≈ t1)
-    if (info.is_first) { /* initialization */ }
-    my_handler.set_transformation(...);
-});
-```
 
 ## Scripting Kinematic Objects
 
@@ -91,28 +68,6 @@ simulation.add_time_event(0.0, duration, [&](double t) {
 });
 ```
 
-```python
-# Deformable prescribed position
-left = simulation.deformables().prescribed_positions().add_inside_aabb(...)
-
-simulation.add_time_event(0.0, duration,
-    lambda t: left.set_transformation(np.zeros(3), t * 90.0, np.array([1,0,0]))
-)
-```
-
-## Gravity
-
-Gravity can be changed at run time:
-
-```cpp
-// C++
-simulation.set_gravity({0.0, 0.0, -9.81});
-```
-
-```python
-# Python
-simulation.set_gravity(np.array([0.0, 0.0, -9.81]))
-```
 
 This is useful for scenes where gravity is ramped up gradually (e.g. to avoid explosive initial conditions).
 
@@ -130,12 +85,7 @@ These are mainly used internally by the physics models, but you can register you
 | `add_write_frame` | When STARK decides to output a frame |
 | `add_should_continue_execution` | Every step; return `false` to stop the simulation |
 
-```cpp
-// C++ (via stark.callbacks, available on core::STARK)
-// In typical usage you access this through Simulation internals or model code
-```
-
-For most user scenarios, time events cover everything you need.
+For most user scenarios, time events should cover everything you need.
 Callbacks are mainly relevant when you are [extending STARK](extending.md) with new models.
 
 ## Query Methods
@@ -148,8 +98,3 @@ double dt    = simulation.get_time_step_size();
 int    frame = simulation.get_frame();
 ```
 
-```python
-t     = simulation.get_time()
-dt    = simulation.get_time_step_size()
-frame = simulation.get_frame()
-```

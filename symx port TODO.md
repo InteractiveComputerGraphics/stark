@@ -15,9 +15,10 @@ Docs
     - Architecture
         Simulations -> presets -> deformables, RB, interactions -> Points, RB, Energies
     - Simulation Loop
+        Overall time logic, including newtons method, what are the dofs...
         Adaptive time step
-        Quasistatics
         Callbacks
+        Quasistatics: Not first class citizen, but you can do it a in example `quasistatic_column_extrusion()` (explain the key changes)
         Control/Scripting
     - Models
         Presets

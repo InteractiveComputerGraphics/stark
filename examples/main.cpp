@@ -370,6 +370,55 @@ void deformable_and_rigid_collisions()
 	simulation.run();
 }
 
+void spinning_box_cloth()
+{
+	/*
+		A box spins with a prescribed motion and a cloth falls on top of it.
+	*/
+
+    // 1. Configure output and solver settings
+    stark::Settings settings;
+    settings.output.simulation_name = "spinning_box_cloth";
+    settings.output.output_directory = OUTPUT_PATH + "/spinning_box_cloth";
+
+    // 2. Create the simulation
+    stark::Simulation simulation(settings);
+
+    // 3. Set global contact parameters
+    stark::EnergyFrictionalContact::GlobalParams contact_params;
+    contact_params.default_contact_thickness = 0.0025;
+    contact_params.friction_stick_slide_threshold = 0.01;
+    simulation.interactions->contact->set_global_params(contact_params);
+
+    // 4. Add a deformable cloth surface
+    auto cloth = simulation.presets->deformables->add_surface_grid(
+        "cloth",
+        Eigen::Vector2d(0.4, 0.4),
+        {32, 32},
+        stark::Surface::Params::Cotton_Fabric()
+    );
+
+    // 5. Add a rigid body box
+    auto box = simulation.presets->rigidbodies->add_box("box", 1.0, 0.08);
+    box.handler.rigidbody.add_translation({0.0, 0.0, -0.08});
+    auto fix = simulation.rigidbodies->add_constraint_fix(box.handler.rigidbody);
+
+    // 6. Set friction
+    cloth.handler.contact.set_friction(box.handler.contact, 1.0);
+
+    // 7. Script: spin the box
+    double duration = 10.0;
+    simulation.add_time_event(0.0, duration, [&](double t) {
+        fix.set_transformation(
+            {0.0, 0.0, -0.08 - 0.1*std::sin(t)}, 
+            90.0*t, 
+            {0.0, 0.0, 1.0});
+    });
+
+    // 8. Run
+    simulation.run(duration);
+}
+
 void simple_grasp()
 {
 	/*
@@ -632,7 +681,7 @@ void magnetic_deformables()
 
 int main()
 {
-	hanging_net();
+	spinning_box_cloth();
 	return 0;
 
 	/*
@@ -659,6 +708,7 @@ int main()
 
 	// Simulations with collisions
 	deformable_and_rigid_collisions();
+	spinning_box_cloth();
 	simple_grasp(); 
 	twisting_cloth();
 	magnetic_deformables();
