@@ -55,13 +55,6 @@ attachments
 ```
 
 ```{toctree}
-:caption: High-Level API
-:maxdepth: 1
-
-python_api
-```
-
-```{toctree}
 :caption: Advanced
 :maxdepth: 1
 
