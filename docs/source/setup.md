@@ -1,73 +1,89 @@
 # Setup
 
-STARK requires **CMake 3.15+**, a **C++17** compiler, and **OpenMP**.
-It bundles Eigen, fmt, and SymX as dependencies.
-Python bindings (pystark) require Python 3.8+ and are built separately.
+STARK is a C++ library with optional Python bindings (`pystark`).
+The core library, examples, tests, and bindings are all built with CMake.
+STARK bundles its main third-party dependencies, including `SymX`, `Eigen`, `fmt`, `TriangleMeshCollisionDetection`, `vtkio`, `par_shapes`, and `tinyobjloader`.
 
-## Project Structure
+For SymX-specific build options such as AVX2, compiler selection, code-generation folders, and Hessian storage precision, see the [SymX setup page](https://symx.physics-simulation.org/setup.html).
+
+## Requirements
+
+| Requirement | Notes |
+|---|---|
+| CMake | 3.18 or newer |
+| C++ compiler | C++20-capable compiler |
+| OpenMP | Required by the STARK C++ library |
+| Python | Optional; Python 3.8+ with development-module support for `pystark` |
+| NumPy | Optional; required when using `pystark` |
+
+## Project structure
 
 | Folder | Contents |
 |---|---|
-| `stark/` | The core C++ library |
-| `examples/` | Self-contained C++ example scenes |
-| `pystark/` | Python bindings (nanobind) |
+| `stark/` | Core C++ library |
+| `examples/` | C++ example scenes |
 | `tests/` | C++ unit tests |
-| `docs/` | This documentation |
+| `pystark/` | Python package and nanobind bindings |
+| `docs/` | Documentation source |
 
-## `pip install stark`
-TODO
+## Building the C++ library and examples
 
-## Building the C++ Library and Examples
-
-Configure with CMake (Release by default):
+From the repository root:
 
 ```bash
-cmake -B build
+cmake -S . -B build
+cmake --build build --parallel
 ```
 
-Build:
-
-```bash
-cmake --build build --parallel                   # Everything
-cmake --build build --parallel --target examples # Only examples
-cmake --build build --parallel --target tests    # Only tests
-```
-
-Run the examples:
+The examples are built by default:
 
 ```bash
 ./build/examples/examples
 ```
 
-Output files (VTK/OBJ meshes per frame) and logs are written to the directory configured in `settings.output.output_directory`.
-Generated C++ code from SymX is written to `settings.output.codegen_directory` and is cached between runs.
-
-## CMake Options
-
-| Option | Default | Description |
-|---|---|---|
-| `STARK_ENABLE_EXAMPLES` | `ON` | Build the example scenes |
-| `STARK_ENABLE_TESTS` | `ON` | Build the test suite |
-| `STARK_BUILD_PYTHON_BINDINGS` | `ON` | Build the pystark Python bindings |
-
-STARK inherits SymX CMake options for AVX2, compiler path, and Hessian storage.
-See the [SymX setup docs](https://github.com/InteractiveComputerGraphics/SymX) for details on those.
-
-## Building pystark (Python Bindings)
-
-pystark uses [nanobind](https://github.com/wjakob/nanobind) (fetched automatically at configure time) and is built as part of the main CMake project via the `STARK_BUILD_PYTHON_BINDINGS` option (enabled by default).
-
-**Prerequisites:** Python 3.8+ with development headers and NumPy.
+STARK defaults to a Release build when no build type is specified. To choose explicitly:
 
 ```bash
-# Tell CMake which Python to use (required when using conda/virtualenv)
-cmake -B build -DPython_EXECUTABLE=$(which python)
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+```
+
+## Optional tests
+
+Tests are disabled by default. Enable them at configure time:
+
+```bash
+cmake -S . -B build -DSTARK_BUILD_TESTS=ON
+cmake --build build --parallel --target stark_tests
+./build/tests/stark_tests
+```
+
+## Optional Python bindings
+
+The Python bindings are disabled by default. Enable them with:
+
+```bash
+cmake -S . -B build -DSTARK_BUILD_PYTHON_BINDINGS=ON
 cmake --build build --parallel --target pystark
 ```
 
-This produces a shared library and places it directly into `pystark/pystark/` so the Python package is immediately importable.
+When using Conda, Miniforge, virtualenv, or multiple Python installations, explicitly select the Python executable:
 
-To make `import pystark` work, add the `pystark/` source directory to `PYTHONPATH`:
+```bash
+cmake -S . -B build \
+  -DSTARK_BUILD_PYTHON_BINDINGS=ON \
+  -DSTARK_PYTHON_EXECUTABLE=$HOME/miniforge3/envs/ENVNAME/bin/python
+
+cmake --build build --parallel --target pystark
+```
+
+`pystark` uses nanobind, which is fetched automatically by CMake.
+The compiled extension module is written directly into the source-tree Python package:
+
+```txt
+pystark/pystark/
+```
+
+To import it from the source tree, add the package folder to `PYTHONPATH`:
 
 ```bash
 export PYTHONPATH=/path/to/stark/pystark:$PYTHONPATH
@@ -83,18 +99,40 @@ Then verify:
 
 ```python
 import pystark
-s = pystark.Settings()
-print(s.as_string())
+
+settings = pystark.Settings()
+print(settings.as_string())
 ```
 
-To disable pystark when building only the C++ library:
+If Python detection fails, either disable the bindings:
 
 ```bash
-cmake -B build -DSTARK_BUILD_PYTHON_BINDINGS=OFF
+cmake -S . -B build -DSTARK_BUILD_PYTHON_BINDINGS=OFF
 ```
 
-The Python package at `pystark/pystark/__init__.py` re-exports everything from the native module and adds convenience aliases (e.g. `pystark.ZERO`, `pystark.UNITX`), utilities and safeguards to transfer lambdas between C++ and Python.
+or point STARK to a Python environment with development-module support:
 
-## SymX Options
-Check out SymX building options as they will be available through STARK: [SymX Setup](https://symx.physics-simulation.org/setup.html)
+```bash
+cmake -S . -B build \
+  -DSTARK_BUILD_PYTHON_BINDINGS=ON \
+  -DSTARK_PYTHON_EXECUTABLE=$HOME/miniforge3/envs/ENVNAME/bin/python
+```
+
+If CMake keeps finding the wrong Python, delete the build directory before reconfiguring:
+
+```bash
+rm -rf build
+```
+
+## CMake options
+
+| Option | Default | Description |
+|---|---:|---|
+| `STARK_BUILD_TESTS` | `OFF` | Build the C++ test executable |
+| `STARK_BUILD_PYTHON_BINDINGS` | `OFF` | Build the `pystark` Python extension module |
+| `STARK_PYTHON_EXECUTABLE` | unset | Explicit Python executable used when building `pystark` |
+| `CMAKE_BUILD_TYPE` | `Release` | Build type for single-config generators |
+
+STARK also forwards or inherits relevant SymX options, including SIMD/JIT/compiler-related settings.
+For those, use the SymX setup page as the reference.
 
