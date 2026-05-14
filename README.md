@@ -46,6 +46,10 @@ It has been validated through real-world, challenging cases of interactions betw
 
 ## Hello World
 
+<p align=center>
+ <img src="docs/source/_static/spinning_box_cloth.gif">
+</p>
+
 ```python
 import numpy as np
 import pystark
