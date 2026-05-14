@@ -1,106 +1,142 @@
 # Architecture
 
-STARK is organized as a layered platform.
-The outermost layer is what users interact with; the innermost layer is SymX, which handles symbolic math, code generation, and the Newton solver.
+STARK has very clear entry points to users, despite the internals be somewhat complex.
+The user will mainly interact with `Simulation`, which presents access to the different systems available for simulation.
+Internally, `core::Stark` is in charge of orchestrating time stepping and Newton solves through the SymX symbolic library.
 
-## The Big Picture
+## Component Map
 
 ```{mermaid}
-flowchart BT
+flowchart TD
+    Sim["Simulation"]
 
-classDef user   fill:#dcfce7,stroke:#22c55e,stroke-width:1.5px,color:#064e3b
-classDef model  fill:#dbeafe,stroke:#3b82f6,stroke-width:1.5px,color:#1e3a8a
-classDef core   fill:#fef9c3,stroke:#eab308,stroke-width:1.5px,color:#713f12
-classDef symx   fill:#ffe4e6,stroke:#fb7185,stroke-width:1.5px,color:#881337
+    Def["deformables"]
+    RB["rigidbodies"]
+    Int["interactions"]
+    Pre["presets"]
 
-SIM["Simulation"]:::user
+    Core["Stark"]
+    SymX["SymX"]
 
-DEF["Deformables"]:::model
-RB["RigidBodies"]:::model
-INT["Interactions"]:::model
-PRE["Presets"]:::model
-
-STARK["stark::core::STARK"]:::core
-
-SYMX["SymX\n(GlobalPotential + NewtonsMethod)"]:::symx
-
-SIM ==>|"owns"| DEF
-SIM ==>|"owns"| RB
-SIM ==>|"owns"| INT
-SIM ==>|"owns"| PRE
-SIM ==>|"owns"| STARK
-
-DEF ==>|"registers potentials in"| STARK
-RB  ==>|"registers potentials in"| STARK
-INT ==>|"registers potentials in"| STARK
-
-STARK ==>|"drives"| SYMX
+    Sim --> Def
+    Sim --> RB
+    Sim --> Int
+    Sim --> Pre
+    Sim --> Core
+    Def & RB & Int -.->|register| Core
+    Core --> SymX
 ```
 
-## Layers
 
-### Green · User-Facing API
+## `Simulation`
 
-`stark::Simulation` is the single entry point for users.
-It owns four subsystems — `Deformables`, `RigidBodies`, `Interactions`, and `Presets` — as public fields (C++) or accessor methods (Python).
-You construct a `Simulation`, add objects, set up scripting, and call `run()`.
+`Simulation` is the single public entry point.
+Constructing it with a `Settings` object is all that is needed to start a simulation:
 
-### Blue · Physics Models
+```cpp
+stark::core::Settings settings;
+settings.output.directory = "./output";
+settings.simulation.max_time_step_size = 0.01;
 
-Each subsystem manages a family of energy models.
-When you add a cloth, a rigid body, a contact pair, or an attachment, the subsystem registers the corresponding energy potentials with the core, connects them to the degree-of-freedom (DoF) arrays, and sets up any required callbacks.
+stark::Simulation simulation(settings);
+```
 
-Models exposed to users:
+The four subsystems are available as public `shared_ptr` fields:
 
-| Subsystem | Models |
+```cpp
+simulation.deformables   // deformable meshes and FEM energies
+simulation.rigidbodies   // rigid bodies and joints
+simulation.interactions  // cross-system contact and attachments
+simulation.presets       // high-level scene factories
+```
+
+Once the scene is built, the simulation is advanced by calling `run()`:
+
+```cpp
+simulation.run();                  // run until no time events remain
+simulation.run(5.0);               // run for exactly 5 seconds
+simulation.run_one_time_step();    // advance by a single time step
+```
+
+Time-dependent boundary conditions and scripted motions are registered through `simulation.get_script()` or `simulation.add_time_event()`.
+See [Simulation Loop](simulation_loop.md) for the full API.
+
+---
+
+## Physics Subsystems
+
+### `deformables`
+
+Manages all deformable objects: rods, shells (or cloth), and volumetric soft bodies.
+
+Internally, all deformable node positions and velocities are stored in a single flat array inside `PointDynamics`.
+When you add a mesh, its nodes are appended to that shared array and identified by a `PointSetHandler`.
+This flat representation keeps internals simple and improves parallelism and vectorization.
+
+The energy models that act on point sets are:
+
+| Model | Description |
 |---|---|
-| `Deformables` | Lumped inertia, prescribed positions, segment strain (rods), triangle strain (cloth), discrete shells (bending), tet strain (volumes) |
-| `RigidBodies` | Rigid body inertia, rigid body constraints (joints, motors, springs) |
-| `Interactions` | IPC frictional contact, attachments (deformable–deformable, rigid–deformable) |
-| `Presets` | High-level constructors for common objects (grid cloth, tet box, sphere, cylinder, …) |
+| `EnergyLumpedInertia` | Mass and Rayleigh damping for any topology |
+| `EnergyPrescribedPositions` | Penalty-based kinematic boundary conditions |
+| `EnergySegmentStrain` | 1D stretching for rods and cables |
+| `EnergyTriangleStrain` | 2D membrane strain for cloth and shells |
+| `EnergyDiscreteShells` | Bending stiffness (Bergou discrete shells) |
+| `EnergyTetStrain` | 3D volumetric FEM for soft bodies |
 
-### Yellow · Core Engine
+In practice you almost never compose these by hand.
+The [Presets](presets.md) subsystem wraps the most common combinations into single calls.
+The [Deformables](deformables.md) page covers the full API for when you need direct control.
 
-`stark::core::STARK` owns:
-- The SymX `GlobalPotential` (all registered energy potentials)
-- The SymX `Context` (thread count, logger, output verbosity)
-- The simulation loop (`run()`, `run_one_step()`)
-- The `EventDrivenScript` and `Callbacks` systems
+### `rigidbodies`
 
-### Red · SymX
+Manages rigid bodies and the constraints between them.
 
-SymX handles everything below the waterline:
-- Symbolic differentiation of all energy potentials
-- JIT C++ code generation and compilation (once, then cached)
-- Newton's Method with adaptive line search and Hessian projection
+Like deformables, all rigid-body state lives in a single flat array inside `RigidBodyDynamics`.
+Each body is identified by a `RigidBodyHandler` and carries six degrees of freedom: three translational and three rotational (angular velocity, mapped internally from a quaternion orientation).
 
-You do not need to interact with SymX directly to use STARK.
-If you want to add new energy models, you will use the SymX API to define potentials — see [Extending STARK](extending.md) and the [SymX documentation](https://github.com/InteractiveComputerGraphics/SymX).
+The energy models are:
 
-## Data Flow Through a Time Step
+| Model | Description |
+|---|---|
+| `EnergyRigidBodyInertia` | Mass, inertia tensor, and Rayleigh damping |
+| `EnergyRigidBodyConstraints` | All joints, motors, and springs between bodies |
 
-Each simulated time step follows this sequence:
+See [Rigid Bodies](rigidbodies.md) and [Rigid Body Constraints](rb_constraints.md) for the full API.
 
-```{mermaid}
-flowchart LR
+### `interactions`
 
-classDef cb fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
-classDef nw fill:#ffe4e6,stroke:#fb7185,color:#881337
+Manages energies that couple the two state systems — or connect objects of the same system across separate point sets.
 
-A["before_time_step\ncallbacks"]:::cb
-B["Newton's Method\n(SymX)"]:::nw
-C["on_time_step_accepted\ncallbacks"]:::cb
-D["after_time_step\ncallbacks"]:::cb
-E["write_frame\ncallbacks"]:::cb
+| Model | Description |
+|---|---|
+| `EnergyFrictionalContact` | IPC-based frictional contact (deformable–deformable, rigid–deformable, rigid–rigid) |
+| `EnergyAttachments` | Penalty-based gluing of surface or point pairs |
 
-A --> B --> C --> D --> E
-```
+See [Contact](contact.md) and [Attachments](attachments.md).
 
-Callbacks run at well-defined points in the loop.
-They are the mechanism by which models react to solver events (e.g. contact stiffness hardening on penetration) and by which user scripts update kinematic objects.
+### `presets`
 
-## Output
+A convenience layer built on top of the three subsystems above.
+It provides high-level factory calls that create objects with sensible defaults in one line, handling the composition of inertia, strain, bending, and output registration for you.
 
-STARK writes per-frame mesh output as VTK (`.vtk`) files by default, one file per registered object per frame.
-The frame rate is controlled by `settings.output.fps`.
-A YAML log with timing and solver statistics is also written to disk.
+Most users should start here.
+See [Presets](presets.md) for the full list of available factories.
+
+---
+
+## `core::Stark`: The Solver Engine
+
+`core::Stark` is the engine that drives the simulation.
+
+Its key components are:
+
+- **`GlobalPotential`** — the SymX energy registry. Every energy model calls `global_potential->add_potential(...)` during construction to register its symbolic energy expression and the connectivity that defines which state variables it acts on.
+- **`Callbacks`** — a set of hook points where models (and user scripts) can inject logic at well-defined moments in the simulation loop: `before_time_step`, `on_time_step_accepted`, `after_time_step`, and `write_frame`.
+- **`EventDrivenScript`** — a higher-level scripting system that fires registered lambdas at specified simulation times or on solver events.
+- **`Settings`** — the configuration object passed at construction: output paths, time step size, Newton solver tolerances, contact parameters, and more.
+
+Under normal use you do not interact with `core::Stark` directly.
+When writing a custom energy model that extends STARK, you access it through `simulation.get_stark()`.
+See [Extending STARK](extending.md) for a worked example.
+
