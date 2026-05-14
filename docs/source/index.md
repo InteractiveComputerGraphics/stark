@@ -50,13 +50,13 @@ rigidbodies
 rb_constraints
 contact
 attachments
+presets
 ```
 
 ```{toctree}
 :caption: High-Level API
 :maxdepth: 1
 
-presets
 python_api
 ```
 

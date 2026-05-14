@@ -19,6 +19,8 @@ Docs
         Quasistatics
         Callbacks
         Control/Scripting
+    - Models
+        Presets
 pip install
 Tests don't pass
 Readme
