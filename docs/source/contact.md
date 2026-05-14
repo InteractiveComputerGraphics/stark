@@ -34,14 +34,6 @@ params.intersection_test_enabled = true;
 simulation.interactions->contact->set_global_params(params);
 ```
 
-```python
-# Python
-params = pystark.EnergyFrictionalContact.GlobalParams()
-params.default_contact_thickness       = 0.001
-params.min_contact_stiffness           = 1e4
-params.friction_stick_slide_threshold  = 0.01
-simulation.interactions().contact().set_global_params(params)
-```
 
 ## Registering Contact Objects
 

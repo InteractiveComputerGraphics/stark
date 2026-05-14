@@ -82,5 +82,3 @@ simulation.presets->rigidbodies->add(
     render_vertices, render_triangles
 );
 ```
-
-
