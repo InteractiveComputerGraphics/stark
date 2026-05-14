@@ -27,9 +27,10 @@ using RBH = const RigidBodyHandler;
 
 // nanobind <-> numpy types
 template<typename T>
-using VecX = nb::ndarray<nb::numpy, T, nb::shape<nb::any>>;
-template<typename T, std::size_t M>
-using MatX = nb::ndarray<nb::numpy, T, nb::shape<nb::any, M>>;
+using VecX = nb::ndarray<nb::numpy, T, nb::shape<-1>, nb::device::cpu>;
+
+template<typename T, ssize_t M>
+using MatX = nb::ndarray<nb::numpy, T, nb::shape<-1, M>, nb::device::cpu>;
 
 using VecXd = VecX<double>;
 using MatX2d = MatX<double, 2>;
@@ -44,88 +45,92 @@ using MatX4i = MatX<int, 4>;
 template<typename T>
 inline std::vector<T> nb_to_stark(const VecX<T>& x)
 {
-	std::vector<T> arr(x.shape(0));
-	for (size_t i = 0; i < arr.size(); ++i) {
-		arr[i] = x(i);
-	}
-	return arr;
+    std::vector<T> arr(x.shape(0));
+    for (size_t i = 0; i < arr.size(); ++i) {
+        arr[i] = x(i);
+    }
+    return arr;
 }
-inline std::vector<Eigen::Vector3d> nb_to_stark(const MatX3d& x) 
+
+inline std::vector<Eigen::Vector3d> nb_to_stark(const MatX3d& x)
 {
-	std::vector<Eigen::Vector3d> arr(x.shape(0));
-	for (size_t i = 0; i < arr.size(); ++i) {
-		for (size_t j = 0; j < 3; j++) {
-			arr[i][j] = x(i, j);
-		}
-	}
-	return arr;
+    std::vector<Eigen::Vector3d> arr(x.shape(0));
+    for (size_t i = 0; i < arr.size(); ++i) {
+        for (size_t j = 0; j < 3; j++) {
+            arr[i][j] = x(i, j);
+        }
+    }
+    return arr;
 }
-template<typename T, std::size_t M>
-inline std::vector<std::array<T, M>> nb_to_stark(const MatX<T, M>& x)
+
+template<typename T, ssize_t M>
+inline std::vector<std::array<T, (size_t)M>> nb_to_stark(const MatX<T, M>& x)
 {
-	std::vector<std::array<T, M>> arr(x.shape(0));
-	for (size_t i = 0; i < arr.size(); ++i) {
-		for (size_t j = 0; j < M; j++) {
-			arr[i][j] = x(i, j);
-		}
-	}
-	return arr;
+    std::vector<std::array<T, (size_t)M>> arr(x.shape(0));
+    for (size_t i = 0; i < arr.size(); ++i) {
+        for (size_t j = 0; j < (size_t)M; j++) {
+            arr[i][j] = x(i, j);
+        }
+    }
+    return arr;
 }
+
 inline std::vector<std::array<double, 3>> nb_to_stark_no_eigen(const MatX<double, 3>& x)
 {
-	std::vector<std::array<double, 3>> arr(x.shape(0));
-	for (size_t i = 0; i < arr.size(); ++i) {
-		for (size_t j = 0; j < 3; j++) {
-			arr[i][j] = x(i, j);
-		}
-	}
-	return arr;
+    std::vector<std::array<double, 3>> arr(x.shape(0));
+    for (size_t i = 0; i < arr.size(); ++i) {
+        for (size_t j = 0; j < 3; j++) {
+            arr[i][j] = x(i, j);
+        }
+    }
+    return arr;
 }
+
 
 // stark -> nanobind converters
-// Note: In order to pass numpy arrays by copied data to Python, we need to manage their lifetime in C++
-//       We use a nanobind::capsule to do this
+// We copy into heap memory and attach a nanobind capsule as owner.
+// The capsule keeps the buffer alive until Python releases the array.
 template<typename T>
-inline VecX<T> stark_to_nb(const std::vector<T>& x) {
+inline VecX<T> stark_to_nb(const std::vector<T>& x)
+{
+    T* data = new T[x.size()];
+    std::memcpy(data, x.data(), x.size() * sizeof(T));
 
-	// Copy data to a dynamically allocated array that will be destroyed when the capsule is destroyed
-	T* data = new T[x.size()];
-	memcpy(data, x.data(), x.size() * sizeof(T));
+    nb::capsule owner(data, [](void* p) noexcept {
+        delete[] static_cast<T*>(p);
+    });
 
-	// Deferred destructor
-	nb::capsule owner(data, [](void* p) noexcept { delete[](T*) p; });
-
-	const std::array<size_t, 1> shape = { x.size() };
-	return VecX<T>(data, 1, shape.data(), owner);
-}
-inline MatX<double, 3> stark_to_nb(const std::vector<Eigen::Vector3d>& x) {
-
-	// Copy data to a dynamically allocated array that will be destroyed when the capsule is destroyed
-	const size_t size = 3*x.size();
-	double* data = new double[size];
-	memcpy(data, x.data(), size * sizeof(double));
-
-	// Deferred destructor
-	nb::capsule owner(data, [](void* p) noexcept { delete[](double*) p; });
-
-	const std::array<size_t, 2> shape = { x.size(), 3 };
-	return MatX<double, 3>(data, 2, shape.data(), owner);
-}
-template<std::size_t M>
-inline MatX<int, M> stark_to_nb(const std::vector<std::array<int, M>>& x) {
-
-	// Copy data to a dynamically allocated array that will be destroyed when the capsule is destroyed
-	const size_t size = M * x.size();
-	int* data = new int[size];
-	memcpy(data, x.data(), size * sizeof(int));
-
-	// Deferred destructor
-	nb::capsule owner(data, [](void* p) noexcept { delete[](int*) p; });
-
-	const std::array<size_t, 2> shape = { x.size(), M };
-	return MatX<int, M>(data, 2, shape.data(), owner);
+    return VecX<T>(data, { x.size() }, owner);
 }
 
+inline MatX<double, 3> stark_to_nb(const std::vector<Eigen::Vector3d>& x)
+{
+    const size_t size = 3 * x.size();
+
+    double* data = new double[size];
+    std::memcpy(data, x.data(), size * sizeof(double));
+
+    nb::capsule owner(data, [](void* p) noexcept {
+        delete[] static_cast<double*>(p);
+    });
+
+    return MatX<double, 3>(data, { x.size(), 3 }, owner);
+}
+
+template<size_t M>
+inline MatX<int, (ssize_t)M> stark_to_nb(const std::vector<std::array<int, M>>& x)
+{
+    const size_t size = M * x.size();
+
+    int* data = new int[size];
+    std::memcpy(data, x.data(), size * sizeof(int));
+
+    nb::capsule owner(data, [](void* p) noexcept {
+        delete[] static_cast<int*>(p);
+    });
+
+    return MatX<int, (ssize_t)M>(data, { x.size(), M }, owner);
+}
 
 // Stark parameter and handler macros for bindings
 #define BIND_PARAMS(ParamsClass) \

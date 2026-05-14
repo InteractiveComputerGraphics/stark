@@ -7,15 +7,14 @@ Docs
     - Explain all parameters
         Friction and contact parameters
     - Explain all callbacks
-    - Color with VSCode style
     - Panic sheet
         Friction and contact parameters
     - Upload to https://stark.physics-simulation.org
     - Setup: `pip install stark`
     - Architecture
         Simulations -> presets -> deformables, RB, interactions -> Points, RB, Energies
-    - Models
-        Presets
+    - Update setup with the updated python binding stuff
+Update binaries in sciebo
 New teaser images?
 pip install
 Tests don't pass

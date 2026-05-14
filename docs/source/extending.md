@@ -1,116 +1,153 @@
 # Extending STARK
 
 STARK's physics models are defined using SymX — the symbolic differentiation and JIT compilation engine bundled with STARK.
-Adding a new material, joint, or interaction model requires writing the energy potential in symbolic form.
-STARK takes care of differentiation, code generation, compilation, and assembly automatically.
+Adding a new material or interaction energy requires writing the potential in symbolic form; STARK handles differentiation, code generation, compilation, and assembly automatically.
 
-> This page gives an overview of the process.
 > For the full SymX API reference, see the [SymX documentation](https://github.com/InteractiveComputerGraphics/SymX).
 
 ## The Core Idea
 
 Every physics model in STARK is an **energy potential** — a scalar function of the degrees of freedom (DoFs).
-STARK assembles all potentials, differentiates them symbolically to get the gradient and Hessian, and feeds them to Newton's Method.
+STARK assembles all potentials, differentiates them symbolically to obtain the gradient and Hessian, and feeds them to Newton's method.
 
-To add a model you need to:
+The DoFs for deformable objects are already registered by `PointDynamics` (velocities `v1`, positions `x0`/`x1`).
+To add a custom energy you only need to:
 
-1. Register your DoF arrays with the `GlobalPotential`.
-2. Define a potential function using SymX symbolic types (`Scalar`, `Vector`, `Matrix`).
-3. Register the potential with the `GlobalPotential`.
+1. Define a potential function in symbolic form using SymX types (`Scalar`, `Vector`).
+2. Register it with `GlobalPotential` via a connectivity table.
 
-The framework handles the rest.
+## Worked Example: `EnergyMagneticAttraction`
 
-## Minimal Example: Custom Point Spring
+The complete, runnable example is in [examples/main.cpp](../../examples/main.cpp) — see the `EnergyMagneticAttraction` struct and `magnetic_deformables_implicit()` scene function.
+
+### What it does
+
+Each deformable vertex `i` is attracted to a magnet position by the regularised 1/r potential:
+
+$$E_i = -\frac{k}{\|\mathbf{x}_1^i - \mathbf{p}_{\mathrm{magnet}}\|_\varepsilon}$$
+
+where $\|\cdot\|_\varepsilon = \sqrt{\|\cdot\|^2 + \varepsilon^2}$ avoids a singularity at zero distance, $k$ is a per-group strength constant, and $\mathbf{x}_1^i = \mathbf{x}_0^i + \Delta t\,\mathbf{v}_1^i$ is the time-integrated position (the velocity $\mathbf{v}_1$ is the DOF the Newton solver updates).
+
+Because the energy is registered implicitly, SymX differentiates it with respect to $\mathbf{v}_1$ automatically, giving the attractive 1/r² force and its Hessian contribution within each Newton iteration.
+
+### Struct layout
 
 ```cpp
-#include <stark>
-#include <symx>
-
-struct MySpring
+struct EnergyMagneticAttraction
 {
-    // Data
-    std::vector<Eigen::Vector3d> x;  // current positions (DoFs)
-    std::vector<Eigen::Vector3d> x0; // rest positions
-    std::vector<std::array<int, 2>> edges; // spring connectivity
-    double stiffness = 1e4;
+    stark::PointDynamics* dyn = nullptr;
+    symx::LabelledConnectivity<2> conn{{ "glob", "group" }};
+    Eigen::Vector3d magnet_center = Eigen::Vector3d::Zero();
+    std::vector<double> strength;   // one entry per add() call
+    double eps_sq = 0.01 * 0.01;   // regularisation constant (m²)
 
-    void add_to_simulation(stark::Simulation& sim)
-    {
-        auto& G = *sim.stark.global_potential;   // GlobalPotential
-        using namespace symx;
-
-        // 1. Register DoFs
-        G.add_dof_array(this->x, "spring_x");
-
-        // 2. Define the potential
-        G.add_potential("my_spring", this->edges,
-            [&](MappedWorkspace<double>& mws, Element& elem)
-            {
-                // Create symbols from data
-                Vector xa  = mws.make_vector(this->x,  elem[0]);
-                Vector xb  = mws.make_vector(this->x,  elem[1]);
-                Vector Xa  = mws.make_vector(this->x0, elem[0]);
-                Vector Xb  = mws.make_vector(this->x0, elem[1]);
-                Scalar k   = mws.make_scalar(this->stiffness);
-
-                // Energy: 0.5 * k * (|xa - xb| - |Xa - Xb|)^2
-                Scalar rest_len    = (Xa - Xb).norm();
-                Scalar current_len = (xa - xb).norm();
-                Scalar stretch     = current_len - rest_len;
-                return 0.5 * k * stretch * stretch;
-            }
-        );
-    }
+    void initialize(stark::core::Stark& stark_core, stark::PointDynamics* dynamics);
+    void add(const stark::PointSetHandler& set, double strength_val);
+    void update_magnet_center(const stark::RigidBodyHandler& rb);
 };
 ```
 
-## Key SymX Concepts Used in STARK
+`conn` is a `LabelledConnectivity<2>` with columns `{"glob", "group"}`.
+Each row maps one vertex (global index) to one strength group.
+The SymX lambda receives one row at a time via `node["glob"]` and `node["group"]`.
 
-| Concept | What it does |
+### Registering the potential
+
+The `initialize()` method calls `add_potential` once, at setup time.
+The lambda defines the symbolic energy expression; it is **not** called per time step — it is compiled once and then evaluated automatically by STARK:
+
+```cpp
+void initialize(stark::core::Stark& stark_core, stark::PointDynamics* dynamics)
+{
+    using namespace symx;
+    this->dyn = dynamics;
+
+    stark_core.global_potential->add_potential("EnergyMagneticAttraction", this->conn,
+        [&](MappedWorkspace<double>& mws, Element& node)
+        {
+            // DOF: velocity at time n+1
+            Vector v1 = mws.make_vector(this->dyn->v1.data, node["glob"]);
+            // Known state at time n
+            Vector x0 = mws.make_vector(this->dyn->x0.data, node["glob"]);
+            // Time step (scalar reference, read-only each evaluation)
+            Scalar dt = mws.make_scalar(stark_core.dt);
+            // Per-group strength constant
+            Scalar k  = mws.make_scalar(this->strength, node["group"]);
+            // Magnet center: reference to member, updated each time step via callback
+            Vector magnet = mws.make_vector(this->magnet_center);
+
+            // Time-integrated position: x1 = x0 + dt * v1
+            Vector x1 = x0 + dt * v1;
+
+            // Regularised attractive potential
+            Vector diff = x1 - magnet;
+            Scalar dist = diff.stable_norm(this->eps_sq);
+            return -k / dist;
+        }
+    );
+}
+```
+
+### Adding vertices and wiring into a scene
+
+```cpp
+// In the scene function:
+EnergyMagneticAttraction mag_energy;  // must outlive simulation.run()
+
+// simulation.get_stark() exposes the core::Stark instance (callbacks, global_potential, dt).
+mag_energy.initialize(simulation.get_stark(), simulation.deformables->point_sets.get());
+
+for (auto& obj : objs) {
+    mag_energy.add(obj.point_set, /*strength=*/0.1);
+}
+
+// Keep magnet_center up to date before each Newton solve:
+simulation.get_stark().callbacks->add_before_time_step([&]() {
+    mag_energy.update_magnet_center(magnet.rigidbody);
+});
+```
+
+`Simulation::get_stark()` is a public getter that exposes the internal `core::Stark` instance, giving access to `global_potential`, `callbacks`, `dt`, and `gravity`.
+
+### Data lifetime
+
+The compiled potential holds **references** (not copies) to:
+- `this->dyn->v1.data`, `this->dyn->x0.data` — kept alive by `PointDynamics`
+- `this->strength` — member of the struct
+- `this->magnet_center` — member of the struct
+- `stark_core.dt` — member of `core::Stark`
+
+The struct must therefore not be moved or destroyed while the simulation is running.
+In the scene function the struct lives on the stack and `simulation.run()` returns before the stack frame unwinds, which is safe.
+
+## Key SymX API
+
+| Call | What it produces |
 |---|---|
-| `MappedWorkspace<double>` | Connects symbolic variables to your data arrays; manages the map from symbol to memory |
-| `mws.make_vector(array, idx)` | Creates a symbolic `Vector` that, at evaluation time, reads from `array[idx]` |
-| `mws.make_scalar(value)` | Creates a symbolic `Scalar` from a scalar data reference |
-| `Element& elem` | Holds the connectivity indices for the current element (e.g. `elem[0]`, `elem[1]`) |
-| `G.add_potential(name, connectivity, lambda)` | Registers the energy for all elements in the connectivity list |
-| `G.add_dof_array(array, name)` | Declares an array as a set of degrees of freedom |
+| `mws.make_vector(std::vector<Eigen::Vector3d>& arr, node["label"])` | Symbolic `Vector` indexed into `arr` |
+| `mws.make_vector(const Eigen::Vector3d& v)` | Constant symbolic `Vector` (reference to `v`) |
+| `mws.make_scalar(std::vector<double>& arr, node["label"])` | Symbolic `Scalar` indexed into `arr` |
+| `mws.make_scalar(const double& s)` | Constant symbolic `Scalar` (reference to `s`) |
+| `Vector::stable_norm(double eps_sq)` | $\sqrt{\|\cdot\|^2 + \varepsilon^2}$ — regularised norm |
+| `global_potential->add_potential(name, conn, lambda)` | Register energy; lambda called once at compile time |
 
 ## Looking at Existing Models
 
-The cleanest way to learn how to extend STARK is to read an existing, simple model:
-
-- **`EnergyPrescribedPositions`** — a point-to-point penalty attachment; one of the simplest models.
-  See `stark/src/models/deformables/point/`.
-- **`EnergyLumpedInertia`** — per-vertex inertia energy (diagonal mass matrix via penalty).
-  See `stark/src/models/deformables/`.
-- **`EnergyAttachments`** — multi-type attachment constraints between point sets and rigid bodies.
-  See `stark/src/models/interactions/`.
-
-## SymX Documentation
-
-The full SymX API is documented at the [SymX GitHub repo](https://github.com/InteractiveComputerGraphics/SymX).
-
-Topics most relevant to extending STARK:
-
-- **Symbol–Data Maps (Layer 3):** `MappedWorkspace`, `CompiledInLoop` — the mechanism STARK uses internally for all its models.
-- **Second-Order Optimization (Layer 4):** `GlobalPotential`, `NewtonsMethod` — the solver infrastructure STARK wraps.
-- **FEM Integration:** built-in FEM element types and integration helpers (`fem_integrator`, `fem_jacobian`).
+- **`EnergyMagneticAttraction`** in [examples/main.cpp](../../examples/main.cpp) — the worked example above; self-contained, no library changes needed.
+- **`EnergyPrescribedPositions`** — a simple penalty attachment. See `stark/src/models/deformables/point/`.
+- **`EnergyLumpedInertia`** — per-vertex inertia. See `stark/src/models/deformables/`.
+- **`EnergyAttachments`** — deformable–rigid attachments. See `stark/src/models/interactions/`.
 
 ## Callbacks in Custom Models
 
-Custom models often need to hook into the simulation loop.
-Use `stark.core.STARK` callbacks (accessible via `sim.stark` in `Simulation`):
-
 ```cpp
-stark.callbacks->add_before_time_step([&]() {
-    // Update any data that changes each time step
-});
+// Called before each Newton solve — use to update time-varying parameters.
+stark.callbacks->add_before_time_step([&]() { ... });
 
+// Called after Newton converges — return false to reject the step and harden stiffness.
 stark.callbacks->newton->add_is_converged_state_valid([&]() -> bool {
-    // Return false if the converged state is invalid (e.g. interpenetration)
-    // STARK will harden your stiffness parameter and retry the time step
     return check_validity();
 });
 ```
 
-The `is_converged_state_valid` callback is the standard mechanism for adaptive stiffness hardening (as used by the contact model).
+The `is_converged_state_valid` callback is the standard mechanism for adaptive stiffness hardening, as used internally by the contact model.
