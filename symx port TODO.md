@@ -14,12 +14,6 @@ Docs
     - Setup: `pip install stark`
     - Architecture
         Simulations -> presets -> deformables, RB, interactions -> Points, RB, Energies
-    - Simulation Loop
-        Overall time logic, including newtons method, what are the dofs...
-        Adaptive time step
-        Callbacks
-        Quasistatics: Not first class citizen, but you can do it a in example `quasistatic_column_extrusion()` (explain the key changes)
-        Control/Scripting
     - Models
         Presets
 pip install

@@ -45,12 +45,12 @@ simulation_loop
 :caption: Physics Models
 :maxdepth: 1
 
+presets
 deformables
 rigidbodies
 rb_constraints
 contact
 attachments
-presets
 ```
 
 ```{toctree}

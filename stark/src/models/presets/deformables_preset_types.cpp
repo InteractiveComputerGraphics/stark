@@ -19,7 +19,7 @@ stark::Line::Params::Params(const Preset& preset)
 	switch (preset)
 	{
 	case Preset::Elastic_Rubberband:
-		this->inertia.density = 0.05;  // [kg/m^2]
+		this->inertia.density = 0.05;  // [kg/m]
 		this->inertia.damping = 0.1;
 		this->strain.elasticity_only = false;
 		this->strain.section_radius = 0.002;  // [m]

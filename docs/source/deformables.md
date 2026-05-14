@@ -7,7 +7,7 @@ For common combination cases, such as a surface with strain and bending, use the
 
 ## Point Sets
 
-Every deformable object is backed by a **point set**: an array of 3D positions that are the degrees of freedom solved by Newton's Method.
+Every deformable object is backed by a **point set**: an array of 3D positions, velocities and such.
 `PointSetHandler` is the handle returned to represent a specific point set.
 
 ```cpp
@@ -39,7 +39,7 @@ Useful for cables, ropes, and spring elements.
 stark::Line::Params params;
 
 // Inertia
-params.inertia.density = 1000.0;    // kg/m³ — used to compute lumped mass per vertex
+params.inertia.density = 0.05;       // kg/m — used to compute lumped mass per vertex
 params.inertia.damping = 0.0;       // Rayleigh mass damping coefficient
 
 // Strain
@@ -69,12 +69,7 @@ auto vch = simulation.presets->deformables->add_line_as_segments("rod",
 
 ## Surfaces (Cloth / Shells)
 
-2D elastic surfaces with in-plane strain (membrane) and optional bending (discrete shells).
-The typical use case is cloth simulation.
-
-<p align="center">
-    <img src="twisting_cloth.gif" alt="Twisting cloth simulation" style="width:55%;">
-</p>
+2D elastic surfaces with in-plane strain (membrane) and optional bending (discrete shells - Bergou flat rest).
 
 ### Parameters
 
@@ -82,19 +77,20 @@ The typical use case is cloth simulation.
 stark::Surface::Params params;
 
 // Inertia
-params.inertia.density = 200.0;  // kg/m³ (effective surface density when × thickness)
+params.inertia.density = 0.2;  // [kg/m^2]
 params.inertia.damping = 0.5;
 
 // In-plane strain
 params.strain.youngs_modulus       = 1e5;
 params.strain.poissons_ratio       = 0.3;
 params.strain.damping              = 0.0;
-params.strain.strain_limit         = 0.2;           // max strain before stiffening kicks in
+params.strain.strain_limit         = 0.2;
 params.strain.strain_limit_stiffness = 1e8;
 
 // Bending (discrete shells)
 params.bending.stiffness = 1e-3;
 params.bending.damping   = 0.0;
+params.flat_rest_angle = true;  // -> Bergou quadratic model
 
 // Contact thickness (overrides global default)
 params.contact.thickness = 0.001;
