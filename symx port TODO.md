@@ -7,6 +7,8 @@ Update binaries in sciebo
 
 main should not run one sime and exit
 
+check literature using symx or stark
+
 Readme
 New teaser images?
 Cleanup files and comments
