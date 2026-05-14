@@ -238,8 +238,8 @@ stark::RBCPointWithAngleLimitHandler stark::RigidBodies::add_constraint_point_wi
 {
 	body_a.exit_if_not_valid("RigidBodies::add_constraint_point_with_angle_limit");
 	body_b.exit_if_not_valid("RigidBodies::add_constraint_point_with_angle_limit");
-	auto point = this->add_constraint_point(body_a, body_b, 0.5 * (body_a.get_translation() + body_b.get_translation()));
-	auto angle_limit = this->add_constraint_angle_limit(body_a, body_b, d_glob, admissible_angle_deg);
+	auto point = this->add_constraint_point(body_a, body_b, p_glob);
+    auto angle_limit = this->add_constraint_angle_limit(body_a, body_b, d_glob, admissible_angle_deg);
 	return RBCPointWithAngleLimitHandler(body_a, body_b, point, angle_limit);
 }
 stark::RBCHingeJointHandler stark::RigidBodies::add_constraint_hinge(const RigidBodyHandler& body_a, const RigidBodyHandler& body_b, const Eigen::Vector3d& p_glob, const Eigen::Vector3d& d_glob)

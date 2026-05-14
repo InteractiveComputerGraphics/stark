@@ -1,21 +1,17 @@
 # Deformables
 
 This page covers the individual energy models available for deformable objects.
-If you are looking for the quickest way to add a cloth, soft body, or cable, start with [Presets](presets.md) — the models below are what the presets compose under the hood.
-
 All deformable models operate on **point sets**.
 A point set is an array of 3D positions and velocities managed by `PointDynamics`.
 You get a `PointSetHandler` back when you register a point set, and that handle is what you pass to every energy model you want to attach to those points.
 
 ```cpp
-// Presets give you the handler automatically.
-// For manual composition you can also create a bare point set:
 auto ps = simulation.deformables->point_sets->add(vertices);
 ```
 
-## PointSetHandler — Transforms and Initial Conditions
+## Transforms
 
-Before the simulation starts you can reposition and reorient the point set, or give it an initial velocity:
+You can reposition and reorient the point set, or give it an initial velocity:
 
 ```cpp
 ps.add_translation({0.0, 0.0, 1.0});
@@ -23,12 +19,13 @@ ps.add_rotation(90.0, {1.0, 0.0, 0.0});  // angle_deg, axis
 ps.set_velocity({0.0, 0.0, -1.0});        // applied to all points
 ```
 
----
+## Potential energies
 
-## EnergyLumpedInertia
+### EnergyLumpedInertia
 
 Mass and Rayleigh damping for a point set.
-Works with any element topology — you pass edges, triangles, or tetrahedra and the mass is distributed (lumped) to the vertices proportional to element volume.
+Works with any element topology: edges, triangles, or tetrahedra;
+The mass is distributed (lumped) to the vertices proportional to element volume.
 
 ```cpp
 auto inertia_h = simulation.deformables->lumped_inertia->add(
@@ -44,11 +41,10 @@ The `quasistatic` flag disables the kinetic energy term; see [Simulation Loop](s
 
 ---
 
-## EnergyPrescribedPositions
+### EnergyPrescribedPositions
 
 Penalty-based kinematic boundary conditions.
 Selected vertices are attracted to a target configuration with a stiffness penalty.
-High stiffness approaches a rigid kinematic constraint; lower stiffness acts as a soft pull.
 
 ```cpp
 auto bc = simulation.deformables->prescribed_positions->add_inside_aabb(
@@ -76,7 +72,7 @@ simulation.add_time_event(0.0, duration, [&](double t) {
 
 ---
 
-## EnergySegmentStrain
+### EnergySegmentStrain
 
 1D axial strain energy for rods and cables.
 Acts on pairs of connected vertices (segments).
@@ -92,13 +88,14 @@ auto strain_h = simulation.deformables->segment_strain->add(
 ```
 
 Optional strain limiting caps elongation beyond a given threshold, preventing explosive stretching.
+`elasticity_only = true` disables strain limiting and deformation damping for simpler more performant solve if needed.
 
 ---
 
-## EnergyTriangleStrain
+### EnergyTriangleStrain
 
 2D membrane strain energy for cloth and thin shells.
-Acts on triangles and models in-plane stretching and compression using a St. Venant–Kirchhoff or similar constitutive model.
+Acts on triangles and models in-plane stretching and compression using the Neo-Hookean constitutive model.
 
 ```cpp
 auto strain_h = simulation.deformables->triangle_strain->add(
@@ -112,12 +109,13 @@ auto strain_h = simulation.deformables->triangle_strain->add(
 ```
 
 An `inflation` parameter adds a pressure-like outward force, useful for inflatable objects.
+`elasticity_only = true` disables strain limiting and deformation damping for simpler more performant solve if needed.
 
 ---
 
-## EnergyDiscreteShells
+### EnergyDiscreteShells
 
-Bending energy for triangle meshes, based on the discrete shells formulation (Grinspun et al.).
+Bending energy for triangle meshes, based on the discrete shells formulation (Grinspun et al.) or the flat rest shape quadratic bending model (Bergou et al.).
 Acts on hinge edges (pairs of adjacent triangles).
 
 ```cpp
@@ -134,10 +132,10 @@ The `Surface` preset does this automatically.
 
 ---
 
-## EnergyTetStrain
+### EnergyTetStrain
 
 3D volumetric FEM strain energy for soft bodies.
-Acts on tetrahedra using a Neo-Hookean or similar elastic constitutive model.
+Acts on linear tetrahedra using the Neo-Hookean constitutive model.
 
 ```cpp
 auto strain_h = simulation.deformables->tet_strain->add(
@@ -148,14 +146,15 @@ auto strain_h = simulation.deformables->tet_strain->add(
 );
 ```
 
-Like the other strain energies, it supports optional strain limiting and an `elasticity_only` flag that drops the viscous damping term.
+`elasticity_only = true` disables strain limiting and deformation damping for simpler more performant solve if needed.
+
 
 ---
 
 ## Manual Composition
 
 Any combination of the above energies can be registered on the same `PointSetHandler`.
-This is how the `hanging_box_with_composite_material` example builds a single mesh with volumetric interior, shell surface, and rod edges — each energy registers independently and they all contribute to the same Newton solve.
+This is how the `hanging_box_with_composite_material` [TODO: link] example builds a single mesh with volumetric interior, shell surface, and rod edges — each energy registers independently and they all contribute to the same Newton solve.
 See `examples/main.cpp` for the full code.
 
 ## Output
@@ -171,70 +170,4 @@ simulation.deformables->output->add_point_set("pts", ps);
 
 Presets handle this automatically.
 
-Suitable for soft bodies, deformable objects with interior deformation, and viscoelastic materials.
 
-<p align="center">
-    <img src="viscoelasticity.gif" alt="Volumetric deformable" style="width:55%;">
-</p>
-
-### Parameters
-
-```cpp
-stark::Volume::Params params;
-
-params.inertia.density = 1000.0;  // kg/m³
-params.inertia.damping = 1.0;
-
-params.strain.youngs_modulus = 1e5;
-params.strain.poissons_ratio = 0.4;
-params.strain.damping        = 0.0;
-
-params.contact.thickness = 0.001;
-```
-
-### Adding a Volume
-
-```cpp
-// From existing tet mesh (vertices + tetrahedra)
-auto h = simulation.presets->deformables->add_volume("body", vertices, tets, params);
-
-// Convenience: uniform tet grid (axis-aligned box)
-auto vch = simulation.presets->deformables->add_volume_grid("body",
-    Eigen::Vector3d(0.1, 0.1, 0.2),  // physical size (m)
-    {3, 3, 6},                         // subdivisions
-    params);
-```
-
-## Prescribed Positions
-
-Prescribed positions are the mechanism for kinematically driving deformable vertices.
-They attach an elastic penalty that pulls selected vertices to a target configuration.
-
-### Selecting Vertices
-
-By AABB:
-
-```cpp
-auto bc = simulation.deformables->prescribed_positions->add_inside_aabb(
-    point_set_handler,
-    Eigen::Vector3d(0, 0, 0),    // AABB center
-    Eigen::Vector3d(0.001, 1, 1), // AABB half-extents (very thin along X → selects left edge)
-    stark::EnergyPrescribedPositions::Params()
-);
-```
-
-### Scripting
-
-```cpp
-// Set target transformation every time step
-simulation.add_time_event(0.0, duration, [&](double t) {
-    bc.set_transformation(
-        Eigen::Vector3d(0, 0, 0),    // translation offset
-        t * 90.0,                     // rotation angle (deg)
-        Eigen::Vector3d(1, 0, 0)     // rotation axis
-    );
-});
-```
-
-The stiffness of the penalty is set in `EnergyPrescribedPositions::Params`.
-High stiffness = near-kinematic constraint; lower stiffness = soft attraction.

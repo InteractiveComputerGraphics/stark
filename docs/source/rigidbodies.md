@@ -1,16 +1,9 @@
 # Rigid Bodies
 
-STARK's rigid body system handles articulated mechanisms, kinematic objects, and rigid-deformable interaction.
+STARK's rigid body system handles articulated mechanisms.
 The main entry point is `simulation.rigidbodies`.
 
-Rigid bodies are most conveniently created through [Presets](presets.md), which compute inertia tensors and attach a collision mesh automatically:
-
-```cpp
-auto [V, T, H] = simulation.presets->rigidbodies->add_box("box", mass, size);
-RigidBodyHandler& rb = H.rigidbody;
-```
-
-For a custom mesh or manually computed inertia tensor you can call the low-level interface:
+To declare a rigid body without a preset (no mesh, no collision), you can use:
 
 ```cpp
 Eigen::Matrix3d I = stark::inertia_tensor_box(mass, size);
@@ -23,7 +16,7 @@ Helper functions cover common shapes: `inertia_tensor_box`, `inertia_tensor_sphe
 
 ## RigidBodyHandler
 
-`RigidBodyHandler` is the primary handle for controlling a single rigid body before and during the simulation.
+`RigidBodyHandler` is the primary handle for controlling a single rigid body.
 
 ### Transforms (pre-simulation setup)
 
@@ -64,7 +57,6 @@ Eigen::Matrix3d R       = rb.get_rotation_matrix();
 ## Scripting Rigid Bodies
 
 The most common pattern is to fix a body and drive it with a prescribed trajectory.
-See [Rigid Body Constraints](rb_constraints.md) for `add_constraint_fix` and other joints.
 A scripted box spinning over time looks like:
 
 ```cpp
@@ -91,7 +83,4 @@ simulation.presets->rigidbodies->add(
 );
 ```
 
-## Gravity
-
-Rigid bodies automatically respond to `simulation.gravity` (set in `GlobalParams`).
 
