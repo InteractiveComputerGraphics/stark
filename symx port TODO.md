@@ -16,6 +16,7 @@ Docs
         Simulations -> presets -> deformables, RB, interactions -> Points, RB, Energies
     - Models
         Presets
+New teaser images?
 pip install
 Tests don't pass
 Readme

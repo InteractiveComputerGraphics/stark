@@ -45,6 +45,7 @@ simulation_loop
 :caption: Physics Models
 :maxdepth: 1
 
+problem_representation
 presets
 deformables
 rigidbodies

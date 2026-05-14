@@ -24,7 +24,7 @@ stark::Line::Params::Params(const Preset& preset)
 		this->strain.elasticity_only = false;
 		this->strain.section_radius = 0.002;  // [m]
 		this->strain.youngs_modulus = 1e4;
-		this->strain.strain_limit = std::numeric_limits<double>::max();
+		this->strain.strain_limit = 0.1;
 		this->strain.strain_limit_stiffness = 1e5;
 		this->strain.damping = 1e-4;
 		// Contact is left as default

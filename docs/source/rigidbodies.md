@@ -3,90 +3,55 @@
 STARK's rigid body system handles articulated mechanisms, kinematic objects, and rigid-deformable interaction.
 The main entry point is `simulation.rigidbodies`.
 
-## Adding a Rigid Body
-
-The low-level interface takes mass and an inertia tensor in the local frame:
+Rigid bodies are most conveniently created through [Presets](presets.md), which compute inertia tensors and attach a collision mesh automatically:
 
 ```cpp
-// C++
-Eigen::Matrix3d I = stark::inertia_tensor_box(mass, {0.1, 0.1, 0.2});
-stark::RigidBodyHandler rb = simulation.rigidbodies->add(mass, I);
+auto [V, T, H] = simulation.presets->rigidbodies->add_box("box", mass, size);
+RigidBodyHandler& rb = H.rigidbody;
 ```
 
-For common shapes use the [Presets](presets.md) — they compute the inertia tensor automatically:
+For a custom mesh or manually computed inertia tensor you can call the low-level interface:
 
 ```cpp
-auto vch = simulation.presets->rigidbodies->add_box("box", mass, Eigen::Vector3d(0.1, 0.1, 0.2));
-stark::RigidBodyHandler& rb = vch.handler.rigidbody;
+Eigen::Matrix3d I = stark::inertia_tensor_box(mass, size);
+RigidBodyHandler rb = simulation.rigidbodies->add(mass, I);
 ```
 
-```python
-vV, vC, vH = simulation.presets().rigidbodies().add_box("box", mass, np.array([0.1, 0.1, 0.2]))
-rb = vH.rigidbody
-```
+Helper functions cover common shapes: `inertia_tensor_box`, `inertia_tensor_sphere`, `inertia_tensor_cylinder`, `inertia_tensor_torus`.
+
+---
 
 ## RigidBodyHandler
 
-`RigidBodyHandler` is the primary handle for controlling a single rigid body.
+`RigidBodyHandler` is the primary handle for controlling a single rigid body before and during the simulation.
 
-### Transform
+### Transforms (pre-simulation setup)
 
 ```cpp
-// Set/query position
-Eigen::Vector3d pos = rb.get_translation();
 rb.set_translation({0.0, 0.0, 1.0});
 rb.add_translation({0.0, 0.0, 0.5});
-
-// Set/query orientation (quaternion or angle-axis)
-Eigen::Quaterniond q = rb.get_quaternion();
-rb.set_rotation(45.0, {0.0, 0.0, 1.0});     // angle_deg, axis
-rb.add_rotation(10.0, {0.0, 1.0, 0.0}, pivot); // angle_deg, axis, pivot_point
+rb.set_rotation(45.0, {0.0, 0.0, 1.0});   // angle_deg, axis
+rb.add_rotation(10.0, {0.0, 1.0, 0.0});
 ```
 
-### Velocity
+### Velocities
 
 ```cpp
-Eigen::Vector3d v = rb.get_velocity();
 rb.set_velocity({1.0, 0.0, 0.0});
-rb.add_velocity({0.0, 0.5, 0.0});
-
-Eigen::Vector3d omega = rb.get_angular_velocity();
 rb.set_angular_velocity({0.0, 0.0, 3.14});
-rb.add_angular_velocity({0.0, 0.0, 0.5});
-
-// Velocity at a specific world-space point
-Eigen::Vector3d v_at = rb.get_velocity_at(world_point);
 ```
 
-### Forces and Torques
+### External forces and torques
 
 Forces and torques accumulate across calls and are reset each time step.
 
 ```cpp
-// Force applied at the centroid
-rb.set_force_at_centroid({0.0, 0.0, -9.81 * mass});  // sets (overwrites)
-rb.add_force_at_centroid({0.0, 0.0, -1.0});           // accumulates
-
-// Force applied at a world-space point (induces torque)
-rb.set_force_at(force_world, application_point_world);  // sets force + induced torque
-rb.add_force_at(force_world, application_point_world);  // accumulates
-
-// Torque directly
-Eigen::Vector3d tau = rb.get_torque();
-rb.set_torque({0.0, 0.0, 1.0});
-rb.add_torque({0.0, 0.0, 0.5});
+rb.add_force_at_centroid({0.0, 0.0, -9.81 * mass});
+rb.add_force_at(force_world, application_point_world);  // also induces torque
+rb.add_torque({0.0, 0.0, 1.0});
 ```
 
-### Accelerations
-
-Accelerations are an alternative to forces when you want to control the body in acceleration space (independent of mass):
-
-```cpp
-rb.set_acceleration({0.0, 0.0, -9.81});
-rb.set_angular_acceleration({0.0, 0.0, 1.0});
-```
-
-### Coordinate Transforms
+### Coordinate transforms
 
 ```cpp
 Eigen::Vector3d x_world = rb.transform_local_to_global_point({0.0, 0.0, 0.5});
@@ -94,43 +59,39 @@ Eigen::Vector3d d_world = rb.transform_local_to_global_direction({1.0, 0.0, 0.0}
 Eigen::Matrix3d R       = rb.get_rotation_matrix();
 ```
 
-## Inertia Tensors
+---
 
-STARK provides helper functions to compute inertia tensors for common shapes:
+## Scripting Rigid Bodies
+
+The most common pattern is to fix a body and drive it with a prescribed trajectory.
+See [Rigid Body Constraints](rb_constraints.md) for `add_constraint_fix` and other joints.
+A scripted box spinning over time looks like:
 
 ```cpp
-Eigen::Matrix3d I_box      = stark::inertia_tensor_box(mass, size_vec3);
-Eigen::Matrix3d I_sphere   = stark::inertia_tensor_sphere(mass, radius);
-Eigen::Matrix3d I_cylinder = stark::inertia_tensor_cylinder(mass, radius, height);
+auto fix = simulation.rigidbodies->add_constraint_fix(rb);
+simulation.add_time_event(0.0, duration, [&](double t) {
+    fix.set_transformation(
+        Eigen::Vector3d(0, 0, 0),
+        t * 90.0,
+        Eigen::Vector3d(0, 0, 1)
+    );
+});
 ```
 
-These are automatically used by the preset constructors.
+## Output
 
-## Mesh Output
-
-Rigid bodies in STARK are output as triangle meshes.
-You register collision/render meshes through the presets or directly:
+Rigid body mesh output is handled by the presets automatically.
+For custom rigid bodies, register the mesh explicitly:
 
 ```cpp
-// Via presets (recommended)
-auto vch = simulation.presets->rigidbodies->add_box("box", mass, size);
-// vch.vertices and vch.triangles hold the mesh
-
-// Manual registration for custom shapes
-simulation.presets->rigidbodies->add("my_body", mass, I,
+simulation.presets->rigidbodies->add(
+    "my_body", mass, I,
     collision_vertices, collision_triangles,
-    render_vertices, render_triangles);
+    render_vertices, render_triangles
+);
 ```
 
-The output mesh file name is determined by `output_label` and the current frame.
+## Gravity
 
-## Gravity on Rigid Bodies
+Rigid bodies automatically respond to `simulation.gravity` (set in `GlobalParams`).
 
-Rigid bodies automatically respond to `simulation.gravity`.
-You can override per-body by applying a custom acceleration:
-
-```cpp
-rb.set_acceleration(simulation.get_gravity() * custom_factor);
-```
-
-Or disable gravity response by setting zero acceleration (gravity is added via inertia energy; disabling that is a model-level concern — see [Extending STARK](extending.md)).

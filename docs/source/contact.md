@@ -105,12 +105,3 @@ Penetration couldn't be avoided. Contact stiffness hardened from 1.0e+04 to 2.0e
 
 This is normal behavior for heavily contacted scenes.
 
-## Practical Tips
-
-- **Contact thickness** is the most important parameter to tune.
-  It should be comparable to the smallest feature size or deformation scale in the scene.
-  Too large → stiff, slow simulation; too small → potential tunneling.
-- **Initial `min_contact_stiffness`** should be set high enough that the initial uncontacted state is collision-free.
-  Values around `1e5`–`1e8` are typical for cloth; rigid–rigid may need higher.
-- **Self-contact** (e.g. cloth folding on itself) requires registering `set_friction(self, self, mu)`.
-- Friction can be disabled globally via `params.friction_enabled = false` for faster debugging runs.

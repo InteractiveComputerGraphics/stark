@@ -1,135 +1,176 @@
 # Deformables
 
-STARK's deformable simulation covers three geometric primitives: **lines**, **surfaces**, and **volumes**.
-The lowest-level access is through `simulation.deformables`, which exposes individual energy systems.
-For common combination cases, such as a surface with strain and bending, use the [Presets](presets.md) layer instead.
+This page covers the individual energy models available for deformable objects.
+If you are looking for the quickest way to add a cloth, soft body, or cable, start with [Presets](presets.md) — the models below are what the presets compose under the hood.
 
-
-## Point Sets
-
-Every deformable object is backed by a **point set**: an array of 3D positions, velocities and such.
-`PointSetHandler` is the handle returned to represent a specific point set.
+All deformable models operate on **point sets**.
+A point set is an array of 3D positions and velocities managed by `PointDynamics`.
+You get a `PointSetHandler` back when you register a point set, and that handle is what you pass to every energy model you want to attach to those points.
 
 ```cpp
-auto& ps = cloth.handler.point_set;
+// Presets give you the handler automatically.
+// For manual composition you can also create a bare point set:
+auto ps = simulation.deformables->point_sets->add(vertices);
+```
 
-// Transform the rest state before the simulation starts
+## PointSetHandler — Transforms and Initial Conditions
+
+Before the simulation starts you can reposition and reorient the point set, or give it an initial velocity:
+
+```cpp
 ps.add_translation({0.0, 0.0, 1.0});
-ps.add_rotation(90.0, {1.0, 0.0, 0.0});   // angle_deg, axis
-
-// Set initial velocity
-ps.set_velocity({0.0, 0.0, -1.0});
+ps.add_rotation(90.0, {1.0, 0.0, 0.0});  // angle_deg, axis
+ps.set_velocity({0.0, 0.0, -1.0});        // applied to all points
 ```
 
-```python
-ps = cloth.handler.point_set
-ps.add_translation(np.array([0.0, 0.0, 1.0]))
-ps.add_rotation(90.0, np.array([1.0, 0.0, 0.0]))
-ps.set_velocity(np.array([0.0, 0.0, -1.0]))
-```
+---
 
-## Lines (Rods)
+## EnergyLumpedInertia
 
-1D elastic rods modeled with a linear segment strain energy and lumped inertia.
-Useful for cables, ropes, and spring elements.
-
-### Parameters
+Mass and Rayleigh damping for a point set.
+Works with any element topology — you pass edges, triangles, or tetrahedra and the mass is distributed (lumped) to the vertices proportional to element volume.
 
 ```cpp
-stark::Line::Params params;
-
-// Inertia
-params.inertia.density = 0.05;       // kg/m — used to compute lumped mass per vertex
-params.inertia.damping = 0.0;       // Rayleigh mass damping coefficient
-
-// Strain
-params.strain.youngs_modulus = 1e6; // Pa
-params.strain.poissons_ratio = 0.4;
-params.strain.damping        = 0.0;
-params.strain.cross_section_area = 1e-4; // m²
+auto inertia_h = simulation.deformables->lumped_inertia->add(
+    ps, triangles,
+    stark::EnergyLumpedInertia::Params()
+        .set_density(0.2)   // [kg/m²] for surfaces, [kg/m³] for volumes, etc.
+        .set_damping(0.5)
+);
 ```
 
-Or use a built-in preset:
+Every dynamic point set needs at least one inertia registration.
+The `quasistatic` flag disables the kinetic energy term; see [Simulation Loop](simulation_loop.md) for quasistatic usage.
+
+---
+
+## EnergyPrescribedPositions
+
+Penalty-based kinematic boundary conditions.
+Selected vertices are attracted to a target configuration with a stiffness penalty.
+High stiffness approaches a rigid kinematic constraint; lower stiffness acts as a soft pull.
 
 ```cpp
-auto params = stark::Line::Params::Elastic_Rubberband();
+auto bc = simulation.deformables->prescribed_positions->add_inside_aabb(
+    ps,
+    Eigen::Vector3d(0, 0, 0),       // AABB centre
+    Eigen::Vector3d(0.001, 1, 1),   // AABB half-extents
+    stark::EnergyPrescribedPositions::Params()
+        .set_stiffness(1e6)
+);
 ```
 
-### Adding a Line
+You can also select by explicit vertex list (`add`) or invert the AABB selection (`add_outside_aabb`).
+
+To animate the boundary condition, update its target transformation each time step:
 
 ```cpp
-// From existing geometry
-auto h = simulation.presets->deformables->add_line("rod", vertices, segments, params);
-
-// Convenience: uniform segments along a straight line
-auto vch = simulation.presets->deformables->add_line_as_segments("rod",
-    Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(1, 0, 0), 20, params);
-// vch.vertices, vch.segments, vch.handler
+simulation.add_time_event(0.0, duration, [&](double t) {
+    bc.set_transformation(
+        Eigen::Vector3d(0, 0, 0),   // translation
+        t * 90.0,                    // rotation angle (deg)
+        Eigen::Vector3d(1, 0, 0)    // rotation axis
+    );
+});
 ```
 
-## Surfaces (Cloth / Shells)
+---
 
-2D elastic surfaces with in-plane strain (membrane) and optional bending (discrete shells - Bergou flat rest).
+## EnergySegmentStrain
 
-### Parameters
+1D axial strain energy for rods and cables.
+Acts on pairs of connected vertices (segments).
 
 ```cpp
-stark::Surface::Params params;
-
-// Inertia
-params.inertia.density = 0.2;  // [kg/m^2]
-params.inertia.damping = 0.5;
-
-// In-plane strain
-params.strain.youngs_modulus       = 1e5;
-params.strain.poissons_ratio       = 0.3;
-params.strain.damping              = 0.0;
-params.strain.strain_limit         = 0.2;
-params.strain.strain_limit_stiffness = 1e8;
-
-// Bending (discrete shells)
-params.bending.stiffness = 1e-3;
-params.bending.damping   = 0.0;
-params.flat_rest_angle = true;  // -> Bergou quadratic model
-
-// Contact thickness (overrides global default)
-params.contact.thickness = 0.001;
+auto strain_h = simulation.deformables->segment_strain->add(
+    ps, segments,
+    stark::EnergySegmentStrain::Params()
+        .set_section_radius(5e-3)       // rod cross-section radius
+        .set_youngs_modulus(1e6)
+        .set_damping(0.0)
+);
 ```
 
-Or use a built-in preset:
+Optional strain limiting caps elongation beyond a given threshold, preventing explosive stretching.
+
+---
+
+## EnergyTriangleStrain
+
+2D membrane strain energy for cloth and thin shells.
+Acts on triangles and models in-plane stretching and compression using a St. Venant–Kirchhoff or similar constitutive model.
 
 ```cpp
-auto params = stark::Surface::Params::Cotton_Fabric();
+auto strain_h = simulation.deformables->triangle_strain->add(
+    ps, triangles,
+    stark::EnergyTriangleStrain::Params()
+        .set_thickness(0.001)           // shell thickness (m)
+        .set_youngs_modulus(1e5)
+        .set_poissons_ratio(0.3)
+        .set_strain_limit(0.2)          // optional; 0 = disabled
+);
 ```
 
-### Adding a Surface
+An `inflation` parameter adds a pressure-like outward force, useful for inflatable objects.
+
+---
+
+## EnergyDiscreteShells
+
+Bending energy for triangle meshes, based on the discrete shells formulation (Grinspun et al.).
+Acts on hinge edges (pairs of adjacent triangles).
 
 ```cpp
-// From existing triangle mesh
-auto h = simulation.presets->deformables->add_surface("cloth", vertices, triangles, params);
-
-// Convenience: uniform grid (planar, axis-aligned)
-auto vch = simulation.presets->deformables->add_surface_grid("cloth",
-    Eigen::Vector2d(0.5, 0.5),  // physical size (m)
-    {30, 30},                    // subdivisions
-    params);
-// vch.vertices, vch.triangles, vch.handler
+auto bending_h = simulation.deformables->discrete_shells->add(
+    ps, triangles,
+    stark::EnergyDiscreteShells::Params()
+        .set_stiffness(1e-3)
+        .set_flat_rest_angle(true)   // true → Bergou quadratic; false → use mesh's rest angle
+);
 ```
 
-### Handler Fields
+This is always paired with `EnergyTriangleStrain` on the same triangle mesh.
+The `Surface` preset does this automatically.
+
+---
+
+## EnergyTetStrain
+
+3D volumetric FEM strain energy for soft bodies.
+Acts on tetrahedra using a Neo-Hookean or similar elastic constitutive model.
 
 ```cpp
-auto& h = vch.handler;
-h.point_set   // PointSetHandler — positions / velocity / transforms
-h.inertia     // EnergyLumpedInertia::Handler
-h.strain      // EnergyTriangleStrain::Handler
-h.bending     // EnergyDiscreteShells::Handler
-h.contact     // ContactHandler — for setting friction pairs
+auto strain_h = simulation.deformables->tet_strain->add(
+    ps, tets,
+    stark::EnergyTetStrain::Params()
+        .set_youngs_modulus(1e5)
+        .set_poissons_ratio(0.4)
+);
 ```
 
-## Volumes (Tet Meshes)
+Like the other strain energies, it supports optional strain limiting and an `elasticity_only` flag that drops the viscous damping term.
 
-3D volumetric FEM with tetrahedral elements.
+---
+
+## Manual Composition
+
+Any combination of the above energies can be registered on the same `PointSetHandler`.
+This is how the `hanging_box_with_composite_material` example builds a single mesh with volumetric interior, shell surface, and rod edges — each energy registers independently and they all contribute to the same Newton solve.
+See `examples/main.cpp` for the full code.
+
+## Output
+
+Mesh output is registered separately:
+
+```cpp
+simulation.deformables->output->add_triangle_mesh("cloth", ps, triangles);
+simulation.deformables->output->add_tet_mesh("body", ps, tets);
+simulation.deformables->output->add_segment_mesh("rod", ps, segments);
+simulation.deformables->output->add_point_set("pts", ps);
+```
+
+Presets handle this automatically.
+
 Suitable for soft bodies, deformable objects with interior deformation, and viscoelastic materials.
 
 <p align="center">
