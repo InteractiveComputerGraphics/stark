@@ -233,7 +233,6 @@ void quasistatic_column_extrusion()
 	settings.newton.step_tolerance = 0.001/dt; // Velocity!
 	settings.newton.step_cap = 0.5/dt;  // Velocity!
 	settings.newton.min_iterations = 0;
-	// settings.newton.linear_solver = symx::LinearSolver::DirectLLT;
 	
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);

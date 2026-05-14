@@ -1,100 +1,321 @@
 # Simulation Loop
 
-This page explains how STARK advances time, how to script kinematic motion, and how to inject custom logic into the loop via callbacks.
-
-## Running the Simulation
-
-### `run(duration)`
-
-The most common entry point.
-Runs the simulation until `duration` seconds of simulated time have elapsed (or any other termination condition in [Settings](settings.md) is met).
+STARK advances a simulation by repeatedly solving one nonlinear optimization problem per time step.
+The public API is intentionally simple:
 
 ```cpp
-// C++
-simulation.run(10.0);
+stark::Simulation simulation(settings);
 
-// With a per-step callback (called once per Newton step attempt)
-simulation.run(10.0, [&]() {
-    // Custom logic here
-});
+// Build objects, materials, contact, boundary conditions, and output...
+
+simulation.run();
+```
+
+Internally, each call to `run_one_time_step()`: STARK updates time-dependent data, asks SymX to solve the nonlinear step with Newton's method, if accepted, it commits the state, otherwise it optionally adapts the time step, writes frame output, and updates the solver log.
+
+
+## Optimization Problem
+
+STARK does **not** solve directly for final _positions_.
+For deformable point sets, the primary unknowns are the next-step velocities `v1`.
+The next positions are reconstructed by first-order time integration:
+
+```cpp
+x1 = x0 + dt * v1;
+```
+
+For example, a deformable object contributes one 3D velocity unknown per point:
+
+```text
+soft.v1: 3267
+```
+
+Rigid bodies contribute linear and angular velocity unknowns:
+
+```text
+rigid.v1: 3
+rigid.w1: 3
+```
+
+All energies are then written as functions of the predicted next state. Elasticity, inertia, contact, attachments, prescribed positions, and rigid-body constraints all contribute to one global potential.
+A minima of such potential corresponds to a balance of forces, which is found by Newton's Method.
+
+
+## Initialization
+
+The first time a simulation step is requested, STARK initializes the solver:
+
+1. check that at least one degree of freedom was registered,
+2. create the SymX Newton solver from the global potential,
+3. compile/load the generated SymX kernels,
+4. print the degrees of freedom,
+5. write frame zero,
+6. run `before_simulation` callbacks,
+7. check that the initial state is valid.
+
+
+## High-level time loop
+
+A simplified version of `simulation.run()` is:
+
+```cpp
+while (!finished) {
+    script.run_a_cycle(simulation.get_time());
+    user_callback();              // optional callback passed to run(...)
+
+    bool keep_running = stark.run_one_step();
+    if (!keep_running) {
+        break;
+    }
+}
+
+stark.print_summary();
+```
+
+The loop stops when one of the configured limits is reached:
+
+- `settings.execution.end_simulation_time`
+- `settings.execution.end_frame`
+- `settings.execution.allowed_execution_time`
+- the duration passed to `simulation.run(duration)`
+- a callback requests termination
+- the solver fails in a non-recoverable way
+
+
+## Newton's method inside each step
+
+The nonlinear solve is handled by the SymX Newton solver.
+Check the [original SymX docs](https://symx.physics-simulation.org/newtons_method.html) for more details.
+
+The simplified inner loop is:
+
+```text
+check initial state validity
+
+for each Newton iteration:
+    run before_energy_evaluation callbacks
+    evaluate energy, gradient, and local Hessians
+    compute residual
+    check residual convergence
+
+    repeat:
+        project local Hessians if needed
+        assemble/update the global Hessian
+        solve H * du = -grad
+        check that du is a descent direction
+        if not, increase projection and retry
+
+    check step-size convergence
+
+    line search:
+        apply user step_cap
+        apply max_allowed_step callbacks
+        backtrack until intermediate state is valid
+        backtrack until Armijo sufficient decrease holds
+
+    run optional user convergence callbacks
+
+check converged-state validity
 ```
 
 
-### `run_one_time_step()`
+### Hessian projection
 
-Advances the simulation by exactly one time step (which may be retried internally by the adaptive time step scheme).
-Useful when you want to control the outer loop yourself.
+STARK commonly runs with positive-definite Hessian projection enabled. This makes the Newton system more robust for simulation problems whose local Hessians may become indefinite.
+Depending on the selected projection mode, SymX can:
+
+- run pure Newton without projection,
+- project all local Hessians,
+- project only after a failed linear solve or non-descending direction,
+- progressively project selected blocks based on the gradient magnitude.
+
+The console field `ph` reports the percentage of projected local Hessians during a step.
+
+### Line search
+
+The line search has several layers:
+
+| Stage | Meaning | Typical use |
+|---|---|---|
+| `cap` | Clamp the update by `settings.newton.step_cap` | Prevent overly large Newton steps |
+| `max` | Clamp by `max_allowed_step` callbacks | Continuous collision detection and other hard step limits |
+| `inv` | Backtrack while the intermediate state is invalid | Avoid inversions, penetrations, or other invalid states |
+| `bt` | Armijo backtracking | Require sufficient energy decrease |
+
+These are the four counters printed as
+
+```text
+ls (cap|max|inv|bt):  0| 0| 1| 4
+```
+
+Large `inv` counts usually indicate that the Newton direction is trying to pass through an invalid state. Large `bt` counts usually indicate that the quadratic model is too optimistic and Armijo has to shrink the step.
+
+## Adaptive time step
+
+The time step starts as
 
 ```cpp
-while (my_condition()) {
+dt = settings.simulation.max_time_step_size;
+```
+
+After a successful accepted step, STARK grows it by
+
+```cpp
+dt = min(max_time_step_size, dt * time_step_size_success_multiplier);
+```
+
+If Newton fails because the step is too difficult, STARK halves `dt` and retries the same simulation time:
+
+```cpp
+dt *= 0.5;
+```
+
+If `dt` drops below `settings.simulation.time_step_size_lower_bound`, the simulation exits.
+
+Some failures do **not** immediately reduce `dt`. For example, a converged state may be rejected by a validity callback because a contact or prescribed-position constraint exceeded its tolerance. In that case, the responsible model may harden a stiffness parameter and STARK retries the same time step with the same `dt`.
+
+This distinction is important:
+
+| Failure type | What STARK does |
+|---|---|
+| invalid converged state | retry same time with modified model parameters |
+| too many invalid intermediate states | run invalid-state callbacks, then retry if recoverable |
+| too many Newton iterations | halve `dt` if adaptive stepping is enabled |
+| Armijo failure | run Armijo-failure callbacks; halve `dt` or exit depending on settings |
+| linear solve failure / non-descent | increase projection if possible; otherwise fail the step |
+
+If adaptive stepping is disabled, a non-recoverable failed step exits the simulation instead of shrinking `dt`.
+
+## Callbacks
+
+Callbacks are the main mechanism by which STARK systems inject behavior into the solver loop.
+Most users only need high-level scripting callbacks, but the lower-level callback structure is useful when extending STARK.
+
+### STARK-level callbacks
+
+| Callback | When it runs | Purpose |
+|---|---|---|
+| `before_simulation` | once during initialization, after frame zero is written | initialize derived data |
+| `before_time_step` | before Newton starts | reset unknowns, update forces, update time-step data |
+| `on_time_step_accepted` | only after Newton succeeds and the state is accepted | commit the solved state |
+| `after_time_step` | after accepting the step, before advancing output/logging is complete | post-step updates |
+| `write_frame` | whenever a frame should be written | write VTK/output data |
+| `should_continue_execution` | before each attempted step | allow systems/users to stop the simulation |
+
+The frame-writing callback is how STARK's built-in output system writes registered meshes every frame.
+The frame cadence is controlled by `settings.output.fps`.
+
+### SymX/Newton callbacks
+Check the [original SymX docs](https://symx.physics-simulation.org/newtons_method.html) for more details.
+
+| Callback | When it runs | Purpose |
+|---|---|---|
+| `before_energy_evaluation` | before each energy or gradient/Hessian evaluation | update collision sets, derived fields, or time-dependent data |
+| `is_initial_state_valid` | before Newton starts | reject invalid starting states |
+| `max_allowed_step` | before line-search backtracking | impose step limits, commonly from CCD |
+| `is_intermediate_state_valid` | during line search | reject invalid intermediate states |
+| `on_intermediate_state_invalid` | after too many invalid-state backtracks | harden constraints/contact or report failure |
+| `on_armijo_fail` | after too many Armijo backtracks | diagnostics or model adjustment |
+| `is_converged` | after a line-search update | add custom convergence criteria |
+| `is_converged_state_valid` | after Newton reports success | verify final constraints/contact tolerances |
+
+Boolean validity callbacks are combined with logical `AND`. All registered checks must pass.
+`max_allowed_step` callbacks are combined by taking the smallest returned step fraction.
+The default residual used by Newton is the infinity norm of the gradient, unless a custom residual callback is installed.
+
+## Public scripting and control
+
+For ordinary scene control, use the public scripting interface rather than low-level core callbacks.
+
+### Time events
+
+A time event runs while `t0 <= simulation.get_time() < t1`:
+
+```cpp
+simulation.add_time_event(0.0, 2.0,
+    [&](double t)
+    {
+        const double z = stark::blend(0.0, 1.0, 0.0, 2.0, t, stark::BlendType::Linear);
+        boundary.set_transformation({0.0, 0.0, z}, Eigen::Matrix3d::Identity());
+    }
+);
+```
+
+This is the most convenient way to animate boundary conditions, gravity, material parameters, friction coefficients, target positions, rigid-body motors, or other time-dependent scene data.
+
+### Events with state
+
+For more advanced cases, the event callback can receive an `EventInfo` object:
+
+```cpp
+simulation.add_time_event(1.0, 3.0,
+    [&](double t, stark::EventInfo& event)
+    {
+        if (event.is_first_call()) {
+            event.msg = "activated";
+        }
+
+        // event.get_n_calls(), event.get_begin_time(), event.pack(...), event.unpack(...)
+        // can be used to keep small pieces of state between calls.
+    }
+);
+```
+
+For full control, `simulation.get_script().add_event(...)` exposes the event system directly with custom `run_when` and `delete_when` predicates.
+
+### Simple run callback
+
+`simulation.run(callback)` executes `callback` before every attempted time step:
+
+```cpp
+simulation.run(
+    [&]()
+    {
+        const Eigen::Vector3d center = magnet.rigidbody.get_translation();
+
+        for (int i = 0; i < object.point_set.size(); ++i) {
+            const Eigen::Vector3d x = object.point_set.get_position(i);
+            const Eigen::Vector3d u = center - x;
+            object.point_set.set_force(i, 0.1 * u.normalized() / u.squaredNorm());
+        }
+    }
+);
+```
+
+Use this for simple procedural control that should run throughout the simulation. For time-bounded behavior, prefer `add_time_event`.
+
+### Manual stepping
+
+For interactive applications or external control loops, use:
+
+```cpp
+while (viewer_is_open) {
     simulation.run_one_time_step();
+    // update viewer, UI, custom data, etc.
 }
 ```
 
-## Time Events
+This executes one script cycle and then attempts one STARK time step.
 
-Time events are the primary way to script kinematic motion.
-They fire every time step within the given `[t0, t1]` interval.
+## Quasistatic simulations
 
-```cpp
-// C++
-simulation.add_time_event(t0, t1, [&](double t) {
-    my_handler.set_transformation(position(t), angle_deg(t), axis);
-});
-```
+STARK can be used for quasistatics problems they are not a separate first-class STARK mode. STARK still runs its time-step machinery and still solves for velocity-like unknowns. 
+The trick is to choose parameters so that the velocity unknown behaves like a positional increment.
 
-The callback receives the current simulated time `t`.
-Multiple time events can overlap; they all fire in registration order.
-
-
-## Scripting Kinematic Objects
-
-The typical pattern for scripted motion is:
-
-1. Add a kinematic constraint (e.g. `add_constraint_fix` for rigid bodies, `prescribed_positions` for deformables).
-2. Store the returned handler.
-3. Call `set_transformation` (or equivalent) inside a time event.
+The `quasistatic_column_extrusion()` example uses the following key changes:
 
 ```cpp
-// Rigid body spinning in place
-auto fix = simulation.rigidbodies->add_constraint_fix(box.rigidbody);
+const double duration = 1.0;
+const double dt = duration * 0.99999;  // Do not overflow the sim duration in a single step
+const bool is_quasistatic = true;
 
-simulation.add_time_event(0.0, duration, [&](double t) {
-    fix.set_transformation(
-        Eigen::Vector3d(0, 0, 0),   // pivot (world)
-        t * 90.0,                    // angle in degrees
-        Eigen::Vector3d(0, 0, 1)    // axis
-    );
-});
+settings.execution.end_simulation_time = duration;
+settings.simulation.max_time_step_size = dt;
+settings.output.fps = 1.0 / dt;
+
+settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton; // Advisable
+settings.newton.project_to_pd_use_mirroring = true; // Advisable
+
+stark::Volume::Params material;
+material.inertia.quasistatic = true;  // Important!
 ```
-
-
-This is useful for scenes where gravity is ramped up gradually (e.g. to avoid explosive initial conditions).
-
-## Callbacks (Advanced)
-
-For lower-level control, STARK exposes a callback system.
-These are mainly used internally by the physics models, but you can register your own.
-
-| Callback | When it fires |
-|---|---|
-| `add_before_simulation` | Once, just before the first time step (after SymX compilation) |
-| `add_before_time_step` | At the start of every time step attempt |
-| `add_after_time_step` | After every accepted time step |
-| `add_on_time_step_accepted` | After Newton converges, before advancing time |
-| `add_write_frame` | When STARK decides to output a frame |
-| `add_should_continue_execution` | Every step; return `false` to stop the simulation |
-
-For most user scenarios, time events should cover everything you need.
-Callbacks are mainly relevant when you are [extending STARK](extending.md) with new models.
-
-## Query Methods
-
-At any point during the simulation loop (including inside time events and callbacks) you can query the current simulation state:
-
-```cpp
-double t     = simulation.get_time();
-double dt    = simulation.get_time_step_size();
-int    frame = simulation.get_frame();
-```
-
