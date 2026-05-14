@@ -2,12 +2,12 @@
 
 ## Post Eurographics
 
-Cleanup files and comments
-Update binaries in sciebo
-New teaser images?
 pip install
-Tests don't pass
+Update binaries in sciebo
+
 Readme
+New teaser images?
+Cleanup files and comments
 LinkedIn Post
 
 
