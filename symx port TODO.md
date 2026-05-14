@@ -3,17 +3,6 @@
 ## Post Eurographics
 
 Cleanup files and comments
-Docs
-    - Explain all parameters
-        Friction and contact parameters
-    - Explain all callbacks
-    - Panic sheet
-        Friction and contact parameters
-    - Upload to https://stark.physics-simulation.org
-    - Setup: `pip install stark`
-    - Architecture
-        Simulations -> presets -> deformables, RB, interactions -> Points, RB, Energies
-    - Update setup with the updated python binding stuff
 Update binaries in sciebo
 New teaser images?
 pip install

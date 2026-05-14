@@ -1,5 +1,10 @@
+# Python notes for STARK
+
+## Generate stubs
 https://stackoverflow.com/questions/73879484/vscode-not-autocompleting-python-from-module-made-with-pybind11
 
 pip install pybind11-stubgen
 $env:PYTHONPATH = "$env:PYTHONPATH;$PWD"
 pybind11-stubgen.exe pystark --ignore-all-errors
+
+
