@@ -577,32 +577,43 @@ void twisting_cloth()
 	simulation.run();
 }
 
-void magnetic_deformables()
+void magnetic_deformables_implicit()
 {
 	/*
-		Simulation of a stack of deformable objects attracted by a magnet scripted to move up and down.
+		A magnetic sphere descends on a pile of soft objects laying on a floor and they are attracted.
+
+		This example showcases how to add custom potential energies in STARK while reusing the entire infrastructure.
 	*/
 
+	using namespace symx;
+
 	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "magnetic_deformables";
-	settings.output.output_directory = OUTPUT_PATH + "/magnetic_deformables";
+	settings.output.simulation_name = "magnetic_deformables_implicit";
+	settings.output.output_directory = OUTPUT_PATH + "/magnetic_deformables_implicit";
 	settings.execution.end_simulation_time = 7.0;
 
 	settings.newton.step_tolerance = 0.001;
-	settings.simulation.max_time_step_size = 1.0/30.0;
+	settings.simulation.max_time_step_size = 1.0 / 30.0;
 
 	stark::Simulation simulation(settings);
+
+	// Problem parameters
+	const double magnet_force = 0.1;
+	const double magnet_height = 1.5;
+	Eigen::Vector3d magnet_center = { 0.0, 0.0, magnet_height };
+	double friction = 0.5;
 
 	// Contact
 	simulation.interactions->contact->set_global_params(
 		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(0.005)
-		.set_min_contact_stiffness(1e6)
+			.set_default_contact_thickness(0.005)
+			.set_min_contact_stiffness(1e6)
 	);
 
 	// Add floor
-	auto [floor_vertices, floor_triangles, floor] = simulation.presets->rigidbodies->add_box("floor", 1.0, { 3.0, 3.0, 0.01 });
-	floor.rigidbody.add_translation({ 0.0, 0.0, -0.01 });
+	auto [floor_vertices, floor_triangles, floor] =
+		simulation.presets->rigidbodies->add_box("floor", 1.0, { 3.0, 3.0, 0.01 });
+	floor.rigidbody.add_translation({ 0.0, 0.0, -0.02 });
 	simulation.rigidbodies->add_constraint_fix(floor.rigidbody);
 
 	// Add objects
@@ -613,15 +624,29 @@ void magnetic_deformables()
 		std::array<int, 3> grid = { 4, 4, 4 };
 		double spacing = size * 1.8;
 		double height = 0.5;
-		Eigen::Vector3d center = { 0.5*(grid[0]-1)*spacing, 0.5*(grid[1]-1)*spacing, 0.5*(grid[2]-1)*spacing };
+		Eigen::Vector3d center = {
+			0.5 * (grid[0] - 1) * spacing,
+			0.5 * (grid[1] - 1) * spacing,
+			0.5 * (grid[2] - 1) * spacing
+		};
+
 		auto material = stark::Volume::Params::Soft_Rubber();
 		material.strain.youngs_modulus = 2e4;
+
 		for (int i = 0; i < grid[0]; i++) {
 			for (int j = 0; j < grid[1]; j++) {
 				for (int k = 0; k < grid[2]; k++) {
-					auto [V, C, obj] = simulation.presets->deformables->add_volume_grid("objects", { size, size, size }, { n, n, n }, material);
+					auto [V, C, obj] = simulation.presets->deformables->add_volume_grid(
+						"objects", { size, size, size }, { n, n, n }, material
+					);
+
 					obj.point_set.add_rotation(Eigen::Vector3d::Random().x() * 90.0, Eigen::Vector3d::Random());
-					obj.point_set.add_displacement({ i * spacing - center.x(), j * spacing - center.y(), k * spacing - center.z() + height});
+					obj.point_set.add_displacement({
+						i * spacing - center.x(),
+						j * spacing - center.y(),
+						k * spacing - center.z() + height
+					});
+
 					objs.push_back(obj);
 				}
 			}
@@ -629,13 +654,12 @@ void magnetic_deformables()
 	}
 
 	// Magnet
-	const double magnet_height = 1.5;
-	auto [magnet_vertices, magnet_triangles, magnet] = simulation.presets->rigidbodies->add_sphere("magnet", 1.0, 0.2, 3);
-	magnet.rigidbody.add_translation({ 0.0, 0.0, magnet_height });
+	auto [magnet_vertices, magnet_triangles, magnet] =
+		simulation.presets->rigidbodies->add_sphere("magnet", 1.0, 0.2, 3);
+	magnet.rigidbody.add_translation(magnet_center);
 	auto magnet_fix = simulation.rigidbodies->add_constraint_fix(magnet.rigidbody);
 
 	// Friction
-	double friction = 0.5;
 	for (int i = 0; i < (int)objs.size(); i++) {
 		simulation.interactions->contact->set_friction(objs[i].contact, magnet.contact, friction);
 		simulation.interactions->contact->set_friction(objs[i].contact, floor.contact, friction);
@@ -644,236 +668,59 @@ void magnetic_deformables()
 		}
 	}
 
+	// Implicit magnetic potential
+
+	//// Connectivity
+	symx::LabelledConnectivity<1> magnetic_vertices{ { "point" } };
+	for (const auto& obj : objs) {
+		for (int vertex_idx = 0; vertex_idx < (int)obj.point_set.size(); vertex_idx++) {
+			magnetic_vertices.push_back({ obj.point_set.get_global_index(vertex_idx) });
+		}
+	}
+
+	//// Energy potential definition
+	stark::core::Stark& stark_core = simulation.get_stark();
+	stark::PointDynamics* dyn = simulation.deformables->point_sets.get();
+	stark_core.global_potential->add_potential("EnergyMagneticAttraction", magnetic_vertices,
+		[&](MappedWorkspace<double>& mws, Element& elem)
+		{
+			Vector v1 = mws.make_vector(dyn->v1.data, elem["point"]);
+			Vector x0 = mws.make_vector(dyn->x0.data, elem["point"]);
+			Scalar dt = mws.make_scalar(stark_core.dt);
+
+			Scalar k = mws.make_scalar(magnet_force);
+			Vector m = mws.make_vector(magnet_center);
+
+			Vector x1 = stark::time_integration(x0, v1, dt);
+			Vector r = x1 - m;
+			Scalar d = r.norm();
+
+			return -k / d;
+		}
+	);
+
 	// Magnet script
+	auto set_magnet_height = [&](double height)
+	{
+		magnet_center = { 0.0, 0.0, height };
+		magnet_fix.set_transformation(magnet_center, Eigen::Matrix3d::Identity());
+	};
+
 	simulation.add_time_event(1.5, 3.0,
 		[&](double t) {
 			double height = stark::blend(magnet_height, 0.5, 1.5, 3.0, t, stark::BlendType::Linear);
-			magnet_fix.set_transformation({ 0.0, 0.0, height }, Eigen::Matrix3d::Identity());
+			set_magnet_height(height);
 		}
 	);
+
 	simulation.add_time_event(4.5, 6.0,
 		[&](double t) {
 			double height = stark::blend(0.5, magnet_height, 4.5, 6.0, t, stark::BlendType::Linear);
-			magnet_fix.set_transformation({ 0.0, 0.0, height }, Eigen::Matrix3d::Identity());
+			set_magnet_height(height);
 		}
 	);
 
-	// Run with a callback function that is executed every time step (same than a time event but without time bounds)
-	simulation.run(
-		[&]()
-		{
-			double magnet_force = 0.1;
-			const Eigen::Vector3d magnet_center = magnet.rigidbody.get_translation();
-			for (auto& obj : objs) {
-				for (int vertex_idx = 0; vertex_idx < (int)obj.point_set.size(); vertex_idx++) {
-					const Eigen::Vector3d vertex = obj.point_set.get_position(vertex_idx);
-					const Eigen::Vector3d u = magnet_center - vertex;
-					const double d = u.norm();
-					const double force = magnet_force / (d * d);
-					obj.point_set.set_force(vertex_idx, force * u.normalized());
-				}
-			}
-		}
-	);
-}
-
-
-/*
- * =========================================================================
- * EnergyMagneticAttraction — custom implicit energy registered with SymX
- * =========================================================================
- *
- * This struct demonstrates how to inject a new physics model into STARK's
- * Newton solver without modifying the library.  The magnetic attraction
- * potential is:
- *
- *   E_i = -k / ||x1_i - magnet_center||_ε
- *
- * where ||·||_ε is the regularised norm  sqrt(||·||² + ε²) and x1_i is
- * the time-integrated position of vertex i.
- *
- * The gradient of E_i with respect to the velocity DOF v1_i (through the
- * chain x1 = x0 + dt·v1) recovers the 1/r² attractive force as expected.
- *
- * Because the energy is registered with GlobalPotential, STARK computes
- * the gradient and Hessian automatically via SymX and includes them in the
- * Newton step — the force is implicitly coupled to the solver.
- *
- * Data lifetime: this struct must not be moved or destroyed while the
- * simulation is running because the compiled potential holds references to
- * its member arrays.
- */
-struct EnergyMagneticAttraction
-{
-	// -- Data accessed by the compiled potential at every Newton iteration --
-	stark::PointDynamics* dyn = nullptr;
-	symx::LabelledConnectivity<2> conn{{ "glob", "group" }};
-	Eigen::Vector3d magnet_center = Eigen::Vector3d::Zero();  // updated before each time step
-	std::vector<double> strength;                              // per group (one per add() call)
-	double eps_sq = 0.01 * 0.01;  // regularisation constant (m²), avoids 1/0
-
-	// -- Register the energy with STARK's global potential --
-	// Call this once, before simulation.run().
-	// dyn must point to simulation.deformables->point_sets and must outlive this struct.
-	void initialize(stark::core::Stark& stark_core, stark::PointDynamics* dynamics)
-	{
-		using namespace symx;
-		this->dyn = dynamics;
-
-		stark_core.global_potential->add_potential("EnergyMagneticAttraction", this->conn,
-			[&](MappedWorkspace<double>& mws, Element& node)
-			{
-				// Position DOF at n+1 (velocity integration)
-				Vector v1 = mws.make_vector(this->dyn->v1.data, node["glob"]);
-				Vector x0 = mws.make_vector(this->dyn->x0.data, node["glob"]);
-				Scalar dt = mws.make_scalar(stark_core.dt);
-
-				// Per-group strength constant
-				Scalar k = mws.make_scalar(this->strength, node["group"]);
-
-				// Magnet center: a reference to this->magnet_center, read each Newton iteration.
-				// Updated to the current rigid-body position via add_before_time_step callback.
-				Vector magnet = mws.make_vector(this->magnet_center);
-
-				// Time-integrated position: x1 = x0 + dt * v1
-				Vector x1 = x0 + dt * v1;
-
-				// Regularised 1/r potential: E = -k / ||x1 - magnet||_eps
-				Vector diff = x1 - magnet;
-				Scalar dist = diff.stable_norm(this->eps_sq);
-				return -k / dist;
-			}
-		);
-	}
-
-	// Add all vertices of a point set to this energy.
-	// strength_val: force constant [N·m] (same units as magnet_force in original example).
-	// Call this for every deformable object set before simulation.run().
-	void add(const stark::PointSetHandler& set, double strength_val)
-	{
-		const int group = (int)this->strength.size();
-		this->strength.push_back(strength_val);
-		for (int i = 0; i < set.size(); i++) {
-			this->conn.push_back({ (int32_t)set.get_global_index(i), (int32_t)group });
-		}
-	}
-
-	// Update the magnet center from the rigid body.
-	// Register this as a before_time_step callback so it runs before each Newton solve.
-	void update_magnet_center(const stark::RigidBodyHandler& rb)
-	{
-		this->magnet_center = rb.get_translation();
-	}
-};
-
-void magnetic_deformables_implicit()
-{
-	/*
-		Same scene as magnetic_deformables(), but the attraction force is injected as an implicit
-		energy potential into STARK's Newton solver via SymX.
-
-		This means:
-		  - The force contributes to both the gradient and the Hessian of the global potential.
-		  - Newton's method therefore accounts for how the force changes with position within each step,
-		    leading to better convergence and unconditional stability.
-		  - The magnet center is treated as a known parameter (updated once per time step before the
-		    Newton solve begins), while the deformable vertex positions are the optimisation variables.
-
-		Compare with magnetic_deformables() where set_force() is called each time step: that version
-		is explicit (force is constant during the Newton iterations) and may require smaller time steps.
-	*/
-
-	stark::Settings settings = stark::Settings();
-	settings.output.simulation_name = "magnetic_deformables_implicit";
-	settings.output.output_directory = OUTPUT_PATH + "/magnetic_deformables_implicit";
-	settings.execution.end_simulation_time = 7.0;
-	settings.newton.step_tolerance = 0.001;
-	settings.simulation.max_time_step_size = 1.0/30.0;
-
-	stark::Simulation simulation(settings);
-
-	// Contact
-	simulation.interactions->contact->set_global_params(
-		stark::EnergyFrictionalContact::GlobalParams()
-		.set_default_contact_thickness(0.005)
-		.set_min_contact_stiffness(1e6)
-	);
-
-	// Floor
-	auto [floor_vertices, floor_triangles, floor] = simulation.presets->rigidbodies->add_box("floor", 1.0, { 3.0, 3.0, 0.01 });
-	floor.rigidbody.add_translation({ 0.0, 0.0, -0.01 });
-	simulation.rigidbodies->add_constraint_fix(floor.rigidbody);
-
-	// Deformable objects (same grid as magnetic_deformables)
-	std::vector<stark::Volume::Handler> objs;
-	{
-		double size = 0.1;
-		int n = 2;
-		std::array<int, 3> grid = { 4, 4, 4 };
-		double spacing = size * 1.8;
-		double height = 0.5;
-		Eigen::Vector3d center = { 0.5*(grid[0]-1)*spacing, 0.5*(grid[1]-1)*spacing, 0.5*(grid[2]-1)*spacing };
-		auto material = stark::Volume::Params::Soft_Rubber();
-		material.strain.youngs_modulus = 2e4;
-		for (int i = 0; i < grid[0]; i++) {
-			for (int j = 0; j < grid[1]; j++) {
-				for (int k = 0; k < grid[2]; k++) {
-					auto [V, C, obj] = simulation.presets->deformables->add_volume_grid("objects", { size, size, size }, { n, n, n }, material);
-					obj.point_set.add_rotation(Eigen::Vector3d::Random().x() * 90.0, Eigen::Vector3d::Random());
-					obj.point_set.add_displacement({ i * spacing - center.x(), j * spacing - center.y(), k * spacing - center.z() + height });
-					objs.push_back(obj);
-				}
-			}
-		}
-	}
-
-	// Magnet (kinematically driven rigid body)
-	const double magnet_height = 1.5;
-	auto [magnet_vertices, magnet_triangles, magnet] = simulation.presets->rigidbodies->add_sphere("magnet", 1.0, 0.2, 3);
-	magnet.rigidbody.add_translation({ 0.0, 0.0, magnet_height });
-	auto magnet_fix = simulation.rigidbodies->add_constraint_fix(magnet.rigidbody);
-
-	// Friction
-	double friction = 0.5;
-	for (int i = 0; i < (int)objs.size(); i++) {
-		simulation.interactions->contact->set_friction(objs[i].contact, magnet.contact, friction);
-		simulation.interactions->contact->set_friction(objs[i].contact, floor.contact, friction);
-		for (int j = i + 1; j < (int)objs.size(); j++) {
-			simulation.interactions->contact->set_friction(objs[i].contact, objs[j].contact, friction);
-		}
-	}
-
-	// --- Custom implicit magnetic energy ---
-	// The struct must outlive simulation.run(), so it lives in this scope.
-	EnergyMagneticAttraction mag_energy;
-	{
-		const double magnet_force = 0.1;  // same constant as in magnetic_deformables()
-		mag_energy.initialize(simulation.get_stark(), simulation.deformables->point_sets.get());
-		for (auto& obj : objs) {
-			mag_energy.add(obj.point_set, magnet_force);
-		}
-
-		// Update magnet_center before each Newton solve so the potential
-		// reads the current kinematic target of the magnet rigid body.
-		simulation.get_stark().callbacks->add_before_time_step([&]() {
-			mag_energy.update_magnet_center(magnet.rigidbody);
-		});
-	}
-
-	// Kinematic script: magnet moves down then back up
-	simulation.add_time_event(1.5, 3.0,
-		[&](double t) {
-			double h = stark::blend(magnet_height, 0.5, 1.5, 3.0, t, stark::BlendType::Linear);
-			magnet_fix.set_transformation({ 0.0, 0.0, h }, Eigen::Matrix3d::Identity());
-		}
-	);
-	simulation.add_time_event(4.5, 6.0,
-		[&](double t) {
-			double h = stark::blend(0.5, magnet_height, 4.5, 6.0, t, stark::BlendType::Linear);
-			magnet_fix.set_transformation({ 0.0, 0.0, h }, Eigen::Matrix3d::Identity());
-		}
-	);
-
+	// Run
 	simulation.run();
 }
 
@@ -910,7 +757,8 @@ int main()
 	spinning_box_cloth();
 	simple_grasp(); 
 	twisting_cloth();
-	magnetic_deformables();
+
+	// Extending STARK with custom potentials
 	magnetic_deformables_implicit();
 }
 

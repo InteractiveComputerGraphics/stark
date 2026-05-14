@@ -247,7 +247,7 @@ bool stark::EnergyRigidBodyConstraints::_is_converged_state_valid(core::Stark& s
 	*/
 	const bool valid = this->_adjust_constraints_stiffness_and_log(stark, 1.0, this->stiffness_hard_multiplier, /* are_positions_set = */ false);
 	if (!valid) {
-		stark.context->output->print("Rigid body constraints are not within tolerance. Hardening bending_stiffness.\n", symx::Verbosity::Summary);
+		stark.context->output->print("Rigid body constraints are not within tolerance. Hardening constraint stiffness.\n", symx::Verbosity::Summary);
 	}
 	return valid;
 }
@@ -258,7 +258,8 @@ void stark::EnergyRigidBodyConstraints::_on_time_step_accepted(core::Stark& star
 	*	Logs the state of the constraints.
 	*	Also, increases constraint stiffnesses at the end of a successful time step to preemtively adapt to harder conditions if occur smoothly.
 	*	This is an easy and cheap way to avoid restarting future successful time steps due to predictable load increases.
-	*	Adaptive soft decrease is not done as it would require a base bending_stiffness value which is added responsibility to the user.
+	*	Adaptive soft decrease is not done as it would require a base constraint stiffness.\n", symx::Verbosity::Summary);
+	} value which is added responsibility to the user.
 	*	It's too easy to have an overly soft constraint parametrization that runs into force time restarts too frequently.
 	*/
 	this->_adjust_constraints_stiffness_and_log(stark, this->soft_constraint_capacity_hardening_point, this->stiffness_soft_multiplier, /* are_positions_set = */ true);
@@ -268,8 +269,8 @@ bool stark::EnergyRigidBodyConstraints::_adjust_constraints_stiffness_and_log(co
 {
 	/*
 		This function evaluates all the constraints and serves multiple purposes:
-			- Hard increase of bending_stiffness within the newton step
-			- Soft increase bending_stiffness at the end of a successful time step
+			- Hard increase of constraint stiffness within the newton step
+			- Soft increase constraint stiffness at the end of a successful time step
 			- Log the state of constraints
 	*/
 

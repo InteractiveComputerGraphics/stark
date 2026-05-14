@@ -645,7 +645,8 @@ void NewtonsMethod::print_summary(double total_time) const
 	auto* out = this->output.get();
 
     // Exit if no iterations were performed
-    if (this->stats.newton_iterations == 0) {
+    const int total_n_newton = logger->get_stats("newton_iterations").total;
+    if (total_n_newton == 0) {
         out->print_with_new_line("No Newton iterations were performed. No summary to show.\n");
         return;
     }
