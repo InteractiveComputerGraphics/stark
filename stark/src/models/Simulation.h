@@ -23,6 +23,7 @@ namespace stark
 		symx::Logger& get_logger();
 		const core::Settings& get_settings() const;
 		EventDrivenScript& get_script();
+		core::Stark& get_stark();
 
 		void add_time_event(double t0, double t1, std::function<void(double)> action);
 		void add_time_event(double t0, double t1, std::function<void(double, EventInfo&)> action);

@@ -76,6 +76,11 @@ void stark::Simulation::run_one_time_step()
 	this->stark.run_one_step();
 }
 
+stark::core::Stark& stark::Simulation::get_stark()
+{
+	return this->stark;
+}
+
 stark::Simulation::Simulation(const core::Settings& settings)
 	: stark(settings)
 {
