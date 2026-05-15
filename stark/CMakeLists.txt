@@ -1,20 +1,19 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.10)
+
+# Default to Release build if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
+endif()
 
 # Option to disable AVX for ARM-based devices
-set(STARK_ENABLE_AVX ON CACHE BOOL "Flag to enable AVX for Stark and its dependencies")
+set(STARK_ENABLE_AVX2 ON CACHE BOOL "Flag to enable AVX for Stark and its dependencies")
 
 # If AVX is disabled for stark, disable it for all dependencies that use AVX
-if(NOT ${STARK_ENABLE_AVX})
+if(NOT ${STARK_ENABLE_AVX2})
 	set(SYMX_ENABLE_AVX OFF CACHE BOOL "Flag to enable AVX for symx" FORCE)
-	set(TMCD_ENABLE_AVX OFF CACHE BOOL "Flag to enable AVX for tmcd" FORCE)
+	set(TMCD_ENABLE_AVX2 OFF CACHE BOOL "Flag to enable AVX for tmcd" FORCE)
 endif()
 
-# Eigen path (also used in projects below)
-set(EIGEN3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/Eigen)
-if( NOT EIGEN3_INCLUDE_DIR )
-    message( FATAL_ERROR "Please point the environment variable EIGEN3_INCLUDE_DIR to the include directory of your Eigen3 installation.")
-endif()
-add_compile_options("-DEIGEN_MPL2_ONLY")
 
 # Parallel compilation in MSVC
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -24,7 +23,6 @@ endif()
 # Enable SIMD and suppress compiler warnings
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	add_compile_options("-march=native")
-    add_compile_options("-Wno-ignored-attributes")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	add_compile_options("/arch:AVX")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -32,20 +30,16 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif()
 
 # Dependencies
+set(SYMX_EIGEN_PUBLIC ON)
+set(SYMX_FMT_PUBLIC   ON)
+set(SYMX_HESS_STORAGE_FLOAT "float" CACHE STRING "Storage type for Hessian matrices (float or double)" FORCE)
 add_subdirectory(extern/symx)
 add_subdirectory(extern/TriangleMeshCollisionDetection)
-add_subdirectory(extern/fmt)
 
 # Source files
 set(CORE_FILES
 	src/core/Callbacks.h
-	src/core/Console.cpp
-	src/core/Console.h
 	src/core/include_ui.h
-	src/core/Logger.cpp
-	src/core/Logger.h
-	src/core/NewtonsMethod.cpp
-	src/core/NewtonsMethod.h
 	src/core/Settings.cpp
 	src/core/Settings.h
 	src/core/EventDrivenScript.cpp
@@ -167,7 +161,7 @@ set(ALL_FILES
 	${UTILS_FILES}
 )
 
-# Create lireary
+# Create library
 add_library(stark ${ALL_FILES})
 
 # Include/link dependencies
@@ -183,21 +177,14 @@ target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/symx/
 target_link_libraries(stark TriangleMeshCollisionDetection)
 target_include_directories(stark PUBLIC extern/TriangleMeshCollisionDetection/include)
 
-## Conjugate Gradient
-target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/symx/extern)
-
 ## vtkio
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/vtkio/include)
 
 ## TriangleMeshDistance
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/TriangleMeshDistance/include)
 
-## fmt
-target_link_libraries(stark fmt::fmt)
-target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/fmt/include)
-
-## Eigen
-target_include_directories(stark PUBLIC ${EIGEN3_INCLUDE_DIR})
+## fmt (provided by symx transitively)
+## Eigen (provided by symx transitively)
 
 ## par_shapes
 target_include_directories(stark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/extern/par_shapes/include)

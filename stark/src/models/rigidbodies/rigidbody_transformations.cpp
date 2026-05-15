@@ -154,7 +154,7 @@ symx::Vector stark::integrate_loc_direction(const symx::Vector& d_loc, const sym
 	return local_to_global_direction(d_loc, R1);
 }
 
-symx::Vector stark::global_point_velocity_in_rigib_body(const symx::Vector& v_body, const symx::Vector& w_body, const symx::Vector& r_glob)
+symx::Vector stark::global_point_velocity_in_rigid_body(const symx::Vector& v_body, const symx::Vector& w_body, const symx::Vector& r_glob)
 {
 	return v_body + w_body.cross3(r_glob);
 }

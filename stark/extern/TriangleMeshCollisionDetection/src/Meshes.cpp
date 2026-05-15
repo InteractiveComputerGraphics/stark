@@ -117,8 +117,8 @@ int32_t tmcd::internals::Meshes::add_mesh(const double* x0, const double* x1, co
 		unique_edges.insert({ e_sorted[0], e_sorted[1] });
 	}
 	if (unique_edges.size() != n_edges) {
-		std::cout << "TriangleMeshCollisionDetection error: non-unique edge found in mesh." << std::endl;
-		exit(-1);
+		std::cout << "TriangleMeshCollisionDetection warning: non-unique edge found in mesh." << std::endl;
+		//exit(-1);
 	}
 
 	// Add

@@ -20,10 +20,10 @@ namespace stark
 		int get_frame() const;
 		Eigen::Vector3d get_gravity() const;
 		void set_gravity(const Eigen::Vector3d& gravity);
-		core::Logger& get_logger();
-		core::Console& get_console();
+		symx::Logger& get_logger();
 		const core::Settings& get_settings() const;
 		EventDrivenScript& get_script();
+		core::Stark& get_stark();
 
 		void add_time_event(double t0, double t1, std::function<void(double)> action);
 		void add_time_event(double t0, double t1, std::function<void(double, EventInfo&)> action);

@@ -1,9 +1,6 @@
 *.pyc
 *.pyi
 *.pyd
+*.so
 build/
-codegen_folder/
-output_folder/
-.vscode/
-CMakeFiles/
-CMakeCache.txt
+dist/

@@ -40,8 +40,7 @@ std::array<double, 2> stark::barycentric_edge_edge(const Eigen::Vector3d& A, con
 	const double cross_sq_norm = denom; // Same as da.cross(db).squaredNorm();
 
 	if (denom < 1e-16) {
-		std::cout << "error stark::barycentric_edge_edge(): parallel edge found." << std::endl;
-		exit(-1);
+		return { 0.5, 0.5 };  // Parallel edges: solve by the center
 	}
 	const double s = (b * f - c * e) / denom;  // arc of the closest point on L1 to L2
 	const double t = (b * s + f) / e;  // arc of the closest point on L2 to L1

@@ -5,6 +5,10 @@
 
 namespace bsm
 {
+	enum class Preconditioner { Diagonal, BlockDiagonal };
+	enum class Ordering { RowMajor, ColMajor };
+	enum class ThreadSafety { UseMutex, Unsafe };
+
 	template<typename T>
 	struct Triplet
 	{
@@ -46,7 +50,7 @@ namespace bsm
 	struct ColBlockTemplated
 	{
 		int base_col = -1;
-		std::array<T, NROWS*NCOLS> vals; // Col Major
+		std::array<T, NROWS*NCOLS> vals; // Col Major (faster AVX block spmxv)
 
 		template<typename MATRIX_PARENTHESIS_INDEXABLE>
 		ColBlockTemplated(const int base_col, const MATRIX_PARENTHESIS_INDEXABLE& m)
@@ -59,5 +63,28 @@ namespace bsm
 			}
 		}
 		ColBlockTemplated() = default;
+	};
+
+	template<typename FLOAT, Ordering ORDERING, size_t BLOCK_ROWS, size_t BLOCK_COLS>
+	class MatrixIndexer
+	{
+	private:
+		const FLOAT* m_data;
+
+	public:
+		MatrixIndexer(const FLOAT* data) : m_data(data) {};
+		inline const FLOAT& operator()(const int row, const int col) const {
+			return at(this->m_data, row, col);
+		};
+
+		static const FLOAT& at(const FLOAT* data, const int row, const int col)
+		{
+			if constexpr (ORDERING == Ordering::RowMajor) {
+				return data[BLOCK_COLS * row + col];
+			}
+			else {
+				return data[BLOCK_ROWS * col + row];
+			}
+		}
 	};
 }

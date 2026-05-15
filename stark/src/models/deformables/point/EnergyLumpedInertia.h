@@ -21,6 +21,7 @@ namespace stark
 		{ 
 			STARK_PARAM_NON_NEGATIVE(double, density, 1.0)
 			STARK_PARAM_DAMPING() 
+			STARK_PARAM_NO_VALIDATION(bool, quasistatic, false)
 		};
 		struct Handler
 		{
@@ -35,6 +36,7 @@ namespace stark
 
 		std::vector<double> density;  // [kg/V] per group
 		std::vector<double> damping; // per group
+		std::vector<double> is_quasistatic; // per group
 		std::vector<double> lumped_volume;  // [V] per idx
 
 	public:

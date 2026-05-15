@@ -19,12 +19,12 @@ stark::Line::Params::Params(const Preset& preset)
 	switch (preset)
 	{
 	case Preset::Elastic_Rubberband:
-		this->inertia.density = 0.05;  // [kg/m^2]
+		this->inertia.density = 0.05;  // [kg/m]
 		this->inertia.damping = 0.1;
 		this->strain.elasticity_only = false;
 		this->strain.section_radius = 0.002;  // [m]
 		this->strain.youngs_modulus = 1e4;
-		this->strain.strain_limit = std::numeric_limits<double>::max();
+		this->strain.strain_limit = 0.1;
 		this->strain.strain_limit_stiffness = 1e5;
 		this->strain.damping = 1e-4;
 		// Contact is left as default
@@ -46,7 +46,7 @@ stark::Surface::Params::Params(const Preset& preset)
 		this->inertia.damping = 0.1;
 		this->strain.elasticity_only = false;
 		this->strain.thickness = 0.001;  // [m]
-		this->strain.youngs_modulus = 1e3;
+		this->strain.youngs_modulus = 5e3;
 		this->strain.poissons_ratio = 0.3;
 		this->strain.strain_limit = 0.1;
 		this->strain.strain_limit_stiffness = 1e6;

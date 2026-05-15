@@ -1,4 +1,4 @@
-#include "mesh_generators.h"
+﻿#include "mesh_generators.h"
 #include <limits>
 
 #include <par_shapes/par_shapes.h>
@@ -31,16 +31,37 @@ stark::Mesh<3> stark::make_sphere(const double radius, const int subdivisions)
 	scale(m.vertices, radius);
 	return m;
 }
-stark::Mesh<3> stark::make_box(const Eigen::Vector3d& size)
+stark::Mesh<3> stark::make_box(const Eigen::Vector3d& size, const bool lid)
 {
-	Mesh m = as_mesh(par_shapes_create_cube());
+	Mesh<3> m = as_mesh(par_shapes_create_cube());
+	if (!lid) {
+		int cursor = 0;
+		for (int i = 0; i < (int)m.conn.size(); i++) {
+			const std::array<int, 3>& tri = m.conn[i];
+
+			bool is_lid = true;
+			for (int j = 0; j < 3; j++) {
+				const Eigen::Vector3d& p = m.vertices[tri[j]];
+				if (p[2] < 1.0 - std::numeric_limits<double>::epsilon()) {
+					is_lid = false;
+					break;
+				}
+			}
+
+			if (!is_lid) {
+				m.conn[cursor] = tri;
+				cursor++;
+			}
+		}
+		m.conn.resize(cursor);
+	}
 	move(m.vertices, {-0.5, -0.5, -0.5});
 	scale(m.vertices, size);
 	return m;
 }
-stark::Mesh<3> stark::make_box(const double size)
+stark::Mesh<3> stark::make_box(const double size, const bool lid)
 {
-	return make_box({size, size, size});
+	return make_box({size, size, size}, lid);
 }
 stark::Mesh<3> stark::make_cylinder(const double radius, const double full_height, const int slices, const int stacks)
 {
@@ -150,6 +171,96 @@ stark::Mesh<3> stark::generate_triangle_grid(const Eigen::Vector2d& center, cons
 	generate_triangle_grid(mesh.vertices, mesh.conn, center, dimensions, n_quads_per_dim, z);
 	return mesh;
 }
+void stark::generate_cylindrical_triangle_mesh(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 3>>& out_connectivity, double radius, double height, const std::array<int, 2>& n_quads_per_dim)
+{
+	// Number of quads along the circumference:
+	const int n_quads_circumference = n_quads_per_dim[0];
+	// Number of quads along the height:
+	const int n_quads_height = n_quads_per_dim[1];
+
+	// Number of vertices in the angular direction (no duplicate for wrap)
+	// and in the height direction (we need +1 to accommodate quads along height):
+	const int nx = n_quads_circumference;           // around the circle
+	const int ny = n_quads_height + 1;              // along the height
+
+	// Total number of points:
+	const int n_points = nx * ny;
+
+	// Angular step for each segment around the circle:
+	const double dtheta = 2.0 * M_PI / static_cast<double>(n_quads_circumference);
+	// Step in height:
+	const double dz = height / static_cast<double>(n_quads_height);
+
+	// Generate vertices
+	out_vertices.resize(n_points);
+	for (int i = 0; i < nx; ++i)
+	{
+		// Current angle in [0, 2π)
+		const double theta = i * dtheta;
+		// Precompute cos/sin
+		const double c = std::cos(theta);
+		const double s = std::sin(theta);
+
+		for (int j = 0; j < ny; ++j)
+		{
+			// z goes from 0 up to height
+			const double z_coord = j * dz;
+			// Global index for this vertex
+			const int idx = i * ny + j;
+
+			// Map from (theta, z) to Cartesian
+			out_vertices[idx] = Eigen::Vector3d(radius * c, radius * s, z_coord);
+		}
+	}
+
+	// Each "cell" is a quadrilateral split into two triangles.
+	// We'll have:
+	//   - n_quads_circumference * n_quads_height total quads
+	//   - 2 * (n_quads_circumference * n_quads_height) triangles
+	out_connectivity.clear();
+	out_connectivity.reserve(2 * n_quads_circumference * n_quads_height);
+
+	for (int i = 0; i < n_quads_circumference; ++i)
+	{
+		// Next in the angular direction (wrapped)
+		const int ip1 = (i + 1) % nx;
+
+		for (int j = 0; j < n_quads_height; ++j)
+		{
+			// The four corner indices of the quad:
+			// node0 = (i, j),   node1 = (i, j+1)
+			// node2 = (i+1, j), node3 = (i+1, j+1)
+			const int node0 = i * ny + j;
+			const int node1 = i * ny + (j + 1);
+			const int node2 = ip1 * ny + j;
+			const int node3 = ip1 * ny + (j + 1);
+
+			// Optionally, alternate the diagonal based on parity
+			if ((i + j) % 2 == 0)
+			{
+				// First triangle:  (node0, node2, node3)
+				// Second triangle: (node0, node3, node1)
+				out_connectivity.push_back({ node0, node2, node3 });
+				out_connectivity.push_back({ node0, node3, node1 });
+			}
+			else
+			{
+				// First triangle:  (node0, node2, node1)
+				// Second triangle: (node2, node3, node1)
+				out_connectivity.push_back({ node0, node2, node1 });
+				out_connectivity.push_back({ node2, node3, node1 });
+			}
+		}
+	}
+}
+
+stark::Mesh<3> stark::generate_cylindrical_triangle_mesh(double radius, double height, const std::array<int, 2>& n_quads_per_dim)
+{
+	stark::Mesh<3> mesh;
+	generate_cylindrical_triangle_mesh(mesh.vertices, mesh.conn, radius, height, n_quads_per_dim);
+	return mesh;
+}
+
 void stark::generate_tet_grid(std::vector<Eigen::Vector3d>& out_vertices, std::vector<std::array<int, 4>>& out_tets, const Eigen::Vector3d& center, const Eigen::Vector3d& dimensions, const std::array<int, 3>& n_quads_per_dim)
 {
 	const Eigen::Vector3d bottom = center - 0.5 * dimensions;

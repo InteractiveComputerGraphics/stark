@@ -3,86 +3,88 @@
 #include "../../time_integration.h"
 #include "../../../utils/include.h"
 
+using namespace symx;
+
 stark::EnergySegmentStrain::EnergySegmentStrain(stark::core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
 {
-	stark.global_energy.add_energy("EnergySegmentStrain", this->conn_complete,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("EnergySegmentStrain", this->conn_complete,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
-			std::vector<symx::Index> edge = { conn["i"], conn["j"] };
+			std::vector<Index> edge = { conn["i"], conn["j"] };
 
 			// Create symbols
-			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dyn->dof, this->dyn->v1.data, edge);
-			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, edge);
-			std::vector<symx::Vector> X = energy.make_vectors(this->dyn->X.data, edge);
-			symx::Scalar scale = energy.make_scalar(this->scale, conn["group"]);
-			symx::Scalar section_radius = energy.make_scalar(this->section_radius, conn["group"]);
-			symx::Scalar youngs_modulus = energy.make_scalar(this->youngs_modulus, conn["group"]);
-			symx::Scalar strain_damping = energy.make_scalar(this->strain_damping, conn["group"]);
-			symx::Scalar strain_limit = energy.make_scalar(this->strain_limit, conn["group"]);
-			symx::Scalar strain_limit_stiffness = energy.make_scalar(this->strain_limit_stiffness, conn["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			std::vector<Vector> v1 = mws.make_vectors(this->dyn->v1.data, edge);
+			std::vector<Vector> x0 = mws.make_vectors(this->dyn->x0.data, edge);
+			std::vector<Vector> X = mws.make_vectors(this->dyn->X.data, edge);
+			Scalar scale = mws.make_scalar(this->scale, conn["group"]);
+			Scalar section_radius = mws.make_scalar(this->section_radius, conn["group"]);
+			Scalar youngs_modulus = mws.make_scalar(this->youngs_modulus, conn["group"]);
+			Scalar strain_damping = mws.make_scalar(this->strain_damping, conn["group"]);
+			Scalar strain_limit = mws.make_scalar(this->strain_limit, conn["group"]);
+			Scalar strain_limit_stiffness = mws.make_scalar(this->strain_limit_stiffness, conn["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+			std::vector<Vector> x1 = time_integration(x0, v1, dt);
 
 			// Scaling
-			std::vector<symx::Vector> Xs = { scale * X[0], scale * X[1] };
+			std::vector<Vector> Xs = { scale * X[0], scale * X[1] };
 
 			// Strain
-			symx::Scalar section_area = M_PI * section_radius.powN(2);
-			symx::Scalar l_rest = (Xs[0] - Xs[1]).norm();
-			symx::Scalar l = (x1[0] - x1[1]).norm();
-			symx::Scalar e = (l - l_rest) / l_rest;
-			symx::Scalar volume = section_area * l_rest;
-			symx::Scalar E_s = volume * youngs_modulus * e.powN(2) / 2.0;
+			Scalar section_area = M_PI * section_radius.powN(2);
+			Scalar l_rest = (Xs[0] - Xs[1]).norm();
+			Scalar l = (x1[0] - x1[1]).norm();
+			Scalar e = (l - l_rest) / l_rest;
+			Scalar volume = section_area * l_rest;
+			Scalar E_s = volume * youngs_modulus * e.powN(2) / 2.0;
 
 			// Strain limiting
-			symx::Scalar e_over_limit = e - strain_limit;
-			symx::Scalar E_sl_ = volume * strain_limit_stiffness * e_over_limit.powN(3) / 3.0;
-			symx::Scalar E_sl = symx::branch(e_over_limit > 0.0, E_sl_, 0.0);
+			Scalar e_over_limit = e - strain_limit;
+			Scalar E_sl_ = volume * strain_limit_stiffness * e_over_limit.powN(3) / 3.0;
+			Scalar E_sl = branch(e_over_limit > 0.0, E_sl_, 0.0);
 
 			// Strain damping
-			symx::Scalar l0 = (x0[1] - x0[0]).norm();
-			symx::Scalar e0 = (l0 - l_rest) / l_rest;
-			symx::Scalar E_d = dt * strain_damping * ((e - e0) / dt).powN(2) / 2.0;
+			Scalar l0 = (x0[1] - x0[0]).norm();
+			Scalar e0 = (l0 - l_rest) / l_rest;
+			Scalar E_d = dt * strain_damping * ((e - e0) / dt).powN(2) / 2.0;
 
 			// Total
-			symx::Scalar E = E_s + E_sl + E_d;
-			energy.set(E);
+			Scalar E = E_s + E_sl + E_d;
+			return E;
 		}
 	);
-	stark.global_energy.add_energy("EnergySegmentStrain_Elasticity_Only", this->conn_elasticity_only,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("EnergySegmentStrain_Elasticity_Only", this->conn_elasticity_only,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
-			std::vector<symx::Index> edge = { conn["i"], conn["j"] };
+			std::vector<Index> edge = { conn["i"], conn["j"] };
 
 			// Create symbols
-			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dyn->dof, this->dyn->v1.data, edge);
-			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, edge);
-			std::vector<symx::Vector> X = energy.make_vectors(this->dyn->X.data, edge);
-			symx::Scalar scale = energy.make_scalar(this->scale, conn["group"]);
-			symx::Scalar section_radius = energy.make_scalar(this->section_radius, conn["group"]);
-			symx::Scalar youngs_modulus = energy.make_scalar(this->youngs_modulus, conn["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			std::vector<Vector> v1 = mws.make_vectors(this->dyn->v1.data, edge);
+			std::vector<Vector> x0 = mws.make_vectors(this->dyn->x0.data, edge);
+			std::vector<Vector> X = mws.make_vectors(this->dyn->X.data, edge);
+			Scalar scale = mws.make_scalar(this->scale, conn["group"]);
+			Scalar section_radius = mws.make_scalar(this->section_radius, conn["group"]);
+			Scalar youngs_modulus = mws.make_scalar(this->youngs_modulus, conn["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+			std::vector<Vector> x1 = time_integration(x0, v1, dt);
 
 			// Scaling
-			std::vector<symx::Vector> Xs = { scale * X[0], scale * X[1] };
+			std::vector<Vector> Xs = { scale * X[0], scale * X[1] };
 
 			// Strain
-			symx::Scalar section_area = M_PI * section_radius.powN(2);
-			symx::Scalar l_rest = (Xs[0] - Xs[1]).norm();
-			symx::Scalar l = (x1[0] - x1[1]).norm();
-			symx::Scalar e = (l - l_rest) / l_rest;
-			symx::Scalar volume = section_area * l_rest;
-			symx::Scalar E_s = volume * youngs_modulus * e.powN(2) / 2.0;
+			Scalar section_area = M_PI * section_radius.powN(2);
+			Scalar l_rest = (Xs[0] - Xs[1]).norm();
+			Scalar l = (x1[0] - x1[1]).norm();
+			Scalar e = (l - l_rest) / l_rest;
+			Scalar volume = section_area * l_rest;
+			Scalar E_s = volume * youngs_modulus * e.powN(2) / 2.0;
 
 			// Total
-			symx::Scalar E = E_s;
-			energy.set(E);
+			Scalar E = E_s;
+			return E;
 		}
 	);
 }
@@ -100,7 +102,7 @@ stark::EnergySegmentStrain::Handler stark::EnergySegmentStrain::add(const PointS
 	this->strain_limit_stiffness.push_back(params.strain_limit_stiffness);
 
 	// Connectivity
-	symx::LabelledConnectivity<4>* conn = params.elasticity_only == true ? &this->conn_elasticity_only : &this->conn_complete;
+	LabelledConnectivity<4>* conn = params.elasticity_only == true ? &this->conn_elasticity_only : &this->conn_complete;
 	for (int edge_i = 0; edge_i < (int)segments.size(); edge_i++) {
 		const std::array<int, 2>& conn_loc = segments[edge_i];
 		const std::array<int, 2> conn_glob = set.get_global_indices(conn_loc);

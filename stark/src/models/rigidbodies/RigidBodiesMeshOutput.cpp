@@ -6,7 +6,7 @@
 stark::RigidBodiesMeshOutput::RigidBodiesMeshOutput(core::Stark& stark, spRigidBodyDynamics rb)
 	: rb(rb)
 {
-	stark.callbacks.add_write_frame([&]() { this->_write_frame(stark); });
+	stark.callbacks->add_write_frame([&]() { this->_write_frame(stark); });
 }
 void stark::RigidBodiesMeshOutput::add_point_mesh(const std::string& label, const RigidBodyHandler& rb, const std::vector<Eigen::Vector3d>& vertices)
 {

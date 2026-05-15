@@ -2,7 +2,6 @@
 #include <functional>
 
 #include <stark>
-#include "paths.h"
 
 stark::RigidBodyHandler make_box(stark::Simulation& simulation)
 {
@@ -16,11 +15,9 @@ void template_sim(std::string name, std::function<void(stark::Simulation& simula
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = name;
-	settings.output.output_directory = OUTPUT_PATH + "/rb_constraints";
-	settings.output.codegen_directory = COMPILE_PATH;
-	settings.output.console_verbosity = stark::ConsoleVerbosity::Frames;
+	settings.output.output_directory = std::string(STARK_EXAMPLES_OUTPUT_DIR) + "/rb_constraints";
+	settings.output.console_verbosity = symx::Verbosity::Minimal;
 	settings.execution.end_simulation_time = 5.0;
-	settings.debug.symx_check_for_NaNs = true;
 	settings.simulation.init_frictional_contact = false;
 	stark::Simulation simulation(settings);
 

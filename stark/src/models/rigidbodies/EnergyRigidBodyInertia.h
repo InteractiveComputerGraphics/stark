@@ -15,10 +15,11 @@ namespace stark
         std::vector<double> mass;
         std::vector<std::array<double, 9>> J0_glob;  // Inertia tensor local coordinates
         std::vector<std::array<double, 9>> J0_inv_glob;  // Inverse inertia tensor local coordinates
+        std::vector<double> is_quasistatic;
 
         /* Methods */
         EnergyRigidBodyInertia(core::Stark& stark, spRigidBodyDynamics rb);
-        void add(const int rb_idx, const double mass, const Eigen::Matrix3d& inertia_loc, const double linear_damping, const double angular_damping);
+        void add(const int rb_idx, const double mass, const Eigen::Matrix3d& inertia_loc);
 
     private:
         // Stark callbacks

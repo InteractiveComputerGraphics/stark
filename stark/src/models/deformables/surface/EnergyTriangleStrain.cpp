@@ -4,127 +4,127 @@
 #include "../../time_integration.h"
 #include "../../../utils/include.h"
 
+using namespace symx;
 
 stark::EnergyTriangleStrain::EnergyTriangleStrain(stark::core::Stark& stark, spPointDynamics dyn)
 	: dyn(dyn)
 {
 	// Energies
-	stark.global_energy.add_energy("EnergyTriangleStrain", this->conn_complete,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("EnergyTriangleStrain", this->conn_complete,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			// Unpack connectivity
-			std::vector<symx::Index> triangle = conn.slice(2, 5);
+			std::vector<Index> triangle = conn.slice(2, 5);
 
 			// Create symbols
-			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dyn->dof, this->dyn->v1.data, triangle);
-			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, triangle);
-			std::vector<symx::Vector> X = energy.make_vectors(this->dyn->X.data, triangle);
-			symx::Scalar scale = energy.make_scalar(this->scale, conn["group"]);
-			symx::Scalar thickness = energy.make_scalar(this->thickness, conn["group"]);
-			symx::Scalar e = energy.make_scalar(this->youngs_modulus, conn["group"]);
-			symx::Scalar nu = energy.make_scalar(this->poissons_ratio, conn["group"]);
-			symx::Scalar strain_damping = energy.make_scalar(this->strain_damping, conn["group"]);
-			symx::Scalar strain_limit = energy.make_scalar(this->strain_limit, conn["group"]);
-			symx::Scalar strain_limit_stiffness = energy.make_scalar(this->strain_limit_stiffness, conn["group"]);
-			symx::Scalar inflation = energy.make_scalar(this->inflation, conn["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			std::vector<Vector> v1 = mws.make_vectors(this->dyn->v1.data, triangle);
+			std::vector<Vector> x0 = mws.make_vectors(this->dyn->x0.data, triangle);
+			std::vector<Vector> X = mws.make_vectors(this->dyn->X.data, triangle);
+			Scalar scale = mws.make_scalar(this->scale, conn["group"]);
+			Scalar thickness = mws.make_scalar(this->thickness, conn["group"]);
+			Scalar e = mws.make_scalar(this->youngs_modulus, conn["group"]);
+			Scalar nu = mws.make_scalar(this->poissons_ratio, conn["group"]);
+			Scalar strain_damping = mws.make_scalar(this->strain_damping, conn["group"]);
+			Scalar strain_limit = mws.make_scalar(this->strain_limit, conn["group"]);
+			Scalar strain_limit_stiffness = mws.make_scalar(this->strain_limit_stiffness, conn["group"]);
+			Scalar inflation = mws.make_scalar(this->inflation, conn["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+			std::vector<Vector> x1 = time_integration(x0, v1, dt);
 
 			// Scaling
-			std::vector<symx::Vector> Xs = { scale * X[0], scale * X[1], scale * X[2] };
+			std::vector<Vector> Xs = { scale * X[0], scale * X[1], scale * X[2] };
 
 			// Kinematics
-			symx::Scalar rest_area = 0.5 * ((Xs[0] - Xs[2]).cross3(Xs[1] - Xs[2])).norm();
-			symx::Matrix DXinv = triangle_jacobian(Xs).inv();
-			symx::Matrix Dx1_32 = symx::Matrix(symx::gather({ x1[1] - x1[0], x1[2] - x1[0] }), { 2, 3 }).transpose();
-			symx::Matrix F1_32 = Dx1_32 * DXinv;  // 3x2
-			symx::Matrix C1 = F1_32.transpose() * F1_32;
-			symx::Matrix E1 = 0.5 * (C1 - energy.make_identity_matrix(2));
+			Scalar rest_area = 0.5 * ((Xs[0] - Xs[2]).cross3(Xs[1] - Xs[2])).norm();
+			Matrix DXinv = triangle_jacobian(Xs).inv();
+			Matrix Dx1_32 = Matrix(collect_scalars({ x1[1] - x1[0], x1[2] - x1[0] }), { 2, 3 }).transpose();
+			Matrix F1_32 = Dx1_32 * DXinv;  // 3x2
+			Matrix C1 = F1_32.transpose() * F1_32;
+			Matrix E1 = 0.5 * (C1 - mws.make_identity_matrix(2));
 
-			symx::Matrix Dx0_32 = symx::Matrix(symx::gather({ x0[1] - x0[0], x0[2] - x0[0] }), { 2, 3 }).transpose();
-			symx::Matrix F0_32 = Dx0_32 * DXinv;  // 3x2
-			symx::Matrix E0 = 0.5 * (F0_32.transpose() * F0_32 - energy.make_identity_matrix(2));
-
-			symx::Matrix dE_dt = (E1 - E0) / dt;
+			Matrix Dx0_32 = Matrix(collect_scalars({ x0[1] - x0[0], x0[2] - x0[0] }), { 2, 3 }).transpose();
+			Matrix F0_32 = Dx0_32 * DXinv;  // 3x2
+			Matrix E0 = 0.5 * (F0_32.transpose() * F0_32 - mws.make_identity_matrix(2));
+			Matrix dE_dt = (E1 - E0) / dt;
 
 			// Neo-Hookean strain energy
-			symx::Scalar mu = e / (2.0 * (1.0 + nu));
-			symx::Scalar lambda = (e * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
-			symx::Scalar area = 0.5 * ((x1[0] - x1[2]).cross3(x1[1] - x1[2])).norm();
-			symx::Scalar J = area / rest_area;
-			symx::Scalar Ic = C1.trace();
-			symx::Scalar logJ = symx::log(J);
-			symx::Scalar elastic_energy_density = 0.5 * mu * (Ic - 2.0) - mu * logJ + 0.5 * lambda * logJ.powN(2);
+			Scalar mu = e / (2.0 * (1.0 + nu));
+			Scalar lambda = (e * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
+			Scalar area = 0.5 * ((x1[0] - x1[2]).cross3(x1[1] - x1[2])).norm();
+			Scalar J = area / rest_area;
+			Scalar Ic = C1.trace();
+			Scalar logJ = log(J);
+			Scalar elastic_energy_density = 0.5 * mu * (Ic - 2.0) - mu * logJ + 0.5 * lambda * logJ.powN(2);
 
 			// Damping
-			symx::Scalar damping_energy_density = 0.5 * strain_damping * dE_dt.frobenius_norm_sq();
+			Scalar damping_energy_density = 0.5 * strain_damping * dE_dt.frobenius_norm_sq();
 
 			// Strain limiting
-			std::array<symx::Scalar, 2> s = eigenvalues_sym_2x2(E1);
-			symx::Scalar strain_limiting_energy_density = energy.make_zero();
+			std::array<Scalar, 2> s = eigenvalues_sym_2x2(E1);
+			Scalar strain_limiting_energy_density = mws.make_zero();
 			for (int i = 0; i < 2; i++) {
-				symx::Scalar dl = s[i] - strain_limit;
-				strain_limiting_energy_density += symx::branch(dl > 0.0, strain_limit_stiffness*dl.powN(3)/3.0, 0.0);
+				Scalar dl = s[i] - strain_limit;
+				strain_limiting_energy_density += branch(dl > 0.0, strain_limit_stiffness*dl.powN(3)/3.0, 0.0);
 			}
 
 			// Inflate
-			symx::Vector n0 = -(x0[1] - x0[0]).cross3(x0[2] - x0[0]).normalized();
-			symx::Scalar inflation_energy_density = inflation * n0.dot(x1[0] + x1[1] + x1[2])/3.0;
+			Vector n0 = -(x0[1] - x0[0]).cross3(x0[2] - x0[0]).normalized();
+			Scalar inflation_energy_density = inflation * n0.dot(x1[0] + x1[1] + x1[2])/3.0;
 
 			// Total
-			symx::Scalar Energy = thickness * rest_area * (elastic_energy_density + damping_energy_density + strain_limiting_energy_density + inflation_energy_density);
-			energy.set(Energy);
+			Scalar Energy = thickness * rest_area * (elastic_energy_density + damping_energy_density + strain_limiting_energy_density + inflation_energy_density);
+			return Energy;
 		}
 	);
 
-	stark.global_energy.add_energy("EnergyTriangleStrain_Elasticity_Only", this->conn_elasticity_only,
-		[&](symx::Energy& energy, symx::Element& conn)
+	stark.global_potential->add_potential("EnergyTriangleStrain_Elasticity_Only", this->conn_elasticity_only,
+		[&](MappedWorkspace<double>& mws, Element& conn)
 		{
 			// Unpack connectivity
-			std::vector<symx::Index> triangle = conn.slice(2, 5);
+			std::vector<Index> triangle = conn.slice(2, 5);
 
 			// Create symbols
-			std::vector<symx::Vector> v1 = energy.make_dof_vectors(this->dyn->dof, this->dyn->v1.data, triangle);
-			std::vector<symx::Vector> x0 = energy.make_vectors(this->dyn->x0.data, triangle);
-			std::vector<symx::Vector> X = energy.make_vectors(this->dyn->X.data, triangle);
-			symx::Scalar scale = energy.make_scalar(this->scale, conn["group"]);
-			symx::Scalar thickness = energy.make_scalar(this->thickness, conn["group"]);
-			symx::Scalar e = energy.make_scalar(this->youngs_modulus, conn["group"]);
-			symx::Scalar nu = energy.make_scalar(this->poissons_ratio, conn["group"]);
-			symx::Scalar inflation = energy.make_scalar(this->inflation, conn["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
+			std::vector<Vector> v1 = mws.make_vectors(this->dyn->v1.data, triangle);
+			std::vector<Vector> x0 = mws.make_vectors(this->dyn->x0.data, triangle);
+			std::vector<Vector> X = mws.make_vectors(this->dyn->X.data, triangle);
+			Scalar scale = mws.make_scalar(this->scale, conn["group"]);
+			Scalar thickness = mws.make_scalar(this->thickness, conn["group"]);
+			Scalar e = mws.make_scalar(this->youngs_modulus, conn["group"]);
+			Scalar nu = mws.make_scalar(this->poissons_ratio, conn["group"]);
+			Scalar inflation = mws.make_scalar(this->inflation, conn["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
 
 			// Time integration
-			std::vector<symx::Vector> x1 = time_integration(x0, v1, dt);
+			std::vector<Vector> x1 = time_integration(x0, v1, dt);
 
 			// Scaling
-			std::vector<symx::Vector> Xs = { scale * X[0], scale * X[1], scale * X[2] };
+			std::vector<Vector> Xs = { scale * X[0], scale * X[1], scale * X[2] };
 
 			// Kinematics
-			symx::Scalar rest_area = 0.5 * ((Xs[0] - Xs[2]).cross3(Xs[1] - Xs[2])).norm();
-			symx::Matrix DXinv = triangle_jacobian(Xs).inv();
-			symx::Matrix Dx1_32 = symx::Matrix(symx::gather({ x1[1] - x1[0], x1[2] - x1[0] }), { 2, 3 }).transpose();
-			symx::Matrix F1_32 = Dx1_32 * DXinv;  // 3x2
-			symx::Matrix C1 = F1_32.transpose() * F1_32;
+			Scalar rest_area = 0.5 * ((Xs[0] - Xs[2]).cross3(Xs[1] - Xs[2])).norm();
+			Matrix DXinv = triangle_jacobian(Xs).inv();
+			Matrix Dx1_32 = Matrix(collect_scalars({ x1[1] - x1[0], x1[2] - x1[0] }), { 2, 3 }).transpose();
+			Matrix F1_32 = Dx1_32 * DXinv;  // 3x2
+			Matrix C1 = F1_32.transpose() * F1_32;
 
 			// Neo-Hookean strain energy
-			symx::Scalar mu = e / (2.0 * (1.0 + nu));
-			symx::Scalar lambda = (e * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
-			symx::Scalar area = 0.5 * ((x1[0] - x1[2]).cross3(x1[1] - x1[2])).norm();
-			symx::Scalar J = area / rest_area;
-			symx::Scalar Ic = C1.trace();
-			symx::Scalar logJ = symx::log(J);
-			symx::Scalar elastic_energy_density = 0.5 * mu * (Ic - 2.0) - mu * logJ + 0.5 * lambda * logJ.powN(2);
+			Scalar mu = e / (2.0 * (1.0 + nu));
+			Scalar lambda = (e * nu) / ((1.0 + nu) * (1.0 - nu));  // 2D !!
+			Scalar area = 0.5 * ((x1[0] - x1[2]).cross3(x1[1] - x1[2])).norm();
+			Scalar J = area / rest_area;
+			Scalar Ic = C1.trace();
+			Scalar logJ = log(J);
+			Scalar elastic_energy_density = 0.5 * mu * (Ic - 2.0) - mu * logJ + 0.5 * lambda * logJ.powN(2);
 
 			// Inflate
-			symx::Vector n0 = -(x0[1] - x0[0]).cross3(x0[2] - x0[0]).normalized();
-			symx::Scalar inflation_energy_density = inflation * n0.dot(x1[0] + x1[1] + x1[2]) / 3.0;
+			Vector n0 = -(x0[1] - x0[0]).cross3(x0[2] - x0[0]).normalized();
+			Scalar inflation_energy_density = inflation * n0.dot(x1[0] + x1[1] + x1[2]) / 3.0;
 
 			// Total
-			symx::Scalar Energy = thickness * rest_area * (elastic_energy_density + inflation_energy_density);
-			energy.set(Energy);
+			Scalar Energy = thickness * rest_area * (elastic_energy_density + inflation_energy_density);
+			return Energy;
 		}
 	);
 }
@@ -144,7 +144,7 @@ stark::EnergyTriangleStrain::Handler stark::EnergyTriangleStrain::add(const Poin
 	this->inflation.push_back(params.inflation);
 
 	// Connectivity
-	symx::LabelledConnectivity<5>* conn = params.elasticity_only == true ? &this->conn_elasticity_only : &this->conn_complete;
+	LabelledConnectivity<5>* conn = params.elasticity_only == true ? &this->conn_elasticity_only : &this->conn_complete;
 	for (int tri_i = 0; tri_i < (int)triangles.size(); tri_i++) {
 		const std::array<int, 3>& conn_loc = triangles[tri_i];
 		const std::array<int, 3> conn_glob = set.get_global_indices(conn_loc);

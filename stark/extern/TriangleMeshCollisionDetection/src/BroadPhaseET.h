@@ -30,7 +30,7 @@ namespace tmcd
 		/* Methods */
 		void _run_broad_phase_bruteforce();
 		void _run_octree_leaf_scalar(const OctreeNode& leaf);
-#ifdef TMCD_ENABLE_AVX
+#ifdef TMCD_ENABLE_AVX2
 		void _run_octree_leaf_simd(const OctreeNode& leaf);
 #endif
 

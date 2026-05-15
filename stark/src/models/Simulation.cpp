@@ -26,14 +26,9 @@ void stark::Simulation::set_gravity(const Eigen::Vector3d& gravity)
 	this->stark.gravity = gravity;
 }
 
-stark::core::Logger& stark::Simulation::get_logger()
+symx::Logger& stark::Simulation::get_logger()
 {
-	return this->stark.logger;
-}
-
-stark::core::Console& stark::Simulation::get_console()
-{
-	return this->stark.console;
+	return *this->stark.context->logger;
 }
 
 const stark::core::Settings& stark::Simulation::get_settings() const
@@ -79,6 +74,11 @@ void stark::Simulation::run_one_time_step()
 {
 	this->stark.script.run_a_cycle(this->get_time());
 	this->stark.run_one_step();
+}
+
+stark::core::Stark& stark::Simulation::get_stark()
+{
+	return this->stark;
 }
 
 stark::Simulation::Simulation(const core::Settings& settings)

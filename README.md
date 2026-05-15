@@ -1,214 +1,239 @@
 # STARK
 
 <p align="center">
-    <img src="docs/images/stark1920.png" alt="SymX Logo" style="width:75%;">
+    <img src="docs/source/_static/stark1920.png" alt="STARK Logo" style="width:75%;">
 </p>
 
-STARK is a C++ and Python simulation _platform_ that provides easy access to state-of-the-art methods to robustly solve simulations of rigid and deformable objects in a strongly coupled manner.
-To the best of our knowledge, no other existing open source simulation environment provides such a rich collection of models, including coupling, with the same level of robustness.
-STARK has been validated through real-world, challenging cases of interactions between robots and deformable objects, see the [STARK ICRA'24 paper](https://www.animation.rwth-aachen.de/publication/0588/).
-
-<p align=center>
- <img src="docs/images/robotic_hand.png" height="200">
-  &nbsp;&nbsp;
- <img src="docs/images/franka_plastic_cup.jpg" height="200">
+<p align="center">
+    <strong>FEM · Shells · Rigid Bodies · Frictional Contact · Strongly Coupled</strong><br>
+    <a href="https://stark.physics-simulation.org/">Docs</a> &nbsp;·&nbsp; <a href="https://animation.rwth-aachen.de/media/papers/88/2024_-_ICRA_-_STARK.pdf">PDF</a> &nbsp;·&nbsp; <a href="https://doi.org/10.1109/icra57147.2024.10610574">IEEE Page</a>
 </p>
 
-One of the main features of STARK is that it uses a powerful symbolic differentiation and code generation engine that allows for a concise formulation of the global variational form of the non-linear dynamic problem.
-Adding new models (e.g. materials, joints, interactions, ...) in STARK is as simple as specifying their energy potential in symbolic form together with the data they depend on.
-This removes the tedium of manually deriving, implementing, testing and optimizing new models and integrating them in existing complex simulation environments.
-STARK collects all the potentials and uses Newton's Method to find the solution to the non-linear implicit time-stepping problem.
-Presently, even though STARK has a C++ and Python API, models can only be defined in C++.
+**STARK** is a C++ and Python simulation platform for **strongly coupled simulation of rigid and deformable bodies with frictional contact**.
+It provides a rich set of physics models — volumetric FEM, discrete shells, rods, rigid body joints, and IPC frictional contact — driven by [SymX](https://github.com/InteractiveComputerGraphics/SymX), a symbolic differentiation and JIT compilation engine that eliminates manual derivative computation, evaluation loops, and most performance tuning.
 
-By default, STARK comes out-of-the-box with important widely used models:
-- 3D and 2D **FEM** discretizations for deformable non-linear materials
-- **Discrete Shells** for cloths and stiff shells
-- **Rigid Bodies** with joints and motors
-- Frictional Contact with **IPC**
+STARK is **very easy to use** and it is **great for research**.
+It has been validated through real-world, challenging cases of interactions between robots and deformable objects, see the [STARK ICRA'24 paper](https://www.animation.rwth-aachen.de/publication/0588/).
 
-See [Features](#features) section for more details.
+<p align="center">
+  <img src="https://github.com/InteractiveComputerGraphics/SymX/blob/gh-pages/gallery.webp" alt="STARK/SymX gallery" width="680">
+</p>
 
-There are two use cases for STARK:
-  - As an external, black-box, powerful simulator that can handle very challenging scenarios.
-  No knowledge of STARK internals are needed in this case, and users can directly use the high-level C++ or Python APIs.
-  - As a research and development tool for simulation.
-  Thanks mainly to the symbolic differentiation and integrated collision detection, STARK can dramatically increase productivity of simulation technology research.
-  See [here](stark/src/models) how the models contained in STARK are implemented.
+
+## Features
+
+- **Deformable objects**
+  - 1D rods and cables — axial strain with optional strain limiting
+  - 2D cloth and shells — Neo-Hookean membrane strain ([Stable Neo-Hookean](https://dl.acm.org/doi/10.1145/3180491)) + [discrete shell bending](https://dl.acm.org/doi/10.5555/846276.846284), inflation pressure
+  - 3D soft bodies — linear tetrahedral FEM with Neo-Hookean constitutive model
+  - [Strain limiting](https://dl.acm.org/doi/10.1145/3450626.3459767), inertial and material damping, quasistatic mode
+  - Composite materials: freely mix volume, surface, and rod energies on a single mesh
+- **Rigid bodies**
+  - Comprehensive joint library: fix, ball, hinge, slider, universal, planar, point-on-axis, and more
+  - Velocity controllers with smooth force/torque caps ([paper](https://www.animation.rwth-aachen.de/publication/0588/))
+  - Damped springs and distance limits
+  - Automatic stiffness hardening to enforce tight tolerances without hand-tuning
+- **Frictional contact**
+  - [IPC](https://dl.acm.org/doi/abs/10.1145/3386569.3392425)-based, guaranteed intersection-free
+  - All coupling modes: deformable–deformable, rigid–deformable, rigid–rigid
+  - Per-pair Coulomb friction, per-object contact thickness
+- **Attachments** — penalty-based gluing by point list, barycentric coords, or proximity search; deformable–deformable and rigid–deformable
+- **Powered by [SymX](https://github.com/InteractiveComputerGraphics/SymX)** — symbolic differentiation, automatic code generation, JIT compilation, OpenMP parallelism, and a robust Newton solver with line search and projection to PD
+- **Python API** (`pystark`) — full access to the C++ API from Python with NumPy interop
+- **Event-based scripting** — time events, callbacks, and animated boundary conditions
+- **Extensible** — add custom SymX energy potentials without modifying STARK internals; the symbolic gradient and Hessian are derived automatically
 
 
 ## Hello World
-The following is a script example using STARK's Python API to execute a simulation of a piece of cloth falling on a rigid box with a prescribed spinning motion.
 
 <p align=center>
- <img src="docs/images/spinning_box_cloth.gif">
+ <img src="docs/source/_static/spinning_box_cloth.gif">
 </p>
 
 ```python
 import numpy as np
 import pystark
 
+# 1. Configure output and solver settings
 settings = pystark.Settings()
 settings.output.simulation_name = "spinning_box_cloth"
 settings.output.output_directory = "output_folder"
 settings.output.codegen_directory = "codegen_folder"
+
+# 2. Create the simulation
 simulation = pystark.Simulation(settings)
 
-# Global frictional contact IPC parameters
+# 3. Set global contact parameters
 contact_params = pystark.EnergyFrictionalContact.GlobalParams()
-contact_params.default_contact_thickness = 0.001  # Can be overriden by per-object thickness
-contact_params.friction_stick_slide_threshold = 0.01
+contact_params.default_contact_thickness = 0.0025
 simulation.interactions().contact().set_global_params(contact_params)
 
-# Add deformable surface
-cV, cT, cH = simulation.presets().deformables().add_surface_grid("cloth",
+# 4. Add a deformable cloth surface
+cV, cT, cH = simulation.presets().deformables().add_surface_grid(
+    "cloth",
     size=np.array([0.4, 0.4]),
-    subdivisions=np.array([20, 20]),
+    subdivisions=np.array([32, 32]),
     params=pystark.Surface.Params.Cotton_Fabric()
 )
 
-# Add rigid body box
+# 5. Add a rigid body box
 bV, bT, bH = simulation.presets().rigidbodies().add_box("box", mass=1.0, size=0.08)
 bH.rigidbody.add_translation(np.array([0.0, 0.0, -0.08]))
 fix_handler = simulation.rigidbodies().add_constraint_fix(bH.rigidbody)
 
-# Set friction pair
-cH.contact.set_friction(bH.contact, 1.0)
-
-# Script
+# 6. Script: spin the box over time
 duration = 10.0
 def script(t):
     fix_handler.set_transformation(
-        translation=np.array([0.0, 0.0, -0.08 - 0.1*np.sin(t)]), 
-        angle_deg=100.0*t, 
-        axis=np.array([0.0, 0.0, 1.0]))
-simulation.add_time_event(0, duration, script)
+        np.array([0.0, 0.0, -0.08]),
+        90.0*t,
+        np.array([0.0, 0.0, 1.0])
+    )
 
-# Run
-simulation.run(duration)
+# 7. Run
+simulation.run(duration, script)
 ```
 
-The output is a sequence of VTK files per output group (in this case one sequence for the cloth and another for the box).
-VTK files can be viewed in Blender with [this](https://github.com/InteractiveComputerGraphics/blender-sequence-loader) add-on or in [Paraview](https://www.paraview.org/).
-You can use [meshio](https://github.com/nschloe/meshio) to transform VTK meshes to other formats.
+The native C++ scene definition is 1-to-1 the same calls.
+Output is written as VTK files; you can open them in [ParaView](https://www.paraview.org/) or in Blender with the [Sequence Loader Addon](https://github.com/InteractiveComputerGraphics/blender-sequence-loader).
 
-STARK code will always follow the same structure:
-  - Define global settings and parameters.
-  - Add objects, boundary conditions and define interactions. In this example, `presets` are used but custom objects and composed materials are also possible.
-  - Optionally, specify time-dependent events (script).
-  - Run.
-    
-See the folder [`stark/pystark/examples`](pystark/examples) for more scenes using the Python API and [`stark/examples`](examples/) for scenes written in C++.
+
+## Extending STARK
+
+STARK physics models are SymX symbolic definitions of energy potentials.
+You can inject custom physics, without modifying worrying about implementation details or STARK internals.
+
+The following example adds an implicit magnetic attraction to deformable vertices.
+What would take some effort, even for such a simple model, it's just a handful of lines:
+
+```cpp
+stark::core::Stark& stark_core = simulation.get_stark();
+stark::PointDynamics* dyn = simulation.deformables->point_sets.get();
+
+stark_core.global_potential->add_potential("EnergyMagneticAttraction", magnetic_vertices,
+    [&](MappedWorkspace<double>& mws, Element& elem)
+    {
+        Vector v1  = mws.make_vector(dyn->v1.data, elem["point"]);
+        Vector x0  = mws.make_vector(dyn->x0.data, elem["point"]);
+        Scalar dt  = mws.make_scalar(stark_core.dt);
+        Scalar k   = mws.make_scalar(magnet_force);
+        Vector m   = mws.make_vector(magnet_center);
+
+        Vector x1 = stark::time_integration(x0, v1, dt);
+        Vector r  = x1 - m;
+        return -k / r.norm();
+    }
+);
+```
+
+
+## Examples
+
+The repository comes with C++ and Python examples to get you started.
+
+**C++ examples** (`examples/main.cpp`):
+- `hanging_net` — a net of rods fixed at its perimeter and hanging under gravity
+- `hanging_cloth` — cloth fixed by two corners and hanging under gravity
+- `hanging_deformable_box` — a soft body fixed by two corners, baseline for FEM
+- `hanging_box_with_composite_material` — volume + surface + rod on one mesh
+- `quasistatic_column_extrusion` — quasistatic Neo-Hookean
+- `attachments` — two cloth panels and a rigid body glued by attachments
+- `deformable_and_rigid_collisions` — stacked soft boxes on a rigid floor
+- `spinning_box_cloth` — cloth on a spinning rigid box, IPC contact and friction
+- `simple_grasp` — parallel gripper grasping a deformable object
+- `twisting_cloth` — cloth twisted by animated boundary conditions
+- `magnetic_deformables_implicit` — external magnetic energy definition
+
+**Python examples** (`pystark/examples/`):
+- `spinning_box_cloth.py` — the hello world scene
+- `boxes_on_cloth.py` — stack of rigid boxes landing on a pinned cloth
+- `twisting_cloth.py` — cloth twisted by prescribed boundary conditions
+- `inflation.py` — inflatable membrane with animated internal pressure
+- `viscoelasticity.py` — viscoelastic soft body compressed by a rigid torus
 
 
 ## Get STARK
-STARK's C++ and Python APIs are essentially equivalent.
-A user who just wants to _use_ STARK with the models that it comes with, probably will prefer the Python API.
-Users looking to work on their own new models to _extend_ STARK with new functionality will have to work directly in the C++ source code.
 
-Every time STARK encounters a new potential energy, it will generate and compile code to compute its derivatives.
-Therefore, a C++17 compiler is required.
-You can specify the command to invoke a compatible compiler using `pystark.set_compiler_command(str)` in Python and `stark::set_compiler_command(str)` in C++.
-By default, it is `"g++"` in Unix and 
+### C++
+
+STARK requires only CMake 3.18+, a C++20 compiler, and OpenMP.
+
+```bash
+cmake -S . -B build
+cmake --build build --parallel
+
+build/examples/examples   # run C++ examples
 ```
-pystark.set_compiler_command("\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"")
+See [Setup in Docs](https://stark.physics-simulation.org/setup.html) for the full integration guide.
+
+### Python (`pystark`)
+
+Build from source with CMake:
+
+```bash
+cmake -S . -B build \
+  -DSTARK_BUILD_PYTHON_BINDINGS=ON \
+  -DSTARK_PYTHON_EXECUTABLE=$(which python)
+cmake --build build --parallel --target pystark
+
+export PYTHONPATH=/path/to/stark/pystark:$PYTHONPATH
 ```
-in Windows.
-Use `pystark.Settings().debug.symx_suppress_compiler_output = False` to inspect the compiler's output.
+
+See [Setup in Docs](https://stark.physics-simulation.org/setup.html) for Conda/virtualenv instructions and Windows notes.
 
 
-If you don't have a C++17 compiler and just want to use the models shipped with STARK by default, you can download the corresponding compiled binaries [here](https://rwth-aachen.sciebo.de/s/5NXgsPtoDyVl8Yo).
-Don't forget to point STARK to the folder containing those in `settings.output.codegen_directory`.
+## Documentation
 
-### Python API
-You can install STARK for Python 3.8+ using
-```
-pip install stark-sim
-```
+Full documentation: <https://stark.physics-simulation.org/>
 
-### Build from source
-To build from source you will need [CMake](https://cmake.org/) and a C++17 compiler.
-All dependencies are bundled with STARK or are downloaded by CMake at build time.
-
-## Examples with code
-<div align="center">
-<table>
-  <tr>
-    <td align="center">
-      <img src="docs/images/twisting_cloth.gif" alt="Alt text for gif1" style="width:100%; max-width: 300px;" />
-      <br>
-      <a href="pystark/examples/twisting_cloth.py">twisting_cloth.py</a>
-    </td>
-    <td align="center">
-      <img src="docs/images/boxes_on_cloth.gif" alt="Alt text for gif1" style="width:100%; max-width: 300px;" />
-      <br>
-      <a href="pystark/examples/boxes_on_cloth.py">boxes_on_cloth.py</a>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="docs/images/inflation.gif" alt="Alt text for gif1" style="width:100%; max-width: 300px;" />
-      <br>
-      <a href="pystark/examples/inflation.py">inflation.py</a>
-    </td>
-    <td align="center">
-      <img src="docs/images/viscoelasticity.gif" alt="Alt text for gif1" style="width:100%; max-width: 300px;" />
-      <br>
-      <a href="pystark/examples/viscoelasticity.py">viscoelasticity.py</a>
-    </td>
-  </tr>
-  <!-- Continue adding rows here -->
-</table>
-</div>
+- [Hello World](https://stark.physics-simulation.org/hello_world.html)
+- [Setup](https://stark.physics-simulation.org/setup.html)
+- [Architecture Overview](https://stark.physics-simulation.org/architecture.html)
+- [Settings](https://stark.physics-simulation.org/settings.html)
+- [Deformables](https://stark.physics-simulation.org/deformables.html)
+- [Rigid Bodies](https://stark.physics-simulation.org/rigidbodies.html)
+- [Rigid Body Constraints](https://stark.physics-simulation.org/rb_constraints.html)
+- [Frictional Contact](https://stark.physics-simulation.org/contact.html)
+- [Attachments](https://stark.physics-simulation.org/attachments.html)
+- [Extending STARK](https://stark.physics-simulation.org/extending.html)
 
 
-## Features
+## Research Using STARK
 
-### Models
-Besides a simulator, STARK is a repository of potential energies commonly used for deformable and rigid objects and frictional contact.
-The following models can be found in symbolic form in `stark/stark/src/models/`:
+* [Progressively Projected Newton's Method](https://arxiv.org/abs/2505.21013)
+* [Strongly coupled simulation of magnetic rigid bodies](https://doi.org/10.1111/cgf.15185)
+* [Micropolar Elasticity in Physically-Based Animation](https://doi.org/10.1145/3606922)
+* [Curved Three‐Director Cosserat Shells with Strong Coupling](https://doi.org/10.1111/cgf.15183)
 
-* Deformable objects
-  - 2D and 3D linear FEM (triangles and tets) with the Neo-Hookean and Stable Neo-Hookean constitutive models, respectively ([paper](https://dl.acm.org/doi/10.1145/3180491))
-  - Discrete Shells ([paper](https://dl.acm.org/doi/10.5555/846276.846284))
-  - Strain limiting ([paper](https://dl.acm.org/doi/10.1145/3450626.3459767))
-  - Inertial and material damping
-* Rigid bodies
-  - Soft joints (linear)
-  - Smooth force/torque capped motors [(paper)](https://www.animation.rwth-aachen.de/publication/0588/)
-  - Comprehensive collection of constraints (ball joints, hinge joints, sliders, ...)
-* Frictional contact (based on triangle meshes)
-  - IPC [(paper)](https://dl.acm.org/doi/abs/10.1145/3386569.3392425)
-* Attachments (based on triangle mesh distances)
-
-### Solver
-* Symbolic differentiation
-  - Automatic generation of gradients and Hessians
-  - Parallel autonomous global evaluation and assembly
-* Triangle-based collision detection
-* Solver
-  - Newton's Method
-  - Intersection free line search (CCD coming soon)
-  - Conjugate Gradient or Direct LU linear solver
-  - Optional adaptive time step size
-  - Optional numerical PSD projection of element Hessians
-* Event-based scripts
-
-## Research using STARK
-* ["Micropolar Elasticity in Physically-Based Animation"](https://www.animation.rwth-aachen.de/publication/0582/) - Löschner et al., 2023
-* ["Curved Three-Director Cosserat Shells with Strong Coupling"](https://www.animation.rwth-aachen.de/publication/0589/) - Löschner et al., 2024
-* ["Strongly Coupled Simulation of Magnetic Rigid Bodies"](https://www.animation.rwth-aachen.de/publication/0590/) - Westhofen et al., 2024
 
 ## Cite STARK
+
+If STARK contributes to your research, please cite the paper.
+
 ```bibtex
 @InProceedings{FLL+24,
-  author={Fernández-Fernández, José Antonio and Lange, Ralph and Laible, Stefan and Arras, Kai O. and Bender, Jan},
-  booktitle={2024 IEEE International Conference on Robotics and Automation (ICRA)}, 
-  title={STARK: A Unified Framework for Strongly Coupled Simulation of Rigid and Deformable Bodies with Frictional Contact}, 
+  author={Fern\'{a}ndez-Fern\'{a}ndez, Jos\'{e} Antonio and Lange, Ralph and Laible, Stefan and Arras, Kai O. and Bender, Jan},
+  booktitle={2024 IEEE International Conference on Robotics and Automation (ICRA)},
+  title={STARK: A Unified Framework for Strongly Coupled Simulation of Rigid and Deformable Bodies with Frictional Contact},
   year={2024},
   pages={16888-16894},
-  doi={10.1109/ICRA57147.2024.10610574}}
+  doi={10.1109/ICRA57147.2024.10610574}
 }
 ```
+
+## Want to Collaborate?
+
+STARK is exactly the kind of project that benefits from real use in real environments.
+
+If you are:
+
+- simulating soft robots, surgical tools, garments, or other compliant mechanisms
+- building FEM pipelines for animation or engineering
+- exploring differentiable simulation, contact, or multi-physics coupling
+- interested in extending the physics models, solver, or Python API
+
+then feel free to reach out!
+
 
 ## Acknowledgments
 
@@ -223,6 +248,8 @@ The following models can be found in symbolic form in `stark/stark/src/models/`:
   </tr>
 </table>
 
-List of collaborators to the codebase:
-  - [José Antonio Fernández-Fernández](https://github.com/JoseAntFer)
-  - [Fabian Löschner](https://github.com/w1th0utnam3)
+Contributors to the codebase:
+- [José Antonio Fernández-Fernández](https://github.com/JoseAntFer) (Corresponding author)
+- [Fabian Löschner](https://github.com/w1th0utnam3)
+
+

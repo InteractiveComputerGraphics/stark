@@ -5,9 +5,6 @@
 
 #include "Settings.h"
 #include "Callbacks.h"
-#include "NewtonsMethod.h"
-#include "Console.h"
-#include "Logger.h"
 #include "EventDrivenScript.h"
 
 namespace stark::core
@@ -17,15 +14,15 @@ namespace stark::core
 	public:
 		/* Fields */
 		const Settings settings;
-		symx::GlobalEnergy global_energy;
-		Callbacks callbacks;
-		Console console;
-		Logger logger;
+		symx::spGlobalPotential global_potential;
+		symx::spContext context;
+		spCallbacks callbacks;
 		EventDrivenScript script;
 
 		// Parameters
 		double current_time = 0.0;
 		int current_frame = 0;
+		int current_time_step = 0;
 		double dt = -1.0;
 		Eigen::Vector3d gravity = { 0.0, 0.0, -9.81 };
 
@@ -38,7 +35,7 @@ namespace stark::core
 
 	private:
 		/* Fields */
-		NewtonsMethod newton;
+		symx::spNewtonsMethod newton;
 		bool is_init = false;
 		double next_frame_time = -std::numeric_limits<double>::epsilon();
 		double execution_time = 0.0;

@@ -57,7 +57,8 @@ void pystark_utils_impl(nb::module_& m)
         "triangles"_a, "n_vertices"_a);
     m.def("find_sharp_edges", [](MatX3d& vertices, MatX3i& triangles, double angle_deg_threshold)
         { 
-            auto [edges, edge_to_triangle_map] = find_sharp_edges(nb_to_stark(vertices), nb_to_stark(triangles), nb_to_stark(vertices).size());
+            auto verts = nb_to_stark(vertices);
+            auto [edges, edge_to_triangle_map] = find_sharp_edges(verts, nb_to_stark(triangles), angle_deg_threshold);
             nb::tuple out = nb::make_tuple(stark_to_nb(edges), stark_to_nb(edge_to_triangle_map));
             return create_named_tuple("FindSharpEdgesOutput", { "edges", "edge_to_triangle_map" }, out);
         }, 

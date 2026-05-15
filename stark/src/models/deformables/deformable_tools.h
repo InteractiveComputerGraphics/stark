@@ -11,4 +11,5 @@ namespace stark
 
 	std::array<symx::Scalar, 2> eigenvalues_sym_2x2(const symx::Matrix& A);
 	std::array<symx::Scalar, 3> eigenvalues_sym_3x3(const symx::Matrix& A);
+	symx::Scalar soft_activation(const symx::Scalar& x, const symx::Scalar& eps);
 }

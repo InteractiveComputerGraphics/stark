@@ -14,6 +14,6 @@ void pystark_EnergyDiscreteShells(nb::module_& m)
         .def("set_params", &Self::set_params)
         ;
 
-    BIND_PARAMS(Params) PARAM(elasticity_only) PARAM(scale) PARAM(flat_rest_angle) PARAM(stiffness) PARAM(damping);
+    BIND_PARAMS(Params) PARAM(scale) PARAM(flat_rest_angle) PARAM(stiffness) PARAM(damping);
     BIND_HANDLER(Handler);
 }

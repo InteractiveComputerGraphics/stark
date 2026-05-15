@@ -35,5 +35,5 @@ namespace stark
     symx::Vector integrate_loc_point(const symx::Vector& p_loc, const symx::Vector& t0, const symx::Vector& q0, const symx::Vector& v1, const symx::Vector& w1, const symx::Scalar& dt);
     symx::Vector integrate_loc_direction(const symx::Vector& d_loc, const symx::Vector& q0, const symx::Vector& w1, const symx::Scalar& dt);
 
-    symx::Vector global_point_velocity_in_rigib_body(const symx::Vector& v_body, const symx::Vector& w_body, const symx::Vector& r_glob);
+    symx::Vector global_point_velocity_in_rigid_body(const symx::Vector& v_body, const symx::Vector& w_body, const symx::Vector& r_glob);
 }

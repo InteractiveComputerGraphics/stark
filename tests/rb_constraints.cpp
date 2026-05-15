@@ -9,10 +9,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include "../examples/paths.h"
-
 #define ENABLE_TESTS_IN_THIS_FILE true
-
 
 using namespace Catch::Matchers;
 
@@ -31,18 +28,19 @@ stark::Settings test_settings(std::string name)
 {
 	stark::Settings settings = stark::Settings();
 	settings.output.simulation_name = name;
-	settings.output.output_directory = OUTPUT_PATH + "/test_output";
-	settings.output.codegen_directory = COMPILE_PATH;
-	settings.output.console_verbosity = stark::ConsoleVerbosity::NoOutput;
+	settings.output.output_directory = std::string(STARK_TESTS_OUTPUT_DIR) + "/test_output";
 	settings.output.enable_output = false;
+	settings.output.enable_frame_writes = false;
 	settings.execution.end_simulation_time = 3.0;
 	settings.simulation.gravity = {0, 0, 0};
 	settings.simulation.init_frictional_contact = false;
 
 	// High resolution for accurate results
 	settings.simulation.max_time_step_size = 0.002;
-	settings.newton.linear_system_solver = stark::LinearSystemSolver::DirectLU;
-	settings.newton.residual = { stark::ResidualType::Force, 1e-6 };
+	settings.newton.linear_solver = symx::LinearSolver::DirectLLT;
+	// settings.newton.projection_mode = symx::ProjectionToPD::ProjectedNewton;
+	settings.newton.residual_tolerance_abs = 1e-6;
+	settings.newton.step_tolerance = 0.0;
 
 	return settings;
 }

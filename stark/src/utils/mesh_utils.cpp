@@ -75,7 +75,8 @@ std::vector<stark::Mesh<3>> stark::load_obj(const std::string& path)
         int index_offset = 0;
         for (int tri_i = 0; tri_i < shapes[shape_i].mesh.num_face_vertices.size(); tri_i++) {
             if (shapes[shape_i].mesh.num_face_vertices[tri_i] != 3) {
-                std::cout << "learnSPH error: readTriMeshesFromObj can only read triangle meshes." << std::endl;
+                std::cout << "Stark error: readTriMeshesFromObj can only read triangle meshes." << std::endl;
+                exit(-1);
             }
 
             // Gather triangle global indices
@@ -127,6 +128,7 @@ void stark::write_VTK(const std::string& path, const std::vector<Eigen::Vector3d
 	}
 	else {
 		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.points.castInplace<float>();
 		vtk_file.set_cells_from_twice_indexable(tets, vtkio::CellType::Tetra);
 		vtk_file.write(path);
 	}
@@ -140,11 +142,13 @@ void stark::write_VTK(const std::string& path, const std::vector<Eigen::Vector3d
 	}
 	else {
 		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.points.castInplace<float>();
 		vtk_file.set_cells_from_twice_indexable(triangles, vtkio::CellType::Triangle);
 		if (generate_normals) {
 			std::vector<Eigen::Vector3d> normals;
 			compute_node_normals(normals, vertices, triangles);
 			vtk_file.set_point_data_from_twice_indexable("normals", normals, vtkio::AttributeType::Vectors);
+			vtk_file.point_data["normals"].buffer.castInplace<float>();
 		}
 		vtk_file.write(path);
 	}
@@ -158,6 +162,7 @@ void stark::write_VTK(const std::string& path, const std::vector<Eigen::Vector3d
 	}
 	else {
 		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.points.castInplace<float>();
 		vtk_file.set_cells_from_twice_indexable(edges, vtkio::CellType::Line);
 		vtk_file.write(path);
 	}
@@ -171,6 +176,7 @@ void stark::write_VTK(const std::string& path, const std::vector<Eigen::Vector3d
 	}
 	else {
 		vtk_file.set_points_from_twice_indexable(vertices);
+		vtk_file.points.castInplace<float>();
 		vtk_file.set_cells_as_particles(vertices.size());
 		vtk_file.write(path);
 	}
@@ -227,7 +233,6 @@ void stark::find_internal_angles(std::vector<std::array<int, 4>>& internal_angle
 	std::vector<std::array<int, 2>> edges;
 	find_edges_from_simplices(edges, triangles, n_nodes);
 
-	bool issue_warning = false;
 	std::vector<int> buffer;
 	internal_angles.reserve(edges.size());
 	for (int edge_i = 0; edge_i < (int)edges.size(); edge_i++) {
@@ -240,11 +245,9 @@ void stark::find_internal_angles(std::vector<std::array<int, 4>>& internal_angle
 			internal_angles.push_back({ edge[0], edge[1], buffer[0], buffer[1] });
 		}
 		else if (buffer.size() > 2) {
-			issue_warning = true;
+			std::cout << "Stark error: triangle mesh has edges with more than two incident triangles." << std::endl;
+			exit(-1);
 		}
-	}
-	if (issue_warning) {
-		std::cout << "Stark warning: triangle mesh has edges with more than two incident triangles." << std::endl;
 	}
 }
 void stark::find_perimeter_edges(std::vector<std::array<int, 2>>& out_perimeter_edges, std::vector<int>& out_edge_to_triangle_node_map, const std::vector<std::array<int, 3>>& triangles, const int n_nodes)
@@ -456,6 +459,42 @@ void stark::compute_node_normals(std::vector<Eigen::Vector3d>& output, const std
 	}
 }
 
+
+void stark::center(std::vector<Eigen::Vector3d>& points)
+{
+	if (points.size() == 0) {
+		return;
+	}
+	Eigen::Vector3d center = Eigen::Vector3d::Zero();
+	for (const Eigen::Vector3d& point : points) {
+		center += point;
+	}
+	center /= (double)points.size();
+	for (Eigen::Vector3d& point : points) {
+		point -= center;
+	}
+}
+
+void stark::normalize(std::vector<Eigen::Vector3d>& points, const double length)
+{
+	if (points.size() == 0) {
+		return;
+	}
+
+	Eigen::AlignedBox3d bbox;
+	for (const Eigen::Vector3d& point : points) {
+		bbox.extend(point);
+	}
+	const double max_length = bbox.diagonal().maxCoeff();
+	if (max_length == 0.0) {
+		std::cout << "Stark error: normalize: max_length is zero." << std::endl;
+		exit(-1);
+	}
+	const double scale = length / max_length;
+	for (Eigen::Vector3d& point : points) {
+		point *= scale;
+	}
+}
 
 void stark::move(std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& translation)
 {

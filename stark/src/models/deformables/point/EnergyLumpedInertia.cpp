@@ -1,60 +1,50 @@
 #include "EnergyLumpedInertia.h"
 
+#include "../../time_integration.h"
 #include "../../../utils/include.h"
+
+using namespace symx;
 
 stark::EnergyLumpedInertia::EnergyLumpedInertia(stark::core::Stark& stark, const spPointDynamics dyn)
 	: dyn(dyn)
 {
 	// Energy definition
-	stark.global_energy.add_energy("EnergyLumpedInertia", this->conn,
-		[&](symx::Energy& energy, symx::Element& node)
+	stark.global_potential->add_potential("EnergyLumpedInertia", this->conn,
+		[&](MappedWorkspace<double>& mws, Element& node)
 		{
-			PointDynamics& dyn = *(this->dyn);
-
 			//// Create symbols
-			symx::Vector v1 = energy.make_dof_vector(dyn.dof, dyn.v1.data, node["glob"]);
-			symx::Vector x0 = energy.make_vector(dyn.x0.data, node["glob"]);
-			symx::Vector v0 = energy.make_vector(dyn.v0.data, node["glob"]);
-			symx::Vector a = energy.make_vector(dyn.a.data, node["glob"]);
-			symx::Vector f = energy.make_vector(dyn.f.data, node["glob"]);
-			symx::Scalar volume = energy.make_scalar(this->lumped_volume, node["idx"]);
-			symx::Scalar density = energy.make_scalar(this->density, node["group"]);
-			symx::Scalar damping = energy.make_scalar(this->damping, node["group"]);
-			symx::Scalar dt = energy.make_scalar(stark.dt);
-			symx::Vector gravity = energy.make_vector(stark.gravity);
+			Vector v1 = mws.make_vector(this->dyn->v1.data, node["glob"]);
+			Vector x0 = mws.make_vector(this->dyn->x0.data, node["glob"]);
+			Vector v0 = mws.make_vector(this->dyn->v0.data, node["glob"]);
+			Vector a = mws.make_vector(this->dyn->a.data, node["glob"]);
+			Vector f = mws.make_vector(this->dyn->f.data, node["glob"]);
+			Scalar volume = mws.make_scalar(this->lumped_volume, node["idx"]);
+			Scalar density = mws.make_scalar(this->density, node["group"]);
+			Scalar damping = mws.make_scalar(this->damping, node["group"]);
+			Scalar is_quasistatic = mws.make_scalar(this->is_quasistatic, node["group"]);
+			Scalar dt = mws.make_scalar(stark.dt);
+			Vector gravity = mws.make_vector(stark.gravity);
 
-			//// Set energy expression
-			symx::Scalar mass = volume * density;
-			symx::Vector x1 = x0 + dt * v1;
-			symx::Vector xhat = x0 + dt * v0 + dt * dt * (a + gravity + f/mass);
-			symx::Vector dev = x1 - xhat;
-			symx::Vector dev2 = x1 - x0;
-			symx::Scalar E = 0.5 * mass * (dev.dot(dev) / (dt.powN(2)) + dev2.dot(dev2) * damping / dt);
-			energy.set(E);
-		}
-	);
+			//// Energy expression
+			// Inertia and external forces
+			//
+			// E_inertia = 0.5*m*( ||x1 - x0 - dt*v0||^2 / dt^2  +  ||x1 - x0||^2 * d / dt )
+			// E_ext     = -( m*(a + g) + f ).T * x1
 
-	// Inverse mass for acceleration residual
-	stark.callbacks.add_inv_mass_application(this->dyn->dof, 
-		[&](double* begin, double* end)
-		{
-			const int n = (int)std::distance(begin, end);
-			if (n != 3 * this->dyn->size()) {
-				std::cout << "Stark error: EnergyLumpedInertia::inv_mass_application() found `begin` and `end` with different size than the set nodes." << std::endl;
-				exit(-1);
-			}
+			Scalar mass = volume * density;
+			Vector x1 = time_integration(x0, v1, dt);
 
-			// Apply inverse mass
-			for (const std::array<int, 3>&conn : this->conn.data) {
-				const int idx = conn[0];
-				const int glob = conn[1];
-				const int obj = conn[2];
-				const double mass = this->density[obj] * this->lumped_volume[idx];
-				const double mass_inv = 1.0 / mass;
-				begin[3 * glob + 0] *= mass_inv;
-				begin[3 * glob + 1] *= mass_inv;
-				begin[3 * glob + 2] *= mass_inv;
-			}
+			// Inertial energy (zero for quasistatic)
+			Vector xhat = x0 + dt * v0;  // free-flight prediction (no external forces)
+			Vector dev = x1 - xhat;
+			Vector dev2 = x1 - x0;
+			Scalar E_inertia = 0.5 * mass * (dev.dot(dev) / (dt.powN(2)) + dev2.dot(dev2) * damping / dt);
+
+			// External force potential (always applied, including quasistatic)
+			Vector f_ext = mass * (a + gravity) + f;  // total external force
+			Scalar E_ext = -f_ext.dot(x1);
+
+			return E_ext + branch(is_quasistatic > 0.5, 0.0, E_inertia);
 		}
 	);
 }
@@ -65,6 +55,12 @@ stark::EnergyLumpedInertia::Handler stark::EnergyLumpedInertia::add(const PointS
 	const int group = (int)this->density.size();
 	this->density.push_back(params.density);
 	this->damping.push_back(params.damping);
+	if (params.quasistatic) {
+		this->is_quasistatic.push_back(1.0);
+	}
+	else {
+		this->is_quasistatic.push_back(0.0);
+	}
 
 	for (int i = 0; i < (int)points.size(); i++) {
 		this->lumped_volume.push_back(lumped_volume[i]);
@@ -183,6 +179,7 @@ void stark::EnergyLumpedInertia::set_params(const Handler& handler, const Params
 	const int group = handler.get_idx();
 	this->density[group] = params.density;
 	this->damping[group] = params.damping;
+	this->is_quasistatic[group] = (double)params.quasistatic;
 }
 
 double stark::EnergyLumpedInertia::get_mass(const Handler& handler) const
