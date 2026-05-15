@@ -22,6 +22,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wno-ignored-attributes)
 endif()
 
+option(STARK_BUILD_EXAMPLES "Build STARK examples" ON)
 option(STARK_BUILD_TESTS "Build STARK tests" OFF)
 option(STARK_BUILD_PYTHON_BINDINGS "Build STARK Python bindings" OFF)
 
@@ -29,7 +30,10 @@ option(STARK_BUILD_PYTHON_BINDINGS "Build STARK Python bindings" OFF)
 set(STARK_PYTHON_EXECUTABLE "NOT_SET" CACHE FILEPATH "Python executable used to build pystark")
 
 add_subdirectory(stark)
-add_subdirectory(examples)
+
+if(STARK_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
 
 if(STARK_BUILD_TESTS)
     add_subdirectory(tests)
