@@ -5,7 +5,7 @@
 pip install
 Update binaries in sciebo
 
-main should not run one sime and exit
+main should not run one sim and exit
 
 check literature using symx or stark
 
