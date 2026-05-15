@@ -3,10 +3,4 @@
 *.pyd
 *.so
 build/
-output/
-codegen/
-profile/
-REFERENCE\ IMPLEMENTATION/
-symx_docs
-codegen_folder
-output_folder
+dist/

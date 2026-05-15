@@ -27,7 +27,7 @@ option(STARK_BUILD_TESTS "Build STARK tests" OFF)
 option(STARK_BUILD_PYTHON_BINDINGS "Build STARK Python bindings" OFF)
 
 # STARK-specific Python override.
-set(STARK_PYTHON_EXECUTABLE "NOT_SET" CACHE FILEPATH "Python executable used to build pystark")
+set(STARK_PYTHON_EXECUTABLE "" CACHE FILEPATH "Python executable used to build pystark")
 
 add_subdirectory(stark)
 

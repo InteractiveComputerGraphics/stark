@@ -5,7 +5,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
 endif()
 
-set(TMCD_ENABLE_AVX ON CACHE BOOL "Flag to enable AVX for TriangleMeshCollisionDetection")
+set(TMCD_ENABLE_AVX2 ON CACHE BOOL "Flag to enable AVX for TriangleMeshCollisionDetection")
 
 # Enable SIMD and suppress compiler warnings
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -57,8 +57,8 @@ set(SOURCE_FILES
 
 add_library(TriangleMeshCollisionDetection ${SOURCE_FILES})
 
-if(${TMCD_ENABLE_AVX})
-	target_compile_definitions(TriangleMeshCollisionDetection PUBLIC TMCD_ENABLE_AVX)
+if(${TMCD_ENABLE_AVX2})
+	target_compile_definitions(TriangleMeshCollisionDetection PUBLIC TMCD_ENABLE_AVX2)
 endif()
 
 # External dependencies

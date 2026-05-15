@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-#ifdef TMCD_ENABLE_AVX
+#ifdef TMCD_ENABLE_AVX2
 #include <immintrin.h>
 #include "alignment_allocator.h"
 #endif
@@ -85,7 +85,7 @@ namespace tmcd
 
 		struct ThreadBuffer
 		{
-#ifdef TMCD_ENABLE_AVX
+#ifdef TMCD_ENABLE_AVX2
 			struct LeafSIMDBuffer
 			{
 				struct AABBList

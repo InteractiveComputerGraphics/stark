@@ -723,7 +723,7 @@ void magnetic_deformables_implicit()
 
 int main()
 {
-	magnetic_deformables_implicit();
+	hanging_net();
 	return 0;
 
 	/*

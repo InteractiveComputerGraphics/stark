@@ -6,12 +6,12 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Option to disable AVX for ARM-based devices
-set(STARK_ENABLE_AVX ON CACHE BOOL "Flag to enable AVX for Stark and its dependencies")
+set(STARK_ENABLE_AVX2 ON CACHE BOOL "Flag to enable AVX for Stark and its dependencies")
 
 # If AVX is disabled for stark, disable it for all dependencies that use AVX
-if(NOT ${STARK_ENABLE_AVX})
+if(NOT ${STARK_ENABLE_AVX2})
 	set(SYMX_ENABLE_AVX OFF CACHE BOOL "Flag to enable AVX for symx" FORCE)
-	set(TMCD_ENABLE_AVX OFF CACHE BOOL "Flag to enable AVX for tmcd" FORCE)
+	set(TMCD_ENABLE_AVX2 OFF CACHE BOOL "Flag to enable AVX for tmcd" FORCE)
 endif()
 
 

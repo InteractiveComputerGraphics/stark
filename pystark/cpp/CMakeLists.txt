@@ -103,7 +103,30 @@ target_include_directories(pystark PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../../stark/include"
 )
 
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${PYSTARK_FILES})
+# Local development convenience:
+# build/pystark target writes the extension into pystark/pystark/
+# so `PYTHONPATH=/path/to/stark/pystark python -c "import pystark"` works.
+set_target_properties(pystark PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../pystark"
+)
 
+# Packaging:
+# scikit-build-core builds the wheel from the CMake install tree, not from
+# LIBRARY_OUTPUT_DIRECTORY. Therefore the extension and pure Python files must
+# be installed explicitly into the Python package directory.
+install(TARGETS pystark
+    LIBRARY DESTINATION pystark
+    RUNTIME DESTINATION pystark
+    ARCHIVE DESTINATION pystark
+)
+
+install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/../pystark/__init__.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../pystark/serialize.py"
+    DESTINATION pystark
+)
+
+# Misc
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${PYSTARK_FILES})
 message(STATUS "STARK: pystark uses Python executable: ${Python_EXECUTABLE}")
 message(STATUS "STARK: pystark uses nanobind tag:     ${STARK_NANOBIND_GIT_TAG}")
