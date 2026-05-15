@@ -1,8 +1,10 @@
 # symx port TODO
 
 ## Post Eurographics
+Is SymX up to date?
 
 pip install
+    AVX2 disabled for everybody?
 Update binaries in sciebo
 
 main should not run one sim and exit

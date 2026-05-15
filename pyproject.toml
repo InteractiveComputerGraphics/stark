@@ -1,0 +1,80 @@
+[build-system]
+requires = [
+    "scikit-build-core>=0.10",
+    "cmake>=3.18",
+    "ninja",
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "stark-sim"
+version = "0.1.0"
+description = "STARK simulation framework Python bindings"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "José Antonio Fernández-Fernández" }
+]
+keywords = ["simulation", "physics", "graphics", "optimization", "fem"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: C++",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+]
+dependencies = [
+    "numpy",
+]
+
+[project.urls]
+Homepage = "https://github.com/InteractiveComputerGraphics/stark"
+Documentation = "https://stark.physics-simulation.org/"
+Source = "https://github.com/InteractiveComputerGraphics/stark"
+
+[tool.scikit-build]
+# The Python package lives at pystark/pystark, while the PyPI distribution
+# is named stark-sim. The final path component is the installed package name.
+wheel.packages = ["pystark/pystark"]
+wheel.license-files = ["LICENSE"]
+
+cmake.version = ">=3.18"
+cmake.build-type = "Release"
+cmake.args = [
+    "-DSTARK_BUILD_PYTHON_BINDINGS=ON",
+    "-DSTARK_BUILD_TESTS=OFF",
+    "-DSTARK_BUILD_EXAMPLES=OFF",
+]
+
+# Build only the Python module target and install only the pystark component.
+# This requires the CMake install rules in patches/cmake_packaging.patch.
+cmake.targets = ["pystark"]
+install.components = ["pystark"]
+
+[tool.cibuildwheel]
+build = "cp310-* cp311-* cp312-*"
+skip = "pp* *-musllinux_*"
+build-verbosity = 1
+
+test-command = "python -c \"import pystark; print('pystark import OK:', pystark.__file__)\""
+
+[tool.cibuildwheel.linux]
+archs = ["x86_64"]
+# manylinux_2_28 has a modern compiler suitable for C++20-heavy projects.
+manylinux-x86_64-image = "manylinux_2_28"
+
+[tool.cibuildwheel.windows]
+archs = ["AMD64"]
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "arm64"]
+
+# STARK/SymX macOS note:
+# On macOS, especially Apple Silicon, keep AVX2 disabled. These variables are
+# passed to CMake by scikit-build-core/cibuildwheel.
+environment = { SYMX_ENABLE_AVX2 = "OFF", STARK_ENABLE_AVX2 = "OFF" }
