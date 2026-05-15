@@ -1,4 +1,4 @@
-name: Build wheels
+name: Build linux wheels
 
 on:
   push:
@@ -19,8 +19,10 @@ jobs:
       - name: Build wheel
         uses: pypa/cibuildwheel@v2.22.0
         env:
-          CIBW_BUILD: cp312-manylinux_x86_64
-          CIBW_TEST_COMMAND: python -c "import pystark; print('pystark import OK'); print(pystark.Settings())"
+            CIBW_BUILD: cp312-manylinux_x86_64
+            CIBW_TEST_COMMAND: >
+                python -c "import numpy, pystark; print('numpy', numpy.__version__); print('pystark import OK'); print(pystark.Settings())"
+                && python -m pip check
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4

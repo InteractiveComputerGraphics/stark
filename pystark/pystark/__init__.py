@@ -5,6 +5,7 @@ import numpy as np
 # Import all
 from .pystark import *
 from .serialize import *
+from .test_sim import *
 
 ZERO = np.array([0.0, 0.0, 0.0])
 ONES = np.array([1.0, 1.0, 1.0])

@@ -1,0 +1,75 @@
+name: Build all wheels
+
+on:
+  push:
+    branches:
+      - prerelease/**
+  workflow_dispatch:
+
+jobs:
+  build_wheels:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x86_64
+            os: ubuntu-latest
+            artifact: wheels-linux-x86_64
+            cibw_build: "cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64"
+            cibw_archs_macos: ""
+            cmake_args: ""
+
+          - name: Windows x64
+            os: windows-latest
+            artifact: wheels-windows-x64
+            cibw_build: "cp310-win_amd64 cp311-win_amd64 cp312-win_amd64"
+            cibw_archs_macos: ""
+            cmake_args: ""
+
+          - name: macOS Intel x86_64
+            os: macos-15-intel
+            artifact: wheels-macos-x86_64
+            cibw_build: "cp310-macosx_* cp311-macosx_* cp312-macosx_*"
+            cibw_archs_macos: "x86_64"
+            cmake_args: "-DSYMX_ENABLE_AVX2=OFF -DSTARK_ENABLE_AVX=OFF -DSTARK_ENABLE_AVX2=OFF"
+
+          - name: macOS arm64
+            os: macos-15
+            artifact: wheels-macos-arm64
+            cibw_build: "cp310-macosx_* cp311-macosx_* cp312-macosx_*"
+            cibw_archs_macos: "arm64"
+            cmake_args: "-DSYMX_ENABLE_AVX2=OFF -DSTARK_ENABLE_AVX=OFF -DSTARK_ENABLE_AVX2=OFF"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.22.0
+        env:
+          CIBW_BUILD: ${{ matrix.cibw_build }}
+          CIBW_BUILD_VERBOSITY: 1
+
+          # macOS-only; harmlessly empty on Linux/Windows.
+          CIBW_ARCHS_MACOS: ${{ matrix.cibw_archs_macos }}
+
+          # Platform-specific CMake options.
+          CMAKE_ARGS: ${{ matrix.cmake_args }}
+
+          # Keep this light. We test import + native extension load,
+          # but we avoid constructing Settings() here.
+          CIBW_TEST_COMMAND: >
+            python -c "import importlib, pystark; importlib.import_module('pystark.pystark'); print('pystark import OK')"
+            && python -m pip check
+
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: wheelhouse/*.whl
+          

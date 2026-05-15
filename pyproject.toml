@@ -16,7 +16,7 @@ authors = [
 ]
 
 dependencies = [
-    "numpy"
+    "numpy>=1.26,<2.3"
 ]
 
 classifiers = [
@@ -63,6 +63,7 @@ targets = ["pystark"]
 STARK_BUILD_PYTHON_BINDINGS = "ON"
 STARK_BUILD_EXAMPLES = "OFF"
 STARK_BUILD_TESTS = "OFF"
+SYMX_CODEGEN_DIR = "codegen"
 
 STARK_ENABLE_AVX2 = "OFF"
 TMCD_ENABLE_AVX2 = "OFF"
