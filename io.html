@@ -1,0 +1,800 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Simulation Loop" href="simulation_loop.html"><link rel="prev" title="Settings" href="settings.html">
+        <link rel="prefetch" href="_static/stark250.png" as="image">
+
+    <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
+        <title>Input / Output - STARK docs</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=51155216" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #ffffff;
+  --color-code-foreground: #24292f;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #1e1e1e;
+  --color-code-foreground: #b59b7d;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #1e1e1e;
+  --color-code-foreground: #b59b7d;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">STARK docs</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/stark250.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">STARK docs</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello World</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Input / Output</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation_loop.html">Simulation Loop</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Physics Models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="problem_representation.html">Problem Representation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="presets.html">Presets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deformables.html">Deformables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rigidbodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rb_constraints.html">Rigid Body Constraints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Frictional Contact</a></li>
+<li class="toctree-l1"><a class="reference internal" href="attachments.html">Attachments</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extending.html">Extending STARK</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/io.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section class="tex2jax_ignore mathjax_ignore" id="input-output">
+<h1>Input / Output<a class="headerlink" href="#input-output" title="Link to this heading">¶</a></h1>
+<p>STARK keeps input and output simple: meshes are ordinary C++ containers, frames are written as VTK files, and solver diagnostics are printed both to the console and to yaml log files. This makes it easy to combine STARK with external mesh generation and pre/post processing tools.
+VTK Files can directly be inspected on ParaView and Blender and logs are easily parsed by Python scripts.</p>
+<p>A typical simulation produces three kinds of output:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Output</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Typical file</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>VTK frames</p></td>
+<td><p>Geometry data</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">my_sim_object_42.vtk</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Text log</p></td>
+<td><p>Human-readable copy of console/file output</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">my_sim__2026-05-13__15-24-16.log</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>YAML log</p></td>
+<td><p>Machine-readable solver statistics and timings</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">my_sim__2026-05-13__15-24-16.yaml</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The output directory, simulation name, frame rate, and verbosity are configured through <code class="docutils literal notranslate"><span class="pre">stark::Settings</span></code>.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="nc">stark</span><span class="o">::</span><span class="nc">Settings</span><span class="w"> </span><span class="n">settings</span><span class="p">;</span>
+<span class="n">settings</span><span class="p">.</span><span class="n">output</span><span class="p">.</span><span class="n">simulation_name</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_sim&quot;</span><span class="p">;</span>
+<span class="n">settings</span><span class="p">.</span><span class="n">output</span><span class="p">.</span><span class="n">output_directory</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build/output/my_sim&quot;</span><span class="p">;</span>
+<span class="n">settings</span><span class="p">.</span><span class="n">output</span><span class="p">.</span><span class="n">codegen_directory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build/codegen&quot;</span><span class="p">;</span>
+<span class="n">settings</span><span class="p">.</span><span class="n">output</span><span class="p">.</span><span class="n">fps</span><span class="w">               </span><span class="o">=</span><span class="w"> </span><span class="mi">30</span><span class="p">;</span>
+<span class="n">settings</span><span class="p">.</span><span class="n">output</span><span class="p">.</span><span class="n">console_verbosity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">symx</span><span class="o">::</span><span class="n">Verbosity</span><span class="o">::</span><span class="n">Summary</span><span class="p">;</span>
+<span class="n">settings</span><span class="p">.</span><span class="n">output</span><span class="p">.</span><span class="n">file_verbosity</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="nc">symx</span><span class="o">::</span><span class="n">Verbosity</span><span class="o">::</span><span class="n">Full</span><span class="p">;</span>
+
+<span class="nc">stark</span><span class="o">::</span><span class="n">Simulation</span><span class="w"> </span><span class="nf">simulation</span><span class="p">(</span><span class="n">settings</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">simulation_name</span></code>, <code class="docutils literal notranslate"><span class="pre">output_directory</span></code>, and <code class="docutils literal notranslate"><span class="pre">codegen_directory</span></code> must be set. STARK creates the directories automatically. The code-generation directory is used by SymX to cache generated/compiled kernels; it is not where frame files are written.</p>
+<section id="mesh-input">
+<h2>Mesh input<a class="headerlink" href="#mesh-input" title="Link to this heading">¶</a></h2>
+<p>STARK does not require a special mesh class at the API boundary. Most geometry is represented as</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="nc">Eigen</span><span class="o">::</span><span class="nc">Vector3d</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vertices</span><span class="p">;</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">connectivity</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">=</span> <span class="pre">1</span></code> for points, <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">=</span> <span class="pre">2</span></code> for segments, <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">=</span> <span class="pre">3</span></code> for triangles, and <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">=</span> <span class="pre">4</span></code> for tetrahedra. This means you can bring meshes from your own meshing code, external tools, procedural generators, or the helper functions bundled with STARK.</p>
+<section id="loading-vtk-meshes">
+<h3>Loading VTK meshes<a class="headerlink" href="#loading-vtk-meshes" title="Link to this heading">¶</a></h3>
+<p>STARK bundles <code class="docutils literal notranslate"><span class="pre">vtkio</span></code>, which can read a VTK file into the usual vertex/connectivity containers.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vtkio&gt;</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="nc">Eigen</span><span class="o">::</span><span class="nc">Vector3d</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vertices</span><span class="p">;</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">tets</span><span class="p">;</span>
+
+<span class="n">vtkio</span><span class="o">::</span><span class="n">VTKFile</span><span class="w"> </span><span class="n">vtk_file</span><span class="p">;</span>
+<span class="n">vtk_file</span><span class="p">.</span><span class="nf">read</span><span class="p">(</span><span class="s">&quot;bunny.vtk&quot;</span><span class="p">);</span>
+<span class="n">vtk_file</span><span class="p">.</span><span class="nf">get_points_to_twice_indexable</span><span class="p">(</span><span class="n">vertices</span><span class="p">);</span>
+<span class="n">vtk_file</span><span class="p">.</span><span class="nf">get_cells_to_twice_indexable</span><span class="p">(</span><span class="n">tets</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>For the common case, STARK also provides <code class="docutils literal notranslate"><span class="pre">load_vtk</span></code> wrappers:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="nc">stark</span><span class="o">::</span><span class="n">Mesh</span><span class="o">&lt;</span><span class="mi">4</span><span class="o">&gt;</span><span class="w"> </span><span class="n">tet_mesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="n">load_vtk</span><span class="o">&lt;</span><span class="mi">4</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;bunny.vtk&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="loading-obj-triangle-meshes">
+<h3>Loading OBJ triangle meshes<a class="headerlink" href="#loading-obj-triangle-meshes" title="Link to this heading">¶</a></h3>
+<p>Triangle OBJ meshes can be loaded with:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="nc">stark</span><span class="o">::</span><span class="n">Mesh</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">meshes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="nf">load_obj</span><span class="p">(</span><span class="s">&quot;model.obj&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The OBJ loader expects triangular faces. If the file contains multiple OBJ shapes, the return value contains one <code class="docutils literal notranslate"><span class="pre">stark::Mesh&lt;3&gt;</span></code> per shape.</p>
+</section>
+<section id="procedural-mesh-generators">
+<h3>Procedural mesh generators<a class="headerlink" href="#procedural-mesh-generators" title="Link to this heading">¶</a></h3>
+<p>For examples, tests, and simple scenes, STARK provides a few built-in mesh generators:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">sphere</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="nf">make_sphere</span><span class="p">(</span><span class="mf">0.5</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">box</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="nf">make_box</span><span class="p">({</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.2</span><span class="p">});</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">cyl</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="nf">make_cylinder</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">torus</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="nf">make_torus</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">cloth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="nf">generate_triangle_grid</span><span class="p">(</span>
+<span class="w">    </span><span class="nc">Eigen</span><span class="o">::</span><span class="nc">Vector2d</span><span class="p">{</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">},</span><span class="w">   </span><span class="c1">// center</span>
+<span class="w">    </span><span class="nc">Eigen</span><span class="o">::</span><span class="nc">Vector2d</span><span class="p">{</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">},</span><span class="w">   </span><span class="c1">// dimensions</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="o">&gt;</span><span class="p">{</span><span class="mi">32</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">},</span><span class="w">  </span><span class="c1">// quads per dimension</span>
+<span class="w">    </span><span class="mf">0.0</span><span class="w">                          </span><span class="c1">// z coordinate</span>
+<span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">block</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="nf">generate_tet_grid</span><span class="p">(</span>
+<span class="w">    </span><span class="nc">Eigen</span><span class="o">::</span><span class="nc">Vector3d</span><span class="p">{</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">},</span>
+<span class="w">    </span><span class="nc">Eigen</span><span class="o">::</span><span class="nc">Vector3d</span><span class="p">{</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">},</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="p">{</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">}</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="presets-and-handles">
+<h3>Presets and Handles<a class="headerlink" href="#presets-and-handles" title="Link to this heading">¶</a></h3>
+<p>The highest-level option is presets, which generate geometry, register physics, and return mesh data and handles.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="nc">stark</span><span class="o">::</span><span class="nc">Volume</span><span class="o">::</span><span class="nc">Params</span><span class="w"> </span><span class="n">material</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="nc">Volume</span><span class="o">::</span><span class="nc">Params</span><span class="o">::</span><span class="nf">Soft_Rubber</span><span class="p">();</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="p">[</span><span class="n">V</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">H</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">simulation</span><span class="p">.</span><span class="n">presets</span><span class="o">-&gt;</span><span class="n">deformables</span><span class="o">-&gt;</span><span class="nf">add_volume_grid</span><span class="p">(</span>
+<span class="w">    </span><span class="s">&quot;block&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nc">Eigen</span><span class="o">::</span><span class="nc">Vector3d</span><span class="p">{</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">},</span><span class="w">  </span><span class="c1">// size</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="p">{</span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">},</span><span class="w">     </span><span class="c1">// subdivisions</span>
+<span class="w">    </span><span class="n">material</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p>As a preset, <code class="docutils literal notranslate"><span class="pre">add_volume_grid</span></code> returns the mesh data and a set of handles associated with the standard elastic volume model:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">std::vector&lt;Eigen::Vector3d&gt;</span></code> containing the mesh vertices</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">std::vector&lt;std::array&lt;int,</span> <span class="pre">4&gt;&gt;</span></code> containing the tetrahedral connectivity</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stark::Volume::Handler</span></code>: handle to the volume object which in turn contains</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">stark::PointSetHandler</span></code>: handle to the vertex representation of the object</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stark::EnergyLumpedInertia::Handler</span></code>: handle to the inertia term</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stark::EnergyTetStrain::Handler</span></code>: handle to the strain energy term</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stark::ContactHandler</span></code>: handle to the contact representation</p></li>
+</ul>
+</li>
+</ul>
+<p>Handlers provide convenient interfaces to modify object definitions. For instance, you can move all the vertices of the “block” object by</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">H</span><span class="o">.</span><span class="n">point_set</span><span class="o">.</span><span class="n">add_displacement</span><span class="p">({</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">});</span>
+</pre></div>
+</div>
+<p>More on modelling with STARK in the upcoming “Physical Models” chapter.</p>
+</section>
+</section>
+<section id="writing-vtk-files">
+<h2>Writing VTK files<a class="headerlink" href="#writing-vtk-files" title="Link to this heading">¶</a></h2>
+<p>STARK writes frame geometry in VTK format.
+It will write meshes automatically every frame as you would expect.
+Further, the built in helpers if you want to write your own geometry:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="nc">stark</span><span class="o">::</span><span class="nf">write_VTK</span><span class="p">(</span><span class="s">&quot;points.vtk&quot;</span><span class="p">,</span><span class="w">   </span><span class="n">vertices</span><span class="p">,</span><span class="w"> </span><span class="n">points</span><span class="p">);</span>
+<span class="nc">stark</span><span class="o">::</span><span class="nf">write_VTK</span><span class="p">(</span><span class="s">&quot;edges.vtk&quot;</span><span class="p">,</span><span class="w">    </span><span class="n">vertices</span><span class="p">,</span><span class="w"> </span><span class="n">edges</span><span class="p">);</span>
+<span class="nc">stark</span><span class="o">::</span><span class="nf">write_VTK</span><span class="p">(</span><span class="s">&quot;surface.vtk&quot;</span><span class="p">,</span><span class="w">  </span><span class="n">vertices</span><span class="p">,</span><span class="w"> </span><span class="n">triangles</span><span class="p">);</span>
+<span class="nc">stark</span><span class="o">::</span><span class="nf">write_VTK</span><span class="p">(</span><span class="s">&quot;volume.vtk&quot;</span><span class="p">,</span><span class="w">   </span><span class="n">vertices</span><span class="p">,</span><span class="w"> </span><span class="n">tets</span><span class="p">);</span>
+
+<span class="c1">// Triangle meshes can optionally include generated vertex normals.</span>
+<span class="nc">stark</span><span class="o">::</span><span class="nf">write_VTK</span><span class="p">(</span><span class="s">&quot;surface_with_normals.vtk&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">vertices</span><span class="p">,</span><span class="w"> </span><span class="n">triangles</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Or use <code class="docutils literal notranslate"><span class="pre">vtkio</span></code> directly:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">vtkio</span><span class="o">::</span><span class="n">VTKFile</span><span class="w"> </span><span class="n">vtk_file</span><span class="p">;</span>
+<span class="n">vtk_file</span><span class="p">.</span><span class="nf">set_points_from_twice_indexable</span><span class="p">(</span><span class="n">vertices</span><span class="p">);</span>
+<span class="n">vtk_file</span><span class="p">.</span><span class="nf">set_cells_from_twice_indexable</span><span class="p">(</span><span class="n">tets</span><span class="p">,</span><span class="w"> </span><span class="n">vtkio</span><span class="o">::</span><span class="n">CellType</span><span class="o">::</span><span class="n">Tetra</span><span class="p">);</span>
+<span class="n">vtk_file</span><span class="p">.</span><span class="nf">write</span><span class="p">(</span><span class="s">&quot;frame_0000.vtk&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="registering-simulation-output">
+<h2>Registering simulation output<a class="headerlink" href="#registering-simulation-output" title="Link to this heading">¶</a></h2>
+<p>Most STARK systems expose output helpers that register geometry to be written every frame. For deformables, typical calls look like this:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="p">.</span><span class="n">deformables</span><span class="o">-&gt;</span><span class="n">output</span><span class="o">-&gt;</span><span class="nf">add_tet_mesh</span><span class="p">(</span><span class="s">&quot;tets&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">nodeset</span><span class="p">,</span><span class="w"> </span><span class="n">tets</span><span class="p">);</span>
+<span class="n">simulation</span><span class="p">.</span><span class="n">deformables</span><span class="o">-&gt;</span><span class="n">output</span><span class="o">-&gt;</span><span class="nf">add_triangle_mesh</span><span class="p">(</span><span class="s">&quot;surface&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">nodeset</span><span class="p">,</span><span class="w"> </span><span class="n">triangles</span><span class="p">,</span><span class="w"> </span><span class="n">tri_tet_map</span><span class="p">);</span>
+<span class="n">simulation</span><span class="p">.</span><span class="n">deformables</span><span class="o">-&gt;</span><span class="n">output</span><span class="o">-&gt;</span><span class="nf">add_segment_mesh</span><span class="p">(</span><span class="s">&quot;edges&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">nodeset</span><span class="p">,</span><span class="w"> </span><span class="n">edges</span><span class="p">,</span><span class="w"> </span><span class="n">edge_tet_map</span><span class="p">);</span>
+<span class="n">simulation</span><span class="p">.</span><span class="n">deformables</span><span class="o">-&gt;</span><span class="n">output</span><span class="o">-&gt;</span><span class="nf">add_point_set</span><span class="p">(</span><span class="s">&quot;points&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">nodeset</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The name passed to the output helper becomes part of the filename. Internally, frame paths are generated as</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;output_directory&gt;/&lt;simulation_name&gt;_&lt;name&gt;_&lt;frame&gt;.vtk
+</pre></div>
+</div>
+<p>Frame writing is controlled by:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Setting</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">settings.output.enable_frame_writes</span></code></p></td>
+<td><p>Enables/disables frame file output.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">settings.output.fps</span></code></p></td>
+<td><p>Output frame rate. <code class="docutils literal notranslate"><span class="pre">30</span></code> writes 30 frames per simulated second; <code class="docutils literal notranslate"><span class="pre">-1</span></code> writes every time step.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="custom-per-frame-output-callbacks">
+<h3>Custom per-frame output callbacks<a class="headerlink" href="#custom-per-frame-output-callbacks" title="Link to this heading">¶</a></h3>
+<p>The frame writer is callback-based. STARK’s built-in output systems use the same mechanism: register a function that is executed whenever a frame is written.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="nc">stark</span><span class="p">.</span><span class="n">callbacks</span><span class="o">-&gt;</span><span class="nf">add_write_frame</span><span class="p">([</span><span class="o">&amp;</span><span class="p">]()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">stark</span><span class="p">.</span><span class="nf">get_frame_path</span><span class="p">(</span><span class="s">&quot;debug_surface&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;.vtk&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="nf">write_VTK</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="n">debug_vertices</span><span class="p">,</span><span class="w"> </span><span class="n">debug_triangles</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span>
+<span class="p">});</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="visualizing-vtk-output">
+<h2>Visualizing VTK output<a class="headerlink" href="#visualizing-vtk-output" title="Link to this heading">¶</a></h2>
+<section id="blender">
+<h3>Blender<a class="headerlink" href="#blender" title="Link to this heading">¶</a></h3>
+<p>For rendering and animation, VTK sequences can be imported into Blender with the <a class="reference external" href="https://github.com/InteractiveComputerGraphics/blender-sequence-loader">Blender Sequence Loader</a> add-on. The add-on loads mesh sequences just-in-time as the Blender frame changes, which avoids loading the full simulation into memory at once. It supports common geometric data such as points, lines, triangles, quads, and can extract surface meshes from tetrahedral or hexahedral volume meshes.</p>
+<figure class="align-default" id="id1">
+<a class="reference internal image-reference" href="../_static/blender.png"><img alt="STARK VTK output rendered in Blender" src="../_static/blender.png" style="width: 90%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">STARK frame sequence loaded in Blender with Sequence Loader.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+</section>
+<section id="paraview">
+<h3>ParaView<a class="headerlink" href="#paraview" title="Link to this heading">¶</a></h3>
+<p>For scientific inspection, ParaView is the recommended viewer for STARK output. Open one of the generated <code class="docutils literal notranslate"><span class="pre">.vtk</span></code> files, or open the file sequence if the filenames share the same prefix and increasing frame index.</p>
+<figure class="align-default" id="id2">
+<a class="reference internal image-reference" href="../_static/paraview.png"><img alt="STARK VTK output opened in ParaView" src="../_static/paraview.png" style="width: 90%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">STARK frame sequence visualized in ParaView.</span><a class="headerlink" href="#id2" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+</section>
+</section>
+<section id="console-output">
+<h2>Console output<a class="headerlink" href="#console-output" title="Link to this heading">¶</a></h2>
+<p>A normal STARK run prints four main sections: settings, SymX compilation/loading, simulation progress, and final summary.</p>
+<section id="settings-header">
+<h3>Settings header<a class="headerlink" href="#settings-header" title="Link to this heading">¶</a></h3>
+<p>At startup, STARK prints the effective settings used by the run.
+The following is a representative selection:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>================================== Settings ==============================
+Stark Settings
+     Output
+         simulation_name: &quot;spinning_box_cloth&quot;
+         output_directory: &quot;.../build/output/spinning_box_cloth&quot;
+         codegen_directory: &quot;.../build/codegen&quot;
+         fps: 30
+         console_verbosity: Summary
+         file_verbosity: Full
+     Simulation
+         gravity: (0.000000, 0.000000, -9.810000)
+         max_time_step_size: 3.3333e-02
+         use_adaptive_time_step: true
+     Newton&#39;s Method
+         projection_mode: Progressive
+         solver: BDPCG
+     Execution
+         end_frame: 2147483647
+         n_threads: 10
+</pre></div>
+</div>
+</section>
+<section id="symx-section">
+<h3>SymX section<a class="headerlink" href="#symx-section" title="Link to this heading">¶</a></h3>
+<p>The SymX section reports generated symbolic kernels and compilation/cache status.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>==================================== SymX ================================
+Second Order Potentials:
+    EnergyBendingFlat...............................................loaded
+    EnergyLumpedInertia.............................................loaded
+    EnergyTetStrain.................................................loaded
+    contact_d_d_pt_pt_cubic.........................queued for compilation
+    friction_d_d_pt_C0..............................................loaded
+Compiling... done.
+Total time: 0.712316 s
+
+Degrees of freedom:
+soft.v1: 3267
+rigid.v1: 3
+rigid.w1: 3
+Total: 3273
+</pre></div>
+</div>
+</section>
+<section id="simulation-section">
+<h3>Simulation section<a class="headerlink" href="#simulation-section" title="Link to this heading">¶</a></h3>
+<p>The STARK section prints frame markers and one line per solved time step.
+The following corresponds to <code class="docutils literal notranslate"><span class="pre">symx::Verbosity::Summary</span></code>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>==================================== STARK ===============================
+[Frame: 0] Time: 0.000 s
+    0. dt: 33.33 ms | #newton:  3 | ph:  0.0% | #CG/newton:   43 | ls (cap|max|inv|bt):  0| 0| 0| 0| runtime:   12.7 ms | cr:    0.4
+[Frame: 1] Time: 0.067 s
+    1. dt: 33.33 ms | #newton:  8 | ph: 37.9% | #CG/newton:  162 | ls (cap|max|inv|bt):  0| 0| 0| 1| runtime:   80.6 ms | cr:    2.4
+</pre></div>
+</div>
+<p>The main fields are:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dt</span></code></p></td>
+<td><p>Current simulation time step.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">#newton</span></code></p></td>
+<td><p>Newton iterations used for this time step.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ph</span></code></p></td>
+<td><p>Percentage of Hessian blocks projected to positive definite during the solve.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">#CG/newton</span></code></p></td>
+<td><p>Average linear-solver iterations per Newton iteration.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">(cap|max|inv|bt)</span></code></p></td>
+<td><p>Line-search counters: step cap reductions, maximum-step reductions, invalid-state rejections, and Armijo backtracking reductions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">runtime</span></code></p></td>
+<td><p>Wall-clock time for the time-step solve.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cr</span></code></p></td>
+<td><p>Compute ratio: <code class="docutils literal notranslate"><span class="pre">runtime</span> <span class="pre">/</span> <span class="pre">dt</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Contact simulations may also print corrective events, for example:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Penetration couldn&#39;t be avoided. Contact stiffness hardened from 1.0e+05 to 2.0e+05.
+</pre></div>
+</div>
+<p>This indicates that STARK detected a failed contact validity condition and increased the offending contact stiffness before retrying.</p>
+</section>
+</section>
+<section id="yaml-log-structure">
+<h2>YAML log structure<a class="headerlink" href="#yaml-log-structure" title="Link to this heading">¶</a></h2>
+<p>The YAML log is the machine-readable companion to the console output. It is written periodically during the run and once more at the end. Its top-level structure is:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">accumulators</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">time_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">301</span>
+<span class="w">  </span><span class="nt">avg dt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.03333333</span>
+<span class="w">  </span><span class="nt">failed_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.170669</span>
+<span class="w">  </span><span class="nt">newton_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3636</span>
+<span class="w">  </span><span class="nt">cg_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">348569</span>
+<span class="w">  </span><span class="nt">ls_inv</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">563</span>
+<span class="w">  </span><span class="nt">ls_bt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1633</span>
+<span class="w">  </span><span class="nt">projected_hessians_ratio</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">245.7605</span>
+
+<span class="nt">timers</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">linear_system_solve</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">total</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16.078993</span>
+<span class="w">    </span><span class="nt">count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8154</span>
+<span class="w">    </span><span class="nt">avg</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.001972</span>
+<span class="w">    </span><span class="nt">min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.000054</span>
+<span class="w">    </span><span class="nt">max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.011288</span>
+<span class="w">  </span><span class="nt">assembly</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">total</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3.024711</span>
+<span class="w">    </span><span class="nt">count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">11936</span>
+<span class="w">    </span><span class="nt">avg</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.000253</span>
+<span class="w">    </span><span class="nt">min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.000005</span>
+<span class="w">    </span><span class="nt">max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.003527</span>
+
+<span class="nt">statistics</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">dt</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">total</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10.03333</span>
+<span class="w">    </span><span class="nt">avg</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.03333333</span>
+<span class="w">    </span><span class="nt">min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.03333333</span>
+<span class="w">    </span><span class="nt">max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.03333333</span>
+<span class="w">    </span><span class="nt">count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">301</span>
+<span class="w">  </span><span class="nt">newton_iterations</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">total</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3636</span>
+<span class="w">    </span><span class="nt">avg</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">11.882353</span>
+<span class="w">    </span><span class="nt">min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">    </span><span class="nt">max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">49</span>
+<span class="w">    </span><span class="nt">count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">306</span>
+
+<span class="nt">series</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">time</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.03333333</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0.06666667</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0.1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">...</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">frame</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">...</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">dt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.03333333</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0.03333333</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0.03333333</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">...</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">newton_iterations</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">7</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">8</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">...</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+<p>The sections have different purposes:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Section</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">accumulators</span></code></p></td>
+<td><p>Totals or last accumulated values over the full run.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">timers</span></code></p></td>
+<td><p>Runtime measurements for named code regions. Each timer stores total time, call count, average, minimum, and maximum.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">statistics</span></code></p></td>
+<td><p>Aggregated statistics for scalar quantities such as <code class="docutils literal notranslate"><span class="pre">dt</span></code>, Newton iterations, CG iterations, and Hessian projection ratio.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">series</span></code></p></td>
+<td><p>Per-step time series useful for plotting convergence, time-step changes, or solver cost over time.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="final-summary">
+<h2>Final summary<a class="headerlink" href="#final-summary" title="Link to this heading">¶</a></h2>
+<p>At the end of the run, STARK prints a compact summary of the simulation, solve statistics, and runtime breakdown.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>================================== Summary ===============================
+Info
+  Name:               spinning_box_cloth
+  Simulation time:    10.033 s
+  ndofs:              3273
+  Frames:             301
+  Time steps:         301
+  dt [ms]:            avg: 33.3 | min: 33.3 | max: 33.3
+
+  Solve                         Total      Avg      Min      Max
+  --------------------------------------------------------------
+  Newton iterations              3636     11.9        3       49
+  CG iterations                348569     92.2        1      275
+  Line search inv                 563      0.2        0        8
+  Line search bt                 1633      0.4        0        6
+  Projected hessians                       6.5%     0.0%    99.0%
+
+  Runtime                                    Time (s)       %
+  ------------------------------------------------------------
+  linear_system_solve                       16.078993   46.6%
+  before_energy_evaluation                   8.025052   23.3%
+  evaluate_P_grad_hess                       3.035306    8.8%
+  assembly                                   3.024711    8.8%
+  project_to_PD                              1.711081    5.0%
+  write_frame                                0.129421    0.4%
+  ------------------------------------------------------------
+  Total                                     34.473580  100.0%
+</pre></div>
+</div>
+</section>
+<section id="practical-notes">
+<h2>Practical notes<a class="headerlink" href="#practical-notes" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Keep <code class="docutils literal notranslate"><span class="pre">output_directory</span></code> separate for each experiment to avoid mixing frame sequences.</p></li>
+<li><p>Keep <code class="docutils literal notranslate"><span class="pre">codegen_directory</span></code> persistent between runs to benefit from SymX kernel caching.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">console_verbosity</span> <span class="pre">=</span> <span class="pre">Summary</span></code> for normal runs and higher verbosity when debugging.</p></li>
+<li><p>Use the <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> log for plots and comparisons instead of scraping console output.</p></li>
+<li><p>Disable frame writes for timing benchmarks unless visualization output is part of what you want to measure.</p></li>
+<li><p>Prefer VTK for simulation output, ParaView for quick inspection, and Blender/Sequence Loader for final rendering.</p></li>
+</ul>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="simulation_loop.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Simulation Loop</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="settings.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Settings</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, Jose Antonio Fernandez-Fernandez
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Input / Output</a><ul>
+<li><a class="reference internal" href="#mesh-input">Mesh input</a><ul>
+<li><a class="reference internal" href="#loading-vtk-meshes">Loading VTK meshes</a></li>
+<li><a class="reference internal" href="#loading-obj-triangle-meshes">Loading OBJ triangle meshes</a></li>
+<li><a class="reference internal" href="#procedural-mesh-generators">Procedural mesh generators</a></li>
+<li><a class="reference internal" href="#presets-and-handles">Presets and Handles</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#writing-vtk-files">Writing VTK files</a></li>
+<li><a class="reference internal" href="#registering-simulation-output">Registering simulation output</a><ul>
+<li><a class="reference internal" href="#custom-per-frame-output-callbacks">Custom per-frame output callbacks</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#visualizing-vtk-output">Visualizing VTK output</a><ul>
+<li><a class="reference internal" href="#blender">Blender</a></li>
+<li><a class="reference internal" href="#paraview">ParaView</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#console-output">Console output</a><ul>
+<li><a class="reference internal" href="#settings-header">Settings header</a></li>
+<li><a class="reference internal" href="#symx-section">SymX section</a></li>
+<li><a class="reference internal" href="#simulation-section">Simulation section</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#yaml-log-structure">YAML log structure</a></li>
+<li><a class="reference internal" href="#final-summary">Final summary</a></li>
+<li><a class="reference internal" href="#practical-notes">Practical notes</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

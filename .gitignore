@@ -1,9 +1,0 @@
-*.pyc
-*.pyi
-*.pyd
-build/
-codegen_folder/
-output_folder/
-.vscode/
-CMakeFiles/
-CMakeCache.txt
