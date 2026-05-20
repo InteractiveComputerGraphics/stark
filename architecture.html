@@ -259,9 +259,9 @@
         <article role="main" id="furo-main-content">
           <section class="tex2jax_ignore mathjax_ignore" id="architecture">
 <h1>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">¶</a></h1>
-<p>STARK’s public API is straightforward despite the internal complexity.
+<p>STARK’s public API is straightforward.
 Users work through a single entry point, <code class="docutils literal notranslate"><span class="pre">Simulation</span></code>, which exposes all physics subsystems.
-Internally, <code class="docutils literal notranslate"><span class="pre">core::Stark</span></code> orchestrates time stepping and Newton solves via SymX.</p>
+Internally, <code class="docutils literal notranslate"><span class="pre">core::Stark</span></code> orchestrates time stepping and uses SymX’s Newton solves.</p>
 <section id="component-map">
 <h2>Component Map<a class="headerlink" href="#component-map" title="Link to this heading">¶</a></h2>
 <pre  class="mermaid">
@@ -292,7 +292,7 @@ Constructing it with a <code class="docutils literal notranslate"><span class="p
 <span class="n">settings</span><span class="p">.</span><span class="n">output</span><span class="p">.</span><span class="n">directory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;./output&quot;</span><span class="p">;</span>
 <span class="n">settings</span><span class="p">.</span><span class="n">simulation</span><span class="p">.</span><span class="n">max_time_step_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.01</span><span class="p">;</span>
 
-<span class="nc">stark</span><span class="o">::</span><span class="n">Simulation</span><span class="w"> </span><span class="nf">simulation</span><span class="p">(</span><span class="n">settings</span><span class="p">);</span>
+<span class="nc">stark</span><span class="o">::</span><span class="nc">Simulation</span><span class="w"> </span><span class="nf">simulation</span><span class="p">(</span><span class="n">settings</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>The four subsystems are available as public <code class="docutils literal notranslate"><span class="pre">shared_ptr</span></code> fields:</p>
@@ -342,7 +342,7 @@ This flat representation keeps internals simple and improves parallelism and vec
 <td><p>2D membrane strain for cloth and shells</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">EnergyDiscreteShells</span></code></p></td>
-<td><p>Bending stiffness (Bergou discrete shells)</p></td>
+<td><p>Bending stiffness</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">EnergyTetStrain</span></code></p></td>
 <td><p>3D volumetric FEM for soft bodies</p></td>

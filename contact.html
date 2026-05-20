@@ -350,7 +350,7 @@ You will see messages like:</p>
 <span class="w">    </span><span class="n">rubber</span>
 <span class="p">);</span>
 
-<span class="nc">stark</span><span class="o">::</span><span class="n">ContactHandler</span><span class="w"> </span><span class="n">body_contact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">body</span><span class="p">.</span><span class="n">contact</span><span class="p">;</span>
+<span class="nc">stark</span><span class="o">::</span><span class="nc">ContactHandler</span><span class="w"> </span><span class="n">body_contact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">body</span><span class="p">.</span><span class="n">contact</span><span class="p">;</span>
 
 <span class="c1">// Rigid body with contact</span>
 <span class="k">auto</span><span class="w"> </span><span class="p">[</span><span class="n">floor_V</span><span class="p">,</span><span class="w"> </span><span class="n">floor_T</span><span class="p">,</span><span class="w"> </span><span class="n">floor</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">simulation</span><span class="p">.</span><span class="n">presets</span><span class="o">-&gt;</span><span class="n">rigidbodies</span><span class="o">-&gt;</span><span class="nf">add_box</span><span class="p">(</span>
@@ -360,7 +360,7 @@ You will see messages like:</p>
 <span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="nf">ContactParams</span><span class="p">().</span><span class="nf">set_contact_thickness</span><span class="p">(</span><span class="mf">0.001</span><span class="p">)</span>
 <span class="p">);</span>
 
-<span class="nc">stark</span><span class="o">::</span><span class="n">ContactHandler</span><span class="w"> </span><span class="n">floor_contact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">floor</span><span class="p">.</span><span class="n">contact</span><span class="p">;</span>
+<span class="nc">stark</span><span class="o">::</span><span class="nc">ContactHandler</span><span class="w"> </span><span class="n">floor_contact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">floor</span><span class="p">.</span><span class="n">contact</span><span class="p">;</span>
 </pre></div>
 </div>
 </section>
@@ -369,9 +369,9 @@ You will see messages like:</p>
 <p>For custom objects, register the contact geometry directly.
 The collision mesh indices refer to vertices of the <code class="docutils literal notranslate"><span class="pre">PointSetHandler</span></code>.</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="nc">stark</span><span class="o">::</span><span class="nc">PointSetHandler</span><span class="w"> </span><span class="n">point_set</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* your deformable point set */</span><span class="p">;</span>
-<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">surface_triangles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* collision surface */</span><span class="p">;</span>
+<span class="nc">std</span><span class="o">::</span><span class="nc">vector</span><span class="o">&lt;</span><span class="nc">std</span><span class="o">::</span><span class="nc">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">surface_triangles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* collision surface */</span><span class="p">;</span>
 
-<span class="nc">stark</span><span class="o">::</span><span class="n">ContactHandler</span><span class="w"> </span><span class="n">cloth_contact</span><span class="w"> </span><span class="o">=</span>
+<span class="nc">stark</span><span class="o">::</span><span class="nc">ContactHandler</span><span class="w"> </span><span class="n">cloth_contact</span><span class="w"> </span><span class="o">=</span>
 <span class="w">    </span><span class="n">simulation</span><span class="p">.</span><span class="n">interactions</span><span class="o">-&gt;</span><span class="n">contact</span><span class="o">-&gt;</span><span class="nf">add_triangles</span><span class="p">(</span>
 <span class="w">        </span><span class="n">point_set</span><span class="p">,</span>
 <span class="w">        </span><span class="n">surface_triangles</span><span class="p">,</span>
@@ -380,9 +380,9 @@ The collision mesh indices refer to vertices of the <code class="docutils litera
 </pre></div>
 </div>
 <p>For segment-like objects, use edges instead of triangles:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">edges</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* collision edges */</span><span class="p">;</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="nc">std</span><span class="o">::</span><span class="nc">vector</span><span class="o">&lt;</span><span class="nc">std</span><span class="o">::</span><span class="nc">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">edges</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* collision edges */</span><span class="p">;</span>
 
-<span class="nc">stark</span><span class="o">::</span><span class="n">ContactHandler</span><span class="w"> </span><span class="n">rod_contact</span><span class="w"> </span><span class="o">=</span>
+<span class="nc">stark</span><span class="o">::</span><span class="nc">ContactHandler</span><span class="w"> </span><span class="n">rod_contact</span><span class="w"> </span><span class="o">=</span>
 <span class="w">    </span><span class="n">simulation</span><span class="p">.</span><span class="n">interactions</span><span class="o">-&gt;</span><span class="n">contact</span><span class="o">-&gt;</span><span class="nf">add_edges</span><span class="p">(</span>
 <span class="w">        </span><span class="n">point_set</span><span class="p">,</span>
 <span class="w">        </span><span class="n">edges</span><span class="p">,</span>
@@ -396,10 +396,10 @@ The collision mesh indices refer to vertices of the <code class="docutils litera
 <p>Use the overload with <code class="docutils literal notranslate"><span class="pre">point_set_map</span></code> in that case. The collision mesh is indexed locally into <code class="docutils literal notranslate"><span class="pre">point_set_map</span></code>, and <code class="docutils literal notranslate"><span class="pre">point_set_map[i]</span></code> maps collision vertex <code class="docutils literal notranslate"><span class="pre">i</span></code> to a vertex in the full point set.</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="nc">stark</span><span class="o">::</span><span class="nc">PointSetHandler</span><span class="w"> </span><span class="n">point_set</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* full deformable point set */</span><span class="p">;</span>
 
-<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">surface_to_point_set</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* collision vertex -&gt; point-set vertex */</span><span class="p">;</span>
-<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">surface_triangles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* indexed into surface_to_point_set */</span><span class="p">;</span>
+<span class="nc">std</span><span class="o">::</span><span class="nc">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">surface_to_point_set</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* collision vertex -&gt; point-set vertex */</span><span class="p">;</span>
+<span class="nc">std</span><span class="o">::</span><span class="nc">vector</span><span class="o">&lt;</span><span class="nc">std</span><span class="o">::</span><span class="nc">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">surface_triangles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* indexed into surface_to_point_set */</span><span class="p">;</span>
 
-<span class="nc">stark</span><span class="o">::</span><span class="n">ContactHandler</span><span class="w"> </span><span class="n">contact</span><span class="w"> </span><span class="o">=</span>
+<span class="nc">stark</span><span class="o">::</span><span class="nc">ContactHandler</span><span class="w"> </span><span class="n">contact</span><span class="w"> </span><span class="o">=</span>
 <span class="w">    </span><span class="n">simulation</span><span class="p">.</span><span class="n">interactions</span><span class="o">-&gt;</span><span class="n">contact</span><span class="o">-&gt;</span><span class="nf">add_triangles</span><span class="p">(</span>
 <span class="w">        </span><span class="n">point_set</span><span class="p">,</span>
 <span class="w">        </span><span class="n">surface_triangles</span><span class="p">,</span>

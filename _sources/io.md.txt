@@ -1,6 +1,6 @@
 # Input / Output
 
-STARK keeps input and output simple: meshes are ordinary C++ containers, frames are written as VTK files, and solver diagnostics are printed both to the console and to yaml log files. This makes it easy to combine STARK with external mesh generation and pre/post processing tools.
+In STARK meshes are ordinary C++ containers, frames are written as VTK files, and solver diagnostics are printed both to the console and to yaml log files. This makes it easy to combine STARK with external mesh generation and pre/post processing tools.
 VTK Files can directly be inspected on ParaView and Blender and logs are easily parsed by Python scripts.
 
 A typical simulation produces three kinds of output:
@@ -19,7 +19,7 @@ settings.output.simulation_name   = "my_sim";
 settings.output.output_directory  = "build/output/my_sim";
 settings.output.codegen_directory = "build/codegen";
 settings.output.fps               = 30;
-settings.output.console_verbosity = symx::Verbosity::Summary;
+settings.output.console_verbosity = symx::Verbosity::Summary;               
 settings.output.file_verbosity    = symx::Verbosity::Full;
 
 stark::Simulation simulation(settings);
@@ -203,7 +203,7 @@ STARK frame sequence loaded in Blender with Sequence Loader.
 
 ### ParaView
 
-For scientific inspection, ParaView is the recommended viewer for STARK output. Open one of the generated `.vtk` files, or open the file sequence if the filenames share the same prefix and increasing frame index.
+Sequences can also be viewed with ParaView. Open one of the generated `.vtk` files, or open the file sequence if the filenames share the same prefix and increasing frame index.
 
 ```{figure} ../_static/paraview.png
 :alt: STARK VTK output opened in ParaView
@@ -397,9 +397,7 @@ Info
 
 ## Practical notes
 
-- Keep `output_directory` separate for each experiment to avoid mixing frame sequences.
 - Keep `codegen_directory` persistent between runs to benefit from SymX kernel caching.
 - Use `console_verbosity = Summary` for normal runs and higher verbosity when debugging.
 - Use the `.yaml` log for plots and comparisons instead of scraping console output.
 - Disable frame writes for timing benchmarks unless visualization output is part of what you want to measure.
-- Prefer VTK for simulation output, ParaView for quick inspection, and Blender/Sequence Loader for final rendering.

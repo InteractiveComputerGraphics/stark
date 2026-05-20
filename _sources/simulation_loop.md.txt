@@ -1,7 +1,7 @@
 # Simulation Loop
 
 STARK advances a simulation by repeatedly solving one nonlinear optimization problem per time step.
-The public API is intentionally simple:
+This is triggered by the `.run()` method:
 
 ```cpp
 stark::Simulation simulation(settings);
@@ -148,9 +148,9 @@ These are the four counters printed as
 ls (cap|max|inv|bt):  0| 0| 1| 4
 ```
 
-Large `inv` counts usually indicate that the Newton direction is trying to pass through an invalid state. Large `bt` counts usually indicate that the quadratic model is too optimistic and Armijo has to shrink the step.
-
 ## Adaptive time step
+
+STARK optionally allows for adaptive time step, which allows for automatically reducing the time step when the problem is challenging and otherwise keeps it at a user specified value.
 
 The time step starts as
 
@@ -164,7 +164,7 @@ After a successful accepted step, STARK grows it by
 dt = min(max_time_step_size, dt * time_step_size_success_multiplier);
 ```
 
-If Newton fails because the step is too difficult, STARK halves `dt` and retries the same simulation time:
+If Newton fails because the step is too difficult (e.g. maximum Newton iteration reached), STARK halves `dt` and retries the same simulation time:
 
 ```cpp
 dt *= 0.5;
@@ -172,19 +172,6 @@ dt *= 0.5;
 
 If `dt` drops below `settings.simulation.time_step_size_lower_bound`, the simulation exits.
 
-Some failures do **not** immediately reduce `dt`. For example, a converged state may be rejected by a validity callback because a contact or prescribed-position constraint exceeded its tolerance. In that case, the responsible model may harden a stiffness parameter and STARK retries the same time step with the same `dt`.
-
-This distinction is important:
-
-| Failure type | What STARK does |
-|---|---|
-| invalid converged state | retry same time with modified model parameters |
-| too many invalid intermediate states | run invalid-state callbacks, then retry if recoverable |
-| too many Newton iterations | halve `dt` if adaptive stepping is enabled |
-| Armijo failure | run Armijo-failure callbacks; halve `dt` or exit depending on settings |
-| linear solve failure / non-descent | increase projection if possible; otherwise fail the step |
-
-If adaptive stepping is disabled, a non-recoverable failed step exits the simulation instead of shrinking `dt`.
 
 ## Callbacks
 

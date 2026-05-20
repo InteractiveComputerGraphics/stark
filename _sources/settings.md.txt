@@ -43,7 +43,7 @@ The following are the options given by STARK/SymX:
     - `newton.max_iterations` reached and `newton.max_iterations_as_success = true`
 
 Most often when simulations are slow or behave unrealistically it is because the convergence criteria and tolerances are not set appropriately.
-Typically, `newton.step_tolerance` is the most robust general criteria, but it too can be really challenging to obtain in simulations with extreme densities (light or heavy).
+Typically, `newton.step_tolerance` is the most robust general criteria, but it too can be really challenging to obtain in challenging simulations.
 Sometimes, shortening the time step size is the best option.
 Other times, returning success on a fixed amount of Newton iterations is justified.
 

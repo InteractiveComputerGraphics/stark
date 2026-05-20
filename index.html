@@ -267,10 +267,10 @@ STARK is a C++ and Python simulation platform for simulating rigid and deformabl
 Check out the <a class="reference external" href="https://github.com/InteractiveComputerGraphics/stark">STARK GitHub repo</a> and the <a class="reference external" href="https://www.animation.rwth-aachen.de/publication/0588/">STARK ICRA’24 paper</a>.</p>
 <p>These pages give a high-level overview of the main concepts and show how to use the library.
 They are not a doxygen-style exhaustive documentation, but rather a guide on how the library works and how to use it effectively.</p>
-<p>STARK is built on top of <a class="reference external" href="https://github.com/InteractiveComputerGraphics/SymX">SymX</a>, a mathematical engine that handles differentiation, evaluation, and optimization via a Newton solver.
-STARK can be seen as a repository of common simulation models with a convenient interface, scripting, and a Python API.</p>
-<p>If you need something simpler or more customizable, using SymX directly may be a better fit.
-If you need performance beyond what STARK offers (e.g. GPU), STARK can still serve as a rapid prototyping environment before committing to a custom solver.</p>
+<p>STARK is built on top of <a class="reference external" href="https://github.com/InteractiveComputerGraphics/SymX">SymX</a>, a symbolic math engine that handles differentiation, evaluation, and optimization via a Newton solver.
+This makes STARK <strong>very easy</strong> to expand with new models, which makes it a great platform to do research with.
+Plus, STARK already ships with many ready-to-use models through a convenient interface, scripting utilities, and a Python API.</p>
+<p>Note that if you need something simpler or more customizable than STARK, consider using SymX directly.</p>
 <section id="table-of-contents">
 <h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">

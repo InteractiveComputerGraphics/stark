@@ -1,8 +1,8 @@
 # Architecture
 
-STARK's public API is straightforward despite the internal complexity.
+STARK's public API is straightforward.
 Users work through a single entry point, `Simulation`, which exposes all physics subsystems.
-Internally, `core::Stark` orchestrates time stepping and Newton solves via SymX.
+Internally, `core::Stark` orchestrates time stepping and uses SymX's Newton solves.
 
 ## Component Map
 
@@ -81,7 +81,7 @@ The energy models that act on point sets are:
 | `EnergyPrescribedPositions` | Penalty-based kinematic boundary conditions |
 | `EnergySegmentStrain` | 1D stretching for rods and cables |
 | `EnergyTriangleStrain` | 2D membrane strain for cloth and shells |
-| `EnergyDiscreteShells` | Bending stiffness (Bergou discrete shells) |
+| `EnergyDiscreteShells` | Bending stiffness |
 | `EnergyTetStrain` | 3D volumetric FEM for soft bodies |
 
 In practice you almost never compose these by hand.

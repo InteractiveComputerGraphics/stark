@@ -259,10 +259,10 @@
         <article role="main" id="furo-main-content">
           <section class="tex2jax_ignore mathjax_ignore" id="hello-world">
 <h1>Hello World<a class="headerlink" href="#hello-world" title="Link to this heading">¶</a></h1>
-<p>Two quick STARK “hello world” programs — one in Python, one in C++.
+<p>Here you can find two quick STARK “hello world” programs — one in Python, one in C++.
 Both simulate a piece of cloth falling on a rigid box that spins in place.</p>
 <p align="center">
-    <img src="../images/spinning_box_cloth.gif" alt="Spinning box cloth simulation" style="width:65%;">
+    <img src="../_static/spinning_box_cloth.gif" alt="Spinning box cloth simulation" style="width:65%;">
 </p>
 <section id="python">
 <h2>Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h2>
@@ -324,7 +324,7 @@ Both simulate a piece of cloth falling on a rigid box that spins in place.</p>
 <span class="w">    </span><span class="n">settings</span><span class="p">.</span><span class="n">output</span><span class="p">.</span><span class="n">codegen_directory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;codegen_folder&quot;</span><span class="p">;</span>
 
 <span class="w">    </span><span class="c1">// 2. Create the simulation</span>
-<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="n">Simulation</span><span class="w"> </span><span class="nf">simulation</span><span class="p">(</span><span class="n">settings</span><span class="p">);</span>
+<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="nc">Simulation</span><span class="w"> </span><span class="nf">simulation</span><span class="p">(</span><span class="n">settings</span><span class="p">);</span>
 
 <span class="w">    </span><span class="c1">// 3. Set global contact parameters</span>
 <span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="nc">EnergyFrictionalContact</span><span class="o">::</span><span class="nc">GlobalParams</span><span class="w"> </span><span class="n">contact_params</span><span class="p">;</span>
@@ -348,7 +348,7 @@ Both simulate a piece of cloth falling on a rigid box that spins in place.</p>
 <span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">duration</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">10.0</span><span class="p">;</span>
 <span class="w">    </span><span class="n">simulation</span><span class="p">.</span><span class="nf">add_time_event</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">duration</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="kt">double</span><span class="w"> </span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">fix</span><span class="p">.</span><span class="nf">set_transformation</span><span class="p">(</span>
-<span class="w">            </span><span class="p">{</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">-0.08</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">0.1</span><span class="o">*</span><span class="n">std</span><span class="o">::</span><span class="nf">sin</span><span class="p">(</span><span class="n">t</span><span class="p">)},</span><span class="w"> </span>
+<span class="w">            </span><span class="p">{</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">-0.08</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">0.1</span><span class="o">*</span><span class="nc">std</span><span class="o">::</span><span class="nf">sin</span><span class="p">(</span><span class="n">t</span><span class="p">)},</span><span class="w"> </span>
 <span class="w">            </span><span class="mf">90.0</span><span class="o">*</span><span class="n">t</span><span class="p">,</span><span class="w"> </span>
 <span class="w">            </span><span class="p">{</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">});</span>
 <span class="w">    </span><span class="p">});</span>

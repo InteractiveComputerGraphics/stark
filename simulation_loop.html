@@ -260,8 +260,8 @@
           <section class="tex2jax_ignore mathjax_ignore" id="simulation-loop">
 <h1>Simulation Loop<a class="headerlink" href="#simulation-loop" title="Link to this heading">¶</a></h1>
 <p>STARK advances a simulation by repeatedly solving one nonlinear optimization problem per time step.
-The public API is intentionally simple:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="nc">stark</span><span class="o">::</span><span class="n">Simulation</span><span class="w"> </span><span class="nf">simulation</span><span class="p">(</span><span class="n">settings</span><span class="p">);</span>
+This is triggered by the <code class="docutils literal notranslate"><span class="pre">.run()</span></code> method:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="nc">stark</span><span class="o">::</span><span class="nc">Simulation</span><span class="w"> </span><span class="nf">simulation</span><span class="p">(</span><span class="n">settings</span><span class="p">);</span>
 
 <span class="c1">// Build objects, materials, contact, boundary conditions, and output...</span>
 
@@ -408,11 +408,11 @@ Depending on the selected projection mode, SymX can:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>ls (cap|max|inv|bt):  0| 0| 1| 4
 </pre></div>
 </div>
-<p>Large <code class="docutils literal notranslate"><span class="pre">inv</span></code> counts usually indicate that the Newton direction is trying to pass through an invalid state. Large <code class="docutils literal notranslate"><span class="pre">bt</span></code> counts usually indicate that the quadratic model is too optimistic and Armijo has to shrink the step.</p>
 </section>
 </section>
 <section id="adaptive-time-step">
 <h2>Adaptive time step<a class="headerlink" href="#adaptive-time-step" title="Link to this heading">¶</a></h2>
+<p>STARK optionally allows for adaptive time step, which allows for automatically reducing the time step when the problem is challenging and otherwise keeps it at a user specified value.</p>
 <p>The time step starts as</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">dt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">settings</span><span class="p">.</span><span class="n">simulation</span><span class="p">.</span><span class="n">max_time_step_size</span><span class="p">;</span>
 </pre></div>
@@ -421,40 +421,11 @@ Depending on the selected projection mode, SymX can:</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">dt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">min</span><span class="p">(</span><span class="n">max_time_step_size</span><span class="p">,</span><span class="w"> </span><span class="n">dt</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">time_step_size_success_multiplier</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>If Newton fails because the step is too difficult, STARK halves <code class="docutils literal notranslate"><span class="pre">dt</span></code> and retries the same simulation time:</p>
+<p>If Newton fails because the step is too difficult (e.g. maximum Newton iteration reached), STARK halves <code class="docutils literal notranslate"><span class="pre">dt</span></code> and retries the same simulation time:</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">dt</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">;</span>
 </pre></div>
 </div>
 <p>If <code class="docutils literal notranslate"><span class="pre">dt</span></code> drops below <code class="docutils literal notranslate"><span class="pre">settings.simulation.time_step_size_lower_bound</span></code>, the simulation exits.</p>
-<p>Some failures do <strong>not</strong> immediately reduce <code class="docutils literal notranslate"><span class="pre">dt</span></code>. For example, a converged state may be rejected by a validity callback because a contact or prescribed-position constraint exceeded its tolerance. In that case, the responsible model may harden a stiffness parameter and STARK retries the same time step with the same <code class="docutils literal notranslate"><span class="pre">dt</span></code>.</p>
-<p>This distinction is important:</p>
-<div class="table-wrapper colwidths-auto docutils container">
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head"><p>Failure type</p></th>
-<th class="head"><p>What STARK does</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p>invalid converged state</p></td>
-<td><p>retry same time with modified model parameters</p></td>
-</tr>
-<tr class="row-odd"><td><p>too many invalid intermediate states</p></td>
-<td><p>run invalid-state callbacks, then retry if recoverable</p></td>
-</tr>
-<tr class="row-even"><td><p>too many Newton iterations</p></td>
-<td><p>halve <code class="docutils literal notranslate"><span class="pre">dt</span></code> if adaptive stepping is enabled</p></td>
-</tr>
-<tr class="row-odd"><td><p>Armijo failure</p></td>
-<td><p>run Armijo-failure callbacks; halve <code class="docutils literal notranslate"><span class="pre">dt</span></code> or exit depending on settings</p></td>
-</tr>
-<tr class="row-even"><td><p>linear solve failure / non-descent</p></td>
-<td><p>increase projection if possible; otherwise fail the step</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>If adaptive stepping is disabled, a non-recoverable failed step exits the simulation instead of shrinking <code class="docutils literal notranslate"><span class="pre">dt</span></code>.</p>
 </section>
 <section id="callbacks">
 <h2>Callbacks<a class="headerlink" href="#callbacks" title="Link to this heading">¶</a></h2>
@@ -562,7 +533,7 @@ The default residual used by Newton is the infinity norm of the gradient, unless
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="p">.</span><span class="nf">add_time_event</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">2.0</span><span class="p">,</span>
 <span class="w">    </span><span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="kt">double</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="nf">blend</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">2.0</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="n">BlendType</span><span class="o">::</span><span class="n">Linear</span><span class="p">);</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="nf">blend</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">2.0</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="nc">stark</span><span class="o">::</span><span class="nc">BlendType</span><span class="o">::</span><span class="nc">Linear</span><span class="p">);</span>
 <span class="w">        </span><span class="n">boundary</span><span class="p">.</span><span class="nf">set_transformation</span><span class="p">({</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="n">z</span><span class="p">},</span><span class="w"> </span><span class="nc">Eigen</span><span class="o">::</span><span class="nc">Matrix3d</span><span class="o">::</span><span class="nf">Identity</span><span class="p">());</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">);</span>

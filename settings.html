@@ -282,7 +282,7 @@ The difference in performance and accuracy between a good and a bad setup can be
 <span class="w">    </span><span class="n">settings</span><span class="p">.</span><span class="n">newton</span><span class="p">.</span><span class="n">step_tolerance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1e-3</span><span class="p">;</span><span class="w">  </span><span class="c1">// [m/s]</span>
 <span class="w">    </span><span class="n">settings</span><span class="p">.</span><span class="n">newton</span><span class="p">.</span><span class="n">residual_tolerance_abs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1e-3</span><span class="p">;</span><span class="w">  </span><span class="c1">// [N]</span>
 
-<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="n">Simulation</span><span class="w"> </span><span class="nf">simulation</span><span class="p">(</span><span class="n">settings</span><span class="p">);</span>
+<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="nc">Simulation</span><span class="w"> </span><span class="nf">simulation</span><span class="p">(</span><span class="n">settings</span><span class="p">);</span>
 <span class="w">    </span><span class="n">simulation</span><span class="p">.</span><span class="nf">run</span><span class="p">();</span>
 <span class="p">}</span>
 </pre></div>
@@ -303,7 +303,7 @@ The following are the options given by STARK/SymX:</p>
 </li>
 </ul>
 <p>Most often when simulations are slow or behave unrealistically it is because the convergence criteria and tolerances are not set appropriately.
-Typically, <code class="docutils literal notranslate"><span class="pre">newton.step_tolerance</span></code> is the most robust general criteria, but it too can be really challenging to obtain in simulations with extreme densities (light or heavy).
+Typically, <code class="docutils literal notranslate"><span class="pre">newton.step_tolerance</span></code> is the most robust general criteria, but it too can be really challenging to obtain in challenging simulations.
 Sometimes, shortening the time step size is the best option.
 Other times, returning success on a fixed amount of Newton iterations is justified.</p>
 </section>

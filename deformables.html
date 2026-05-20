@@ -281,7 +281,7 @@ Register a point set to get a <code class="docutils literal notranslate"><span c
 Works with any topology (edges, triangles, tets); mass is lumped to vertices proportional to element volume.</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">inertia_h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">simulation</span><span class="p">.</span><span class="n">deformables</span><span class="o">-&gt;</span><span class="n">lumped_inertia</span><span class="o">-&gt;</span><span class="nf">add</span><span class="p">(</span>
 <span class="w">    </span><span class="n">ps</span><span class="p">,</span><span class="w"> </span><span class="n">triangles</span><span class="p">,</span>
-<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="n">EnergyLumpedInertia</span><span class="o">::</span><span class="nc">Params</span><span class="p">()</span>
+<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="nc">EnergyLumpedInertia</span><span class="o">::</span><span class="nc">Params</span><span class="p">()</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_density</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span><span class="w">   </span><span class="c1">// [kg/m²] for surfaces, [kg/m³] for volumes, etc.</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_damping</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
 <span class="p">);</span>
@@ -299,7 +299,7 @@ Selected vertices are attracted to a target configuration with a stiffness penal
 <span class="w">    </span><span class="n">ps</span><span class="p">,</span>
 <span class="w">    </span><span class="nc">Eigen</span><span class="o">::</span><span class="nc">Vector3d</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">),</span><span class="w">       </span><span class="c1">// AABB centre</span>
 <span class="w">    </span><span class="nc">Eigen</span><span class="o">::</span><span class="nc">Vector3d</span><span class="p">(</span><span class="mf">0.001</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">),</span><span class="w">   </span><span class="c1">// AABB half-extents</span>
-<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="n">EnergyPrescribedPositions</span><span class="o">::</span><span class="nc">Params</span><span class="p">()</span>
+<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="nc">EnergyPrescribedPositions</span><span class="o">::</span><span class="nc">Params</span><span class="p">()</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_stiffness</span><span class="p">(</span><span class="mf">1e6</span><span class="p">)</span>
 <span class="p">);</span>
 </pre></div>
@@ -323,7 +323,7 @@ Selected vertices are attracted to a target configuration with a stiffness penal
 Acts on pairs of connected vertices (segments).</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">strain_h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">simulation</span><span class="p">.</span><span class="n">deformables</span><span class="o">-&gt;</span><span class="n">segment_strain</span><span class="o">-&gt;</span><span class="nf">add</span><span class="p">(</span>
 <span class="w">    </span><span class="n">ps</span><span class="p">,</span><span class="w"> </span><span class="n">segments</span><span class="p">,</span>
-<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="n">EnergySegmentStrain</span><span class="o">::</span><span class="nc">Params</span><span class="p">()</span>
+<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="nc">EnergySegmentStrain</span><span class="o">::</span><span class="nc">Params</span><span class="p">()</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_section_radius</span><span class="p">(</span><span class="mf">5e-3</span><span class="p">)</span><span class="w">       </span><span class="c1">// rod cross-section radius</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_youngs_modulus</span><span class="p">(</span><span class="mf">1e6</span><span class="p">)</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_damping</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
@@ -340,7 +340,7 @@ Acts on pairs of connected vertices (segments).</p>
 Acts on triangles and models in-plane stretching and compression using the Neo-Hookean constitutive model.</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">strain_h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">simulation</span><span class="p">.</span><span class="n">deformables</span><span class="o">-&gt;</span><span class="n">triangle_strain</span><span class="o">-&gt;</span><span class="nf">add</span><span class="p">(</span>
 <span class="w">    </span><span class="n">ps</span><span class="p">,</span><span class="w"> </span><span class="n">triangles</span><span class="p">,</span>
-<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="n">EnergyTriangleStrain</span><span class="o">::</span><span class="nc">Params</span><span class="p">()</span>
+<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="nc">EnergyTriangleStrain</span><span class="o">::</span><span class="nc">Params</span><span class="p">()</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_thickness</span><span class="p">(</span><span class="mf">0.001</span><span class="p">)</span><span class="w">           </span><span class="c1">// shell thickness (m)</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_youngs_modulus</span><span class="p">(</span><span class="mf">1e5</span><span class="p">)</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_poissons_ratio</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span>
@@ -357,7 +357,7 @@ Acts on triangles and models in-plane stretching and compression using the Neo-H
 <p>Bending energy for triangle meshes (Grinspun et al. discrete shells or Bergou et al. flat quadratic model), acting on hinge edges.</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">bending_h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">simulation</span><span class="p">.</span><span class="n">deformables</span><span class="o">-&gt;</span><span class="n">discrete_shells</span><span class="o">-&gt;</span><span class="nf">add</span><span class="p">(</span>
 <span class="w">    </span><span class="n">ps</span><span class="p">,</span><span class="w"> </span><span class="n">triangles</span><span class="p">,</span>
-<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="n">EnergyDiscreteShells</span><span class="o">::</span><span class="nc">Params</span><span class="p">()</span>
+<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="nc">EnergyDiscreteShells</span><span class="o">::</span><span class="nc">Params</span><span class="p">()</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_stiffness</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">)</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_flat_rest_angle</span><span class="p">(</span><span class="nb">true</span><span class="p">)</span><span class="w">   </span><span class="c1">// true → Bergou quadratic; false → use mesh&#39;s rest angle</span>
 <span class="p">);</span>
@@ -373,7 +373,7 @@ The <code class="docutils literal notranslate"><span class="pre">Surface</span><
 Acts on linear tetrahedra using the Neo-Hookean constitutive model.</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">strain_h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">simulation</span><span class="p">.</span><span class="n">deformables</span><span class="o">-&gt;</span><span class="n">tet_strain</span><span class="o">-&gt;</span><span class="nf">add</span><span class="p">(</span>
 <span class="w">    </span><span class="n">ps</span><span class="p">,</span><span class="w"> </span><span class="n">tets</span><span class="p">,</span>
-<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="n">EnergyTetStrain</span><span class="o">::</span><span class="nc">Params</span><span class="p">()</span>
+<span class="w">    </span><span class="nc">stark</span><span class="o">::</span><span class="nc">EnergyTetStrain</span><span class="o">::</span><span class="nc">Params</span><span class="p">()</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_youngs_modulus</span><span class="p">(</span><span class="mf">1e5</span><span class="p">)</span>
 <span class="w">        </span><span class="p">.</span><span class="nf">set_poissons_ratio</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span>
 <span class="p">);</span>

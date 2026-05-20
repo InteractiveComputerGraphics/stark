@@ -1,8 +1,8 @@
 # Setup
 
 STARK is written in C++ and comes with optional Python bindings (`pystark`).
-STARK bundles its main third-party dependencies, including `SymX`, `Eigen`, `fmt`, `TriangleMeshCollisionDetection`, `vtkio`, `par_shapes`, and `tinyobjloader`.
-For SymX-specific build options such as AVX2, compiler selection, code-generation folders, and Hessian storage precision, see the [SymX setup page](https://symx.physics-simulation.org/setup.html).
+STARK bundles its main third-party dependencies, which includes `SymX`, `Eigen`, `fmt`, `TriangleMeshCollisionDetection`, `vtkio`, `par_shapes`, and `tinyobjloader`.
+For SymX-specific build options such as compiler selection, code-generation folders, and Hessian storage precision, see the [SymX setup page](https://symx.physics-simulation.org/setup.html).
 
 ## Requirements
 
@@ -97,39 +97,18 @@ Then verify:
 
 ```python
 import pystark
-
-settings = pystark.Settings()
-print(settings.as_string())
 ```
 
-If Python detection fails, either disable the bindings:
-
-```bash
-cmake -S . -B build -DSTARK_BUILD_PYTHON_BINDINGS=OFF
-```
-
-or point STARK to a Python environment with development-module support:
-
-```bash
-cmake -S . -B build \
-  -DSTARK_BUILD_PYTHON_BINDINGS=ON \
-  -DSTARK_PYTHON_EXECUTABLE=$HOME/miniforge3/envs/ENVNAME/bin/python
-```
-
-If CMake keeps finding the wrong Python, delete the build directory before reconfiguring:
-
-```bash
-rm -rf build
-```
 
 ## CMake options
 
 | Option | Default | Description |
 |---|---:|---|
 | `STARK_BUILD_TESTS` | `OFF` | Build the C++ test executable |
+| `STARK_BUILD_EXAMPLES` | `ON` | Build the C++ examples |
 | `STARK_BUILD_PYTHON_BINDINGS` | `OFF` | Build the `pystark` Python extension module |
 | `STARK_PYTHON_EXECUTABLE` | unset | Explicit Python executable used when building `pystark` |
-| `CMAKE_BUILD_TYPE` | `Release` | Build type for single-config generators |
+| `STARK_ENABLE_AVX2` | AUTO | Use AVX2 instructions. AUTO tries to infer local support  |
 
 STARK also forwards or inherits relevant SymX options, including SIMD/JIT/compiler-related settings.
 For those, use the SymX setup page as the reference.

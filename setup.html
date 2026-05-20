@@ -260,8 +260,8 @@
           <section class="tex2jax_ignore mathjax_ignore" id="setup">
 <h1>Setup<a class="headerlink" href="#setup" title="Link to this heading">¶</a></h1>
 <p>STARK is written in C++ and comes with optional Python bindings (<code class="docutils literal notranslate"><span class="pre">pystark</span></code>).
-STARK bundles its main third-party dependencies, including <code class="docutils literal notranslate"><span class="pre">SymX</span></code>, <code class="docutils literal notranslate"><span class="pre">Eigen</span></code>, <code class="docutils literal notranslate"><span class="pre">fmt</span></code>, <code class="docutils literal notranslate"><span class="pre">TriangleMeshCollisionDetection</span></code>, <code class="docutils literal notranslate"><span class="pre">vtkio</span></code>, <code class="docutils literal notranslate"><span class="pre">par_shapes</span></code>, and <code class="docutils literal notranslate"><span class="pre">tinyobjloader</span></code>.
-For SymX-specific build options such as AVX2, compiler selection, code-generation folders, and Hessian storage precision, see the <a class="reference external" href="https://symx.physics-simulation.org/setup.html">SymX setup page</a>.</p>
+STARK bundles its main third-party dependencies, which includes <code class="docutils literal notranslate"><span class="pre">SymX</span></code>, <code class="docutils literal notranslate"><span class="pre">Eigen</span></code>, <code class="docutils literal notranslate"><span class="pre">fmt</span></code>, <code class="docutils literal notranslate"><span class="pre">TriangleMeshCollisionDetection</span></code>, <code class="docutils literal notranslate"><span class="pre">vtkio</span></code>, <code class="docutils literal notranslate"><span class="pre">par_shapes</span></code>, and <code class="docutils literal notranslate"><span class="pre">tinyobjloader</span></code>.
+For SymX-specific build options such as compiler selection, code-generation folders, and Hessian storage precision, see the <a class="reference external" href="https://symx.physics-simulation.org/setup.html">SymX setup page</a>.</p>
 <section id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading">¶</a></h2>
 <div class="table-wrapper colwidths-auto docutils container">
@@ -376,23 +376,6 @@ The compiled extension module is written directly into the source-tree Python pa
 </div>
 <p>Then verify:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pystark</span>
-
-<span class="n">settings</span> <span class="o">=</span> <span class="n">pystark</span><span class="o">.</span><span class="n">Settings</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">as_string</span><span class="p">())</span>
-</pre></div>
-</div>
-<p>If Python detection fails, either disable the bindings:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-S<span class="w"> </span>.<span class="w"> </span>-B<span class="w"> </span>build<span class="w"> </span>-DSTARK_BUILD_PYTHON_BINDINGS<span class="o">=</span>OFF
-</pre></div>
-</div>
-<p>or point STARK to a Python environment with development-module support:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-S<span class="w"> </span>.<span class="w"> </span>-B<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-DSTARK_BUILD_PYTHON_BINDINGS<span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-DSTARK_PYTHON_EXECUTABLE<span class="o">=</span><span class="nv">$HOME</span>/miniforge3/envs/ENVNAME/bin/python
-</pre></div>
-</div>
-<p>If CMake keeps finding the wrong Python, delete the build directory before reconfiguring:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm<span class="w"> </span>-rf<span class="w"> </span>build
 </pre></div>
 </div>
 </section>
@@ -411,17 +394,21 @@ The compiled extension module is written directly into the source-tree Python pa
 <td class="text-right"><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code></p></td>
 <td><p>Build the C++ test executable</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">STARK_BUILD_PYTHON_BINDINGS</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">STARK_BUILD_EXAMPLES</span></code></p></td>
+<td class="text-right"><p><code class="docutils literal notranslate"><span class="pre">ON</span></code></p></td>
+<td><p>Build the C++ examples</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">STARK_BUILD_PYTHON_BINDINGS</span></code></p></td>
 <td class="text-right"><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code></p></td>
 <td><p>Build the <code class="docutils literal notranslate"><span class="pre">pystark</span></code> Python extension module</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">STARK_PYTHON_EXECUTABLE</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">STARK_PYTHON_EXECUTABLE</span></code></p></td>
 <td class="text-right"><p>unset</p></td>
 <td><p>Explicit Python executable used when building <code class="docutils literal notranslate"><span class="pre">pystark</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CMAKE_BUILD_TYPE</span></code></p></td>
-<td class="text-right"><p><code class="docutils literal notranslate"><span class="pre">Release</span></code></p></td>
-<td><p>Build type for single-config generators</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">STARK_ENABLE_AVX2</span></code></p></td>
+<td class="text-right"><p>AUTO</p></td>
+<td><p>Use AVX2 instructions. AUTO tries to infer local support</p></td>
 </tr>
 </tbody>
 </table>
