@@ -261,7 +261,7 @@
 <h1>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">¶</a></h1>
 <p>STARK’s public API is straightforward.
 Users work through a single entry point, <code class="docutils literal notranslate"><span class="pre">Simulation</span></code>, which exposes all physics subsystems.
-Internally, <code class="docutils literal notranslate"><span class="pre">core::Stark</span></code> orchestrates time stepping and uses SymX’s Newton solves.</p>
+Internally, <code class="docutils literal notranslate"><span class="pre">Stark</span></code> orchestrates time stepping and uses SymX’s Newton solves.</p>
 <section id="component-map">
 <h2>Component Map<a class="headerlink" href="#component-map" title="Link to this heading">¶</a></h2>
 <pre  class="mermaid">
@@ -288,7 +288,7 @@ Internally, <code class="docutils literal notranslate"><span class="pre">core::S
 <h2><code class="docutils literal notranslate"><span class="pre">Simulation</span></code><a class="headerlink" href="#simulation" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">Simulation</span></code> is the single public entry point.
 Constructing it with a <code class="docutils literal notranslate"><span class="pre">Settings</span></code> object is all that is needed to start a simulation:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="nc">stark</span><span class="o">::</span><span class="nc">core</span><span class="o">::</span><span class="nc">Settings</span><span class="w"> </span><span class="n">settings</span><span class="p">;</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="nc">stark</span><span class="o">::</span><span class="nc">Settings</span><span class="w"> </span><span class="n">settings</span><span class="p">;</span>
 <span class="n">settings</span><span class="p">.</span><span class="n">output</span><span class="p">.</span><span class="n">directory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;./output&quot;</span><span class="p">;</span>
 <span class="n">settings</span><span class="p">.</span><span class="n">simulation</span><span class="p">.</span><span class="n">max_time_step_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.01</span><span class="p">;</span>
 
@@ -409,9 +409,9 @@ See <a class="reference internal" href="presets.html"><span class="std std-doc">
 </section>
 </section>
 <hr class="docutils" />
-<section id="core-stark-the-solver-engine">
-<h2><code class="docutils literal notranslate"><span class="pre">core::Stark</span></code>: The Solver Engine<a class="headerlink" href="#core-stark-the-solver-engine" title="Link to this heading">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">core::Stark</span></code> is the engine that drives the simulation.</p>
+<section id="stark-class">
+<h2><code class="docutils literal notranslate"><span class="pre">Stark</span></code> class<a class="headerlink" href="#stark-class" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Stark</span></code> is the engine that drives the simulation.</p>
 <p>Its key components are:</p>
 <ul class="simple">
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">GlobalPotential</span></code></strong> — the SymX energy registry. Energy models call <code class="docutils literal notranslate"><span class="pre">global_potential-&gt;add_potential(...)</span></code> during construction to register their symbolic expression and the state variables it acts on.</p></li>
@@ -419,7 +419,7 @@ See <a class="reference internal" href="presets.html"><span class="std std-doc">
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">EventDrivenScript</span></code></strong> — fires lambdas at specified simulation times or on solver events.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">Settings</span></code></strong> — output paths, time step size, Newton tolerances, contact parameters, and more.</p></li>
 </ul>
-<p>Under normal use you do not interact with <code class="docutils literal notranslate"><span class="pre">core::Stark</span></code> directly.
+<p>Under normal use you do not interact with <code class="docutils literal notranslate"><span class="pre">Stark</span></code> directly.
 When writing a custom energy model that extends STARK, you access it through <code class="docutils literal notranslate"><span class="pre">simulation.get_stark()</span></code>.
 See <a class="reference internal" href="extending.html"><span class="std std-doc">Extending STARK</span></a> for a worked example.</p>
 </section>
@@ -490,7 +490,7 @@ See <a class="reference internal" href="extending.html"><span class="std std-doc
 <li><a class="reference internal" href="#presets"><code class="docutils literal notranslate"><span class="pre">presets</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#core-stark-the-solver-engine"><code class="docutils literal notranslate"><span class="pre">core::Stark</span></code>: The Solver Engine</a></li>
+<li><a class="reference internal" href="#stark-class"><code class="docutils literal notranslate"><span class="pre">Stark</span></code> class</a></li>
 </ul>
 </li>
 </ul>

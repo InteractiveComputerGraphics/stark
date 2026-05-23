@@ -2,7 +2,7 @@
 
 STARK's public API is straightforward.
 Users work through a single entry point, `Simulation`, which exposes all physics subsystems.
-Internally, `core::Stark` orchestrates time stepping and uses SymX's Newton solves.
+Internally, `Stark` orchestrates time stepping and uses SymX's Newton solves.
 
 ## Component Map
 
@@ -34,7 +34,7 @@ flowchart TD
 Constructing it with a `Settings` object is all that is needed to start a simulation:
 
 ```cpp
-stark::core::Settings settings;
+stark::Settings settings;
 settings.output.directory = "./output";
 settings.simulation.max_time_step_size = 0.01;
 
@@ -123,9 +123,9 @@ See [Presets](presets.md) for the full list.
 
 ---
 
-## `core::Stark`: The Solver Engine
+## `Stark` class
 
-`core::Stark` is the engine that drives the simulation.
+`Stark` is the engine that drives the simulation.
 
 Its key components are:
 
@@ -134,7 +134,7 @@ Its key components are:
 - **`EventDrivenScript`** — fires lambdas at specified simulation times or on solver events.
 - **`Settings`** — output paths, time step size, Newton tolerances, contact parameters, and more.
 
-Under normal use you do not interact with `core::Stark` directly.
+Under normal use you do not interact with `Stark` directly.
 When writing a custom energy model that extends STARK, you access it through `simulation.get_stark()`.
 See [Extending STARK](extending.md) for a worked example.
 

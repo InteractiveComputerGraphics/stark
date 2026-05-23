@@ -336,6 +336,7 @@ Check the <a class="reference external" href="https://symx.physics-simulation.or
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>check initial state validity
 
 for each Newton iteration:
+    run before_step callbacks
     run before_energy_evaluation callbacks
     evaluate energy, gradient, and local Hessians
     compute residual
@@ -357,6 +358,7 @@ for each Newton iteration:
         backtrack until Armijo sufficient decrease holds
 
     run optional user convergence callbacks
+    run after_step callbacks
 
 check converged-state validity
 </pre></div>
@@ -484,37 +486,45 @@ The frame cadence is controlled by <code class="docutils literal notranslate"><s
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">before_energy_evaluation</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">before_step</span></code></p></td>
+<td><p>at the very start of each Newton iteration</p></td>
+<td><p>logging, resetting per-iteration state</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">before_energy_evaluation</span></code></p></td>
 <td><p>before each energy or gradient/Hessian evaluation</p></td>
 <td><p>update collision sets, derived fields, or time-dependent data</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">is_initial_state_valid</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">is_initial_state_valid</span></code></p></td>
 <td><p>before Newton starts</p></td>
 <td><p>reject invalid starting states</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">max_allowed_step</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">max_allowed_step</span></code></p></td>
 <td><p>before line-search backtracking</p></td>
 <td><p>impose step limits, commonly from CCD</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">is_intermediate_state_valid</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">is_intermediate_state_valid</span></code></p></td>
 <td><p>during line search</p></td>
 <td><p>reject invalid intermediate states</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">on_intermediate_state_invalid</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">on_intermediate_state_invalid</span></code></p></td>
 <td><p>after too many invalid-state backtracks</p></td>
 <td><p>harden constraints/contact or report failure</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">on_armijo_fail</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">on_armijo_fail</span></code></p></td>
 <td><p>after too many Armijo backtracks</p></td>
 <td><p>diagnostics or model adjustment</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">is_converged</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">is_converged</span></code></p></td>
 <td><p>after a line-search update</p></td>
 <td><p>add custom convergence criteria</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">is_converged_state_valid</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">is_converged_state_valid</span></code></p></td>
 <td><p>after Newton reports success</p></td>
 <td><p>verify final constraints/contact tolerances</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">after_step</span></code></p></td>
+<td><p>at the end of each Newton iteration</p></td>
+<td><p>per-iteration diagnostics, adaptive parameter updates</p></td>
 </tr>
 </tbody>
 </table>

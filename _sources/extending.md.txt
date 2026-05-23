@@ -32,7 +32,7 @@ This is incorporated to the rest of the physical effects and piped into the opti
 The following is the energy definition
 
 ```cpp
-stark::core::Stark& stark_core = simulation.get_stark();
+stark::Stark& stark_core = simulation.get_stark();
 stark::PointDynamics* dyn = simulation.deformables->point_sets.get();
 
 stark_core.global_potential->add_potential("EnergyMagneticAttraction", magnetic_vertices,

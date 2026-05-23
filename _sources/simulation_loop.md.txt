@@ -93,6 +93,7 @@ The simplified inner loop is:
 check initial state validity
 
 for each Newton iteration:
+    run before_step callbacks
     run before_energy_evaluation callbacks
     evaluate energy, gradient, and local Hessians
     compute residual
@@ -114,6 +115,7 @@ for each Newton iteration:
         backtrack until Armijo sufficient decrease holds
 
     run optional user convergence callbacks
+    run after_step callbacks
 
 check converged-state validity
 ```
@@ -197,6 +199,7 @@ Check the [original SymX docs](https://symx.physics-simulation.org/newtons_metho
 
 | Callback | When it runs | Purpose |
 |---|---|---|
+| `before_step` | at the very start of each Newton iteration | logging, resetting per-iteration state |
 | `before_energy_evaluation` | before each energy or gradient/Hessian evaluation | update collision sets, derived fields, or time-dependent data |
 | `is_initial_state_valid` | before Newton starts | reject invalid starting states |
 | `max_allowed_step` | before line-search backtracking | impose step limits, commonly from CCD |
@@ -205,6 +208,7 @@ Check the [original SymX docs](https://symx.physics-simulation.org/newtons_metho
 | `on_armijo_fail` | after too many Armijo backtracks | diagnostics or model adjustment |
 | `is_converged` | after a line-search update | add custom convergence criteria |
 | `is_converged_state_valid` | after Newton reports success | verify final constraints/contact tolerances |
+| `after_step` | at the end of each Newton iteration | per-iteration diagnostics, adaptive parameter updates |
 
 Boolean validity callbacks are combined with logical `AND`. All registered checks must pass.
 `max_allowed_step` callbacks are combined by taking the smallest returned step fraction.
