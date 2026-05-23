@@ -433,8 +433,11 @@ Depending on the selected projection mode, SymX can:</p>
 <h2>Callbacks<a class="headerlink" href="#callbacks" title="Link to this heading">¶</a></h2>
 <p>Callbacks inject behavior into the solver loop.
 Most users only need the scripting interface, but lower-level callbacks are useful when extending STARK.</p>
+<p>Callbacks are accessed through <code class="docutils literal notranslate"><span class="pre">simulation.get_callbacks()</span></code>, which returns a reference to <code class="docutils literal notranslate"><span class="pre">stark::Callbacks</span></code>.
+That struct exposes the STARK-level methods directly, and a <code class="docutils literal notranslate"><span class="pre">newton</span></code> member of type <code class="docutils literal notranslate"><span class="pre">symx::SolverCallbacks</span></code> that carries the SymX/Newton-level hooks.</p>
 <section id="stark-level-callbacks">
 <h3>STARK-level callbacks<a class="headerlink" href="#stark-level-callbacks" title="Link to this heading">¶</a></h3>
+<p>These callbacks relate to time stepping.</p>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
@@ -473,10 +476,17 @@ Most users only need the scripting interface, but lower-level callbacks are usef
 </div>
 <p>The frame-writing callback is how STARK’s built-in output system writes registered meshes every frame.
 The frame cadence is controlled by <code class="docutils literal notranslate"><span class="pre">settings.output.fps</span></code>.</p>
+<p>Register a STARK-level callback via <code class="docutils literal notranslate"><span class="pre">simulation.get_callbacks()-&gt;add_&lt;name&gt;(f)</span></code>:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="p">.</span><span class="nf">get_callbacks</span><span class="p">()</span><span class="o">-&gt;</span><span class="nf">add_before_time_step</span><span class="p">([</span><span class="o">&amp;</span><span class="p">]()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// runs once before Newton starts for every time step</span>
+<span class="w">    </span><span class="c1">// e.g. update step-lagged quantities</span>
+<span class="p">});</span>
+</pre></div>
+</div>
 </section>
 <section id="symx-newton-callbacks">
 <h3>SymX/Newton callbacks<a class="headerlink" href="#symx-newton-callbacks" title="Link to this heading">¶</a></h3>
-<p>Check the <a class="reference external" href="https://symx.physics-simulation.org/newtons_method.html">original SymX docs</a> for more details.</p>
+<p>These callbacks relate to the Newton solves. Check the <a class="reference external" href="https://symx.physics-simulation.org/newtons_method.html">original SymX docs</a> for more details.</p>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
@@ -529,9 +539,19 @@ The frame cadence is controlled by <code class="docutils literal notranslate"><s
 </tbody>
 </table>
 </div>
-<p>Boolean validity callbacks are combined with logical <code class="docutils literal notranslate"><span class="pre">AND</span></code>. All registered checks must pass.
-<code class="docutils literal notranslate"><span class="pre">max_allowed_step</span></code> callbacks are combined by taking the smallest returned step fraction.
-The default residual used by Newton is the infinity norm of the gradient, unless a custom residual callback is installed.</p>
+<p>Notes:</p>
+<ul class="simple">
+<li><p>Boolean validity callbacks are combined with logical <code class="docutils literal notranslate"><span class="pre">AND</span></code>. All registered checks must pass.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_allowed_step</span></code> callbacks are combined by taking the smallest returned step fraction.</p></li>
+<li><p>The default residual used by Newton is the infinity norm of the gradient, unless a custom residual callback is installed.</p></li>
+</ul>
+<p>SymX/Newton callbacks live on <code class="docutils literal notranslate"><span class="pre">simulation.get_callbacks()-&gt;newton</span></code>, which is of type <code class="docutils literal notranslate"><span class="pre">symx::spSolverCallbacks</span></code> (defined in SymX):</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="p">.</span><span class="nf">get_callbacks</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">newton</span><span class="o">-&gt;</span><span class="nf">add_before_energy_evaluation</span><span class="p">([</span><span class="o">&amp;</span><span class="p">]()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// runs before every energy / gradient / Hessian evaluation inside Newton</span>
+<span class="w">    </span><span class="c1">// e.g. update broad-phase collision sets</span>
+<span class="p">});</span>
+</pre></div>
+</div>
 </section>
 </section>
 <section id="public-scripting-and-control">

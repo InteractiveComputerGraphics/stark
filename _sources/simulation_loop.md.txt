@@ -180,7 +180,11 @@ If `dt` drops below `settings.simulation.time_step_size_lower_bound`, the simula
 Callbacks inject behavior into the solver loop.
 Most users only need the scripting interface, but lower-level callbacks are useful when extending STARK.
 
+Callbacks are accessed through `simulation.get_callbacks()`, which returns a reference to `stark::Callbacks`.
+That struct exposes the STARK-level methods directly, and a `newton` member of type `symx::SolverCallbacks` that carries the SymX/Newton-level hooks.
+
 ### STARK-level callbacks
+These callbacks relate to time stepping.
 
 | Callback | When it runs | Purpose |
 |---|---|---|
@@ -194,8 +198,17 @@ Most users only need the scripting interface, but lower-level callbacks are usef
 The frame-writing callback is how STARK's built-in output system writes registered meshes every frame.
 The frame cadence is controlled by `settings.output.fps`.
 
+Register a STARK-level callback via `simulation.get_callbacks()->add_<name>(f)`:
+
+```cpp
+simulation.get_callbacks()->add_before_time_step([&]() {
+    // runs once before Newton starts for every time step
+    // e.g. update step-lagged quantities
+});
+```
+
 ### SymX/Newton callbacks
-Check the [original SymX docs](https://symx.physics-simulation.org/newtons_method.html) for more details.
+These callbacks relate to the Newton solves. Check the [original SymX docs](https://symx.physics-simulation.org/newtons_method.html) for more details.
 
 | Callback | When it runs | Purpose |
 |---|---|---|
@@ -210,9 +223,19 @@ Check the [original SymX docs](https://symx.physics-simulation.org/newtons_metho
 | `is_converged_state_valid` | after Newton reports success | verify final constraints/contact tolerances |
 | `after_step` | at the end of each Newton iteration | per-iteration diagnostics, adaptive parameter updates |
 
-Boolean validity callbacks are combined with logical `AND`. All registered checks must pass.
-`max_allowed_step` callbacks are combined by taking the smallest returned step fraction.
-The default residual used by Newton is the infinity norm of the gradient, unless a custom residual callback is installed.
+Notes:
+- Boolean validity callbacks are combined with logical `AND`. All registered checks must pass.
+- `max_allowed_step` callbacks are combined by taking the smallest returned step fraction.
+- The default residual used by Newton is the infinity norm of the gradient, unless a custom residual callback is installed.
+
+SymX/Newton callbacks live on `simulation.get_callbacks()->newton`, which is of type `symx::spSolverCallbacks` (defined in SymX):
+
+```cpp
+simulation.get_callbacks()->newton->add_before_energy_evaluation([&]() {
+    // runs before every energy / gradient / Hessian evaluation inside Newton
+    // e.g. update broad-phase collision sets
+});
+```
 
 ## Public scripting and control
 
